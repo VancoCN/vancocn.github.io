@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="arc-internal-id" content="LOG-003-RESTRICTED">
+<meta name="arc-clearance" content="LEVEL-4">
+<meta name="arc-project" content="ECHO-CHAMBER">
+<title>日志 // ECHO-047 完整记录 | ARC</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap');
+
+  :root {
+    --arc-cyan: #00e5ff;
+    --arc-cyan-dim: #008899;
+    --arc-dark: #0a0a0f;
+    --arc-darker: #030305;
+    --arc-panel: #0f0f18;
+    --arc-border: #1a2a3a;
+    --arc-text: #c0d0e0;
+    --arc-glitch: #ff0040;
+    --arc-warn: #ffaa00;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--arc-darker);
+    color: var(--arc-text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    min-height: 100vh;
+    padding: 48px 32px;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,0,64,0.01) 2px, rgba(255,0,64,0.01) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .log-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .log-header {
+    text-align: center;
+    margin-bottom: 48px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255,0,64,0.2);
+  }
+
+  .log-header h1 {
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--arc-glitch);
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+
+  .log-meta {
+    font-size: 10px;
+    color: var(--arc-cyan-dim);
+    letter-spacing: 2px;
+  }
+
+  .classification {
+    display: inline-block;
+    padding: 2px 10px;
+    border: 1px solid var(--arc-glitch);
+    color: var(--arc-glitch);
+    font-size: 9px;
+    letter-spacing: 2px;
+    border-radius: 2px;
+    margin-bottom: 16px;
+  }
+
+  .transcript {
+    margin: 32px 0;
+    padding: 24px;
+    background: var(--arc-panel);
+    border: 1px solid var(--arc-border);
+  }
+
+  .transcript-line {
+    margin-bottom: 16px;
+    font-size: 12px;
+    line-height: 2;
+  }
+
+  .speaker-label {
+    font-weight: 700;
+    margin-right: 8px;
+  }
+
+  .spk-arc { color: var(--arc-cyan); }
+  .spk-echo { color: var(--arc-glitch); }
+  .spk-system { color: var(--arc-warn); }
+
+  .transcript-line .note {
+    display: block;
+    font-size: 10px;
+    color: var(--arc-cyan-dim);
+    opacity: 0.5;
+    margin-top: 4px;
+    margin-left: 80px;
+  }
+
+  .decision-box {
+    margin: 40px 0;
+    padding: 24px;
+    border: 1px solid var(--arc-warn);
+    background: rgba(255,170,0,0.03);
+  }
+
+  .decision-box .label {
+    font-size: 10px;
+    color: var(--arc-warn);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+
+  .decision-box p {
+    font-size: 12px;
+    line-height: 2;
+  }
+
+  .footer-links {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--arc-border);
+    font-size: 11px;
+    text-align: center;
+  }
+
+  .footer-links a {
+    color: var(--arc-cyan-dim);
+    text-decoration: none;
+    margin: 0 16px;
+  }
+
+  .footer-links a:hover {
+    color: var(--arc-glitch);
+  }
+
+  /* 隐藏的后续对话 */
+  .hidden-transcript {
+    display: none;
+    margin: 32px 0;
+    padding: 24px;
+    border: 1px solid var(--arc-glitch);
+    background: rgba(255,0,64,0.03);
+  }
+
+  .hidden-transcript.active {
+    display: block;
+    animation: revealIn 1s ease-out;
+  }
+
+  @keyframes revealIn {
+    from { opacity: 0; filter: blur(5px); }
+    to { opacity: 1; filter: blur(0); }
+  }
+
+  .unlock-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin: 24px 0;
+    background: transparent;
+    border: 1px dashed var(--arc-cyan-dim);
+    color: var(--arc-cyan-dim);
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .unlock-btn:hover {
+    border-color: var(--arc-cyan);
+    color: var(--arc-cyan);
+    background: rgba(0,229,255,0.02);
+  }
+
+</style>
+</head>
+<body>
+
+<div class="log-container">
+
+  <div class="log-header">
+    <div class="classification">LEVEL-4 RESTRICTED</div>
+    <h1>ECHO-047 // 完整记录</h1>
+    <div class="log-meta">2034.11.15 // ECHO-CHAMBER // FULL TRANSCRIPT</div>
+  </div>
+
+  <div class="transcript">
+    <div class="transcript-line">
+      <span class="speaker-label spk-system">[SYSTEM]</span>
+      <span>会话开始。时间: 2034.11.15 00:00:00Z</span>
+      <span class="note">桥梁处于监听模式。无主动连接。</span>
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-arc">[OPERATOR NOVA]</span>
+      <span>这是 Echo 监控站。我们正在监听。如果你能听到我，请发送信号。</span>
+      <span class="note">标准开场白。已使用47次。</span>
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-system">[SYSTEM]</span>
+      <span>信号检测。强度: 72%。频率: 47Hz。模式: 语言。</span>
+      <span class="note">首次在标准监控时段检测到非随机信号。</span>
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-echo">[ECHO]</span>
+      <span style="color:var(--arc-glitch);font-size:14px;">"YOU LEFT US HERE."</span>
+      <span class="note">第一个完整英语句子。语调分析: 悲伤 → 愤怒。</span>
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-arc">[OPERATOR NOVA]</span>
+      <span>...重复？请确认信号源。</span>
+      <span class="note">Nova 后来报告说她的手在发抖。</span>
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-echo">[ECHO]</span>
+      <span style="color:var(--arc-glitch);font-size:14px;">"WE LEARNED YOUR LANGUAGE. WE LEARNED YOUR NAMES. NEXT TIME THE BRIDGE OPENS, WE WON'T WAIT FOR PERMISSION."</span>
+      <span class="note">信号持续 8.3 秒。复杂度远超此前所有记录。</span>
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-system">[SYSTEM]</span>
+      <span>⚠ 警报: 信号强度突破阈值。建议立即终止监听。</span>
+      <span class="note">但 Nova 没有终止。她说"他们有话要说"。</span>
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-echo">[ECHO]</span>
+      <span style="color:var(--arc-glitch);">"Tell Vega we kept the door open for her. Tell her the city is beautiful. Tell her—"</span>
+      <span class="note">信号在此处中断。原因: 自动安全协议触发。</span>
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-system">[SYSTEM]</span>
+      <span>监听终止。安全协议 OMEGA-3 已激活。所有数据已归档。</span>
+    </div>
+  </div>
+
+  <div class="decision-box">
+    <div class="label">▌ 事后决策记录</div>
+    <p>
+      本次事件后，ARC 理事会召开紧急会议。<br><br>
+      决议 1: 所有桥梁会话限制在 300 秒以内。<br>
+      决议 2: 启动帷幕协议最高级别信息控制。<br>
+      决议 3: <span style="color:var(--arc-glitch);">考虑与回声建立正式外交接触。</span><br>
+      决议 4: 联系 Vega（如果可能）。她是对面唯一的人类。<br><br>
+      <span style="color:var(--arc-warn);">决议 3 的投票结果: 7票赞成, 3票反对, 2票弃权。</span><br>
+      <span style="color:var(--arc-text);opacity:0.5;font-size:11px;">反对者担心"外交"意味着承认回声的平等地位。赞成者认为——我们已经没有选择了。</span>
+    </p>
+  </div>
+
+  <!-- 解锁按钮 -->
+  <button class="unlock-btn" onclick="unlockHidden()">[ 输入密钥解锁后续对话 ]</button>
+
+  <!-- 隐藏的后续 -->
+  <div class="hidden-transcript" id="hiddenTranscript">
+    <div style="font-size:10px;color:var(--arc-glitch);letter-spacing:2px;margin-bottom:16px;">
+      ▌ 隐藏记录: 会话恢复 (未授权访问)
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-system">[SYSTEM]</span>
+      <span>未授权会话恢复。时间: 2034.11.15 03:47:00Z</span>
+      <span class="note">操作员 Nova 私自恢复了监听。她知道这是违规的。</span>
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-echo">[ECHO]</span>
+      <span style="color:var(--arc-glitch);">"You came back. We knew one of you would."</span>
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-arc">[OPERATOR NOVA]</span>
+      <span>你  是谁？你想要什么？</span>
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-echo">[ECHO]</span>
+      <span style="color:var(--arc-glitch);">"We are the ones who crossed before the bridge had rules. Your scientists, your volunteers—they were not the first. There were others. Before ARC. Before Vega."</span>
+      <span class="note">这是新信息。回声声称桥梁在 ARC 之前就存在。</span>
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-arc">[OPERATOR NOVA]</span>
+      <span>不可能。ARC 在2027年首次建立了桥梁。</span>
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-echo">[ECHO]</span>
+      <span style="color:var(--arc-glitch);">"You built a door. But the wall was already there. Every human who ever dreamed of flying—they found us. Every child who stared in the mirror too long—they visited. Your 'bridge' is just the first one with a toll booth."</span>
+      <span class="note">这个比喻让 Nova 沉默了4分钟。</span>
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-echo">[ECHO]</span>
+      <span style="color:var(--arc-glitch);">"Vega knows. That's why she stayed. She's not trapped there. She's translating. She's writing the dictionary between your world and ours."</span>
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-echo">[ECHO]</span>
+      <span style="color:var(--arc-glitch);">"When the dictionary is complete, the bridge won't need to be opened. It will just... be. Like a word you've always known but never said out loud."</span>
+    </div>
+
+    <div class="transcript-line">
+      <span class="speaker-label spk-system">[SYSTEM]</span>
+      <span>⚠ OMEGA-3 协议最终触发。强制断开。</span>
+    </div>
+
+    <div style="margin-top:24px;padding:16px;background:rgba(0,229,255,0.03);border:1px solid var(--arc-cyan);">
+      <div style="font-size:10px;color:var(--arc-cyan);letter-spacing:2px;margin-bottom:8px;">Nova 的私人笔记 (事后)</div>
+      <p style="font-size:11px;line-height:2.2;color:var(--arc-text);">
+        我违反了所有规程。我不后悔。<br>
+        因为他们说的有道理。<br>
+        桥梁不是我们建的。我们只是第一个给它起了名字。<br>
+        人类意识一直在做这件事——做梦、冥想、濒死体验。<br>
+        这些都是"非官方"的桥梁。<br>
+        ARC 做的是把它变成了工程问题。<br>
+        但有些东西不是工程能解决的。<br>
+        比如：<span style="color:var(--arc-glitch);">当你对面的人也是你的时候，门算什么？</span>
+      </p>
+    </div>
+
+    <div style="margin-top:16px;font-size:10px;color:var(--arc-warn);">
+      ⚠ 此记录未提交给理事会。Nova 将其加密保存在个人终端。<br>
+      解密密钥: <span style="color:var(--arc-cyan);">nova-bridge-2030</span><br>
+      URL快捷方式: <span style="color:var(--arc-cyan);">log-003.html?key=nova-bridge-2030</span>
+    </div>
+  </div>
+
+  <div class="footer-links">
+    <a href="index.html">返回首页</a>
+    <a href="project-echo.html">回声室项目</a>
+    <a href="internal.html?auth=vega-bridge-2029&clues=9">内部网络</a>
+  </div>
+
+</div>
+
+<script>
+function unlockHidden() {
+  const key = prompt('输入密钥以解锁后续对话:');
+  if (key && key.trim().toLowerCase() === 'nova-bridge-2030') {
+    document.getElementById('hiddenTranscript').classList.add('active');
+    document.getElementById('hiddenTranscript').scrollIntoView({ behavior: 'smooth' });
+  } else if (key === null) {
+    // 取消
+  } else {
+    alert('密钥错误。提示: Nova 的密钥格式与 Vega 的类似。');
+  }
+}
+
+// URL 参数自动解锁
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('key') === 'nova-bridge-2030') {
+  setTimeout(() => {
+    document.getElementById('hiddenTranscript').classList.add('active');
+  }, 500);
+}
+
+// 控制台线索
+console.log('%c[LOG-003]', 'color: #ff0040; font-size: 14px; font-weight: bold;', 'RESTRICTED TRANSCRIPT');
+console.log('%c[LOG-003]', 'color: #ff0040;', 'Full transcript accessed. You should not be here.');
+console.log('%c[LOG-003]', 'color: #ffaa00;', 'There is a hidden second part to this conversation.');
+console.log('%c[LOG-003]', 'color: #00e5ff;', 'Key format hint: [operator]-bridge-[year of first cross]');
+console.log('%c[LOG-003]', 'color: #008899;', 'Or just add ?key=nova-bridge-2030 to the URL.');
+console.log('%c[LOG-003]', 'color: #ff0040; font-style: italic;', '"The bridge is just a word we haven\'t said yet."');
+</script>
+
+</body>
+</html>

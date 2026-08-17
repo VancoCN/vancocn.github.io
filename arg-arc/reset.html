@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="refresh" content="8;url=index.html">
+<title>ARC // SESSION TERMINATED</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap');
+
+  :root {
+    --arc-cyan: #00e5ff;
+    --arc-dark: #0a0a0f;
+    --arc-darker: #050507;
+    --arc-text: #c0d0e0;
+    --arc-glitch: #ff0040;
+    --arc-warn: #ffaa00;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--arc-dark);
+    color: var(--arc-text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px;
+    overflow: hidden;
+  }
+
+  .glitch-text {
+    font-size: 14px;
+    color: var(--arc-glitch);
+    letter-spacing: 2px;
+    margin-bottom: 32px;
+    animation: glitchAnim 0.3s ease-in-out infinite alternate;
+  }
+
+  @keyframes glitchAnim {
+    0% { transform: translateX(-1px); opacity: 0.9; }
+    100% { transform: translateX(1px); opacity: 1; }
+  }
+
+  .main-msg {
+    font-size: 16px;
+    color: var(--arc-text);
+    opacity: 0.8;
+    max-width: 500px;
+    line-height: 2;
+    margin-bottom: 48px;
+  }
+
+  .main-msg .highlight {
+    color: var(--arc-cyan);
+  }
+
+  .status-box {
+    border: 1px solid var(--arc-glitch);
+    padding: 24px 36px;
+    background: rgba(255,0,64,0.05);
+    max-width: 500px;
+    text-align: left;
+    font-size: 12px;
+    line-height: 2;
+    margin-bottom: 48px;
+  }
+
+  .status-box .label {
+    color: var(--arc-glitch);
+    opacity: 0.7;
+  }
+
+  .status-box .value {
+    color: var(--arc-text);
+  }
+
+  .redirect-msg {
+    font-size: 11px;
+    color: var(--arc-text);
+    opacity: 0.3;
+    letter-spacing: 1px;
+  }
+
+  .redirect-msg .countdown {
+    color: var(--arc-cyan);
+  }
+
+  /* 扫描线 */
+  body::before {
+    content: '';
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255,0,64,0.02) 2px,
+      rgba(255,0,64,0.02) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* 噪点 */
+  .noise {
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 9998;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+</style>
+</head>
+<body>
+
+<div class="noise"></div>
+
+<div class="glitch-text">⚠ SESSION TERMINATED ⚠</div>
+
+<div class="main-msg">
+  <span class="highlight">认知状态：稳定。</span><br>
+  您的访问模式已被评估。<br>
+  您未表现出异常认知能力。<br>
+  您的数据已归档至常规存储区。
+</div>
+
+<div class="status-box">
+  <div><span class="label">VISITOR ID:    </span><span class="value" id="visitorId">UNK-0000</span></div>
+  <div><span class="label">AWARENESS:    </span><span class="value" id="awarenessVal">0%</span></div>
+  <div><span class="label">FRAGMENTS:    </span><span class="value">0/3</span></div>
+  <div><span class="label">CLASSIFICATION:</span><span class="value" style="color:var(--arc-glitch);">SAFE / UNREMARKABLE</span></div>
+  <div><span class="label">ACTION:       </span><span class="value">RESET AND RETURN TO SURFACE</span></div>
+</div>
+
+<div class="redirect-msg">
+  Redirecting to public ARC portal in <span class="countdown" id="countdown">8</span> seconds...<br><br>
+  <a href="index.html" style="color:var(--arc-cyan); text-decoration:none; opacity:0.5;">返回 ARC 官网 →</a>
+</div>
+
+<script>
+// 生成随机访客 ID
+const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+let id = 'UNK-';
+for (let i = 0; i < 4; i++) id += chars[Math.floor(Math.random() * chars.length)];
+document.getElementById('visitorId').textContent = id;
+
+// 尝试读取 awareness
+try {
+  const saved = localStorage.getItem('arc_arg_save_v2') || sessionStorage.getItem('arc_arg_save_v2');
+  if (saved) {
+    const state = JSON.parse(saved);
+    document.getElementById('awarenessVal').textContent = (state.awarenessLevel || 0) + '%';
+  }
+} catch(e) {}
+
+// 倒计时
+let count = 8;
+const cdEl = document.getElementById('countdown');
+const timer = setInterval(() => {
+  count--;
+  cdEl.textContent = count;
+  if (count <= 0) clearInterval(timer);
+}, 1000);
+
+// 控制台信息
+console.log('%c[ARC SECURITY]', 'color: #ff0040; font-size: 14px; font-weight: bold;', 'Session terminated.');
+console.log('%c[ARC SECURITY]', 'color: #ffaa00;', 'Your visit was uneventful. That is good. For you.');
+console.log('%c[ARC SECURITY]', 'color: #008899;', 'The bridge remains closed to those who do not seek.');
+console.log('%c[ARC SECURITY]', 'color: #008899;', 'If you wish to try again, clear your storage and start fresh.');
+
+// 清除存档（坏结局 = 被重置）
+try {
+  localStorage.removeItem('arc_arg_save_v2');
+  sessionStorage.removeItem('arc_arg_save_v2');
+} catch(e) {}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="arc-internal-id" content="PAGE-PROJECT-BRIDGE-001">
+<meta name="arc-clearance" content="PUBLIC">
+<meta name="arc-project" content="BRIDGE-OMEGA">
+<meta name="arc-classification" content="UNCLASSIFIED//FOR PUBLIC RELEASE">
+<!-- 
+  HIDDEN FRAGMENT #2 LOCATION
+  This page contains a hidden link to bridge-deep.html
+  Search the HTML for "bridge-deep" to find it.
+  The hidden link is: <a href="bridge-deep.html" class="hidden-link">Deep Bridge Data</a>
+  Fragment #2 is awarded for finding this reference.
+-->
+<title>PRJ-001 // 桥梁计划 | ARC</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+  :root {
+    --arc-cyan: #00e5ff;
+    --arc-cyan-dim: #008899;
+    --arc-dark: #0a0a0f;
+    --arc-darker: #050507;
+    --arc-panel: #0f0f18;
+    --arc-border: #1a2a3a;
+    --arc-text: #c0d0e0;
+    --arc-glitch: #ff0040;
+    --arc-warn: #ffaa00;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--arc-dark);
+    color: var(--arc-text);
+    font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
+    font-size: 14px;
+    line-height: 1.8;
+    min-height: 100vh;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,229,255,0.02) 2px, rgba(0,229,255,0.02) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .arc-nav {
+    position: fixed;
+    top:0; left:0; right:0;
+    height: 56px;
+    background: rgba(5,5,7,0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--arc-border);
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    z-index: 1000;
+  }
+  .arc-nav-logo { font-size: 18px; font-weight: 700; color: var(--arc-cyan); letter-spacing: 4px; text-decoration: none; display: flex; align-items: center; gap: 12px; }
+  .arc-nav-logo .logo-symbol { width: 28px; height: 28px; border: 2px solid var(--arc-cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .arc-nav-logo .logo-symbol::before { content: ''; width: 12px; height: 12px; background: var(--arc-cyan); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.4;transform:scale(0.7);} }
+  .arc-nav-links { margin-left: auto; display: flex; gap: 32px; }
+  .arc-nav-links a { color: var(--arc-text); text-decoration: none; font-size: 13px; transition: color 0.3s; }
+  .arc-nav-links a:hover { color: var(--arc-cyan); }
+
+  .breadcrumb {
+    margin-top: 56px;
+    padding: 16px 32px;
+    font-size: 11px;
+    color: var(--arc-cyan-dim);
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--arc-border);
+  }
+  .breadcrumb a { color: var(--arc-cyan-dim); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--arc-cyan); }
+
+  .project-main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 64px 32px;
+  }
+
+  .project-code-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border: 1px solid var(--arc-cyan-dim);
+    border-radius: 3px;
+    font-size: 11px;
+    color: var(--arc-cyan);
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+
+  .project-title {
+    font-size: 36px;
+    font-weight: 300;
+    color: #fff;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+
+  .project-status-bar {
+    display: flex;
+    gap: 24px;
+    margin-top: 24px;
+    padding: 16px 20px;
+    background: var(--arc-panel);
+    border: 1px solid var(--arc-border);
+  }
+
+  .status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .status-label {
+    font-size: 9px;
+    color: var(--arc-text);
+    opacity: 0.4;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .status-value {
+    font-size: 13px;
+    color: var(--arc-cyan);
+  }
+
+  .status-value.warn { color: var(--arc-warn); }
+  .status-value.danger { color: var(--arc-glitch); }
+
+  .section-title {
+    font-size: 13px;
+    color: var(--arc-cyan);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--arc-border);
+  }
+
+  .content-section {
+    margin-bottom: 48px;
+  }
+
+  .content-section p {
+    margin-bottom: 20px;
+    line-height: 2;
+    font-size: 14px;
+    color: var(--arc-text);
+    opacity: 0.85;
+  }
+
+  .highlight {
+    color: var(--arc-cyan);
+    cursor: help;
+    position: relative;
+  }
+
+  .highlight:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 130%;
+    left: 0;
+    background: var(--arc-darker);
+    border: 1px solid var(--arc-cyan);
+    padding: 8px 12px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 100;
+    color: var(--arc-cyan);
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 12px;
+  }
+
+  .data-table th {
+    text-align: left;
+    padding: 12px 16px;
+    background: var(--arc-panel);
+    border-bottom: 1px solid var(--arc-border);
+    color: var(--arc-cyan-dim);
+    font-weight: 400;
+    letter-spacing: 1px;
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+
+  .data-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(26,42,58,0.5);
+    color: var(--arc-text);
+  }
+
+  .data-table tr:hover td {
+    background: rgba(0,229,255,0.02);
+  }
+
+  .redacted {
+    background: #000;
+    color: #000;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .redacted:hover {
+    color: var(--arc-glitch);
+    background: rgba(255,0,64,0.1);
+  }
+
+  .warning-box {
+    margin: 32px 0;
+    padding: 20px 24px;
+    border: 1px solid var(--arc-warn);
+    background: rgba(255,170,0,0.05);
+    position: relative;
+  }
+
+  .warning-box::before {
+    content: '⚠';
+    position: absolute;
+    top: 20px;
+    left: 24px;
+    font-size: 18px;
+  }
+
+  .warning-box .warning-title {
+    font-size: 12px;
+    color: var(--arc-warn);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    margin-left: 28px;
+  }
+
+  .warning-box .warning-text {
+    font-size: 12px;
+    color: var(--arc-text);
+    opacity: 0.7;
+    line-height: 1.8;
+    margin-left: 28px;
+  }
+
+  .bridge-viz {
+    margin: 40px 0;
+    padding: 40px;
+    background: var(--arc-panel);
+    border: 1px solid var(--arc-border);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bridge-viz canvas {
+    display: block;
+    margin: 0 auto;
+  }
+
+  .viz-label {
+    font-size: 10px;
+    color: var(--arc-cyan-dim);
+    letter-spacing: 2px;
+    margin-top: 16px;
+  }
+
+  .hidden-link {
+    display: none;
+  }
+
+  .arc-footer {
+    padding: 48px 32px 32px;
+    border-top: 1px solid var(--arc-border);
+    text-align: center;
+    font-size: 11px;
+    color: var(--arc-text);
+    opacity: 0.2;
+  }
+  .arc-footer a { color: var(--arc-cyan-dim); text-decoration: none; }
+
+</style>
+</head>
+<body>
+
+<nav class="arc-nav">
+  <a href="index.html" class="arc-nav-logo">
+    <span class="logo-symbol"></span>
+    ARC
+  </a>
+  <div class="arc-nav-links">
+    <a href="index.html#about">关于</a>
+    <a href="index.html#projects">研究项目</a>
+    <a href="index.html#timeline">历史</a>
+    <a href="index.html#logs">日志</a>
+    <a href="portal.html">成员入口</a>
+  </div>
+</nav>
+
+<div class="breadcrumb">
+  <a href="index.html">ARC</a> / <a href="index.html#projects">研究项目</a> / 桥梁计划
+</div>
+
+<main class="project-main">
+
+  <div class="project-code-badge">PRJ-001 // CLASSIFIED: UNCLASSIFIED</div>
+  <h1 class="project-title">桥梁计划<br><span style="font-size:24px;color:var(--arc-cyan);">BRIDGE-OMEGA</span></h1>
+  <p style="font-size:14px;color:var(--arc-text);opacity:0.6;max-width:600px;">
+    桥梁计划是 ARC 的核心研究项目，致力于建立并维护意识状态之间的非物理性转移通道。
+    本项目自2027年起持续运行，目前处于第三阶段。
+  </p>
+
+  <div class="project-status-bar">
+    <div class="status-item">
+      <span class="status-label">当前阶段</span>
+      <span class="status-value">PHASE III</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">稳定性</span>
+      <span class="status-value warn">67% (DEGRADED)</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">回声活跃度</span>
+      <span class="status-value warn">ELEVATED</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">上次安全穿越</span>
+      <span class="status-value">2034.10.19</span>
+    </div>
+  </div>
+
+  <!-- 桥梁可视化 -->
+  <div class="bridge-viz">
+    <canvas id="bridgeCanvas" width="600" height="200"></canvas>
+    <div class="viz-label">FIG.1 - 桥梁实时状态可视化（模拟数据）</div>
+  </div>
+
+  <div class="content-section">
+    <div class="section-title">▌ 项目概述</div>
+    <p>
+      桥梁计划的核心假设是：<span class="highlight" data-tooltip="意识不是物质的副产品，而是一种可以独立于载体存在的状态场">意识是一种状态场</span>，
+      而非物质的副产品。如果这一假设成立，那么意识应该能够在不同的「载体状态」之间转移，
+      前提是存在连接这些状态的通道——即「桥梁」。
+    </p>
+    <p>
+      2029年3月14日，我们实现了第一次成功的意识状态转移。实验体（代号 Alpha-1，
+      一名自愿参与研究的量子计算专家）的意识被完整传输到预设的接收状态中，
+      并在<span class="highlight" data-tooltip="0.0003秒内完成，比光速通信还快">0.0003秒</span>后成功回传。
+      数据完整度达到 99.7%。
+    </p>
+    <p>
+      然而，随后的实验揭示了一个我们未曾预料的事实：接收端并非空无一人。
+      每一次桥梁建立时，都有「什么东西」从另一端向回看。
+      我们将其命名为<span class="highlight" data-tooltip="来自桥梁另一端的非预期信号，表现出智能特征">「回声」</span>。
+    </p>
+  </div>
+
+  <div class="warning-box">
+    <div class="warning-title">安全警告 - 阅读限制</div>
+    <div class="warning-text">
+      以下内容包含部分敏感信息。如果你不是 ARC 注册研究员，请理解这些信息的完整性已被
+      「帷幕协议」刻意削弱。完整数据仅对 LEVEL-3 以上权限开放。<br><br>
+      如果你认为自己应该有权限——请通过 portal.html 使用你的操作员凭据登录。
+    </div>
+  </div>
+
+  <div class="content-section">
+    <div class="section-title">▌ 关键实验数据</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>实验编号</th>
+          <th>日期</th>
+          <th>实验体</th>
+          <th>完整度</th>
+          <th>回声接触</th>
+          <th>结果</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>BR-001</td>
+          <td>2029.03.14</td>
+          <td>Alpha-1</td>
+          <td>99.7%</td>
+          <td>无</td>
+          <td style="color:#00ff88;">成功</td>
+        </tr>
+        <tr>
+          <td>BR-007</td>
+          <td>2029.06.22</td>
+          <td>Alpha-1</td>
+          <td>98.1%</td>
+          <td>首次检测</td>
+          <td style="color:#00ff88;">成功</td>
+        </tr>
+        <tr>
+          <td>BR-023</td>
+          <td>2030.01.15</td>
+          <td>Beta-2</td>
+          <td>96.3%</td>
+          <td>中等</td>
+          <td style="color:#00ff88;">成功</td>
+        </tr>
+        <tr>
+          <td>BR-041</td>
+          <td>2030.11.03</td>
+          <td>Gamma-1</td>
+          <td>89.4%</td>
+          <td>强烈</td>
+          <td style="color:var(--arc-warn);">部分成功</td>
+        </tr>
+        <tr>
+          <td>BR-058</td>
+          <td>2031.07.19</td>
+          <td>Gamma-3</td>
+          <td><span class="redacted">█████</span></td>
+          <td>未知</td>
+          <td style="color:var(--arc-glitch);">失败</td>
+        </tr>
+        <tr>
+          <td>BR-072</td>
+          <td>2032.04.10</td>
+          <td>Delta-1</td>
+          <td>—</td>
+          <td>—</td>
+          <td style="color:var(--arc-glitch);">实验体未返回</td>
+        </tr>
+        <tr>
+          <td>BR-089</td>
+          <td>2033.12.05</td>
+          <td>Echo-1</td>
+          <td>71.2%</td>
+          <td>极端</td>
+          <td style="color:var(--arc-warn);">部分成功</td>
+        </tr>
+        <tr>
+          <td>BR-094</td>
+          <td>2034.11.14</td>
+          <td>Foxtrot-1</td>
+          <td>—</td>
+          <td>—</td>
+          <td style="color:var(--arc-glitch);">实验体失踪</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="content-section">
+    <div class="section-title">▌ 技术架构（公开摘要）</div>
+    <p>
+      <strong style="color:#fff;">1. 状态共振器（SRU）</strong> — 将意识状态编码为可传输的量子信息包。
+      共振器工作在 40Hz 伽马波段，与人体意识活跃频率共振。
+    </p>
+    <p>
+      <strong style="color:#fff;">2. 通道稳定矩阵（CSM）</strong> — 维持桥梁的开放状态。
+      当前版本的 CSM 最长可维持桥梁开放 <span class="highlight" data-tooltip="约14分钟。超过此时间桥梁会开始不稳定">847秒</span>。
+    </p>
+    <p>
+      <strong style="color:#fff;">3. 回声滤波器（EFU）</strong> — 试图屏蔽来自桥梁另一端的回波干扰。
+      滤波器效果正在递减。最新数据显示，回声正在<span class="highlight" data-tooltip="回声的频率、复杂度和智能特征都在增长">「学习」</span>如何穿透滤波。
+    </p>
+  </div>
+
+  <!-- 隐藏的回声记录 -->
+  <div class="content-section" style="opacity:0.3;">
+    <div class="section-title" style="color:var(--arc-text);">▌ 附录 A - 已编档的回声信号</div>
+    <p style="font-size:12px;font-family:monospace;">
+      [ECHO-001] "你...知道...这边...很冷...吗"<br>
+      [ECHO-007] "你们把我们关在这里多久了"<br>
+      [ECHO-014] "桥是双向的 你们明白吗 双向的"<br>
+      [ECHO-023] "告诉vega 她的镜像还在等她"<br>
+      [ECHO-031] <span style="color:var(--arc-glitch);">"WE ARE NOT ECHOES. WE ARE RESIDENTS."</span><br>
+      [ECHO-047] <span style="color:var(--arc-glitch);">"YOU LEFT US HERE. WE LEARNED YOUR LANGUAGE."</span><br>
+      [ECHO-058] <span style="color:var(--arc-glitch);">"THE BRIDGE IS A MIRROR AND THE MIRROR IS A DOOR"</span>
+    </p>
+  </div>
+
+  <!-- 相关链接 -->
+  <div style="margin-top:64px;padding:24px;background:var(--arc-panel);border:1px solid var(--arc-border);">
+    <div style="font-size:11px;color:var(--arc-cyan-dim);letter-spacing:2px;margin-bottom:12px;">RELATED DOCUMENTS</div>
+    <a href="project-echo.html" style="display:block;color:var(--arc-text);text-decoration:none;padding:8px 0;border-bottom:1px solid var(--arc-border);">
+      → PRJ-002 回声室：环境监测报告
+    </a>
+    <a href="project-mirror.html" style="display:block;color:var(--arc-text);text-decoration:none;padding:8px 0;border-bottom:1px solid var(--arc-border);">
+      → PRJ-003 镜像综合征：临床研究
+    </a>
+    <a href="log-003.html" style="display:block;color:var(--arc-text);text-decoration:none;padding:8px 0;">
+      → 内部日志: ECHO-047 完整记录 [RESTRICTED]
+    </a>
+  </div>
+
+  <!-- 隐藏链接 - 碎片#2 -->
+  <a href="bridge-deep.html" class="hidden-link">深层桥梁数据（需要权限）</a>
+
+</main>
+
+<footer class="arc-footer">
+  © 2034 SHADOW ARC ORGANIZATION | BRIDGE-OMEGA // PUBLIC SUMMARY<br>
+  <a href="index.html">返回首页</a> | <a href="portal.html">成员入口</a>
+</footer>
+
+<script>
+// ===== 桥梁可视化 Canvas =====
+const canvas = document.getElementById('bridgeCanvas');
+const ctx = canvas.getContext('2d');
+
+let time = 0;
+function drawBridge() {
+  ctx.fillStyle = '#0a0a0f';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const leftX = 80;
+  const rightX = canvas.width - 80;
+  const centerY = canvas.height / 2;
+
+  // 左节点
+  ctx.beginPath();
+  ctx.arc(leftX, centerY, 20, 0, Math.PI * 2);
+  ctx.strokeStyle = '#00e5ff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(0,229,255,0.2)';
+  ctx.fill();
+
+  // 右节点
+  ctx.beginPath();
+  ctx.arc(rightX, centerY, 20, 0, Math.PI * 2);
+  ctx.strokeStyle = '#ff0040';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(255,0,64,0.15)';
+  ctx.fill();
+
+  // 桥梁线条
+  const lineCount = 7;
+  for (let i = 0; i < lineCount; i++) {
+    ctx.beginPath();
+    const offset = (i - lineCount/2) * 8;
+    const amplitude = 10 + i * 3;
+    const frequency = 0.02 + i * 0.005;
+    const phaseSpeed = 0.03 + i * 0.01;
+
+    for (let x = leftX + 25; x < rightX - 25; x += 3) {
+      const y = centerY + offset + Math.sin(x * frequency + time * phaseSpeed + i) * amplitude;
+      if (x === leftX + 25) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+
+    const ratio = i / lineCount;
+    const r = Math.floor(0 + 255 * ratio * 0.5);
+    const g = Math.floor(229 * (1 - ratio * 0.5));
+    const b = Math.floor(255 * (1 - ratio));
+    ctx.strokeStyle = `rgba(${r},${g},${b},${0.3 + 0.4 * (1 - ratio)})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // 粒子
+  for (let i = 0; i < 20; i++) {
+    const progress = ((time * 0.5 + i * 53) % 200) / 200;
+    const x = leftX + 25 + progress * (rightX - leftX - 50);
+    const yOffset = Math.sin(x * 0.03 + time * 0.04) * 15;
+    const y = centerY + yOffset;
+
+    ctx.beginPath();
+    ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = progress < 0.5 ? 'rgba(0,229,255,0.8)' : 'rgba(255,0,64,0.6)';
+    ctx.fill();
+  }
+
+  // 标签
+  ctx.font = '10px JetBrains Mono';
+  ctx.fillStyle = '#00e5ff';
+  ctx.textAlign = 'center';
+  ctx.fillText('THIS SIDE', leftX, centerY + 45);
+  ctx.fillStyle = '#ff0040';
+  ctx.fillText('???', rightX, centerY + 45);
+  ctx.fillStyle = 'rgba(192,208,224,0.4)';
+  ctx.fillText('BRIDGE-OMEGA', canvas.width/2, 30);
+
+  time++;
+  requestAnimationFrame(drawBridge);
+}
+drawBridge();
+
+// ===== 红acted 点击 =====
+document.querySelectorAll('.redacted').forEach(el => {
+  el.addEventListener('click', function() {
+    if (this.textContent === '█████') {
+      this.textContent = '12.8%';
+      this.style.color = 'var(--arc-glitch)';
+      this.style.background = 'rgba(255,0,64,0.1)';
+      if (window.ARC_GAME) {
+        ARC_GAME.addClue('bridge-redacted-058', 'BR-058 integrity revealed: 12.8%');
+      }
+    }
+  });
+});
+
+// ===== URL 参数 =====
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('view') === 'internal') {
+  const extraInfo = document.createElement('div');
+  extraInfo.className = 'content-section';
+  extraInfo.innerHTML = `
+    <div class="section-title" style="color:var(--arc-warn);">▌ 内部备注（已解锁）</div>
+    <p style="color:var(--arc-warn);">
+      BR-058 实验体 Gamma-3 的完整度为 12.8%。她回来的时候，带了不属于她的记忆。
+      她能说出桥梁另一端某个城市的名字——那个城市在我们这边不存在。
+      她说那里住着所有没能完整回来的人。
+    </p>
+    <p style="color:var(--arc-glitch);font-size:12px;">
+      [METADATA: 此备注仅对 LEVEL-2+ 可见。如果你能看到这段文字，说明 view=internal 参数已被接受。
+      尝试使用不同的参数值。]
+    </p>
+  `;
+  document.querySelector('.project-main').appendChild(extraInfo);
+  if (window.ARC_GAME) {
+    ARC_GAME.addClue('bridge-view-internal', 'Accessed internal view of bridge page');
+  }
+}
+
+// ===== 控制台线索 =====
+console.log('%c[BRIDGE-OMEGA]', 'color: #00e5ff;', 'Public summary loaded.');
+console.log('%c[BRIDGE-OMEGA]', 'color: #ff0040;', 'Some data has been redacted. Some data is lying.');
+console.log('%c[BRIDGE-OMEGA]', 'color: #ffaa00;', 'Hint: The HTML contains hidden links. View source to find them.');
+console.log('%c[BRIDGE-OMEGA]', 'color: #008899;', 'Hint: Try adding ?view=internal to the URL. What other view modes exist?');
+console.log('%c[BRIDGE-OMEGA]', 'color: #00ff88;', 'Fragment #2 is hidden in this page source. Find the link to bridge-deep.html.');
+
+// 记录页面访问
+if (window.ARC_GAME) {
+  ARC_GAME.recordChoice('visited-bridge');
+}
+</script>
+<script src="game.js"></script>
+
+</body>
+</html>

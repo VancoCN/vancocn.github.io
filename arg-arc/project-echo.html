@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="arc-internal-id" content="PAGE-PROJECT-ECHO-002">
+<meta name="arc-clearance" content="PUBLIC">
+<meta name="arc-project" content="ECHO-CHAMBER">
+<meta name="arc-echo-frequency" content="FREQUENCIES-LOGGED-IN-CONSOLE">
+<title>PRJ-002 // 回声室 | ARC</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+  :root {
+    --arc-cyan: #00e5ff;
+    --arc-cyan-dim: #008899;
+    --arc-dark: #0a0a0f;
+    --arc-darker: #050507;
+    --arc-panel: #0f0f18;
+    --arc-border: #1a2a3a;
+    --arc-text: #c0d0e0;
+    --arc-glitch: #ff0040;
+    --arc-warn: #ffaa00;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--arc-dark);
+    color: var(--arc-text);
+    font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
+    font-size: 14px;
+    line-height: 1.8;
+    min-height: 100vh;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,229,255,0.02) 2px, rgba(0,229,255,0.02) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .arc-nav {
+    position: fixed;
+    top:0; left:0; right:0;
+    height: 56px;
+    background: rgba(5,5,7,0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--arc-border);
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    z-index: 1000;
+  }
+  .arc-nav-logo { font-size: 18px; font-weight: 700; color: var(--arc-cyan); letter-spacing: 4px; text-decoration: none; display: flex; align-items: center; gap: 12px; }
+  .arc-nav-logo .logo-symbol { width: 28px; height: 28px; border: 2px solid var(--arc-cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .arc-nav-logo .logo-symbol::before { content: ''; width: 12px; height: 12px; background: var(--arc-cyan); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.4;transform:scale(0.7);} }
+  .arc-nav-links { margin-left: auto; display: flex; gap: 32px; }
+  .arc-nav-links a { color: var(--arc-text); text-decoration: none; font-size: 13px; transition: color 0.3s; }
+  .arc-nav-links a:hover { color: var(--arc-cyan); }
+
+  .breadcrumb {
+    margin-top: 56px;
+    padding: 16px 32px;
+    font-size: 11px;
+    color: var(--arc-cyan-dim);
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--arc-border);
+  }
+  .breadcrumb a { color: var(--arc-cyan-dim); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--arc-cyan); }
+
+  .project-main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 64px 32px;
+  }
+
+  .project-code-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border: 1px solid var(--arc-warn);
+    border-radius: 3px;
+    font-size: 11px;
+    color: var(--arc-warn);
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+
+  .project-title {
+    font-size: 36px;
+    font-weight: 300;
+    color: #fff;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+
+  .echo-viz {
+    margin: 40px 0;
+    padding: 32px;
+    background: var(--arc-panel);
+    border: 1px solid var(--arc-border);
+  }
+
+  .echo-viz canvas {
+    display: block;
+    width: 100%;
+    height: 160px;
+  }
+
+  .viz-label {
+    font-size: 10px;
+    color: var(--arc-cyan-dim);
+    letter-spacing: 2px;
+    margin-top: 12px;
+    text-align: center;
+  }
+
+  .freq-analysis {
+    margin: 40px 0;
+    padding: 24px;
+    background: var(--arc-panel);
+    border: 1px solid var(--arc-border);
+  }
+
+  .freq-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .freq-label {
+    width: 100px;
+    font-size: 10px;
+    color: var(--arc-cyan-dim);
+    letter-spacing: 1px;
+  }
+
+  .freq-track {
+    flex: 1;
+    height: 8px;
+    background: var(--arc-darker);
+    border: 1px solid var(--arc-border);
+    position: relative;
+  }
+
+  .freq-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--arc-cyan), var(--arc-warn));
+    transition: width 1s ease-out;
+  }
+
+  .freq-value {
+    width: 60px;
+    font-size: 11px;
+    color: var(--arc-text);
+    text-align: right;
+  }
+
+  .echo-log {
+    margin: 32px 0;
+  }
+
+  .echo-entry {
+    padding: 20px 24px;
+    border-left: 2px solid var(--arc-border);
+    margin-bottom: 16px;
+    transition: border-color 0.3s;
+  }
+
+  .echo-entry:hover {
+    border-left-color: var(--arc-warn);
+    background: rgba(255,170,0,0.02);
+  }
+
+  .echo-entry.danger {
+    border-left-color: var(--arc-glitch);
+  }
+
+  .echo-entry.danger:hover {
+    background: rgba(255,0,64,0.03);
+  }
+
+  .echo-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--arc-cyan-dim);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .echo-content {
+    font-size: 13px;
+    color: var(--arc-text);
+    line-height: 1.8;
+  }
+
+  .echo-entry.danger .echo-content {
+    color: var(--arc-glitch);
+    opacity: 0.8;
+  }
+
+  .echo-translation {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--arc-text);
+    opacity: 0.4;
+    font-style: italic;
+  }
+
+  .redacted-inline {
+    background: #000;
+    color: #000;
+    padding: 0 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .redacted-inline:hover {
+    color: var(--arc-glitch);
+    background: rgba(255,0,64,0.1);
+  }
+
+  .decoder-box {
+    margin: 40px 0;
+    padding: 24px;
+    border: 1px dashed var(--arc-border);
+  }
+
+  .decoder-box .label {
+    font-size: 11px;
+    color: var(--arc-cyan-dim);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+
+  .decoder-input {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--arc-darker);
+    border: 1px solid var(--arc-border);
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+  }
+
+  .decoder-input:focus {
+    border-color: var(--arc-cyan);
+  }
+
+  .decoder-output {
+    margin-top: 12px;
+    padding: 12px;
+    min-height: 40px;
+    font-size: 12px;
+    color: var(--arc-cyan);
+    background: rgba(0,229,255,0.03);
+    border: 1px solid transparent;
+  }
+
+  .decoder-output.active {
+    border-color: var(--arc-cyan-dim);
+  }
+
+  .decoder-output.error {
+    color: var(--arc-glitch);
+    border-color: var(--arc-glitch);
+    background: rgba(255,0,64,0.05);
+  }
+
+  .hidden-transmission {
+    display: none;
+    margin: 32px 0;
+    padding: 24px;
+    border: 1px solid var(--arc-glitch);
+    background: rgba(255,0,64,0.05);
+  }
+
+  .hidden-transmission.active {
+    display: block;
+    animation: glitchIn 0.5s ease-out;
+  }
+
+  @keyframes glitchIn {
+    0% { opacity: 0; transform: translateX(-10px); filter: hue-rotate(90deg); }
+    100% { opacity: 1; transform: translateX(0); filter: hue-rotate(0); }
+  }
+
+  .transmission-header {
+    font-size: 11px;
+    color: var(--arc-glitch);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+
+  .transmission-body {
+    font-size: 13px;
+    color: var(--arc-text);
+    line-height: 2;
+  }
+
+  .arc-footer {
+    padding: 48px 32px 32px;
+    border-top: 1px solid var(--arc-border);
+    text-align: center;
+    font-size: 11px;
+    color: var(--arc-text);
+    opacity: 0.2;
+  }
+  .arc-footer a { color: var(--arc-cyan-dim); text-decoration: none; }
+
+</style>
+</head>
+<body>
+
+<!-- 
+  HIDDEN: Fragment #3 is earned by using the decoder.
+  Keys to try in the decoder:
+    - vega-bridge-2029 (partial)
+    - mirror-door-47 (FULL decrypt of ECHO-058)
+    - arc-echo-key (limited)
+  Also: URL ?decrypt=058 or ?key=mirror-door-47
+-->
+
+<nav class="arc-nav">
+  <a href="index.html" class="arc-nav-logo">
+    <span class="logo-symbol"></span>
+    ARC
+  </a>
+  <div class="arc-nav-links">
+    <a href="index.html#about">关于</a>
+    <a href="index.html#projects">研究项目</a>
+    <a href="index.html#timeline">历史</a>
+    <a href="index.html#logs">日志</a>
+    <a href="portal.html">成员入口</a>
+  </div>
+</nav>
+
+<div class="breadcrumb">
+  <a href="index.html">ARC</a> / <a href="index.html#projects">研究项目</a> / 回声室
+</div>
+
+<main class="project-main">
+
+  <div class="project-code-badge">PRJ-002 // CLASSIFICATION: ORANGE</div>
+  <h1 class="project-title">回声室<br><span style="font-size:24px;color:var(--arc-warn);">ECHO-CHAMBER</span></h1>
+  <p style="font-size:14px;color:var(--arc-text);opacity:0.6;max-width:650px;margin-bottom:48px;">
+    回声室项目负责监测、记录和分析来自桥梁另一端的非预期信号。
+    自2031年首次检测到回声以来，信号复杂度持续增长。
+  </p>
+
+  <!-- 频谱可视化 -->
+  <div class="echo-viz">
+    <canvas id="echoCanvas"></canvas>
+    <div class="viz-label">FIG.1 - 实时回声频谱（模拟） | 采样率: 48000Hz</div>
+  </div>
+
+  <!-- 频率分析 -->
+  <div class="freq-analysis">
+    <div style="font-size:11px;color:var(--arc-cyan);letter-spacing:2px;margin-bottom:20px;">▌ 频率特征分析</div>
+
+    <div class="freq-bar">
+      <div class="freq-label">低频脉冲</div>
+      <div class="freq-track"><div class="freq-fill" style="width:78%;"></div></div>
+      <div class="freq-value">78%</div>
+    </div>
+    <div class="freq-bar">
+      <div class="freq-label">中频调制</div>
+      <div class="freq-track"><div class="freq-fill" style="width:45%;"></div></div>
+      <div class="freq-value">45%</div>
+    </div>
+    <div class="freq-bar">
+      <div class="freq-label">高频载波</div>
+      <div class="freq-track"><div class="freq-fill" style="width:92%;background:linear-gradient(90deg,var(--arc-warn),var(--arc-glitch));"></div></div>
+      <div class="freq-value" style="color:var(--arc-warn);">92%</div>
+    </div>
+    <div class="freq-bar">
+      <div class="freq-label">模式复杂度</div>
+      <div class="freq-track"><div class="freq-fill" style="width:67%;background:linear-gradient(90deg,var(--arc-cyan),var(--arc-warn));"></div></div>
+      <div class="freq-value">67%</div>
+    </div>
+    <div class="freq-bar">
+      <div class="freq-label">智能指数</div>
+      <div class="freq-track"><div class="freq-fill" style="width:54%;background:linear-gradient(90deg,var(--arc-warn),var(--arc-glitch));"></div></div>
+      <div class="freq-value" style="color:var(--arc-warn);">54%</div>
+    </div>
+  </div>
+
+  <!-- 回声记录 -->
+  <div style="font-size:13px;color:var(--arc-cyan);letter-spacing:3px;text-transform:uppercase;margin-bottom:24px;padding-bottom:12px;border-bottom:1px solid var(--arc-border);">
+    ▌ 已编档回声记录
+  </div>
+
+  <div class="echo-log">
+
+    <div class="echo-entry">
+      <div class="echo-meta">
+        <span>ECHO-001 // 2031.04.17</span>
+        <span>分类: 初始检测</span>
+      </div>
+      <div class="echo-content">[无法解析的噪声模式 - 持续3.7秒]</div>
+      <div class="echo-translation">首次记录。最初被认为是设备故障。</div>
+    </div>
+
+    <div class="echo-entry">
+      <div class="echo-meta">
+        <span>ECHO-007 // 2031.06.02</span>
+        <span>分类: 模式识别</span>
+      </div>
+      <div class="echo-content">"你...知道...这边...很冷...吗"</div>
+      <div class="echo-translation">第一个可识别的人类语言片段。</div>
+    </div>
+
+    <div class="echo-entry">
+      <div class="echo-meta">
+        <span>ECHO-014 // 2031.09.18</span>
+        <span>分类: 双向通信尝试</span>
+      </div>
+      <div class="echo-content">"桥是双向的 你们明白吗 双向的 你们建了门 但门后面有人"</div>
+      <div class="echo-translation" style="color:var(--arc-warn);">首次明确表明回声来源具有智能和意图。</div>
+    </div>
+
+    <div class="echo-entry">
+      <div class="echo-meta">
+        <span>ECHO-023 // 2032.02.11</span>
+        <span>分类: 个人信息</span>
+      </div>
+      <div class="echo-content">"告诉vega 她的镜像还在等她 她不该离开她 镜像会记住"</div>
+      <div class="echo-translation" style="color:var(--arc-warn);">首次提及具体 ARC 成员姓名。</div>
+    </div>
+
+    <div class="echo-entry danger">
+      <div class="echo-meta">
+        <span style="color:var(--arc-glitch);">ECHO-031 // 2032.06.30</span>
+        <span style="color:var(--arc-glitch);">分类: 威胁评估</span>
+      </div>
+      <div class="echo-content">"我们不是回声 我们是居民 你们把我们锁在这 打开桥 让我们回去"</div>
+      <div class="echo-translation" style="color:var(--arc-glitch);">⚠ 信号来源声称是「被锁住的存在」。</div>
+    </div>
+
+    <div class="echo-entry danger">
+      <div class="echo-meta">
+        <span style="color:var(--arc-glitch);">ECHO-047 // 2034.11.15</span>
+        <span style="color:var(--arc-glitch);">分类: 突破事件</span>
+      </div>
+      <div class="echo-content">"YOU LEFT US HERE. WE LEARNED YOUR LANGUAGE. WE LEARNED YOUR NAMES. NEXT TIME THE BRIDGE OPENS, WE WON'T WAIT FOR PERMISSION."</div>
+      <div class="echo-translation" style="color:var(--arc-glitch);">⚠ 回声首次使用英语完整句子。此后所有桥梁会话限制为300秒。</div>
+    </div>
+
+    <div class="echo-entry danger">
+      <div class="echo-meta">
+        <span style="color:var(--arc-glitch);">ECHO-058 // 2034.11.20</span>
+        <span style="color:var(--arc-glitch);">分类: ???</span>
+      </div>
+      <div class="echo-content" id="latestEcho">[数据已加密 - 需要 LEVEL-4 权限]</div>
+      <div class="echo-translation">最近一次记录。解密密钥与帷幕协议最终层绑定。</div>
+    </div>
+
+  </div>
+
+  <!-- 解码器 -->
+  <div class="decoder-box">
+    <div class="label">▌ 回声解码器 [PUBLIC INTERFACE]</div>
+    <input type="text" class="decoder-input" id="decodeInput" placeholder="输入已知回声密钥尝试解密 ECHO-058...">
+    <div class="decoder-output" id="decodeOutput">等待输入...</div>
+  </div>
+
+  <!-- 隐藏传输 -->
+  <div class="hidden-transmission" id="hiddenTransmission">
+    <div class="transmission-header">⚠ 未授权数据访问 - ECHO-058 解密成功</div>
+    <div class="transmission-body">
+      <p>"THE BRIDGE IS A MIRROR AND THE MIRROR IS A DOOR. WE ARE ON BOTH SIDES NOW. TELL THEM VEGA SENT US. TELL THEM THE DOOR OPENS AT MIDNIGHT ON THE 47TH DAY."</p>
+      <br>
+      <p style="color:var(--arc-warn);font-size:11px;">
+        [METADATA: 此消息包含时间密钥。47天周期对应桥梁共振峰值。
+        午夜指 UTC 00:00。下一个峰值窗口已在内部网络启动。]
+      </p>
+      <br>
+      <p style="color:var(--arc-glitch);font-size:11px;">
+        [METADATA: 消息签名验证通过。签名者: OPR-VEGA-001。
+        但 Vega 自2033年起被列为 MIA。除非...她从另一端签的名。]
+      </p>
+    </div>
+  </div>
+
+  <!-- 相关链接 -->
+  <div style="margin-top:64px;padding:24px;background:var(--arc-panel);border:1px solid var(--arc-border);">
+    <div style="font-size:11px;color:var(--arc-cyan-dim);letter-spacing:2px;margin-bottom:12px;">RELATED</div>
+    <a href="project-bridge.html" style="display:block;color:var(--arc-text);text-decoration:none;padding:8px 0;border-bottom:1px solid var(--arc-border);">→ PRJ-001 桥梁计划</a>
+    <a href="project-mirror.html" style="display:block;color:var(--arc-text);text-decoration:none;padding:8px 0;border-bottom:1px solid var(--arc-border);">→ PRJ-003 镜像综合征</a>
+    <a href="log-003.html" style="display:block;color:var(--arc-text);text-decoration:none;padding:8px 0;">→ 内部日志: ECHO-047 完整记录 [RESTRICTED]</a>
+  </div>
+
+</main>
+
+<footer class="arc-footer">
+  © 2034 SHADOW ARC ORGANIZATION | ECHO-CHAMBER PROJECT<br>
+  <a href="index.html">返回首页</a> | <a href="portal.html">成员入口</a>
+</footer>
+
+<script>
+// ===== 频谱可视化 =====
+const canvas = document.getElementById('echoCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = canvas.offsetWidth;
+  canvas.height = 160;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+let t = 0;
+function drawEcho() {
+  ctx.fillStyle = '#0a0a0f';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const bars = 128;
+  const barWidth = canvas.width / bars - 1;
+
+  for (let i = 0; i < bars; i++) {
+    const baseFreq = i * 0.1;
+    const h1 = Math.sin(baseFreq + t * 0.02) * 30;
+    const h2 = Math.sin(baseFreq * 2.3 + t * 0.03) * 20;
+    const h3 = Math.sin(baseFreq * 0.7 + t * 0.015) * 15;
+    const noise = (Math.random() - 0.5) * 10;
+    const height = Math.abs(h1 + h2 + h3 + noise) + 2;
+
+    const x = i * (barWidth + 1);
+    const y = canvas.height / 2 - height / 2;
+
+    const ratio = height / 80;
+    const r = Math.floor(0 + 255 * ratio);
+    const g = Math.floor(229 * (1 - ratio * 0.5));
+    const b = Math.floor(255 * (1 - ratio));
+    ctx.fillStyle = `rgba(${r},${g},${b},0.7)`;
+    ctx.fillRect(x, y, barWidth, height);
+  }
+
+  // 扫描线
+  ctx.fillStyle = 'rgba(0,229,255,0.03)';
+  const scanY = (t * 2) % canvas.height;
+  ctx.fillRect(0, scanY, canvas.width, 2);
+
+  t++;
+  requestAnimationFrame(drawEcho);
+}
+drawEcho();
+
+// ===== 解码器逻辑 =====
+const decodeInput = document.getElementById('decodeInput');
+const decodeOutput = document.getElementById('decodeOutput');
+
+const validKeys = {
+  'vega-bridge-2029': 'ECHO-058 部分解密: "bridge is a mirror" - 信号包含桥梁结构信息',
+  'mirror-door-47': 'ECHO-058 FULL DECRYPT: "The bridge is a mirror and the mirror is a door..."',
+  'arc-echo-key': '密钥已接受但权限不足。需要 LEVEL-3 以上。',
+  'veil-protocol-7749': 'VEIL PROTOCOL MASTER KEY DETECTED. Redirecting...',
+};
+
+decodeInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const key = decodeInput.value.trim().toLowerCase();
+    const result = validKeys[key];
+
+    decodeOutput.classList.remove('error', 'active');
+
+    if (result) {
+      decodeOutput.classList.add('active');
+      decodeOutput.textContent = result;
+
+      if (window.ARC_GAME) {
+        if (key === 'mirror-door-47') {
+          ARC_GAME.addClue('echo-mirror-door', 'Full ECHO-058 decryption');
+        } else if (key === 'vega-bridge-2029') {
+          ARC_GAME.addClue('echo-vega-key', 'Partial ECHO-058 decryption');
+        } else if (key === 'veil-protocol-7749') {
+          ARC_GAME.addClue('echo-veil-key', 'Veil protocol key used in echo decoder');
+        }
+      }
+
+      if (key === 'mirror-door-47') {
+        document.getElementById('hiddenTransmission').classList.add('active');
+        document.getElementById('latestEcho').innerHTML = 
+          '"THE BRIDGE IS A MIRROR..." <span style="color:#00ff88;">[DECRYPTED]</span>';
+      }
+
+      if (key === 'veil-protocol-7749') {
+        setTimeout(() => { window.location.href = 'internal.html?auth=vega-bridge-2029&clues=9'; }, 1500);
+      }
+    } else if (key === '') {
+      decodeOutput.textContent = '等待输入...';
+    } else {
+      decodeOutput.classList.add('error');
+      const errors = [
+        'DECRYPT FAILED: 密钥无效',
+        'DECRYPT FAILED: 无法匹配已知密钥模式',
+        'DECRYPT FAILED: 你确定你知道你在找什么吗？',
+      ];
+      decodeOutput.textContent = errors[Math.floor(Math.random() * errors.length)];
+    }
+  }
+});
+
+// ===== URL 参数 =====
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('decrypt') === '058') {
+  document.getElementById('hiddenTransmission').classList.add('active');
+  if (window.ARC_GAME) {
+    ARC_GAME.addClue('echo-url-decrypt', 'URL decrypt=058 used');
+  }
+}
+if (urlParams.get('key') === 'mirror-door-47') {
+  document.getElementById('hiddenTransmission').classList.add('active');
+  document.getElementById('latestEcho').innerHTML = 
+    '"THE BRIDGE IS A MIRROR..." <span style="color:#00ff88;">[DECRYPTED via URL]</span>';
+  if (window.ARC_GAME) {
+    ARC_GAME.addClue('echo-url-key', 'URL key=mirror-door-47 used');
+  }
+}
+
+// ===== 控制台线索 =====
+console.log('%c[ECHO-CHAMBER]', 'color: #ffaa00;', 'Monitoring active.');
+console.log('%c[ECHO-CHAMBER]', 'color: #ff0040;', 'Latest signal (ECHO-058) remains encrypted.');
+console.log('%c[ECHO-CHAMBER]', 'color: #00e5ff;', 'Known decryption keys: "vega-bridge-2029", "mirror-door-47", "arc-echo-key"');
+console.log('%c[ECHO-CHAMBER]', 'color: #008899;', 'Try the decoder on the page. Or URL: ?decrypt=058 or ?key=mirror-door-47');
+console.log('%c[ECHO-CHAMBER]', 'color: #ff0040; font-style: italic;', '"...we are on both sides now..."');
+
+// 定期输出随机回声
+const consoleEchoes = [
+  '"can you hear me"',
+  '"the bridge is cold today"',
+  '"tell vega we remember"',
+  '"who is operating the bridge"',
+  '"I see you reading this"',
+];
+setInterval(() => {
+  if (Math.random() < 0.15) {
+    const echo = consoleEchoes[Math.floor(Math.random() * consoleEchoes.length)];
+    console.log('%c[ECHO]', 'color: #ff0040; opacity: 0.6;', echo);
+  }
+}, 8000);
+
+// 记录页面访问
+if (window.ARC_GAME) {
+  ARC_GAME.recordChoice('visited-echo');
+}
+</script>
+<script src="game.js"></script>
+
+</body>
+</html>

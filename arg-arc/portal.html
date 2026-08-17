@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="arc-internal-id" content="PAGE-PORTAL-002">
+<meta name="arc-clearance" content="RESTRICTED">
+<meta name="arc-project" content="VEIL-PROTOCOL">
+<meta name="arc-portal-version" content="4.2.1-secure">
+<title>ARC // 安全入口</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap');
+
+  :root {
+    --arc-cyan: #00e5ff;
+    --arc-cyan-dim: #008899;
+    --arc-dark: #0a0a0f;
+    --arc-darker: #050507;
+    --arc-panel: #0f0f18;
+    --arc-border: #1a2a3a;
+    --arc-text: #c0d0e0;
+    --arc-glitch: #ff0040;
+    --arc-warn: #ffaa00;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--arc-dark);
+    color: var(--arc-text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    line-height: 1.8;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: 
+      radial-gradient(ellipse at 20% 50%, rgba(0,229,255,0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 50%, rgba(255,0,64,0.02) 0%, transparent 50%);
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,229,255,0.02) 2px,
+      rgba(0,229,255,0.02) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .portal-container {
+    position: relative;
+    z-index: 1;
+    width: 420px;
+    padding: 48px 40px;
+    background: var(--arc-panel);
+    border: 1px solid var(--arc-border);
+    text-align: center;
+  }
+
+  .portal-container::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 20%;
+    width: 60%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--arc-cyan), transparent);
+  }
+
+  .portal-logo {
+    margin-bottom: 40px;
+  }
+
+  .portal-logo .symbol {
+    width: 48px;
+    height: 48px;
+    border: 2px solid var(--arc-cyan);
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .portal-logo .symbol::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    background: var(--arc-cyan);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.6); }
+  }
+
+  .portal-logo h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--arc-cyan);
+    letter-spacing: 6px;
+  }
+
+  .portal-logo .subtitle {
+    font-size: 10px;
+    color: var(--arc-cyan-dim);
+    letter-spacing: 2px;
+    margin-top: 4px;
+  }
+
+  .portal-form {
+    text-align: left;
+  }
+
+  .form-group {
+    margin-bottom: 24px;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 11px;
+    color: var(--arc-cyan-dim);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--arc-darker);
+    border: 1px solid var(--arc-border);
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+
+  .form-input:focus {
+    border-color: var(--arc-cyan);
+    box-shadow: 0 0 0 1px var(--arc-cyan);
+  }
+
+  .form-input::placeholder {
+    color: #333;
+  }
+
+  .btn-login {
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    border: 1px solid var(--arc-cyan);
+    color: var(--arc-cyan);
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 8px;
+  }
+
+  .btn-login:hover {
+    background: var(--arc-cyan);
+    color: var(--arc-dark);
+  }
+
+  .portal-footer {
+    margin-top: 32px;
+    font-size: 10px;
+    color: var(--arc-text);
+    opacity: 0.2;
+    letter-spacing: 1px;
+  }
+
+  .portal-footer a {
+    color: var(--arc-cyan-dim);
+    text-decoration: none;
+  }
+
+  .portal-footer a:hover {
+    color: var(--arc-cyan);
+  }
+
+  .login-error {
+    display: none;
+    margin-top: 16px;
+    padding: 10px 14px;
+    background: rgba(255,0,64,0.1);
+    border: 1px solid var(--arc-glitch);
+    color: var(--arc-glitch);
+    font-size: 11px;
+    letter-spacing: 1px;
+    white-space: pre-wrap;
+  }
+
+  .login-error.active {
+    display: block;
+    animation: shake 0.4s ease-in-out;
+  }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  .hidden-hint {
+    margin-top: 24px;
+    font-size: 9px;
+    color: var(--arc-text);
+    opacity: 0.06;
+    letter-spacing: 1px;
+  }
+
+  .hidden-hint:hover {
+    opacity: 0.3;
+  }
+
+  .two-factor {
+    display: none;
+    margin-top: 24px;
+    padding: 20px;
+    border: 1px solid var(--arc-warn);
+    background: rgba(255,170,0,0.05);
+  }
+
+  .two-factor.active {
+    display: block;
+  }
+
+  .two-factor .label {
+    font-size: 11px;
+    color: var(--arc-warn);
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+  }
+
+  .two-factor .hint {
+    font-size: 10px;
+    color: var(--arc-text);
+    opacity: 0.4;
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+
+  .login-success {
+    display: none;
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  .login-success.active {
+    display: block;
+  }
+
+  .success-icon {
+    font-size: 48px;
+    color: #00ff88;
+    margin-bottom: 16px;
+  }
+
+  .success-text {
+    font-size: 13px;
+    color: #00ff88;
+    letter-spacing: 2px;
+  }
+
+  .redirect-text {
+    font-size: 11px;
+    color: var(--arc-text);
+    opacity: 0.4;
+    margin-top: 12px;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- 
+  HIDDEN PAGE COMMENT:
+  Portal authentication page.
+  First operator: Vega (Lyra constellation reference)
+  Password format: project-year
+  Bridge first resonated: 2029.03.14
+  Backdoor URL param: bypass=veil-protocol-7749
+  Master key location: project-veil.html meta tag
+  Fragment #1 location: console output on this page
+-->
+
+<div class="portal-container">
+  <div class="portal-logo">
+    <div class="symbol"></div>
+    <h1>ARC</h1>
+    <div class="subtitle">SECURE ACCESS PORTAL v4.2</div>
+  </div>
+
+  <div class="portal-form" id="loginForm">
+    <div class="form-group">
+      <label class="form-label">操作员 ID</label>
+      <input type="text" class="form-input" id="operatorId" placeholder="输入你的 ARC 操作员编号" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label class="form-label">密码</label>
+      <input type="password" class="form-input" id="operatorPass" placeholder="••••••••••" autocomplete="off">
+    </div>
+    <button class="btn-login" onclick="attemptLogin()">验证身份</button>
+
+    <div class="login-error" id="loginError"></div>
+
+    <div class="two-factor" id="twoFactor">
+      <div class="label">⚠ 双因素验证所需</div>
+      <input type="text" class="form-input" id="tokenInput" placeholder="输入安全令牌">
+      <div class="hint">
+        提示：令牌与你的身份绑定。如果你不是 ARC 成员，请回到首页。<br>
+        如果你坚信自己应该是成员——检查你第一次来到这里时，控制台留下的信息。
+      </div>
+      <button class="btn-login" style="margin-top:16px;" onclick="attemptToken()">提交令牌</button>
+    </div>
+  </div>
+
+  <div class="login-success" id="loginSuccess">
+    <div class="success-icon">✓</div>
+    <div class="success-text">身份验证通过</div>
+    <div class="redirect-text">正在重定向到内部网络...</div>
+  </div>
+
+  <div class="portal-footer">
+    <a href="index.html">← 返回公开站点</a> | 
+    <a href="javascript:void(0)" onclick="showHint()">忘记凭据?</a>
+  </div>
+
+  <div class="hidden-hint" id="hiddenHint">
+    hint: the first operator was named after a star. her token is the date bridge-alpha first resonated. format: YYYY.MM.DD
+  </div>
+</div>
+
+<!-- 
+  IMPORTANT: game.js MUST load before our script 
+  because our script calls ARC_GAME methods on DOMContentLoaded.
+  But game.js also auto-inits on DOMContentLoaded.
+  Solution: game.js loads first, auto-inits, exposes window.ARC_GAME.
+  Then our script runs after, and ARC_GAME is ready.
+-->
+<script src="game.js"></script>
+<script>
+// 注意：game.js 注册了 DOMContentLoaded 来 auto-init。
+// 但本脚本在 game.js 之后同步执行，此时 DOM 可能还没 ready，
+// 所以 game.js 的 init 可能还没跑。
+// 方案：也监听 DOMContentLoaded，并确保我们在 game.js 之后执行。
+// 由于 addEventListener 按注册顺序触发，game.js 先注册，会先 init。
+document.addEventListener('DOMContentLoaded', () => {
+
+  // ===== 安全检查 =====
+  if (!window.ARC_GAME) {
+    console.error('%c[ARC PORTAL]', 'color: #ff0040; font-weight: bold;', 'FATAL: game.js failed to load. ARC_GAME is undefined.');
+    return;
+  }
+
+  // 确保已初始化（双重保险，即使 game.js 的 autoInit 跑过了也不会有问题）
+  if (!ARC_GAME.state || ARC_GAME.state.sessionCount === 0) {
+    ARC_GAME.init();
+  }
+
+  // ===== ✅ 碎片注册（带去重保护，不会重复触发）=====
+  // registerFragment 内部会判断：如果已拥有 7f3a，直接跳过
+  ARC_GAME.registerFragment('7f3a');
+
+  // ===== ✅ 线索记录（addClue 内部也有去重）=====
+  ARC_GAME.addClue('portal-console-access', 'Accessed portal console');
+
+  // ===== 控制台欢迎信息 =====
+  console.log('%c[ARC PORTAL]', 'color: #00e5ff;', 'Authentication required.');
+  console.log('%c[ARC PORTAL]', 'color: #ffaa00;', 'Hint: The first operator\'s name is a bright star in the Lyra constellation.');
+  console.log('%c[ARC PORTAL]', 'color: #ffaa00;', 'Her password is the project name and year, formatted as: project-year');
+  console.log('%c[ARC PORTAL]', 'color: #008899;', 'There is also a backdoor. URL: ?bypass=veil-protocol-7749');
+  console.log('%c[ARC PORTAL]', 'color: #00ff88;', 'Fragment #1 (7f3a) registered. (Safe to reload — won\'t duplicate.)');
+  console.log('%c[ARC PORTAL]', 'color: #00e5ff;', 'Current awareness: ' + ARC_GAME.state.awarenessLevel + '%');
+  console.log('%c[ARC PORTAL]', 'color: #00e5ff;', 'Fragments: ' + ARC_GAME.state.fragmentCount + '/3');
+
+  // ===== 登录逻辑 =====
+  const VALID_CREDENTIALS = {
+    'operator-vega': 'bridge-2029',
+    'vega': 'bridge-2029',
+    'OPR-VEGA-001': 'bridge-2029',
+    'operator-hayashi': 'bridge-2030',
+    'hayashi': 'bridge-2030',
+  };
+
+  const VALID_TOKENS = {
+    'operator-vega': '2029.03.14',
+    'vega': '2029.03.14',
+    'OPR-VEGA-001': '2029.03.14',
+    'operator-hayashi': '2030.11.03',
+    'hayashi': '2030.11.03',
+  };
+
+  let currentUser = '';
+
+  window.attemptLogin = function() {
+    const id = document.getElementById('operatorId').value.trim().toLowerCase();
+    const pass = document.getElementById('operatorPass').value.trim();
+    const errorEl = document.getElementById('loginError');
+
+    ARC_GAME.recordChoice('portal-login-attempt');
+
+    // 检查后门
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('bypass') === 'veil-protocol-7749') {
+      ARC_GAME.addClue('bypass-veil-protocol', 'Portal backdoor used');
+      // 后门额外认知度奖励
+      ARC_GAME.recordChoice('portal-bypass-used');
+      document.getElementById('loginForm').style.display = 'none';
+      const success = document.getElementById('loginSuccess');
+      success.classList.add('active');
+      success.querySelector('.success-text').textContent = '后门协议已激活';
+      console.log('%c[ARC PORTAL]', 'color: #ff0040; font-weight: bold;', 'BACKDOOR ACTIVATED — Veil protocol master key accepted.');
+      setTimeout(() => { window.location.href = 'internal.html?auth=vega-bridge-2029&clues=8'; }, 2000);
+      return;
+    }
+
+    if (VALID_CREDENTIALS[id] && VALID_CREDENTIALS[id] === pass) {
+      currentUser = id;
+      errorEl.classList.remove('active');
+      document.getElementById('twoFactor').classList.add('active');
+      document.getElementById('operatorId').disabled = true;
+      document.getElementById('operatorPass').disabled = true;
+      document.querySelector('.btn-login').style.display = 'none';
+      ARC_GAME.addClue('portal-login-' + id, 'Logged in as ' + id);
+      console.log('%c[ARC PORTAL]', 'color: #00ff88;', 'Login successful for: ' + id + ' | Awareness: ' + ARC_GAME.state.awarenessLevel + '%');
+      return;
+    }
+
+    if (id === 'visitor' || id === 'guest') {
+      showError('ACCESS DENIED: 你只是一个访客。回到首页看看你能发现什么。');
+      return;
+    }
+
+    if (id.includes('help') || pass.includes('help')) {
+      showError('HELP: 查看页面源代码。寻找不在视觉层的信息。console.log 也是你的朋友。\nHINT: 第一个操作员的名字是一颗星星。');
+      return;
+    }
+
+    const errors = [
+      'ACCESS DENIED: 凭据不匹配。',
+      'ACCESS DENIED: 操作员不存在于注册表中。',
+      'ACCESS DENIED: 该账户已被暂停。',
+    ];
+    showError(errors[Math.floor(Math.random() * errors.length)]);
+  };
+
+  window.attemptToken = function() {
+    const token = document.getElementById('tokenInput').value.trim();
+    const errorEl = document.getElementById('loginError');
+
+    if (VALID_TOKENS[currentUser] === token) {
+      ARC_GAME.addClue('portal-token-' + currentUser, 'Token verified for ' + currentUser);
+      document.getElementById('loginForm').style.display = 'none';
+      const success = document.getElementById('loginSuccess');
+      success.classList.add('active');
+      console.log('%c[ARC PORTAL]', 'color: #00ff88;', 'Token verified. Full access granted. | Awareness: ' + ARC_GAME.state.awarenessLevel + '%');
+      setTimeout(() => { 
+        const authKey = currentUser.includes('vega') ? 'vega-bridge-2029' : 'hayashi-bridge-2030';
+        window.location.href = 'internal.html?auth=' + authKey + '&clues=8'; 
+      }, 2000);
+      return;
+    }
+
+    if (token.includes('2029')) {
+      showError('令牌部分正确。格式应为 YYYY.MM.DD。回忆桥梁首次共振的确切日期。');
+      return;
+    }
+
+    showError('令牌无效。如果你不是 ARC 成员，这个入口不是为你准备的。\n\n[提示] 隐藏提示中提到了一颗星星和一个日期。');
+  };
+
+  function showError(msg) {
+    const el = document.getElementById('loginError');
+    el.textContent = msg;
+    el.classList.add('active');
+    setTimeout(() => el.classList.remove('active'), 5000);
+  }
+
+  window.showHint = function() {
+    const hint = document.getElementById('hiddenHint');
+    hint.style.opacity = '0.5';
+    setTimeout(() => hint.style.opacity = '', 3000);
+  };
+
+  // Enter 键支持
+  document.getElementById('operatorPass').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') attemptLogin();
+  });
+  document.getElementById('tokenInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') attemptToken();
+  });
+
+  // ===== DevTools 检测 =====
+  let devtoolsOpen = false;
+  setInterval(() => {
+    if (window.outerHeight - window.innerHeight > 100 || window.outerWidth - window.innerWidth > 100) {
+      if (!devtoolsOpen) {
+        devtoolsOpen = true;
+        ARC_GAME.addClue('portal-devtools-detected', 'DevTools opened on portal');
+        console.log('%c[ARC SECURITY]', 'color: #ff0040; font-weight: bold;', 'DevTools detected at portal page. Increased monitoring activated.');
+      }
+    } else {
+      devtoolsOpen = false;
+    }
+  }, 1000);
+
+});
+</script>
+
+</body>
+</html>
