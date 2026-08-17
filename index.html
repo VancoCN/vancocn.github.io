@@ -1,183 +1,960 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
-<meta charset="UTF-8" />
-<title>我的创作启动器</title>
-<style>
-    body {
-        margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background: #1b1b1b;
-        color: #e5e5e5;
-        display: flex;
-        height: 100vh;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vanco的小站</title>
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-card: #ffffff;
+            --bg-hover: #f0f0f0;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --border-color: #e0e0e0;
+            --accent-color: #4a6cf7;
+            --accent-hover: #3a5ce5;
+            --tag-original: #10b981;
+            --tag-non-original: #f59e0b;
+            --tag-tool: #3b82f6;
+            --tag-game: #8b5cf6;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-hover: 0 4px 12px rgba(0,0,0,0.12);
+        }
 
-    /* 侧边栏 */
-    #sidebar {
-        width: 220px;
-        background: #2a2a2a;
-        border-right: 1px solid #3a3a3a;
-        padding: 16px;
-        overflow-y: auto;
-    }
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #242424;
+            --bg-card: #2a2a2a;
+            --bg-hover: #333333;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --text-muted: #777777;
+            --border-color: #3a3a3a;
+            --accent-color: #6b8af7;
+            --accent-hover: #7c9bf8;
+            --tag-original: #10b981;
+            --tag-non-original: #f59e0b;
+            --tag-tool: #3b82f6;
+            --tag-game: #8b5cf6;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --shadow-hover: 0 4px 12px rgba(0,0,0,0.4);
+        }
 
-    #sidebar h2 {
-        font-size: 14px;
-        margin: 0 0 12px;
-        color: #aaa;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    .category {
-        margin-bottom: 16px;
-    }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+        }
 
-    .category-title {
-        font-size: 13px;
-        font-weight: bold;
-        margin-bottom: 6px;
-        color: #ccc;
-    }
+        /* Header */
+        .header {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background-color: rgba(var(--bg-secondary), 0.9);
+        }
 
-    .item {
-        padding: 6px 8px;
-        font-size: 13px;
-        cursor: pointer;
-        border-radius: 4px;
-        margin-bottom: 2px;
-    }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-    .item:hover {
-        background: #3a3a3a;
-    }
+        .site-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
 
-    .item.active {
-        background: #4a6fa5;
-        color: #fff;
-    }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
 
-    /* 主区域 */
-    #main {
-        flex: 1;
-        padding: 32px;
-        overflow-y: auto;
-    }
+        .theme-toggle {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
 
-    .placeholder {
-        color: #777;
-        font-size: 14px;
-        margin-top: 40px;
-    }
+        .theme-toggle:hover {
+            background: var(--bg-hover);
+        }
 
-    .title {
-        font-size: 22px;
-        margin-bottom: 8px;
-    }
+        .edit-toggle {
+            background: var(--accent-color);
+            border: none;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
 
-    .meta {
-        font-size: 13px;
-        color: #888;
-        margin-bottom: 16px;
-    }
+        .edit-toggle:hover {
+            background: var(--accent-hover);
+        }
 
-    .desc {
-        font-size: 14px;
-        line-height: 1.6;
-        margin-bottom: 24px;
-        white-space: pre-wrap;
-    }
+        /* Filter Bar */
+        .filter-bar {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
 
-    .launch {
-        display: inline-block;
-        padding: 10px 20px;
-        background: #4a6fa5;
-        color: #fff;
-        text-decoration: none;
-        border-radius: 4px;
-        font-size: 14px;
-    }
+        .filter-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-right: 5px;
+        }
 
-    .launch:hover {
-        background: #5a80b5;
-    }
-</style>
+        .filter-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: var(--bg-hover);
+        }
+
+        .filter-btn.active {
+            background: var(--accent-color);
+            color: #fff;
+            border-color: var(--accent-color);
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px 40px;
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent-color);
+            display: inline-block;
+        }
+
+        .section-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 30px 0;
+        }
+
+        /* Category Block */
+        .category-block {
+            margin-bottom: 35px;
+        }
+
+        .category-header {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .category-header::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background: var(--accent-color);
+            border-radius: 2px;
+        }
+
+        /* Card Grid */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 18px;
+            transition: all 0.25s;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .card-tags {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .tag-original {
+            background: var(--tag-original);
+        }
+
+        .tag-non-original {
+            background: var(--tag-non-original);
+        }
+
+        .tag-tool {
+            background: var(--tag-tool);
+        }
+
+        .tag-game {
+            background: var(--tag-game);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .card-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            flex-grow: 1;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
+
+        .card-date {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .card-link {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .card-link:hover {
+            color: var(--accent-hover);
+            text-decoration: underline;
+        }
+
+        /* Edit Mode */
+        .edit-mode .card {
+            border-color: var(--accent-color);
+        }
+
+        .edit-actions {
+            display: none;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .edit-mode .edit-actions {
+            display: flex;
+        }
+
+        .btn-small {
+            padding: 4px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .btn-small:hover {
+            background: var(--bg-hover);
+        }
+
+        .btn-delete {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        .btn-delete:hover {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .modal h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+
+        .add-btn {
+            display: none;
+            margin-bottom: 15px;
+        }
+
+        .edit-mode .add-btn {
+            display: inline-block;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-bar {
+                gap: 6px;
+            }
+
+            .filter-btn {
+                padding: 5px 10px;
+                font-size: 12px;
+            }
+        }
+
+        /* JSON Editor */
+        .json-editor-modal .modal {
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .json-editor-modal textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            resize: vertical;
+        }
+
+        .json-status {
+            margin-top: 10px;
+            font-size: 13px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .json-status.success {
+            display: block;
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .json-status.error {
+            display: block;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        [data-theme="dark"] .json-status.success {
+            background: #065f46;
+            color: #d1fae5;
+        }
+
+        [data-theme="dark"] .json-status.error {
+            background: #991b1b;
+            color: #fee2e2;
+        }
+    </style>
 </head>
 <body>
+    <header class="header">
+        <div class="header-content">
+            <div class="site-title" id="siteTitle">在线工具与游戏导航</div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">切换深色模式</button>
+                <button class="edit-toggle" onclick="toggleEditMode()">编辑数据</button>
+            </div>
+        </div>
+    </header>
 
-<div id="sidebar">
-    <h2>分类</h2>
-    <div id="nav"></div>
-</div>
+    <div class="filter-bar" id="filterBar">
+        <span class="filter-label">筛选：</span>
+        <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">全部</button>
+        <button class="filter-btn" data-filter="original" onclick="setFilter('original', this)">原创</button>
+        <button class="filter-btn" data-filter="non-original" onclick="setFilter('non-original', this)">非原创</button>
+        <button class="filter-btn" data-filter="tool" onclick="setFilter('tool', this)">工具</button>
+        <button class="filter-btn" data-filter="game" onclick="setFilter('game', this)">游戏</button>
+    </div>
 
-<div id="main">
-    <div class="placeholder">从左侧选择项目</div>
-</div>
+    <main class="main-content" id="mainContent">
+        <!-- Content will be rendered by JavaScript -->
+    </main>
 
-<script>
-/* ===============================
-   数据区（只改这里）
-   =============================== */
-const DATA = {
-    categories: [
-        { name: "工具" },
-        { name: "游戏" }
-    ],
-    items: [
-        {
-            id: "arc",
-            name: "A.R.C",
-            category: "游戏",
-            status: "最后更新于2026/8/18",
-            shortDesc: "来自A.R.C.组织的神秘网站(ARG)",
-            description: "本游戏为ARG游戏,游玩过程中可能需要一定网页基础",
-            url: "https://vancocn.github.io/arg-arc/"
+    <!-- Add/Edit Modal -->
+    <div class="modal-overlay" id="itemModal">
+        <div class="modal">
+            <h2 id="modalTitle">添加项目</h2>
+            <form id="itemForm" onsubmit="return saveItem(event)">
+                <div class="form-group">
+                    <label>名称</label>
+                    <input type="text" id="formName" required placeholder="输入名称">
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea id="formDesc" placeholder="输入描述"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>链接</label>
+                    <input type="url" id="formUrl" required placeholder="https://example.com">
+                </div>
+                <div class="form-group">
+                    <label>分类</label>
+                    <select id="formCategory" required>
+                        <option value="original">原创</option>
+                        <option value="non-original">非原创</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>类型</label>
+                    <select id="formType" required>
+                        <option value="tool">工具</option>
+                        <option value="game">游戏</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>最后更新时间</label>
+                    <input type="date" id="formDate" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JSON Editor Modal -->
+    <div class="modal-overlay json-editor-modal" id="jsonModal">
+        <div class="modal">
+            <h2>编辑 JSON 数据</h2>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">
+                直接编辑下方 JSON 数据，格式为：<code>{ "siteTitle": "...", "items": [...] }</code>
+            </p>
+            <textarea id="jsonEditor" spellcheck="false"></textarea>
+            <div class="json-status" id="jsonStatus"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeJsonModal()">取消</button>
+                <button type="button" class="btn-primary" onclick="saveJson()">应用更改</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 内置 JSON 数据 ==========
+        var siteData = {
+            "siteTitle": "在线工具与游戏导航",
+            "items": [
+                {
+                    "id": 1,
+                    "name": "A.R.C",
+                    "description": "一个来自A.R.C.组织的神秘网站(本游戏为ARG游戏，可能需要部分网页基础)",
+                    "url": "https://vancocn.github.io/arg-arc/",
+                    "category": "original",
+                    "type": "game",
+                    "updateDate": "2026-08-15"
+                },
+                {
+                    "id": 2,
+                    "name": "图片压缩工具",
+                    "description": "无损压缩图片，支持 JPG/PNG/WebP 格式",
+                    "url": "https://tinypng.com",
+                    "category": "original",
+                    "type": "tool",
+                    "updateDate": "2026-08-10"
+                }
+            ]
+        };
+
+        // ========== 全局状态 ==========
+        var currentFilter = 'all';
+        var editMode = false;
+        var editingId = null;
+
+        // ========== 初始化 ==========
+        function init() {
+            document.getElementById('siteTitle').textContent = siteData.siteTitle;
+            document.title = siteData.siteTitle;
+            render();
         }
-    ]
-};
-const nav = document.getElementById("nav");
-const main = document.getElementById("main");
 
-function renderNav() {
-    DATA.categories.forEach(cat => {
-        const items = DATA.items.filter(i => i.category === cat.name);
-        if (!items.length) return;
+        // ========== 渲染 ==========
+        function render() {
+            var container = document.getElementById('mainContent');
+            var filteredItems = getFilteredItems();
 
-        const block = document.createElement("div");
-        block.className = "category";
+            // 按分类和类型分组
+            var groups = {
+                'original': { tools: [], games: [] },
+                'non-original': { tools: [], games: [] }
+            };
 
-        const title = document.createElement("div");
-        title.className = "category-title";
-        title.textContent = cat.name;
-        block.appendChild(title);
+            filteredItems.forEach(function(item) {
+                if (item.category === 'original' && item.type === 'tool') {
+                    groups.original.tools.push(item);
+                } else if (item.category === 'original' && item.type === 'game') {
+                    groups.original.games.push(item);
+                } else if (item.category === 'non-original' && item.type === 'tool') {
+                    groups.non-original.tools.push(item);
+                } else if (item.category === 'non-original' && item.type === 'game') {
+                    groups.non-original.games.push(item);
+                }
+            });
 
-        items.forEach(item => {
-            const div = document.createElement("div");
-            div.className = "item";
-            div.textContent = item.name;
-            div.onclick = () => selectItem(item, div);
-            block.appendChild(div);
+            // 按更新时间排序
+            Object.keys(groups).forEach(function(cat) {
+                groups[cat].tools.sort(function(a, b) { return b.updateDate.localeCompare(a.updateDate); });
+                groups[cat].games.sort(function(a, b) { return b.updateDate.localeCompare(a.updateDate); });
+            });
+
+            var html = '';
+
+            // 原创区块
+            if (groups.original.tools.length > 0 || groups.original.games.length > 0) {
+                html += '<div class="section">';
+                html += '<h2 class="section-title">原创</h2>';
+
+                if (groups.original.tools.length > 0) {
+                    html += '<div class="category-block">';
+                    html += '<div class="category-header">工具</div>';
+                    html += '<div class="card-grid">' + renderCards(groups.original.tools) + '</div>';
+                    html += '</div>';
+                }
+
+                if (groups.original.games.length > 0) {
+                    html += '<div class="category-block">';
+                    html += '<div class="category-header">游戏</div>';
+                    html += '<div class="card-grid">' + renderCards(groups.original.games) + '</div>';
+                    html += '</div>';
+                }
+
+                html += '</div>';
+            }
+
+            // 分隔线
+            if (groups.original.tools.length > 0 || groups.original.games.length > 0) {
+                html += '<div class="section-divider"></div>';
+            }
+
+            // 非原创区块
+            if (groups.non-original.tools.length > 0 || groups.non-original.games.length > 0) {
+                html += '<div class="section">';
+                html += '<h2 class="section-title">非原创</h2>';
+
+                if (groups.non-original.tools.length > 0) {
+                    html += '<div class="category-block">';
+                    html += '<div class="category-header">工具</div>';
+                    html += '<div class="card-grid">' + renderCards(groups.non-original.tools) + '</div>';
+                    html += '</div>';
+                }
+
+                if (groups.non-original.games.length > 0) {
+                    html += '<div class="category-block">';
+                    html += '<div class="category-header">游戏</div>';
+                    html += '<div class="card-grid">' + renderCards(groups.non-original.games) + '</div>';
+                    html += '</div>';
+                }
+
+                html += '</div>';
+            }
+
+            // 空状态
+            if (filteredItems.length === 0) {
+                html = '<div class="empty-state">暂无内容，请切换筛选条件或添加新项目</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function renderCards(items) {
+            return items.map(function(item) {
+                var categoryLabel = item.category === 'original' ? '原创' : '非原创';
+                var typeLabel = item.type === 'tool' ? '工具' : '游戏';
+                var categoryClass = item.category === 'original' ? 'tag-original' : 'tag-non-original';
+                var typeClass = item.type === 'tool' ? 'tag-tool' : 'tag-game';
+
+                var editBtns = editMode ?
+                    '<div class="edit-actions">' +
+                        '<button class="btn-small" onclick="editItem(' + item.id + ')">编辑</button>' +
+                        '<button class="btn-small btn-delete" onclick="deleteItem(' + item.id + ')">删除</button>' +
+                    '</div>' : '';
+
+                return '' +
+                    '<div class="card" data-id="' + item.id + '">' +
+                        '<div class="card-tags">' +
+                            '<span class="tag ' + categoryClass + '">' + categoryLabel + '</span>' +
+                            '<span class="tag ' + typeClass + '">' + typeLabel + '</span>' +
+                        '</div>' +
+                        '<div class="card-title">' + escapeHtml(item.name) + '</div>' +
+                        '<div class="card-desc">' + escapeHtml(item.description || '') + '</div>' +
+                        '<div class="card-footer">' +
+                            '<span class="card-date">更新: ' + item.updateDate + '</span>' +
+                            '<a class="card-link" href="' + item.url + '" target="_blank" rel="noopener">访问链接 &rarr;</a>' +
+                        '</div>' +
+                        editBtns +
+                    '</div>';
+            }).join('');
+        }
+
+        // ========== 筛选 ==========
+        function getFilteredItems() {
+            if (currentFilter === 'all') return siteData.items.slice();
+
+            return siteData.items.filter(function(item) {
+                if (currentFilter === 'original' || currentFilter === 'non-original') {
+                    return item.category === currentFilter;
+                }
+                if (currentFilter === 'tool' || currentFilter === 'game') {
+                    return item.type === currentFilter;
+                }
+                return true;
+            });
+        }
+
+        function setFilter(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(function(b) {
+                b.classList.remove('active');
+            });
+            btn.classList.add('active');
+            render();
+        }
+
+        // ========== 主题切换 ==========
+        function toggleTheme() {
+            var html = document.documentElement;
+            var current = html.getAttribute('data-theme');
+            var next = current === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', next);
+            document.querySelector('.theme-toggle').textContent =
+                next === 'light' ? '切换深色模式' : '切换浅色模式';
+        }
+
+        // ========== 编辑模式 ==========
+        function toggleEditMode() {
+            editMode = !editMode;
+            document.body.classList.toggle('edit-mode', editMode);
+            document.querySelector('.edit-toggle').textContent = editMode ? '退出编辑' : '编辑数据';
+
+            if (editMode) {
+                showJsonEditor();
+            } else {
+                closeJsonModal();
+            }
+
+            render();
+        }
+
+        // ========== 模态框 ==========
+        function openModal(id) {
+            editingId = id || null;
+            var modal = document.getElementById('itemModal');
+            var title = document.getElementById('modalTitle');
+
+            if (id) {
+                var item = siteData.items.find(function(i) { return i.id === id; });
+                if (item) {
+                    title.textContent = '编辑项目';
+                    document.getElementById('formName').value = item.name;
+                    document.getElementById('formDesc').value = item.description || '';
+                    document.getElementById('formUrl').value = item.url;
+                    document.getElementById('formCategory').value = item.category;
+                    document.getElementById('formType').value = item.type;
+                    document.getElementById('formDate').value = item.updateDate;
+                }
+            } else {
+                title.textContent = '添加项目';
+                document.getElementById('itemForm').reset();
+                document.getElementById('formDate').value = new Date().toISOString().slice(0, 10);
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('itemModal').classList.remove('active');
+            editingId = null;
+        }
+
+        function saveItem(e) {
+            e.preventDefault();
+
+            var data = {
+                name: document.getElementById('formName').value.trim(),
+                description: document.getElementById('formDesc').value.trim(),
+                url: document.getElementById('formUrl').value.trim(),
+                category: document.getElementById('formCategory').value,
+                type: document.getElementById('formType').value,
+                updateDate: document.getElementById('formDate').value
+            };
+
+            if (editingId) {
+                var idx = siteData.items.findIndex(function(i) { return i.id === editingId; });
+                if (idx !== -1) {
+                    siteData.items[idx] = Object.assign({}, siteData.items[idx], data);
+                }
+            } else {
+                var newId = siteData.items.length > 0 ?
+                    Math.max.apply(null, siteData.items.map(function(i) { return i.id; })) + 1 : 1;
+                siteData.items.push(Object.assign({ id: newId }, data));
+            }
+
+            closeModal();
+            render();
+            return false;
+        }
+
+        function editItem(id) {
+            openModal(id);
+        }
+
+        function deleteItem(id) {
+            if (confirm('确定要删除这个项目吗？')) {
+                siteData.items = siteData.items.filter(function(i) { return i.id !== id; });
+                render();
+            }
+        }
+
+        // ========== JSON 编辑器 ==========
+        function showJsonEditor() {
+            document.getElementById('jsonEditor').value = JSON.stringify(siteData, null, 2);
+            document.getElementById('jsonStatus').className = 'json-status';
+            document.getElementById('jsonStatus').textContent = '';
+            document.getElementById('jsonModal').classList.add('active');
+        }
+
+        function closeJsonModal() {
+            document.getElementById('jsonModal').classList.remove('active');
+        }
+
+        function saveJson() {
+            var editor = document.getElementById('jsonEditor');
+            var status = document.getElementById('jsonStatus');
+
+            try {
+                var parsed = JSON.parse(editor.value);
+
+                if (!parsed.siteTitle || !Array.isArray(parsed.items)) {
+                    throw new Error('JSON 格式错误：需要包含 siteTitle 和 items 字段');
+                }
+
+                // 验证每个 item
+                parsed.items.forEach(function(item, idx) {
+                    if (!item.name || !item.url || !item.category || !item.type || !item.updateDate) {
+                        throw new Error('第 ' + (idx + 1) + ' 项缺少必填字段');
+                    }
+                    if (!item.id) item.id = idx + 1;
+                });
+
+                siteData = parsed;
+                document.getElementById('siteTitle').textContent = siteData.siteTitle;
+                document.title = siteData.siteTitle;
+
+                status.className = 'json-status success';
+                status.textContent = '保存成功！共 ' + siteData.items.length + ' 个项目';
+
+                render();
+
+                setTimeout(function() {
+                    closeJsonModal();
+                }, 1500);
+
+            } catch (err) {
+                status.className = 'json-status error';
+                status.textContent = '错误: ' + err.message;
+            }
+        }
+
+        // ========== 工具函数 ==========
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 点击模态框外部关闭
+        document.getElementById('itemModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        document.getElementById('jsonModal').addEventListener('click', function(e) {
+            if (e.target === this) closeJsonModal();
         });
 
-        nav.appendChild(block);
-    });
-}
-
-function selectItem(item, el) {
-    document.querySelectorAll(".item").forEach(i => i.classList.remove("active"));
-    el.classList.add("active");
-
-    main.innerHTML = `
-        <div class="title">${item.name}</div>
-        <div class="meta">${item.category} · ${item.status}</div>
-        <div class="desc">${item.description}</div>
-        <a class="launch" href="${item.url}" target="_blank">启动</a>
-    `;
-}
-
-renderNav();
-</script>
-
+        // ========== 启动 ==========
+        init();
+    </script>
 </body>
 </html>
