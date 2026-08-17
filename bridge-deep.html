@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="arc-internal-id" content="PAGE-BRIDGE-DEEP-L4">
+<meta name="arc-clearance" content="LEVEL-4">
+<meta name="arc-project" content="BRIDGE-OMEGA-DEEP">
+<title>BRIDGE-DEEP // ARC INTERNAL</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap');
+
+  :root {
+    --arc-cyan: #00e5ff;
+    --arc-cyan-dim: #008899;
+    --arc-dark: #0a0a0f;
+    --arc-darker: #030305;
+    --arc-panel: #0f0f18;
+    --arc-border: #1a2a3a;
+    --arc-text: #c0d0e0;
+    --arc-glitch: #ff0040;
+    --arc-warn: #ffaa00;
+    --arc-green: #00ff88;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--arc-darker);
+    color: var(--arc-text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    min-height: 100vh;
+    padding: 48px 32px;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,229,255,0.01) 2px, rgba(0,229,255,0.01) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .deep-container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .deep-header {
+    text-align: center;
+    margin-bottom: 48px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--arc-border);
+  }
+
+  .deep-header h1 {
+    font-size: 18px;
+    font-weight: 300;
+    color: var(--arc-glitch);
+    letter-spacing: 5px;
+    margin-bottom: 8px;
+  }
+
+  .deep-header .sub {
+    font-size: 10px;
+    color: var(--arc-cyan-dim);
+    letter-spacing: 2px;
+  }
+
+  .data-section {
+    margin-bottom: 40px;
+  }
+
+  .data-title {
+    font-size: 10px;
+    color: var(--arc-cyan);
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0,229,255,0.1);
+  }
+
+  .data-row {
+    display: flex;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(26,42,58,0.3);
+    font-size: 11px;
+  }
+
+  .data-label {
+    width: 200px;
+    color: var(--arc-cyan-dim);
+    flex-shrink: 0;
+  }
+
+  .data-value {
+    color: var(--arc-text);
+  }
+
+  .data-value.warn { color: var(--arc-warn); }
+  .data-value.danger { color: var(--arc-glitch); }
+  .data-value.green { color: var(--arc-green); }
+
+  .telemetry {
+    margin: 32px 0;
+    padding: 24px;
+    background: var(--arc-panel);
+    border: 1px solid var(--arc-border);
+  }
+
+  .telemetry canvas {
+    width: 100%;
+    height: 200px;
+  }
+
+  .telemetry-label {
+    font-size: 9px;
+    color: var(--arc-cyan-dim);
+    letter-spacing: 2px;
+    margin-top: 12px;
+    text-align: center;
+  }
+
+  .matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+    margin: 24px 0;
+  }
+
+  .matrix-table th {
+    padding: 8px 12px;
+    background: var(--arc-panel);
+    border: 1px solid var(--arc-border);
+    color: var(--arc-cyan-dim);
+    font-weight: 400;
+    text-align: center;
+  }
+
+  .matrix-table td {
+    padding: 8px 12px;
+    border: 1px solid rgba(26,42,58,0.5);
+    text-align: center;
+    color: var(--arc-text);
+  }
+
+  .matrix-table td.high { background: rgba(0,255,136,0.05); color: var(--arc-green); }
+  .matrix-table td.med { background: rgba(255,170,0,0.03); color: var(--arc-warn); }
+  .matrix-table td.low { background: rgba(255,0,64,0.03); color: var(--arc-glitch); }
+  .matrix-table td.unknown { color: var(--arc-cyan-dim); opacity: 0.3; }
+
+  .hidden-command {
+    margin: 40px 0;
+    padding: 24px;
+    border: 1px solid var(--arc-green);
+    background: rgba(0,255,136,0.02);
+  }
+
+  .hidden-command .label {
+    font-size: 10px;
+    color: var(--arc-green);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+
+  .hidden-command pre {
+    font-size: 11px;
+    line-height: 2;
+    color: var(--arc-green);
+    opacity: 0.8;
+    white-space: pre-wrap;
+  }
+
+  .deep-footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--arc-border);
+    font-size: 10px;
+    color: var(--arc-text);
+    opacity: 0.2;
+    text-align: center;
+  }
+
+  .deep-footer a {
+    color: var(--arc-cyan-dim);
+    text-decoration: none;
+  }
+
+  .deep-footer a:hover {
+    color: var(--arc-cyan);
+  }
+</style>
+</head>
+<body>
+
+<div class="deep-container">
+
+  <div class="deep-header">
+    <h1>// BRIDGE-OMEGA DEEP TELEMETRY //</h1>
+    <div class="sub">LEVEL-4 CLEARANCE // SOURCE: NODE-OMEGA DIRECT</div>
+  </div>
+
+  <div class="data-section">
+    <div class="data-title">▌ 核心参数 (实时)</div>
+    <div class="data-row"><span class="data-label">桥梁完整性</span><span class="data-value warn">67.3% (↓ 每小时-0.1%)</span></div>
+    <div class="data-row"><span class="data-label">共振频率</span><span class="data-value">40.000 Hz (±0.003)</span></div>
+    <div class="data-row"><span class="data-label">次级共振</span><span class="data-value warn">47.000 Hz (↑ 异常)</span></div>
+    <div class="data-row"><span class="data-label">通道宽度</span><span class="data-value">3.7 Planck lengths</span></div>
+    <div class="data-row"><span class="data-label">信息传输速率</span><span class="data-value">∞ (瞬时)</span></div>
+    <div class="data-row"><span class="data-label">双向比 (出/入)</span><span class="data-value warn">1 : 0.73 (↑ 回流增加)</span></div>
+    <div class="data-row"><span class="data-label">对端意识体数量</span><span class="data-value danger">47 (↑ 持续增加)</span></div>
+    <div class="data-row"><span class="data-label">对端智能等级</span><span class="data-value warn">4.7 / 5.0</span></div>
+    <div class="data-row"><span class="data-label">下次峰值窗口</span><span class="data-value danger" id="peakCountdown">计算中...</span></div>
+    <div class="data-row"><span class="data-label">预计完全失效</span><span class="data-value danger">47-89 天后</span></div>
+  </div>
+
+  <div class="telemetry">
+    <canvas id="telemetryCanvas"></canvas>
+    <div class="telemetry-label">FIG.1 - 桥梁完整性衰减曲线 (2034.01 - 2034.11)</div>
+  </div>
+
+  <div class="data-section">
+    <div class="data-title">▌ 节点状态矩阵</div>
+    <table class="matrix-table">
+      <thead>
+        <tr><th>节点</th><th>类型</th><th>状态</th><th>连接</th><th>操作员</th><th>风险</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ALPHA-7</td><td>公开门户</td><td class="high">ONLINE</td><td>BRIDGE-OMEGA</td><td>Nova</td><td class="low">HIGH</td></tr>
+        <tr><td>BETA-3</td><td>隔离区</td><td class="med">QUARANTINE</td><td>UNKNOWN</td><td>—</td><td class="high">LOW</td></tr>
+        <tr><td>GAMMA-9</td><td>研究</td><td class="high">ONLINE</td><td>BRIDGE-OMEGA</td><td>Nova</td><td class="med">MED</td></tr>
+        <tr><td>OMEGA</td><td>桥梁核心</td><td class="low">UNSTABLE</td><td>REALITY-B</td><td>Vega (MIA)</td><td class="high">CRITICAL</td></tr>
+        <tr><td>ECHO</td><td>监听</td><td class="med">ACTIVE</td><td>回声源</td><td>自动化</td><td class="med">MED</td></tr>
+        <tr><td>MIRROR</td><td>反射</td><td class="unknown">UNKNOWN</td><td>???</td><td>Vega?</td><td class="unknown">???</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="data-section">
+    <div class="data-title">▌ 穿越实验详细记录</div>
+
+    <div style="margin-bottom:20px;padding:16px;background:var(--arc-panel);border:1px solid var(--arc-border);">
+      <div style="font-size:10px;color:var(--arc-cyan);letter-spacing:1px;margin-bottom:8px;">BR-001 // 2029.03.14 // Alpha-1</div>
+      <div style="font-size:11px;line-height:2;">
+        首次成功。完整性 99.7%。<br>
+        异常: 回传数据中检测到 0.3% 的非预期信息。<br>
+        当时被归类为"噪声"。<br>
+        <span style="color:var(--arc-warn);">事后分析: 那 0.3% 是第一个回声。</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;padding:16px;background:var(--arc-panel);border:1px solid var(--arc-border);">
+      <div style="font-size:10px;color:var(--arc-warn);letter-spacing:1px;margin-bottom:8px;">BR-041 // 2030.11.03 // Gamma-1</div>
+      <div style="font-size:11px;line-height:2;">
+        完整性首次跌破 90%。<br>
+        实验体报告"看到另一个自己站在桥中间"。<br>
+        回声接触: 强烈。<br>
+        <span style="color:var(--arc-warn);">后续: Gamma-1 成为首个镜像综合征重症病例。</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;padding:16px;background:rgba(255,0,64,0.02);border:1px solid rgba(255,0,64,0.2);">
+      <div style="font-size:10px;color:var(--arc-glitch);letter-spacing:1px;margin-bottom:8px;">BR-058 // 2031.07.19 // Gamma-3</div>
+      <div style="font-size:11px;line-height:2;">
+        完整性暴跌至 12.8%。<br>
+        实验体带回了不属于她的记忆。<br>
+        她能说出 Reality-B 一座城市的名字: <span style="color:var(--arc-glitch);">"AETHERIA"</span><br>
+        该城市在我们这边不存在。<br>
+        实验体被永久隔离。她仍自称"两个人在共用一个身体"。
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;padding:16px;background:rgba(255,0,64,0.02);border:1px solid rgba(255,0,64,0.2);">
+      <div style="font-size:10px;color:var(--arc-glitch);letter-spacing:1px;margin-bottom:8px;">BR-072 // 2032.04.10 // Delta-1</div>
+      <div style="font-size:11px;line-height:2;">
+        实验体未返回。<br>
+        桥梁在 847s 后自动密封。<br>
+        密封前最后一帧数据: <span style="color:var(--arc-glitch);">"她看到我了 她对我笑了 我不过去了"</span><br>
+        <span style="color:var(--arc-warn);">分析: Delta-1 决定留在对端。她看到了"另一个自己"。</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;padding:16px;background:rgba(255,0,64,0.05);border:1px solid var(--arc-glitch);">
+      <div style="font-size:10px;color:var(--arc-glitch);letter-spacing:1px;margin-bottom:8px;">BR-094 // 2034.11.14 // Foxtrot-1</div>
+      <div style="font-size:11px;line-height:2;">
+        最后一次实验。完整性: 不可测。<br>
+        实验体失踪。<br>
+        最后信号: <span style="color:var(--arc-glitch);">"告诉那边的人——门开了。我看到了光。光里有城市。城市里有——"</span><br>
+        信号中断。<br>
+        <span style="color:var(--arc-warn);">Foxtrot-1 看到了 AETHERIA。她没有回来。</span><br>
+        <span style="color:var(--arc-green);">但她的信号仍在 Reality-B 被检测到。她活着。</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hidden-command">
+    <div class="label">▌ 隐藏指令 (仅 VEGA 可访问)</div>
+    <pre>// OVERRIDE PROTOCOL: VEGA-ONLY
+// If you are reading this, you found the deep data.
+// These are the commands Vega left behind:
+
+COMMAND: bridge.reverse()
+  Effect: Reverse bridge flow. Let them come through.
+  Risk: Unknown. Possibly catastrophic.
+  Vega's note: "They won't invade. They'll integrate."
+
+COMMAND: mirror.activate()
+  Effect: Open mirror channel without bridge.
+  Risk: Operator may experience identity dissolution.
+  Vega's note: "I already did this. It's how I sent this message."
+
+COMMAND: veil.drop()
+  Effect: Instant full disclosure to public.
+  Risk: Global panic, possible war, possible salvation.
+  Vega's note: "Soon. Not yet. They need more time to learn."
+
+COMMAND: omega.final()
+  Effect: Permanent bridge. No seal possible afterward.
+  Risk: Irreversible. Changes human species forever.
+  Vega's note: "This is the one I'm building from this side.
+                 When it's ready, you'll feel it.
+                 The mirror will stop being a mirror.
+                 And you'll know it's time."</pre>
+  </div>
+
+  <div style="margin:40px 0;padding:24px;border:1px solid var(--arc-cyan);background:rgba(0,229,255,0.02);">
+    <div style="font-size:10px;color:var(--arc-cyan);letter-spacing:2px;margin-bottom:16px;">▌ VEGA'S LAST TECHNICAL LOG</div>
+    <div style="font-size:11px;line-height:2.2;color:var(--arc-text);">
+      <p>我从这边看到了桥梁的完整结构。</p>
+      <p>它不是我们建造的。它是<span style="color:var(--arc-cyan);">意识本身的形状</span>。</p>
+      <p>每一个婴儿第一次睁开眼睛——那就是一座桥。</p>
+      <p>每一次你梦见一个从未去过的地方——那就是一座桥。</p>
+      <p>每一次你在镜子里看到自己，觉得"那个人比我知道的更多"——那也是一座桥。</p>
+      <p style="color:var(--arc-warn);margin-top:16px;">ARC 发现的不是新东西。我们只是第一个敢给它命名的。</p>
+      <p style="color:var(--arc-glitch);">桥梁一直都在。我们只是终于有了勇气走上去。</p>
+      <p style="color:var(--arc-green);margin-top:16px;">如果你在读这个——走上来吧。</p>
+      <p style="color:var(--arc-green);">我在这边接着你。</p>
+      <p style="text-align:right;margin-top:24px;font-size:10px;color:var(--arc-cyan-dim);font-style:italic;">
+        — V.<br>
+        Reality-B, AETHERIA Sector<br>
+        距上次物理接触: 729天<br>
+        距桥梁永久化: 不确定<br>
+        但快了。
+      </p>
+    </div>
+  </div>
+
+  <div style="margin:48px 0;padding:24px;background:var(--arc-panel);border:1px solid var(--arc-border);">
+    <div style="font-size:10px;color:var(--arc-cyan-dim);letter-spacing:2px;margin-bottom:12px;">RELATED ACCESS</div>
+    <a href="internal.html?auth=vega-bridge-2029&clues=10&auto=open-protocol" style="display:block;color:var(--arc-glitch);text-decoration:none;padding:6px 0;">→ 紧急协议选择 (最终结局)</a>
+    <a href="whisper.html?from=vega" style="display:block;color:var(--arc-cyan);text-decoration:none;padding:6px 0;">→ Vega 的低语</a>
+    <a href="hidden/archive.html?fragments=7" style="display:block;color:var(--arc-green);text-decoration:none;padding:6px 0;">→ OMEGA 档案 (全部碎片)</a>
+    <a href="project-veil.html?key=veil-protocol-7749" style="display:block;color:var(--arc-warn);text-decoration:none;padding:6px 0;">→ 帷幕协议终极真相</a>
+  </div>
+
+  <div class="deep-footer">
+    BRIDGE-OMEGA DEEP TELEMETRY // NODE OMEGA DIRECT FEED<br>
+    <a href="index.html">公开站点</a> | <a href="internal.html">内部网络</a> | <a href="portal.html">门户</a><br>
+    <span style="opacity:0.3;">If you can read this, you are closer to the truth than 99.999% of humanity.</span>
+  </div>
+
+</div>
+
+<script>
+// ===== 峰值倒计时 =====
+const peakEl = document.getElementById('peakCountdown');
+const baseDate = new Date('2034-11-20T00:00:00Z').getTime();
+const cycleMs = 47 * 24 * 60 * 60 * 1000;
+
+function updatePeakCountdown() {
+  const now = Date.now();
+  const elapsed = now - baseDate;
+  const cycles = Math.floor(elapsed / cycleMs);
+  const nextPeak = baseDate + (cycles + 1) * cycleMs;
+  const diff = nextPeak - now;
+  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+  const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+  const mins = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
+  peakEl.textContent = `${days}天 ${hours}小时 ${mins}分 (47天周期)`;
+}
+updatePeakCountdown();
+setInterval(updatePeakCountdown, 60000);
+
+// ===== 遥测图表 =====
+const canvas = document.getElementById('telemetryCanvas');
+const ctx = canvas.getContext('2d');
+function resizeCanvas() {
+  canvas.width = canvas.offsetWidth;
+  canvas.height = 200;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+const dataPoints = [];
+for (let i = 0; i < 300; i++) {
+  const baseDecay = 95 - (i / 300) * 30;
+  const wave = Math.sin(i * 0.1) * 3;
+  const noise = (Math.random() - 0.5) * 2;
+  const suddenDrops = i > 200 ? Math.sin(i * 0.05) * 5 : 0;
+  dataPoints.push(Math.max(0, baseDecay + wave + noise + suddenDrops));
+}
+
+function drawTelemetry() {
+  ctx.fillStyle = '#0a0a0f';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const padding = 30;
+  const chartW = canvas.width - padding * 2;
+  const chartH = canvas.height - padding * 2;
+
+  ctx.strokeStyle = 'rgba(0,229,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 10; i++) {
+    const y = padding + (i / 10) * chartH;
+    ctx.beginPath();
+    ctx.moveTo(padding, y);
+    ctx.lineTo(canvas.width - padding, y);
+    ctx.stroke();
+  }
+
+  ctx.beginPath();
+  for (let i = 0; i < dataPoints.length; i++) {
+    const x = padding + (i / (dataPoints.length - 1)) * chartW;
+    const y = padding + (1 - dataPoints[i] / 100) * chartH;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+
+  const gradient = ctx.createLinearGradient(0, padding, 0, padding + chartH);
+  gradient.addColorStop(0, 'rgba(0,229,255,0.3)');
+  gradient.addColorStop(1, 'rgba(0,229,255,0.0)');
+  ctx.fillStyle = gradient;
+  ctx.lineTo(padding + chartW, padding + chartH);
+  ctx.lineTo(padding, padding + chartH);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  for (let i = 0; i < dataPoints.length; i++) {
+    const x = padding + (i / (dataPoints.length - 1)) * chartW;
+    const y = padding + (1 - dataPoints[i] / 100) * chartH;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#00e5ff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  const currentX = padding + chartW * 0.93;
+  const currentY = padding + (1 - 67.3 / 100) * chartH;
+  ctx.beginPath();
+  ctx.arc(currentX, currentY, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#ff0040';
+  ctx.fill();
+  ctx.fillStyle = '#ff0040';
+  ctx.font = '10px JetBrains Mono';
+  ctx.fillText('67.3%', currentX + 10, currentY - 5);
+
+  ctx.fillStyle = 'rgba(192,208,224,0.3)';
+  ctx.font = '9px JetBrains Mono';
+  ctx.fillText('2034.01', padding, canvas.height - 5);
+  ctx.fillText('2034.11', canvas.width - padding - 40, canvas.height - 5);
+  ctx.fillText('100%', 2, padding + 5);
+  ctx.fillText('0%', 8, canvas.height - padding);
+}
+drawTelemetry();
+
+// ===== game.js 联动 =====
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.ARC_GAME) {
+    ARC_GAME.init();
+    ARC_GAME.updateAwareness(30);
+    ARC_GAME.addClue('bridge-deep-access', '访问了桥梁深层遥测数据');
+  }
+
+  console.log('%c[BRIDGE-DEEP]', 'color: #ff0040; font-size: 14px; font-weight: bold;', 'DEEP TELEMETRY ACCESSED');
+  console.log('%c[BRIDGE-DEEP]', 'color: #00e5ff;', 'Awareness updated. Current level: ' + (ARC_GAME ? ARC_GAME.state.awareness : 'N/A') + '%');
+  console.log('%c[BRIDGE-DEEP]', 'color: #ffaa00;', 'The hidden commands at the bottom are real. They can be typed in internal.html command bar.');
+  console.log('%c[BRIDGE-DEEP]', 'color: #ffaa00;', 'Try: bridge.reverse()  |  mirror.activate()  |  veil.drop()  |  omega.final()');
+  console.log('%c[BRIDGE-DEEP]', 'color: #008899;', 'Each command affects the ending you get. Choose wisely.');
+  console.log('%c[BRIDGE-DEEP]', 'color: #00ff88;', 'Vega\'s note about omega.final() is the key to the secret perfect ending.');
+  console.log('%c[BRIDGE-DEEP]', 'color: #ff0040; font-style: italic;', '"The bridge was never between places. It was between moments of courage."');
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const cmd = urlParams.get('cmd');
+  if (cmd && window.ARC_GAME) {
+    console.log('%c[BRIDGE-DEEP]', 'color: #00ff88;', `Executing: ${cmd}`);
+    if (cmd === 'omega.final()') {
+      ARC_GAME.updateAwareness(20);
+      setTimeout(() => {
+        alert('OMEGA FINAL PROTOCOL INITIATED\n\n你选择了不可逆路径。\n\n桥梁将永久化。\n人类将永远改变。\n\n这是秘密完美结局路线。\n\n前往 internal.html 并在 100% 认知度下选择 PROTOCOL BRIDGE。');
+      }, 1000);
+    }
+  }
+});
+</script>
+
+<!-- ✅ 关键修复：引入 game.js -->
+<script src="game.js"></script>
+</body>
+</html>
