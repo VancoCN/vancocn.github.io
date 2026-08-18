@@ -243,212 +243,291 @@
 <script>
 //====================================================================
 //  LAMDA — Minimalist B&W Rhythm Game
+//  三首内置乐曲（加长版），独立BGM，四分音采音
 //====================================================================
 
-// ============ 内置谱面 ============
-const BUILT_IN_CHARTS = [
+// ============ 音符频率表 ============
+const NOTE_FREQ = {
+  'C2':130.81,'D2':146.83,'E2':164.81,'F2':174.61,'G2':196.00,'A2':220.00,'B2':246.94,
+  'C3':261.63,'D3':293.66,'E3':329.63,'F3':349.23,'G3':392.00,'A3':440.00,'B3':493.88,
+  'C4':523.25,'D4':587.33,'E4':659.25,'F4':698.46,'G4':783.99,'A4':880.00,'B4':987.77,
+  'C5':1046.50,'D5':1174.66,'E5':1318.51,'F5':1396.91,'G5':1567.98,'A5':1760.00,'B5':1975.53,
+  'C6':2093.00,'D6':2349.32,'E6':2637.02,
+};
+
+// ============ 乐曲定义（加长版） ============
+// 每首乐曲有完整结构：前奏→主歌→副歌→桥段→尾奏
+// 采音标准：四分音符 = 1 beat = 60/BPM 秒
+// 难度规则：
+//   stable  — 四分音采音，稀疏（每2拍1个音符）
+//   fragile — 四分音采音，中等密度（每拍1个）
+//   chaos   — 四分音采音，高密度（每拍1个 + 八分穿插）
+
+const SONGS = [
+  //==================================================================
+  // 第一首：Endless Test — BPM 120 — C大调 — 约16小节
+  // 结构：前奏(2) → 主歌A(4) → 主歌B(4) → 副歌(4) → 尾奏(2)
+  //==================================================================
   {
     id: 'endless',
     name: 'Endless Test',
     artist: 'Lamda',
     bpm: 120,
+    // 旋律数据：[音符名, 节拍数] 节拍数=0.5为八分,1为四分,2为二分
+    melody: [
+      // --- 前奏 (2小节, 8拍) ---
+      ['C4',1],['E4',1],['G4',1],['C5',1],
+      ['B4',1],['G4',1],['E4',1],['C4',2],
+
+      // --- 主歌A (4小节, 16拍) ---
+      ['C4',1],['D4',1],['E4',1],['F4',1],
+      ['G4',2],['F4',1],['E4',1],
+      ['D4',1],['E4',1],['F4',1],['G4',1],
+      ['A4',2],['G4',1],['F4',1],
+
+      // --- 主歌B (4小节, 16拍) ---
+      ['E4',1],['F4',1],['G4',1],['A4',1],
+      ['G4',2],['F4',1],['E4',1],
+      ['D4',1],['E4',1],['C4',1],['D4',1],
+      ['E4',2],['D4',1],['C4',1],
+
+      // --- 副歌 (4小节, 16拍) ---
+      ['C5',1],['B4',1],['A4',1],['G4',1],
+      ['A4',1],['G4',1],['F4',1],['E4',1],
+      ['F4',1],['E4',1],['D4',1],['C4',1],
+      ['G4',1],['A4',1],['G4',1],['F4',2],
+
+      // --- 尾奏 (2小节, 8拍) ---
+      ['E4',1],['C4',1],['G3',1],['C4',1],
+      ['E4',2],['C4',2],
+    ],
+    // 低音伴奏：每小节一个根音（16小节）
+    bass: [
+      ['C3',4],['F2',4],['G2',4],['C3',4],
+      ['F2',4],['G2',4],['A2',4],['G2',4],
+      ['F2',4],['G2',4],['C3',4],['F2',4],
+      ['G2',4],['C3',4],['F2',4],['C2',4],
+    ],
     difficulties: {
-      stable:  { level: 3, notes: [] },
-      fragile: { level: 6, notes: [] },
-      chaos:   { level: 9, notes: [] },
+      stable:  { level: 3, pattern: 'quarter_sparse' },
+      fragile: { level: 6, pattern: 'quarter_dense' },
+      chaos:   { level: 9, pattern: 'eighth_mixed' },
     }
   },
+
+  //==================================================================
+  // 第二首：First Steps — BPM 100 — F大调 — 约18小节
+  // 结构：前奏(2) → 主歌A(4) → 间奏(2) → 主歌B(4) → 副歌(4) → 尾奏(2)
+  //==================================================================
   {
     id: 'first_steps',
     name: 'First Steps',
     artist: 'Lamda',
     bpm: 100,
+    melody: [
+      // --- 前奏 (2小节, 8拍) ---
+      ['F4',1],['A4',1],['C5',1],['A4',1],
+      ['G4',1],['A4',1],['F4',1],['G4',2],
+
+      // --- 主歌A (4小节, 16拍) ---
+      ['F4',1],['G4',1],['A4',2],['A4',1],['G4',1],
+      ['A4',1],['C5',1],['D5',2],['C5',1],['A4',1],
+      ['G4',1],['A4',1],['F4',2],['F4',1],['G4',1],
+      ['A4',1],['G4',1],['F4',2],['F4',2],
+
+      // --- 间奏 (2小节, 8拍) ---
+      ['C5',1],['Bb4',1],['A4',1],['G4',1],
+      ['A4',1],['G4',1],['F4',1],['G4',2],
+
+      // --- 主歌B (4小节, 16拍) ---
+      ['A4',1],['G4',1],['F4',1],['G4',1],
+      ['A4',2],['G4',1],['F4',1],
+      ['G4',1],['F4',1],['A4',1],['C5',1],
+      ['D5',2],['C5',1],['A4',1],
+
+      // --- 副歌 (4小节, 16拍) ---
+      ['C5',1],['D5',1],['C5',1],['A4',1],
+      ['G4',1],['A4',1],['F4',1],['G4',1],
+      ['A4',2],['C5',1],['D5',1],
+      ['C5',1],['A4',1],['G4',1],['F4',1],['G4',1],
+
+      // --- 尾奏 (2小节, 8拍) ---
+      ['F4',2],['G4',1],['A4',1],
+      ['G4',1],['F4',1],['F4',2],
+    ],
+    bass: [
+      ['F2',4],['A2',4],['C3',4],['F2',4],
+      ['A2',4],['C3',4],['F2',4],['A2',4],
+      ['Bb2',4],['F2',4],['C3',4],['F2',4],
+      ['A2',4],['C3',4],['F2',4],['C3',4],
+      ['F2',4],['F2',4],
+    ],
     difficulties: {
-      stable:  { level: 1, notes: [] },
-      fragile: { level: 4, notes: [] },
-      chaos:   { level: 7, notes: [] },
+      stable:  { level: 1, pattern: 'quarter_sparse' },
+      fragile: { level: 4, pattern: 'quarter_dense' },
+      chaos:   { level: 7, pattern: 'eighth_mixed' },
     }
   },
+
+  //==================================================================
+  // 第三首：Black & White — BPM 120 — A小调 — 约18小节
+  // 结构：前奏(2) → 主歌A(4) → 间奏(2) → 主歌B(4) → 副歌(4) → 桥段(2) → 尾奏(2)
+  //==================================================================
   {
     id: 'black_white',
     name: 'Black & White',
     artist: 'Lamda',
     bpm: 120,
+    melody: [
+      // --- 前奏 (2小节, 8拍) ---
+      ['A4',0.5],['C5',0.5],['E5',1],['D5',1],['C5',1],['A4',0.5],['C5',0.5],
+      ['E5',1],['D5',1],['C5',1],['A4',2],
+
+      // --- 主歌A (4小节, 16拍) ---
+      ['A4',0.5],['C5',0.5],['E5',1],['G5',1],['A5',2],['G5',1],['E5',1],
+      ['C5',0.5],['E5',0.5],['G5',1],['E5',1],['D5',1],['C5',0.5],['D5',0.5],
+      ['E5',1],['C5',1],['A4',2],['A4',1],['C5',1],
+      ['E5',0.5],['D5',0.5],['C5',1],['A4',1],['C5',1],['E5',1],['D5',1],['C5',1],
+
+      // --- 间奏 (2小节, 8拍) ---
+      ['E5',0.5],['G5',0.5],['A5',1],['G5',1],['E5',1],['D5',1],
+      ['C5',1],['A4',2],
+
+      // --- 主歌B (4小节, 16拍) ---
+      ['C5',0.5],['D5',0.5],['E5',1],['F5',1],['E5',1],['D5',0.5],['C5',0.5],
+      ['D5',1],['C5',1],['A4',2],['C5',1],['D5',1],
+      ['E5',0.5],['G5',0.5],['A5',1],['G5',1],['E5',1],['D5',0.5],['C5',0.5],
+      ['D5',1],['C5',1],['A4',2],['A4',1],['C5',1],
+
+      // --- 副歌 (4小节, 16拍) ---
+      ['E5',0.5],['G5',0.5],['A5',1],['C6',1],['A5',1],['G5',0.5],['E5',0.5],
+      ['A5',1],['G5',1],['E5',1],['D5',1],['C5',1],['A4',1],
+      ['C5',0.5],['E5',0.5],['G5',1],['A5',1],['G5',1],['E5',0.5],['D5',0.5],
+      ['E5',1],['C5',1],['A4',2],['A4',2],
+
+      // --- 桥段 (2小节, 8拍) ---
+      ['C5',0.5],['D5',0.5],['E5',1],['G5',1],['A5',1],['G5',0.5],['E5',0.5],
+      ['D5',1],['C5',1],['A4',2],
+
+      // --- 尾奏 (2小节, 8拍) ---
+      ['A4',0.5],['C5',0.5],['E5',1],['D5',1],['C5',1],['A4',0.5],['C5',0.5],
+      ['A4',2],['A4',2],
+    ],
+    bass: [
+      ['A2',4],['C3',4],['E3',4],['A2',4],
+      ['C3',4],['E3',4],['A2',4],['C3',4],
+      ['E3',4],['A2',4],['C3',4],['E3',4],
+      ['A2',4],['C3',4],['E3',4],['A2',4],
+      ['C3',4],['A2',4],
+    ],
     difficulties: {
-      stable:  { level: 2, notes: [] },
-      fragile: { level: 5, notes: [] },
-      chaos:   { level: 8, notes: [] },
+      stable:  { level: 2, pattern: 'quarter_sparse' },
+      fragile: { level: 5, pattern: 'quarter_dense' },
+      chaos:   { level: 8, pattern: 'eighth_mixed' },
     }
   },
 ];
 
-// ============ 生成谱面音符 ============
-function generateEndlessNotes(diff) {
-  // 无尽测试：BPM 120, 交替 Tap/Hold, 60秒
+// ============ 从旋律生成谱面音符 ============
+// pattern 类型：
+//   'quarter_sparse' — 每2拍采1个，交替 Tap/Hold
+//   'quarter_dense'  — 每个四分音都采
+//   'eighth_mixed'   — 每拍一个音符，部分八分穿插，最密
+function generateNotes(song, pattern) {
   const notes = [];
-  const totalBeats = 120; // 60 sec at 120bpm = 120 beats, but we use half-beats
-  for (let i = 0; i < totalBeats; i++) {
-    const t = 2.0 + i * 0.5; // 每半拍一个音符, 从2秒开始
-    if (i % 2 === 0) {
-      notes.push({ time: t, type: 'tap' });
-    } else {
-      notes.push({ time: t, type: 'hold' });
+  const beatDur = 60 / song.bpm;
+  const leadIn = 2.0;
+
+  // 计算总小节数
+  const melodyBeats = song.melody.reduce((s, m) => s + m[1], 0);
+  const totalMeasures = Math.ceil(melodyBeats / 4);
+  const totalBeats = totalMeasures * 4;
+
+  if (pattern === 'quarter_sparse') {
+    // 每2拍一个音符，交替 Tap/Hold
+    for (let beat = 0; beat < totalBeats; beat += 2) {
+      const t = leadIn + beat * beatDur;
+      const type = (beat % 4 === 0) ? 'tap' : 'hold';
+      notes.push({ time: t, type });
     }
   }
-  return notes;
-}
-
-function generateFirstStepsNotes(diff) {
-  // 新手关：BPM 100, 简单节奏
-  const notes = [];
-  const interval = diff === 'stable' ? 0.6 : (diff === 'fragile' ? 0.4 : 0.3);
-  const total = diff === 'stable' ? 40 : (diff === 'fragile' ? 60 : 80);
-  for (let i = 0; i < total; i++) {
-    const t = 2.0 + i * interval;
-    if (i % 4 === 3) {
-      notes.push({ time: t, type: 'hold' });
-    } else {
-      notes.push({ time: t, type: 'tap' });
+  else if (pattern === 'quarter_dense') {
+    // 每拍一个音符（四分音全采）
+    for (let beat = 0; beat < totalBeats; beat++) {
+      const t = leadIn + beat * beatDur;
+      const type = (beat % 4 === 3) ? 'hold' : 'tap';
+      notes.push({ time: t, type });
     }
   }
-  return notes;
-}
-
-function generateBlackWhiteNotes(diff) {
-  // 正式曲：BPM 120, 根据难度不同
-  const notes = [];
-  let interval, total, holdFreq;
-  if (diff === 'stable') { interval = 0.5; total = 60; holdFreq = 5; }
-  else if (diff === 'fragile') { interval = 0.4; total = 80; holdFreq = 4; }
-  else { interval = 0.3; total = 100; holdFreq = 3; }
-
-  for (let i = 0; i < total; i++) {
-    const t = 2.0 + i * interval;
-    if (i % holdFreq === holdFreq - 1) {
-      notes.push({ time: t, type: 'hold' });
-    } else {
-      notes.push({ time: t, type: 'tap' });
-    }
-  }
-  return notes;
-}
-
-// 填充谱面
-BUILT_IN_CHARTS[0].difficulties.stable.notes  = generateEndlessNotes('stable');
-BUILT_IN_CHARTS[0].difficulties.fragile.notes = generateEndlessNotes('fragile');
-BUILT_IN_CHARTS[0].difficulties.chaos.notes   = generateEndlessNotes('chaos');
-
-BUILT_IN_CHARTS[1].difficulties.stable.notes  = generateFirstStepsNotes('stable');
-BUILT_IN_CHARTS[1].difficulties.fragile.notes = generateFirstStepsNotes('fragile');
-BUILT_IN_CHARTS[1].difficulties.chaos.notes   = generateFirstStepsNotes('chaos');
-
-BUILT_IN_CHARTS[2].difficulties.stable.notes  = generateBlackWhiteNotes('stable');
-BUILT_IN_CHARTS[2].difficulties.fragile.notes = generateBlackWhiteNotes('fragile');
-BUILT_IN_CHARTS[2].difficulties.chaos.notes   = generateBlackWhiteNotes('chaos');
-
-// ============ 默认音乐（BPM 120 钢琴旋律） ============
-// 基于图片中的乐谱：4/4拍，右手八分音符旋律，左手低音伴奏
-// 我们用 Web Audio API 合成一段约 30 秒的循环旋律
-const DEFAULT_MUSIC = {
-  bpm: 120,
-  // 每个音符: [startTime(s), duration(s), frequency(Hz), type('lead'|'bass')]
-  notes: []
-};
-
-(function buildDefaultMusic() {
-  const bpm = 120;
-  const beat = 60 / bpm; // 0.5s per beat
-  const measures = 8;
-  const totalBeats = measures * 4; // 32 beats = 16 seconds
-
-  // 右手旋律 (基于图片中的音符模式)
-  // 图片显示：高音谱表有密集的八分音符，包含一些附点节奏
-  const melodyPattern = [
-    // measure 1: C大调上行
-    { n: 'C5', d: 0.5 }, { n: 'D5', d: 0.5 }, { n: 'E5', d: 0.5 }, { n: 'F5', d: 0.5 },
-    { n: 'G5', d: 0.5 }, { n: 'A5', d: 0.5 }, { n: 'G5', d: 0.5 }, { n: 'F5', d: 0.5 },
-    // measure 2: 变化
-    { n: 'E5', d: 0.5 }, { n: 'D5', d: 0.5 }, { n: 'C5', d: 0.5 }, { n: 'D5', d: 0.5 },
-    { n: 'E5', d: 1.0 }, { n: 'F5', d: 0.5 }, { n: 'E5', d: 0.5 },
-    // measure 3: 上行到高音
-    { n: 'D5', d: 0.5 }, { n: 'C5', d: 0.5 }, { n: 'D5', d: 0.5 }, { n: 'E5', d: 0.5 },
-    { n: 'F5', d: 0.5 }, { n: 'G5', d: 0.5 }, { n: 'A5', d: 0.5 }, { n: 'C6', d: 0.5 },
-    // measure 4: 回落
-    { n: 'B5', d: 0.5 }, { n: 'A5', d: 0.5 }, { n: 'G5', d: 0.5 }, { n: 'F5', d: 0.5 },
-    { n: 'E5', d: 1.0 }, { n: 'D5', d: 1.0 },
-    // measure 5: 重复开头变奏
-    { n: 'C5', d: 0.5 }, { n: 'E5', d: 0.5 }, { n: 'G5', d: 0.5 }, { n: 'C6', d: 0.5 },
-    { n: 'B5', d: 0.5 }, { n: 'A5', d: 0.5 }, { n: 'G5', d: 0.5 }, { n: 'F5', d: 0.5 },
-    // measure 6:
-    { n: 'E5', d: 0.5 }, { n: 'D5', d: 0.5 }, { n: 'C5', d: 0.5 }, { n: 'G4', d: 0.5 },
-    { n: 'C5', d: 1.0 }, { n: 'E5', d: 0.5 }, { n: 'G5', d: 0.5 },
-    // measure 7: 高潮段
-    { n: 'A5', d: 0.5 }, { n: 'G5', d: 0.5 }, { n: 'F5', d: 0.5 }, { n: 'E5', d: 0.5 },
-    { n: 'D5', d: 0.5 }, { n: 'C5', d: 0.5 }, { n: 'D5', d: 0.5 }, { n: 'E5', d: 0.5 },
-    // measure 8: 收尾
-    { n: 'F5', d: 0.5 }, { n: 'E5', d: 0.5 }, { n: 'D5', d: 0.5 }, { n: 'C5', d: 0.5 },
-    { n: 'C5', d: 2.0 },
-  ];
-
-  // 左手低音 (每小节根音)
-  const bassPattern = [
-    { n: 'C3', beats: 4 },
-    { n: 'F2', beats: 4 },
-    { n: 'G2', beats: 4 },
-    { n: 'C3', beats: 4 },
-    { n: 'A2', beats: 4 },
-    { n: 'F2', beats: 4 },
-    { n: 'G2', beats: 4 },
-    { n: 'C3', beats: 4 },
-  ];
-
-  // 频率映射
-  const noteFreq = {
-    'C2':130.81,'D2':146.83,'E2':164.81,'F2':174.61,'G2':196.00,'A2':220.00,'B2':246.94,
-    'C3':261.63,'D3':293.66,'E3':329.63,'F3':349.23,'G3':392.00,'A3':440.00,'B3':493.88,
-    'C4':523.25,'D4':587.33,'E4':659.25,'F4':698.46,'G4':783.99,'A4':880.00,'B4':987.77,
-    'C5':1046.50,'D5':1174.66,'E5':1318.51,'F5':1396.91,'G5':1567.98,'A5':1760.00,'B5':1975.53,
-    'C6':2093.00,'D6':2349.32,'E6':2637.02,
-  };
-
-  // 构建旋律
-  let t = 0;
-  for (const m of melodyPattern) {
-    DEFAULT_MUSIC.notes.push({
-      time: t,
-      dur: m.d * beat * 0.9, // 留一点间隔
-      freq: noteFreq[m.n] || 440,
-      type: 'lead'
+  else if (pattern === 'eighth_mixed') {
+    // 高难：跟随旋律节奏，每个音符对应一个谱面音符
+    let currentTime = leadIn;
+    song.melody.forEach((m, i) => {
+      const dur = m[1] * beatDur;
+      if (m[1] <= 0.5) {
+        // 八分音符：直接采
+        const type = (i % 5 === 4) ? 'hold' : 'tap';
+        notes.push({ time: currentTime, type });
+      } else {
+        // 四分/二分：采一个
+        const type = (i % 4 === 3) ? 'hold' : 'tap';
+        notes.push({ time: currentTime, type });
+        // 二分音符中间再插一个（更高密度）
+        if (m[1] >= 2) {
+          notes.push({ time: currentTime + dur * 0.5, type: 'tap' });
+        }
+      }
+      currentTime += dur;
     });
-    t += m.d * beat;
   }
 
-  // 构建低音 (重复两遍凑16小节)
-  for (let rep = 0; rep < 2; rep++) {
-    let bt = rep * 4 * 4 * beat;
-    for (const b of bassPattern) {
-      DEFAULT_MUSIC.notes.push({
-        time: bt,
-        dur: b.beats * beat * 0.8,
-        freq: noteFreq[b.n] || 130,
-        type: 'bass'
-      });
-      bt += b.beats * beat;
-    }
+  return notes;
+}
+
+// ============ 从旋律生成 BGM 音频事件 ============
+function generateBGM(song) {
+  const events = [];
+  const beatDur = 60 / song.bpm;
+  const leadIn = 2.0;
+
+  // 旋律
+  let t = leadIn;
+  song.melody.forEach(m => {
+    const dur = m[1] * beatDur * 0.9;
+    const freq = NOTE_FREQ[m[0]] || 440;
+    events.push({ time: t, dur, freq, voice: 'lead' });
+    t += m[1] * beatDur;
+  });
+
+  // 低音（循环整首时长）
+  const melodyTotalTime = t - leadIn;
+  const bassLoopBeats = song.bass.reduce((s, b) => s + b[1], 0);
+  const bassLoopTime = bassLoopBeats * beatDur;
+  const loopCount = Math.ceil(melodyTotalTime / bassLoopTime) || 1;
+
+  for (let loop = 0; loop < loopCount; loop++) {
+    let bt = leadIn + loop * bassLoopTime;
+    song.bass.forEach(b => {
+      const dur = b[1] * beatDur * 0.85;
+      const freq = NOTE_FREQ[b[0]] || 130;
+      events.push({ time: bt, dur, freq, voice: 'bass' });
+      bt += b[1] * beatDur;
+    });
   }
-})();
+
+  return events;
+}
 
 // ============ 全局状态 ============
 const state = {
-  screen: 'title',        // title | select | game | result | settings
+  screen: 'title',
   running: false,
   paused: false,
   chartId: null,
   difficulty: 'stable',
   chart: null,
   chartTime: 0,
-  notes: [],              // 当前谱面音符副本
-  activeNotes: [],        // 活跃音符（在屏幕上）
+  notes: [],
   particles: [],
   score: 0,
   rawScore: 0,
@@ -463,24 +542,26 @@ const state = {
   offset: 0,
   noteSpeed: 1.0,
   volume: 0.5,
-  ringY: 0.5,             // 判定环归一化Y坐标
+  ringY: 0.5,
   ringPhase: 0,
   lastFrame: 0,
   audioCtx: null,
   audioStartCtxTime: 0,
   audioStarted: false,
   scheduledTones: [],
-  travelTime: 1.5,        // 音符从spawn到判定环的时间(秒)
-  selectedSong: 0,        // 选曲界面当前选中的歌曲索引
-  selectedDiff: ['stable','stable','stable'], // 每个歌曲选中的难度
-  diagHits: [],           // 偏移诊断记录
+  travelTime: 1.5,
+  selectedSong: 0,
+  selectedDiff: ['stable','stable','stable'],
+  diagHits: [],
   diagRunning: false,
   diagNextBeat: 0,
-  // 判定反馈系统
-  judgeTexts: [],        // 浮动判定文字列表
-  ringFlash: 0,          // 判定环闪光强度 0~1
-  ringFlashType: '',     // 'perfect'|'good'|'lost'
-  ringScale: 1.0,        // 判定环缩放（命中时脉冲）
+  judgeTexts: [],
+  ringFlash: 0,
+  ringFlashType: '',
+  ringScale: 1.0,
+  bgmEvents: [],
+  bgmDuration: 0,
+  bgmLoopLen: 0,
 };
 
 // ============ DOM 引用 ============
@@ -502,7 +583,7 @@ const ui = {
   offsetCanvas: document.getElementById('offsetCanvas'),
 };
 
-// ============ Canvas 设置 ============
+// ============ Canvas ============
 const canvas = ui.game;
 const ctx = canvas.getContext('2d');
 let W, H;
@@ -517,8 +598,7 @@ window.addEventListener('resize', resizeCanvas);
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function lerp(a, b, t) { return a + (b - a) * t; }
 
-// 音符频率映射（用于音效）
-const NOTE_FREQS = {
+const SFX_FREQS = {
   tap: 880, hold: 660, perfect: 1200, good: 900, lost: 220,
 };
 
@@ -543,7 +623,6 @@ function playTone(freq, dur, vol, type, startTime) {
   osc.type = type || 'sine';
   osc.frequency.value = freq;
 
-  // 包络
   const v = (vol || 0.3) * state.volume;
   gain.gain.setValueAtTime(0, t0);
   gain.gain.linearRampToValueAtTime(v, t0 + 0.01);
@@ -564,18 +643,18 @@ function scheduleChartAudio(chart) {
 
   const offsetSec = state.offset / 1000;
   const playBase = state.audioStartCtxTime - offsetSec;
-
-  // 调度谱面音符音效（只调度未来的）
   const now = ac.currentTime;
+
+  // 调度谱面判定音效
   chart.notes.forEach(note => {
     const startTime = playBase + note.time;
-    if (startTime < now) return; // 跳过已经过去的时间
-    const freq = note.type === 'hold' ? NOTE_FREQS.hold : NOTE_FREQS.tap;
+    if (startTime < now) return;
+    const freq = note.type === 'hold' ? SFX_FREQS.hold : SFX_FREQS.tap;
     scheduleHitSound(startTime, freq, 0.08, 'square');
   });
 
-  // 调度背景音乐循环
-  scheduleBackgroundMusic(playBase, now);
+  // 调度 BGM（循环覆盖整首谱面）
+  scheduleBGM(playBase, now);
 }
 
 function scheduleHitSound(startTime, freq, dur, type) {
@@ -595,34 +674,38 @@ function scheduleHitSound(startTime, freq, dur, type) {
   osc.stop(startTime + dur + 0.02);
 }
 
-function scheduleBackgroundMusic(playBase, now) {
-  if (!state.audioCtx) return;
+function scheduleBGM(playBase, now) {
+  if (!state.audioCtx || state.bgmEvents.length === 0) return;
   const ac = state.audioCtx;
-  const music = DEFAULT_MUSIC;
-  now = now || ac.currentTime;
 
-  // 循环播放背景音乐（重复多次，覆盖整首谱面）
-  for (let loop = 0; loop < 4; loop++) {
-    const loopOffset = playBase + loop * 16.0; // 16秒一段
-    music.notes.forEach(n => {
-      const t = loopOffset + n.time;
-      if (t < now) return; // 跳过已经过去的时间
-      if (t > now + 120) return; // 不超过2分钟
+  // 计算需要循环的次数以覆盖整首谱面
+  const lastNoteTime = state.notes.length > 0
+    ? state.notes[state.notes.length - 1].time : state.bgmLoopLen;
+  const chartDuration = lastNoteTime + 4;
+  const loopLen = state.bgmLoopLen || 16;
+  const loops = Math.ceil(chartDuration / loopLen) + 1;
+
+  for (let loop = 0; loop < loops; loop++) {
+    const loopOffset = playBase + loop * loopLen;
+    state.bgmEvents.forEach(ev => {
+      const t = loopOffset + ev.time;
+      if (t < now) return;
+      if (t > now + 300) return; // 最多预调度5分钟
 
       const osc = ac.createOscillator();
       const gain = ac.createGain();
-      osc.type = n.type === 'lead' ? 'triangle' : 'sine';
-      osc.frequency.value = n.freq;
+      osc.type = ev.voice === 'lead' ? 'triangle' : 'sine';
+      osc.frequency.value = ev.freq;
 
-      const v = (n.type === 'lead' ? 0.10 : 0.15) * state.volume;
+      const v = (ev.voice === 'lead' ? 0.10 : 0.14) * state.volume;
       gain.gain.setValueAtTime(0, t);
       gain.gain.linearRampToValueAtTime(v, t + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + n.dur);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + ev.dur);
 
       osc.connect(gain);
       gain.connect(ac.destination);
       osc.start(t);
-      osc.stop(t + n.dur + 0.05);
+      osc.stop(t + ev.dur + 0.05);
     });
   }
 }
@@ -638,42 +721,41 @@ function stopAllAudio() {
 // ============ 时间计算 ============
 function getChartTime() {
   if (!state.audioCtx) return 0;
-  const ac = state.audioCtx;
-  // chartTime = audioCtx.currentTime - audioStartCtxTime + offset
-  // offset为正 = 判定提前（补偿音频延迟）
-  return ac.currentTime - state.audioStartCtxTime + state.offset / 1000;
+  return state.audioCtx.currentTime - state.audioStartCtxTime + state.offset / 1000;
 }
 
 // ============ 谱面管理 ============
-function getChartById(id) {
-  return BUILT_IN_CHARTS.find(c => c.id === id);
+function getSongById(id) {
+  return SONGS.find(s => s.id === id);
 }
 
 function loadChart(chartId, difficulty) {
-  const chartDef = getChartById(chartId);
-  if (!chartDef) return null;
-  const diffData = chartDef.difficulties[difficulty];
+  const song = getSongById(chartId);
+  if (!song) return null;
+
+  const diffData = song.difficulties[difficulty];
+  const notes = generateNotes(song, diffData.pattern);
+
   return {
     id: chartId,
-    name: chartDef.name,
-    artist: chartDef.artist,
-    bpm: chartDef.bpm,
+    name: song.name,
+    artist: song.artist,
+    bpm: song.bpm,
     difficulty: difficulty,
     level: diffData.level,
-    notes: diffData.notes.map(n => ({ ...n, hit: false, missed: false, judged: false })),
+    notes: notes.map(n => ({ ...n, hit: false, missed: false, judged: false })),
   };
 }
 
 // ============ 判定逻辑 ============
-const PERFECT_WINDOW = 0.050;  // ±50ms
-const GOOD_WINDOW = 0.120;     // ±120ms
-const HOLD_WINDOW = 0.200;     // 后200ms（Hold专用）
+const PERFECT_WINDOW = 0.050;
+const GOOD_WINDOW = 0.120;
+const HOLD_WINDOW = 0.200;
 
 function attemptHit() {
   if (state.paused || !state.running) return;
   const now = getChartTime();
 
-  // 先检查 Tap
   for (const note of state.notes) {
     if (note.judged || note.type !== 'tap') continue;
     const diff = now - note.time;
@@ -686,20 +768,20 @@ function attemptHit() {
     }
   }
 
-  // 空按：不产生判定，只记录诊断
   if (state.diagRunning) {
     state.diagHits.push({ expected: 0, actual: now, diff: 0 });
   }
 }
 
 function judgeNote(note, result) {
+  if (note.judged) return;
   note.judged = true;
   if (result === 'perfect') {
     state.rawScore += 1000;
     state.perfectCount++;
     state.combo++;
     spawnParticles('perfect');
-    playTone(NOTE_FREQS.perfect, 0.06, 0.2, 'sine');
+    playTone(SFX_FREQS.perfect, 0.06, 0.2, 'sine');
     pushJudgeText('PERFECT', 'perfect');
     flashRing('perfect');
   } else if (result === 'good') {
@@ -707,7 +789,7 @@ function judgeNote(note, result) {
     state.goodCount++;
     state.combo++;
     spawnParticles('good');
-    playTone(NOTE_FREQS.good, 0.06, 0.15, 'sine');
+    playTone(SFX_FREQS.good, 0.06, 0.15, 'sine');
     pushJudgeText('GOOD', 'good');
     flashRing('good');
   }
@@ -715,10 +797,8 @@ function judgeNote(note, result) {
 }
 
 function judgeHoldPassive(note) {
-  // Hold 在 update 中被动检测：只要键是按下状态且进入后200ms窗口
   if (note.judged) return;
   const now = getChartTime();
-  // 只在 note.time 到 note.time + HOLD_WINDOW 之间检测
   if (now >= note.time && now <= note.time + HOLD_WINDOW) {
     if (state.keysHeld > 0) {
       note.judged = true;
@@ -727,7 +807,7 @@ function judgeHoldPassive(note) {
       state.combo++;
       state.maxCombo = Math.max(state.maxCombo, state.combo);
       spawnParticles('perfect');
-      playTone(NOTE_FREQS.perfect, 0.08, 0.2, 'sine');
+      playTone(SFX_FREQS.perfect, 0.08, 0.2, 'sine');
       pushJudgeText('PERFECT', 'perfect');
       flashRing('perfect');
     }
@@ -740,17 +820,15 @@ function checkMissedNotes() {
     if (note.judged) continue;
     if (note.type === 'tap') {
       if (now > note.time + GOOD_WINDOW) {
-        // Lost
         note.judged = true;
         state.lostCount++;
         state.combo = 0;
         spawnParticles('lost');
-        playTone(NOTE_FREQS.lost, 0.1, 0.15, 'sawtooth');
+        playTone(SFX_FREQS.lost, 0.1, 0.15, 'sawtooth');
         pushJudgeText('LOST', 'lost');
         flashRing('lost');
       }
     } else if (note.type === 'hold') {
-      // Hold: 如果已经过了整个窗口还没判定，Miss
       if (state.keysHeld > 0) {
         if (now > note.time + HOLD_WINDOW + 0.30) {
           note.judged = true;
@@ -765,7 +843,7 @@ function checkMissedNotes() {
           state.lostCount++;
           state.combo = 0;
           spawnParticles('lost');
-          playTone(NOTE_FREQS.lost, 0.1, 0.15, 'sawtooth');
+          playTone(SFX_FREQS.lost, 0.1, 0.15, 'sawtooth');
           pushJudgeText('LOST', 'lost');
           flashRing('lost');
         }
@@ -774,7 +852,7 @@ function checkMissedNotes() {
   }
 }
 
-// ============ 判定文字浮动系统 ============
+// ============ 判定文字 & 特效 ============
 function pushJudgeText(text, type) {
   const ringYpx = state.ringY * H;
   const ringX = W * 0.22;
@@ -782,17 +860,17 @@ function pushJudgeText(text, type) {
     text: text,
     type: type,
     x: ringX,
-    y: ringYpx - 42,  // 在判定环上方，距离更近
-    life: 0.5,         // 存活时间更短
+    y: ringYpx - 42,
+    life: 0.5,
     maxLife: 0.5,
-    vy: -20,           // 更慢的飘动
+    vy: -20,
   });
 }
 
 function flashRing(type) {
   state.ringFlash = 0.6;
   state.ringFlashType = type;
-  state.ringScale = 1.0; // 不再放大，保持原尺寸
+  state.ringScale = 1.0;
 }
 
 function updateJudgeTexts(dt) {
@@ -805,7 +883,6 @@ function updateJudgeTexts(dt) {
 }
 
 function updateRingFlash(dt) {
-  // 闪光快速衰减
   state.ringFlash = Math.max(0, state.ringFlash - dt * 5.0);
   state.ringScale = 1.0;
 }
@@ -844,77 +921,51 @@ function updateParticles(dt) {
 }
 
 // ============ 渲染 ============
-function getTrackX(yNorm) {
-  // 音轨随判定环位置弯曲
-  const ringYpx = state.ringY * H;
-  const yPx = yNorm * H;
-  const dy = yPx - ringYpx;
-  // 弯曲量随距离判定环的远近变化
-  const bend = dy * 0.08 * Math.sin(state.ringPhase * 0.5);
-  return W * 0.22 + bend;
-}
-
 function getNoteScreenPos(note, chartTime) {
-  // progress: 0=spawn(右侧屏外), 1=到达判定环
   const travel = state.travelTime / state.noteSpeed;
   const progress = (chartTime - note.time) / travel + 1;
-  // progress < 0: 还没出现
-  // progress = 0: 刚spawn
-  // progress = 1: 到达判定环
-  // progress > 1: 已过判定环，继续向左
-
   const ringX = W * 0.22;
   const spawnX = W * 1.05;
   const x = lerp(spawnX, ringX, clamp(progress, -0.5, 1.5));
-
-  // Y位置：音轨是水平的，但随判定环Y位置整体上下
-  const yNorm = state.ringY;
-  const y = yNorm * H;
-
+  const y = state.ringY * H;
   return { x, y, progress };
 }
 
 function render() {
   ctx.clearRect(0, 0, W, H);
-
   const chartTime = getChartTime();
 
-  // ---- 绘制音轨 ----
+  // ---- 音轨 ----
+  const trackY = state.ringY * H;
   ctx.strokeStyle = '#111';
   ctx.lineWidth = 2;
   ctx.setLineDash([6, 8]);
 
-  // 主音轨线（水平，随判定环Y位置）
-  const trackY = state.ringY * H;
-  ctx.beginPath();
-  ctx.moveTo(W * 1.02, trackY);
-  // 弯曲效果
   const midX = W * 0.6;
   const ctrlOffset = Math.sin(state.ringPhase * 0.8) * 30;
+
+  ctx.beginPath();
+  ctx.moveTo(W * 1.02, trackY);
   ctx.quadraticCurveTo(midX, trackY + ctrlOffset, W * 0.22, trackY);
   ctx.stroke();
 
-  // 第二条辅助线（稍微偏移）
   ctx.strokeStyle = '#ccc';
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(W * 1.02, trackY - 20);
   ctx.quadraticCurveTo(midX, trackY - 20 + ctrlOffset * 0.7, W * 0.22, trackY - 20);
   ctx.stroke();
-
   ctx.beginPath();
   ctx.moveTo(W * 1.02, trackY + 20);
   ctx.quadraticCurveTo(midX, trackY + 20 + ctrlOffset * 0.7, W * 0.22, trackY + 20);
   ctx.stroke();
-
   ctx.setLineDash([]);
 
-  // ---- 绘制判定环 ----
+  // ---- 判定环 ----
   const ringX = W * 0.22;
   const ringR = 36 * state.ringScale;
   const flash = state.ringFlash;
 
-  // 闪光背景圆（命中时轻微填充）
   if (flash > 0.05) {
     const flashColors = {
       perfect: 'rgba(0,0,0,',
@@ -928,14 +979,12 @@ function render() {
     ctx.fill();
   }
 
-  // 外环（闪光时略加粗）
   ctx.strokeStyle = '#111';
   ctx.lineWidth = 3 + flash * 1.5;
   ctx.beginPath();
   ctx.arc(ringX, trackY, ringR, 0, Math.PI * 2);
   ctx.stroke();
 
-  // 内环
   ctx.lineWidth = 2;
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
@@ -943,20 +992,19 @@ function render() {
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // ---- 绘制判定环上下箭头指示 ----
+  // 上下箭头
   ctx.fillStyle = '#111';
   ctx.font = '14px sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('▲', ringX, trackY - 50);
   ctx.fillText('▼', ringX, trackY + 58);
 
-  // ---- 绘制音符 ----
+  // ---- 音符 ----
   for (const note of state.notes) {
     if (note.judged) continue;
     const pos = getNoteScreenPos(note, chartTime);
-    if (pos.progress < -0.3) continue; // 还没到spawn时间
+    if (pos.progress < -0.3) continue;
 
-    // 超过判定环后渐隐
     let alpha = 1.0;
     if (pos.progress > 1.0) {
       alpha = clamp(1.0 - (pos.progress - 1.0) / 0.35, 0, 1);
@@ -967,22 +1015,18 @@ function render() {
     ctx.globalAlpha = alpha;
 
     if (note.type === 'tap') {
-      // 圆形音符
       ctx.strokeStyle = '#111';
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, 18, 0, Math.PI * 2);
       ctx.stroke();
-      // 内部填充
       ctx.fillStyle = '#fff';
       ctx.fill();
-      // 内点
       ctx.fillStyle = '#111';
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, 5, 0, Math.PI * 2);
       ctx.fill();
     } else {
-      // Hold 菱形音符
       const s = 16;
       ctx.strokeStyle = '#111';
       ctx.lineWidth = 3;
@@ -996,11 +1040,10 @@ function render() {
       ctx.fill();
       ctx.stroke();
     }
-
     ctx.restore();
   }
 
-  // ---- 绘制粒子 ----
+  // ---- 粒子 ----
   for (const p of state.particles) {
     const a = clamp(p.life / p.maxLife, 0, 1);
     ctx.save();
@@ -1012,7 +1055,7 @@ function render() {
     ctx.restore();
   }
 
-  // ---- 绘制按键状态指示 ----
+  // ---- 按键状态指示 ----
   if (state.keysHeld > 0) {
     ctx.strokeStyle = '#111';
     ctx.lineWidth = 3;
@@ -1023,13 +1066,12 @@ function render() {
     ctx.setLineDash([]);
   }
 
-  // ---- 绘制判定文字（小字、淡出、不缩放）----
+  // ---- 判定文字 ----
   for (const jt of state.judgeTexts) {
-    const a = clamp(jt.life / jt.maxLife, 0, 1) * 0.7; // 最大透明度0.7，更淡
+    const a = clamp(jt.life / jt.maxLife, 0, 1) * 0.7;
     ctx.save();
     ctx.globalAlpha = a;
     ctx.translate(jt.x, jt.y);
-
     let fontSize = 18;
     if (jt.type === 'perfect') {
       ctx.font = `800 ${fontSize}px 'WenQuanYi Micro Hei', sans-serif`;
@@ -1041,24 +1083,16 @@ function render() {
       ctx.font = `700 ${fontSize}px 'WenQuanYi Micro Hei', sans-serif`;
       ctx.fillStyle = '#aaa';
     }
-
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(jt.text, 0, 0);
-
     ctx.restore();
   }
 
-  // ---- Combo 仅在 HUD 显示，不在画布上绘制大字 ----
-
-  // ---- 绘制偏移诊断可视化 ----
-  if (state.diagRunning) {
-    drawDiagOverlay();
-  }
+  if (state.diagRunning) drawDiagOverlay();
 }
 
 function drawDiagOverlay() {
-  // 在屏幕底部画一个时间轴
   const y = H - 60;
   const x0 = W * 0.1;
   const x1 = W * 0.9;
@@ -1068,18 +1102,12 @@ function drawDiagOverlay() {
   ctx.moveTo(x0, y);
   ctx.lineTo(x1, y);
   ctx.stroke();
-
-  // 中线（判定点）
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
   ctx.moveTo((x0 + x1) / 2, y - 15);
   ctx.lineTo((x0 + x1) / 2, y + 15);
   ctx.stroke();
   ctx.setLineDash([]);
-
-  // 下一个预期判定点
-  const now = getChartTime();
-  // 简化：只显示时间轴
   ctx.fillStyle = '#111';
   ctx.font = '11px sans-serif';
   ctx.textAlign = 'center';
@@ -1096,41 +1124,78 @@ function gameLoop(timestamp) {
   const dt = Math.min((timestamp - state.lastFrame) / 1000, 0.05);
   state.lastFrame = timestamp;
 
-  // 更新判定环位置（正弦波上下移动）
-  state.ringPhase += dt * 0.8;
-  // ringY 在 0.33 ~ 0.67 之间正弦移动
-  state.ringY = 0.50 + 0.17 * Math.sin(state.ringPhase);
+  // 判定环运动（按歌曲情绪）
+  updateRingMotion(dt);
 
-  // 更新粒子
   updateParticles(dt);
   updateJudgeTexts(dt);
   updateRingFlash(dt);
 
-  // 被动检测 Hold
   for (const note of state.notes) {
     if (note.type === 'hold' && !note.judged) {
       judgeHoldPassive(note);
     }
   }
 
-  // 检测 Miss
   checkMissedNotes();
 
-  // 检查谱面结束
   const chartTime = getChartTime();
   const lastNote = state.notes[state.notes.length - 1];
-  if (lastNote && chartTime > lastNote.time + 2.0) {
+  if (lastNote && chartTime > lastNote.time + 3.0) {
     endGame();
     return;
   }
 
-  // 渲染
   render();
-
-  // 更新 HUD
   updateHUD();
-
   animFrameId = requestAnimationFrame(gameLoop);
+}
+
+function updateRingMotion(dt) {
+  // 根据歌曲和难度决定运动幅度
+  const song = getSongById(state.chartId);
+  if (!song) {
+    state.ringPhase += dt * 0.8;
+    state.ringY = 0.50 + 0.17 * Math.sin(state.ringPhase);
+    return;
+  }
+
+  state.ringPhase += dt;
+
+  // 运动参数表
+  const motionParams = {
+    'endless': {
+      stable:  { amp: 0.06, period: 8.0, jitter: 0,    jitterFreq: 0 },
+      fragile: { amp: 0.12, period: 6.0, jitter: 0.02, jitterFreq: 2 },
+      chaos:   { amp: 0.18, period: 4.0, jitter: 0.04, jitterFreq: 3 },
+    },
+    'first_steps': {
+      stable:  { amp: 0.10, period: 6.0, jitter: 0,    jitterFreq: 0 },
+      fragile: { amp: 0.16, period: 4.5, jitter: 0.03, jitterFreq: 2.5 },
+      chaos:   { amp: 0.24, period: 3.0, jitter: 0.05, jitterFreq: 4 },
+    },
+    'black_white': {
+      stable:  { amp: 0.18, period: 5.0, jitter: 0.03, jitterFreq: 3 },
+      fragile: { amp: 0.26, period: 3.5, jitter: 0.06, jitterFreq: 4 },
+      chaos:   { amp: 0.32, period: 2.5, jitter: 0.08, jitterFreq: 5 },
+    },
+  };
+
+  const params = (motionParams[song.id] && motionParams[song.id][state.difficulty])
+    || { amp: 0.15, period: 5.0, jitter: 0.03, jitterFreq: 2 };
+
+  const sinComp = params.amp * Math.sin((state.ringPhase * 2 * Math.PI) / params.period);
+
+  let jitterComp = 0;
+  if (params.jitter > 0) {
+    const phase = (state.ringPhase * params.jitterFreq) % 1;
+    jitterComp = params.jitter * (2 * phase - 1);
+  }
+
+  let target = 0.50 + sinComp + jitterComp;
+  target = clamp(target, 0.20, 0.85);
+  // 平滑过渡
+  state.ringY += (target - state.ringY) * Math.min(dt * 8, 1);
 }
 
 function updateHUD() {
@@ -1144,6 +1209,8 @@ function updateHUD() {
 function startChart(chartId, difficulty) {
   const chart = loadChart(chartId, difficulty);
   if (!chart) return;
+
+  const song = getSongById(chartId);
 
   state.chartId = chartId;
   state.difficulty = difficulty;
@@ -1166,14 +1233,23 @@ function startChart(chartId, difficulty) {
   state.ringY = 0.5;
   state.maxRawScore = chart.notes.length * 1000;
 
-  // 初始化音频
+  // 生成 BGM 事件
+  state.bgmEvents = generateBGM(song);
+  // 计算 BGM 时长
+  const beatDur = 60 / song.bpm;
+  const melodyBeats = song.melody.reduce((s, m) => s + m[1], 0);
+  const totalMeasures = Math.ceil(melodyBeats / 4);
+  const loopLen = totalMeasures * 4 * beatDur;
+  state.bgmDuration = loopLen;
+  state.bgmLoopLen = loopLen;
+  state.bgmLeadIn = 2.0;
+
   initAudio();
   if (state.audioCtx) {
     state.audioStartCtxTime = state.audioCtx.currentTime + 0.1;
     scheduleChartAudio(chart);
   }
 
-  // 切换界面
   ui.select.classList.add('hidden');
   ui.title.classList.add('hidden');
   ui.result.classList.add('hidden');
@@ -1183,7 +1259,6 @@ function startChart(chartId, difficulty) {
   state.paused = false;
   state.screen = 'game';
 
-  // HUD 信息
   ui.hudSong.textContent = `${chart.name} / ${chart.artist}`;
   ui.hudDiff.textContent = `${difficulty.toUpperCase()} Lv.${chart.level}`;
 
@@ -1239,11 +1314,9 @@ function endGame() {
   stopAllAudio();
   ui.hud.style.display = 'none';
 
-  // 计算归一化分数
   const maxScore = state.maxRawScore;
   const normalized = maxScore > 0 ? Math.round((state.rawScore / maxScore) * 1000000) : 0;
 
-  // 评级
   let rank, rankClass;
   if (normalized >= 1000000) { rank = 'λ'; rankClass = 'lambda'; }
   else if (normalized >= 950000) { rank = 'S'; rankClass = ''; }
@@ -1252,14 +1325,12 @@ function endGame() {
   else if (normalized >= 700000) { rank = 'C'; rankClass = ''; }
   else { rank = 'F'; rankClass = ''; }
 
-  // 保存最佳记录
   const key = `${state.chartId}_${state.difficulty}`;
   const prev = parseInt(localStorage.getItem('lamda_best_' + key) || '0');
   if (normalized > prev) {
     localStorage.setItem('lamda_best_' + key, String(normalized));
   }
 
-  // 显示结算
   ui.resultRank.textContent = rank;
   ui.resultRank.className = 'rank' + (rankClass ? ' ' + rankClass : '');
   ui.resultScore.textContent = normalized.toLocaleString();
@@ -1273,30 +1344,40 @@ function endGame() {
   ui.result.classList.remove('hidden');
 }
 
-// ============ 选曲界面构建 ============
+// ============ 选曲界面 ============
 function buildSongSelect() {
   const container = document.getElementById('songList');
   container.innerHTML = '';
 
-  BUILT_IN_CHARTS.forEach((chart, idx) => {
+  SONGS.forEach((song, idx) => {
     const selDiff = state.selectedDiff[idx] || 'stable';
     const card = document.createElement('div');
     card.className = 'song-card';
 
-    // 获取各难度最佳记录
     const best = {
-      stable:  localStorage.getItem(`lamda_best_${chart.id}_stable`)  || null,
-      fragile: localStorage.getItem(`lamda_best_${chart.id}_fragile`) || null,
-      chaos:   localStorage.getItem(`lamda_best_${chart.id}_chaos`)   || null,
+      stable:  localStorage.getItem(`lamda_best_${song.id}_stable`)  || null,
+      fragile: localStorage.getItem(`lamda_best_${song.id}_fragile`) || null,
+      chaos:   localStorage.getItem(`lamda_best_${song.id}_chaos`)   || null,
     };
     const currentBest = best[selDiff];
+
+    const noteCounts = {
+      stable: generateNotes(song, song.difficulties.stable.pattern).length,
+      fragile: generateNotes(song, song.difficulties.fragile.pattern).length,
+      chaos: generateNotes(song, song.difficulties.chaos.pattern).length,
+    };
+
+    // 计算歌曲时长
+    const beatDur = 60 / song.bpm;
+    const melodyBeats = song.melody.reduce((s, m) => s + m[1], 0);
+    const totalSec = Math.round(melodyBeats * beatDur + 2); // +2 for leadIn
 
     card.innerHTML = `
       <div class="song-top">
         <div class="song-info">
-          <div class="song-name">${chart.name}</div>
-          <div class="song-artist">${chart.artist}</div>
-          <div class="song-meta">BPM ${chart.bpm} / ${chart.difficulties[selDiff].notes.length} Notes</div>
+          <div class="song-name">${song.name}</div>
+          <div class="song-artist">${song.artist}</div>
+          <div class="song-meta">BPM ${song.bpm} / ${noteCounts[selDiff]} Notes / ~${totalSec}s</div>
         </div>
         <div class="song-best">
           <div class="label">BEST</div>
@@ -1307,17 +1388,17 @@ function buildSongSelect() {
       <div class="song-bottom">
         <div class="diff-tab stable ${selDiff==='stable'?'active':''}" data-idx="${idx}" data-diff="stable">
           <span class="diff-name">STABLE</span>
-          <span class="diff-lv">Lv.${chart.difficulties.stable.level}</span>
+          <span class="diff-lv">Lv.${song.difficulties.stable.level}</span>
           <span class="diff-best">${best.stable?parseInt(best.stable).toLocaleString():'—'}</span>
         </div>
         <div class="diff-tab fragile ${selDiff==='fragile'?'active':''}" data-idx="${idx}" data-diff="fragile">
           <span class="diff-name">FRAGILE</span>
-          <span class="diff-lv">Lv.${chart.difficulties.fragile.level}</span>
+          <span class="diff-lv">Lv.${song.difficulties.fragile.level}</span>
           <span class="diff-best">${best.fragile?parseInt(best.fragile).toLocaleString():'—'}</span>
         </div>
         <div class="diff-tab chaos ${selDiff==='chaos'?'active':''}" data-idx="${idx}" data-diff="chaos">
           <span class="diff-name">CHAOS</span>
-          <span class="diff-lv">Lv.${chart.difficulties.chaos.level}</span>
+          <span class="diff-lv">Lv.${song.difficulties.chaos.level}</span>
           <span class="diff-best">${best.chaos?parseInt(best.chaos).toLocaleString():'—'}</span>
         </div>
       </div>
@@ -1326,13 +1407,12 @@ function buildSongSelect() {
     container.appendChild(card);
   });
 
-  // 绑定事件
   container.querySelectorAll('.play-btn').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       const idx = parseInt(btn.dataset.idx);
       const diff = state.selectedDiff[idx] || 'stable';
-      startChart(BUILT_IN_CHARTS[idx].id, diff);
+      startChart(SONGS[idx].id, diff);
     });
   });
 
@@ -1342,7 +1422,6 @@ function buildSongSelect() {
       const idx = parseInt(tab.dataset.idx);
       const diff = tab.dataset.diff;
       state.selectedDiff[idx] = diff;
-      // 重建界面以刷新
       buildSongSelect();
     });
   });
@@ -1369,12 +1448,11 @@ window.addEventListener('keydown', e => {
     state.keysHeld++;
     attemptHit();
 
-    // 偏移诊断记录
     if (state.diagRunning) {
       const now = getChartTime();
       const diff = now - state.diagNextBeat;
       state.diagHits.push({ expected: state.diagNextBeat, actual: now, diff: diff });
-      state.diagNextBeat += 0.5; // 每半拍一个测试点
+      state.diagNextBeat += 0.5;
       updateDiagDisplay();
     }
   }
@@ -1387,13 +1465,12 @@ window.addEventListener('keyup', e => {
   }
 });
 
-// 防止页面失去焦点时按键卡住
 window.addEventListener('blur', () => {
   for (const k in keyMap) delete keyMap[k];
   state.keysHeld = 0;
 });
 
-// ============ 鼠标/触摸输入 ============
+// ============ 鼠标/触摸 ============
 canvas.addEventListener('mousedown', () => {
   if (state.screen !== 'game' || state.paused) return;
   state.keysHeld++;
@@ -1412,7 +1489,7 @@ canvas.addEventListener('touchend', () => {
   state.keysHeld = Math.max(0, state.keysHeld - 1);
 });
 
-// ============ 按钮事件绑定 ============
+// ============ 按钮事件 ============
 document.getElementById('btnStart').addEventListener('click', () => {
   state.screen = 'select';
   ui.title.classList.add('hidden');
@@ -1480,9 +1557,7 @@ document.getElementById('btnDiagStart').addEventListener('click', () => {
     state.diagHits = [];
     state.diagNextBeat = getChartTime() + 1.0;
     document.getElementById('btnDiagStart').textContent = 'STOP TEST';
-    // 进入诊断模式需要游戏在跑，这里用简化方式：
     if (state.screen !== 'game') {
-      // 快速进入一个测试谱面
       startChart('endless', 'stable');
     }
   } else {
@@ -1499,13 +1574,11 @@ function updateDiagDisplay() {
   document.getElementById('diagMax').textContent = max.toFixed(1) + 'ms';
   document.getElementById('diagCount').textContent = state.diagHits.length;
 
-  // 绘制诊断可视化
   const dc = document.getElementById('offsetCanvas');
   const dctx = dc.getContext('2d');
   const w = dc.width, h = dc.height;
   dctx.clearRect(0, 0, w, h);
 
-  // 中线
   dctx.strokeStyle = '#111';
   dctx.lineWidth = 2;
   dctx.setLineDash([4, 4]);
@@ -1515,8 +1588,7 @@ function updateDiagDisplay() {
   dctx.stroke();
   dctx.setLineDash([]);
 
-  // 绘制每个hit点
-  const range = 200; // ±200ms 显示范围
+  const range = 200;
   diffs.forEach((d, i) => {
     const x = w / 2 + (d / range) * (w / 2) * 0.9;
     const y = (i % 8) * (h / 8) + h / 16;
