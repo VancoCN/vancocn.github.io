@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcaea曲包封面处理工具</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f5;
+            --card-bg: #ffffff;
+            --text-main: #18181b;
+            --text-sub: #71717a;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --border: #e4e4e7;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 800px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            padding: 32px;
+        }
+
+        h1 { font-size: 1.5rem; margin-bottom: 8px; }
+        p.desc { color: var(--text-sub); font-size: 0.9rem; margin-bottom: 24px; line-height: 1.5; }
+
+        /* 上传区域 */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fafafa;
+            margin-bottom: 24px;
+        }
+        .upload-zone:hover { border-color: var(--accent); background: #eff6ff; }
+        .upload-zone input { display: none; }
+        .upload-zone span { color: var(--accent); font-weight: 600; }
+
+        /* 预览区域 */
+        .preview-area {
+            display: none; /* 默认隐藏 */
+            flex-direction: column;
+            gap: 20px;
+        }
+        .preview-area.active { display: flex; }
+
+        .canvas-wrapper {
+            position: relative;
+            background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), 
+                              linear-gradient(-45deg, #ccc 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #ccc 75%), 
+                              linear-gradient(-45deg, transparent 75%, #ccc 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+        }
+        canvas { max-width: 100%; height: auto; display: block; }
+
+        /* 参数控制面板 */
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+        .control-group label { display: block; font-size: 0.8rem; color: var(--text-sub); margin-bottom: 4px; }
+        .control-group input { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
+
+        /* 按钮 */
+        .actions { display: flex; gap: 12px; }
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:active { transform: translateY(1px); }
+        .btn-download { background: var(--accent); color: white; }
+        .btn-download:hover { background: var(--accent-hover); }
+        .btn-reset { background: #e4e4e7; color: #3f3f46; }
+        .btn-reset:hover { background: #d4d4d8; }
+
+        @media (max-width: 600px) {
+            .controls { grid-template-columns: 1fr; }
+            .container { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Arcaea曲包封面处理工具</h1>
+    <p class="desc">
+        复刻 Python 逻辑：顶部 105px 加深 + 四角镜像透明裁切。<br>
+        支持实时调整参数，预览透明背景，一键下载 PNG。
+    </p>
+
+    <!-- 上传区 -->
+    <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept="image/*">
+        <div>点击或拖拽上传图片<br><span>支持 JPG, PNG, WEBP</span></div>
+    </div>
+
+    <!-- 编辑与预览区 -->
+    <div class="preview-area" id="previewArea">
+        <div class="controls">
+            <div class="control-group">
+                <label>顶部加深高度 (px)</label>
+                <input type="number" id="topHeight" value="105" min="0">
+            </div>
+            <div class="control-group">
+                <label>加深透明度 (0-255)</label>
+                <input type="number" id="topAlpha" value="120" min="0" max="255">
+            </div>
+            <div class="control-group">
+                <label>裁切宽度 (px)</label>
+                <input type="number" id="cutW" value="24" min="0">
+            </div>
+            <div class="control-group">
+                <label>裁切高度 (px)</label>
+                <input type="number" id="cutH" value="42" min="0">
+            </div>
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <div class="actions">
+            <button class="btn-reset" onclick="resetTool()">重新上传</button>
+            <button class="btn-download" onclick="downloadImage()">下载 PNG</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 状态管理
+    const state = {
+        originalImg: null,
+        fileName: 'processed-image.png'
+    };
+
+    // DOM 元素
+    const els = {
+        uploadZone: document.getElementById('uploadZone'),
+        fileInput: document.getElementById('fileInput'),
+        previewArea: document.getElementById('previewArea'),
+        canvas: document.getElementById('canvas'),
+        topHeight: document.getElementById('topHeight'),
+        topAlpha: document.getElementById('topAlpha'),
+        cutW: document.getElementById('cutW'),
+        cutH: document.getElementById('cutH')
+    };
+
+    // 1. 处理文件上传
+    els.uploadZone.addEventListener('click', () => els.fileInput.click());
+    els.uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); els.uploadZone.style.borderColor = '#2563eb'; });
+    els.uploadZone.addEventListener('dragleave', () => { els.uploadZone.style.borderColor = '#e4e4e7'; });
+    els.uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        els.uploadZone.style.borderColor = '#e4e4e7';
+        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+    els.fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) handleFile(e.target.files[0]);
+    });
+
+    // 2. 监听参数变化，实时重绘
+    [els.topHeight, els.topAlpha, els.cutW, els.cutH].forEach(input => {
+        input.addEventListener('input', renderImage);
+    });
+
+    // 3. 核心处理逻辑 (完全对齐 Python 脚本)
+    function handleFile(file) {
+        if (!file.type.startsWith('image/')) return alert('请上传图片文件');
+        
+        state.fileName = file.name.replace(/\.[^/.]+$/, "") + "_processed.png";
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                state.originalImg = img;
+                els.uploadZone.style.display = 'none';
+                els.previewArea.classList.add('active');
+                renderImage();
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function renderImage() {
+        if (!state.originalImg) return;
+        const img = state.originalImg;
+        const ctx = els.canvas.getContext('2d');
+        
+        // 设置画布尺寸
+        els.canvas.width = img.width;
+        els.canvas.height = img.height;
+        
+        // 获取参数
+        const topH = parseInt(els.topHeight.value) || 0;
+        const topA = parseInt(els.topAlpha.value) || 0;
+        const cutW = parseInt(els.cutW.value) || 0;
+        const cutH = parseInt(els.cutH.value) || 0;
+        const w = img.width;
+        const h = img.height;
+
+        // 步骤 0: 绘制原图
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0);
+
+        // 步骤 1: 顶部加深 (Python: draw_overlay.rectangle)
+        if (topH > 0 && topA > 0) {
+            ctx.fillStyle = `rgba(0, 0, 0, ${topA / 255})`;
+            ctx.fillRect(0, 0, w, topH);
+        }
+
+        // 步骤 2: 四角透明裁切 (Python: draw.polygon)
+        // 使用 destination-out 模式实现透明
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.fillStyle = 'rgba(0,0,0,1)';
+        
+        // 左上
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(cutW, 0);
+        ctx.lineTo(0, cutH);
+        ctx.closePath();
+        ctx.fill();
+
+        // 右上
+        ctx.beginPath();
+        ctx.moveTo(w - cutW, 0);
+        ctx.lineTo(w, 0);
+        ctx.lineTo(w, cutH);
+        ctx.closePath();
+        ctx.fill();
+
+        // 左下
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        ctx.lineTo(cutW, h);
+        ctx.lineTo(0, h - cutH);
+        ctx.closePath();
+        ctx.fill();
+
+        // 右下
+        ctx.beginPath();
+        ctx.moveTo(w - cutW, h);
+        ctx.lineTo(w, h);
+        ctx.lineTo(w, h - cutH);
+        ctx.closePath();
+        ctx.fill();
+
+        // 恢复混合模式
+        ctx.globalCompositeOperation = 'source-over';
+    }
+
+    // 4. 下载功能
+    function downloadImage() {
+        if (!state.originalImg) return;
+        const link = document.createElement('a');
+        link.download = state.fileName;
+        link.href = els.canvas.toDataURL('image/png');
+        link.click();
+    }
+
+    // 5. 重置
+    function resetTool() {
+        state.originalImg = null;
+        els.fileInput.value = '';
+        els.previewArea.classList.remove('active');
+        els.uploadZone.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
+
+
