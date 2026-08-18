@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arcaea曲包封面处理工具</title>
+    <title>Arcaea曲包封面处理工具 (374x750)</title>
     <style>
         :root {
             --bg-color: #f4f4f5;
@@ -57,7 +57,7 @@
 
         /* 预览区域 */
         .preview-area {
-            display: none; /* 默认隐藏 */
+            display: none; 
             flex-direction: column;
             gap: 20px;
         }
@@ -78,7 +78,8 @@
             align-items: center;
             min-height: 200px;
         }
-        canvas { max-width: 100%; height: auto; display: block; }
+        /* 限制预览画布的最大高度，防止长图撑爆屏幕 */
+        canvas { max-width: 100%; max-height: 600px; display: block; }
 
         /* 参数控制面板 */
         .controls {
@@ -120,10 +121,10 @@
 <body>
 
 <div class="container">
-    <h1>Arcaea曲包封面处理工具</h1>
+    <h1>Arcaea曲包封面处理工具 (374x750)</h1>
     <p class="desc">
-        复刻 Python 逻辑：顶部 105px 加深 + 四角镜像透明裁切。<br>
-        支持实时调整参数，预览透明背景，一键下载 PNG。
+        自动将图片居中裁切至 <strong>374x750</strong>。<br>
+        支持顶部加深、四角镜像透明裁切，实时预览并下载。
     </p>
 
     <!-- 上传区 -->
@@ -144,11 +145,11 @@
                 <input type="number" id="topAlpha" value="120" min="0" max="255">
             </div>
             <div class="control-group">
-                <label>裁切宽度 (px)</label>
+                <label>四角裁切宽度 (px)</label>
                 <input type="number" id="cutW" value="24" min="0">
             </div>
             <div class="control-group">
-                <label>裁切高度 (px)</label>
+                <label>四角裁切高度 (px)</label>
                 <input type="number" id="cutH" value="42" min="0">
             </div>
         </div>
@@ -165,13 +166,15 @@
 </div>
 
 <script>
-    // 状态管理
+    // 目标尺寸常量
+    const TARGET_W = 374;
+    const TARGET_H = 750;
+
     const state = {
         originalImg: null,
         fileName: 'processed-image.png'
     };
 
-    // DOM 元素
     const els = {
         uploadZone: document.getElementById('uploadZone'),
         fileInput: document.getElementById('fileInput'),
@@ -201,11 +204,11 @@
         input.addEventListener('input', renderImage);
     });
 
-    // 3. 核心处理逻辑 (完全对齐 Python 脚本)
+    // 3. 核心处理逻辑
     function handleFile(file) {
         if (!file.type.startsWith('image/')) return alert('请上传图片文件');
         
-        state.fileName = file.name.replace(/\.[^/.]+$/, "") + "_processed.png";
+        state.fileName = file.name.replace(/\.[^/.]+$/, "") + "_374x750.png";
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
@@ -225,64 +228,60 @@
         const img = state.originalImg;
         const ctx = els.canvas.getContext('2d');
         
-        // 设置画布尺寸
-        els.canvas.width = img.width;
-        els.canvas.height = img.height;
+        // 强制设置画布为目标尺寸
+        els.canvas.width = TARGET_W;
+        els.canvas.height = TARGET_H;
         
         // 获取参数
         const topH = parseInt(els.topHeight.value) || 0;
         const topA = parseInt(els.topAlpha.value) || 0;
         const cutW = parseInt(els.cutW.value) || 0;
         const cutH = parseInt(els.cutH.value) || 0;
-        const w = img.width;
-        const h = img.height;
 
-        // 步骤 0: 绘制原图
-        ctx.clearRect(0, 0, w, h);
-        ctx.drawImage(img, 0, 0);
+        // --- 步骤 0: 居中裁切至 374x750 ---
+        ctx.clearRect(0, 0, TARGET_W, TARGET_H);
+        
+        // 计算缩放比例，取较大值确保完全覆盖
+        const scale = Math.max(TARGET_W / img.width, TARGET_H / img.height);
+        const scaledW = img.width * scale;
+        const scaledH = img.height * scale;
+        
+        // 计算居中偏移量
+        const x = (TARGET_W - scaledW) / 2;
+        const y = (TARGET_H - scaledH) / 2;
+        
+        // 绘制图片
+        ctx.drawImage(img, x, y, scaledW, scaledH);
 
-        // 步骤 1: 顶部加深 (Python: draw_overlay.rectangle)
+        // --- 步骤 1: 顶部加深 ---
         if (topH > 0 && topA > 0) {
             ctx.fillStyle = `rgba(0, 0, 0, ${topA / 255})`;
-            ctx.fillRect(0, 0, w, topH);
+            ctx.fillRect(0, 0, TARGET_W, topH);
         }
 
-        // 步骤 2: 四角透明裁切 (Python: draw.polygon)
-        // 使用 destination-out 模式实现透明
+        // --- 步骤 2: 四角透明裁切 ---
         ctx.globalCompositeOperation = 'destination-out';
         ctx.fillStyle = 'rgba(0,0,0,1)';
         
         // 左上
         ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(cutW, 0);
-        ctx.lineTo(0, cutH);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(0, 0); ctx.lineTo(cutW, 0); ctx.lineTo(0, cutH);
+        ctx.closePath(); ctx.fill();
 
         // 右上
         ctx.beginPath();
-        ctx.moveTo(w - cutW, 0);
-        ctx.lineTo(w, 0);
-        ctx.lineTo(w, cutH);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(TARGET_W - cutW, 0); ctx.lineTo(TARGET_W, 0); ctx.lineTo(TARGET_W, cutH);
+        ctx.closePath(); ctx.fill();
 
         // 左下
         ctx.beginPath();
-        ctx.moveTo(0, h);
-        ctx.lineTo(cutW, h);
-        ctx.lineTo(0, h - cutH);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(0, TARGET_H); ctx.lineTo(cutW, TARGET_H); ctx.lineTo(0, TARGET_H - cutH);
+        ctx.closePath(); ctx.fill();
 
         // 右下
         ctx.beginPath();
-        ctx.moveTo(w - cutW, h);
-        ctx.lineTo(w, h);
-        ctx.lineTo(w, h - cutH);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(TARGET_W - cutW, TARGET_H); ctx.lineTo(TARGET_W, TARGET_H); ctx.lineTo(TARGET_W, TARGET_H - cutH);
+        ctx.closePath(); ctx.fill();
 
         // 恢复混合模式
         ctx.globalCompositeOperation = 'source-over';
@@ -308,5 +307,3 @@
 
 </body>
 </html>
-
-
