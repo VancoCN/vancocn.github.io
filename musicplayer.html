@@ -5,144 +5,190 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>音乐播放器</title>
 <style>
-  :root {
-    --bg: #f5f5f5;
-    --bg-card: #ffffff;
-    --text: #222222;
-    --text-sub: #888888;
-    --accent: #4a6cf7;
-    --accent-hover: #3a5ce7;
-    --border: #e0e0e0;
-    --progress-bg: #e0e0e0;
-    --shadow: 0 2px 12px rgba(0,0,0,0.08);
-    --btn-bg: #f0f0f0;
-    --btn-hover: #e4e4e4;
-    --danger: #e74c3c;
+  /* ==================== 字体 ==================== */
+  @font-face {
+    font-family: "AlfytFont";
+    src: url("alfyt.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
   }
-  [data-theme="dark"] {
-    --bg: #1a1a1a;
-    --bg-card: #242424;
+
+  /* ==================== CSS变量 ==================== */
+  :root {
     --text: #e8e8e8;
-    --text-sub: #999999;
-    --accent: #6b8aff;
-    --accent-hover: #5a7aef;
-    --border: #333333;
-    --progress-bg: #333333;
-    --shadow: 0 2px 12px rgba(0,0,0,0.3);
-    --btn-bg: #2e2e2e;
-    --btn-hover: #3a3a3a;
+    --text-sub: #a0a0b8;
+    --accent: #7c8cff;
+    --accent-hover: #9ab0ff;
+    --accent-glow: rgba(124, 140, 255, 0.35);
+    --glass-bg: rgba(255, 255, 255, 0.06);
+    --glass-bg-hover: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-border-hover: rgba(255, 255, 255, 0.22);
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
     --danger: #ff6b5b;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background: var(--bg);
+    font-family: "AlfytFont", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: var(--text);
     min-height: 100vh;
-    transition: background 0.3s, color 0.3s;
+    overflow-x: hidden;
+    transition: color 0.3s;
   }
 
-  /* ===== 顶部栏 ===== */
+  /* ==================== 背景层 ==================== */
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    filter: blur(30px) saturate(1.2) brightness(0.4);
+    z-index: -4;
+    opacity: 0;
+    transition: opacity 2s ease-in-out;
+  }
+  .bg-layer.show { opacity: 1; }
+
+  .bg-fade {
+    position: fixed;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    filter: blur(30px) saturate(1.2) brightness(0.4);
+    z-index: -5;
+    opacity: 0;
+    transition: opacity 1.8s ease-in-out;
+    pointer-events: none;
+  }
+  .bg-fade.show { opacity: 1; }
+
+  .dark-overlay {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(160deg, rgba(8,8,16,0.6) 0%, rgba(8,8,16,0.8) 50%, rgba(8,8,16,0.65) 100%);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    z-index: -2;
+  }
+
+  .noise-overlay {
+    position: fixed;
+    inset: 0;
+    opacity: 0.03;
+    z-index: -1;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ==================== 顶部栏 ==================== */
   .topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 24px;
-    background: var(--bg-card);
-    border-bottom: 1px solid var(--border);
+    padding: 16px 28px;
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--glass-border);
     position: sticky;
     top: 0;
     z-index: 100;
-    backdrop-filter: blur(10px);
   }
   .topbar h1 {
     font-size: 20px;
     font-weight: 700;
-    letter-spacing: -0.5px;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, #fff 0%, #a0a0d0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
   .topbar-actions {
     display: flex;
-    gap: 8px;
+    gap: 10px;
   }
   .btn {
-    padding: 8px 14px;
-    border: none;
-    border-radius: 8px;
+    padding: 9px 16px;
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
     cursor: pointer;
     font-size: 13px;
     font-weight: 500;
-    background: var(--btn-bg);
+    background: var(--glass-bg);
     color: var(--text);
-    transition: all 0.2s;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.25s;
+    font-family: inherit;
   }
-  .btn:hover { background: var(--btn-hover); }
+  .btn:hover {
+    background: var(--glass-bg-hover);
+    border-color: var(--glass-border-hover);
+    transform: scale(1.03);
+  }
   .btn-primary {
-    background: var(--accent);
+    background: linear-gradient(135deg, var(--accent), #6a5cff);
     color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 16px var(--accent-glow);
   }
-  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:hover {
+    background: linear-gradient(135deg, var(--accent-hover), #8a7cff);
+    box-shadow: 0 6px 24px var(--accent-glow);
+  }
 
-  /* ===== 主体布局 ===== */
+  /* ==================== 主体布局 ==================== */
   .container {
-    max-width: 900px;
+    max-width: 920px;
     margin: 0 auto;
-    padding: 24px 16px 140px;
+    padding: 28px 18px 100px;
   }
 
-  /* ===== 播放器卡片 ===== */
-  .player-card {
-    background: var(--bg-card);
-    border-radius: 16px;
-    padding: 28px;
-    box-shadow: var(--shadow);
-    margin-bottom: 28px;
+  /* ==================== 可视化画布 ==================== */
+  .visualizer-wrap {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.06);
+    margin-bottom: 24px;
     text-align: center;
   }
 
-  .now-playing {
-    margin-bottom: 20px;
+  .visualizer-wrap canvas {
+    width: 100%;
+    height: 180px;
+    border-radius: 12px;
+    display: block;
   }
-  .now-playing .cover {
-    width: 140px;
-    height: 140px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), #8b5cf6);
-    margin: 0 auto 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 48px;
-    color: #fff;
-    animation: spin 20s linear infinite;
-    animation-play-state: paused;
+
+  .now-playing-info {
+    margin-top: 18px;
   }
-  .now-playing .cover.playing {
-    animation-play-state: running;
-  }
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  .now-playing .song-title {
-    font-size: 20px;
+  .now-playing-info .song-title {
+    font-size: 22px;
     font-weight: 700;
+    letter-spacing: 0.5px;
     margin-bottom: 4px;
   }
-  .now-playing .song-status {
+  .now-playing-info .song-status {
     font-size: 13px;
     color: var(--text-sub);
   }
 
-  /* 进度条 */
+  /* ==================== 进度条 ==================== */
   .progress-area {
-    margin: 20px 0;
+    margin: 18px 0 8px;
   }
   .progress-bar {
     width: 100%;
     height: 6px;
-    background: var(--progress-bg);
+    background: rgba(255,255,255,0.08);
     border-radius: 3px;
     cursor: pointer;
     position: relative;
@@ -150,10 +196,11 @@
   }
   .progress-fill {
     height: 100%;
-    background: var(--accent);
+    background: linear-gradient(90deg, var(--accent), #b0a0ff);
     border-radius: 3px;
     width: 0%;
     transition: width 0.1s linear;
+    box-shadow: 0 0 8px var(--accent-glow);
   }
   .progress-times {
     display: flex;
@@ -163,56 +210,67 @@
     margin-top: 6px;
   }
 
-  /* 控制按钮 */
+  /* ==================== 控制按钮 ==================== */
   .controls {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 16px;
-    margin: 20px 0;
+    gap: 18px;
+    margin: 20px 0 12px;
   }
   .ctrl-btn {
-    width: 44px;
-    height: 44px;
-    border: none;
+    width: 46px;
+    height: 46px;
+    border: 1px solid var(--glass-border);
     border-radius: 50%;
     cursor: pointer;
-    background: var(--btn-bg);
+    background: var(--glass-bg);
     color: var(--text);
     font-size: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: all 0.25s;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
-  .ctrl-btn:hover { background: var(--btn-hover); }
+  .ctrl-btn:hover {
+    background: var(--glass-bg-hover);
+    border-color: var(--glass-border-hover);
+    transform: scale(1.08);
+  }
   .ctrl-btn.play-btn {
-    width: 56px;
-    height: 56px;
-    background: var(--accent);
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--accent), #6a5cff);
     color: #fff;
-    font-size: 22px;
+    font-size: 24px;
+    border: none;
+    box-shadow: 0 6px 24px var(--accent-glow);
   }
-  .ctrl-btn.play-btn:hover { background: var(--accent-hover); }
+  .ctrl-btn.play-btn:hover {
+    background: linear-gradient(135deg, var(--accent-hover), #8a7cff);
+    box-shadow: 0 8px 32px var(--accent-glow);
+  }
 
-  /* 音量 */
+  /* ==================== 音量 ==================== */
   .volume-area {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    margin-top: 8px;
+    margin-top: 6px;
   }
   .volume-area label {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-sub);
   }
   .volume-slider {
-    width: 120px;
+    width: 130px;
     height: 4px;
     -webkit-appearance: none;
     appearance: none;
-    background: var(--progress-bg);
+    background: rgba(255,255,255,0.1);
     border-radius: 2px;
     outline: none;
     cursor: pointer;
@@ -224,14 +282,19 @@
     border-radius: 50%;
     background: var(--accent);
     cursor: pointer;
+    box-shadow: 0 0 6px var(--accent-glow);
   }
 
-  /* ===== 播放列表 ===== */
+  /* ==================== 播放列表 ==================== */
   .section-title {
     font-size: 16px;
     font-weight: 700;
     margin-bottom: 14px;
     padding-left: 4px;
+    color: #b0b0d0;
+    letter-spacing: 1px;
+    border-left: 3px solid rgba(124,140,255,0.6);
+    padding-left: 12px;
   }
   .song-list {
     list-style: none;
@@ -239,21 +302,38 @@
   .song-item {
     display: flex;
     align-items: center;
-    padding: 12px 16px;
-    background: var(--bg-card);
-    border-radius: 12px;
-    margin-bottom: 8px;
+    padding: 13px 18px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    margin-bottom: 10px;
     cursor: pointer;
-    transition: all 0.2s;
-    border: 1px solid transparent;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
   }
+  .song-item::before {
+    content: "";
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.03) 45%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 55%, transparent 100%);
+    transition: left 0.7s ease;
+  }
+  .song-item:hover::before { left: 100%; }
   .song-item:hover {
-    background: var(--btn-hover);
+    background: var(--glass-bg-hover);
+    border-color: var(--glass-border-hover);
+    transform: translateY(-2px);
   }
   .song-item.active {
-    border-color: var(--accent);
-    background: var(--btn-bg);
+    border-color: rgba(124,140,255,0.5);
+    background: rgba(124,140,255,0.1);
+    box-shadow: 0 0 20px rgba(124,140,255,0.1), inset 0 1px 0 rgba(255,255,255,0.06);
   }
+
   .song-item .item-index {
     width: 32px;
     font-size: 14px;
@@ -290,10 +370,10 @@
   .icon-btn {
     width: 34px;
     height: 34px;
-    border: none;
+    border: 1px solid var(--glass-border);
     border-radius: 8px;
     cursor: pointer;
-    background: var(--btn-bg);
+    background: var(--glass-bg);
     color: var(--text);
     font-size: 14px;
     display: flex;
@@ -301,60 +381,107 @@
     justify-content: center;
     transition: all 0.2s;
     text-decoration: none;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
   .icon-btn:hover {
     background: var(--accent);
     color: #fff;
+    border-color: transparent;
   }
 
-  /* 空状态 */
+  /* ==================== 换背景按钮 ==================== */
+  .change-bg-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--text-sub);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.25s;
+    font-family: inherit;
+  }
+  .change-bg-btn:hover {
+    background: var(--glass-bg-hover);
+    color: #fff;
+    border-color: var(--glass-border-hover);
+  }
+  .change-bg-btn svg {
+    width: 16px; height: 16px; fill: currentColor;
+    animation: spin 10s linear infinite;
+  }
+  .change-bg-btn:hover svg { animation-duration: 2s; }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* ==================== 空状态 ==================== */
   .empty-state {
     text-align: center;
     padding: 60px 20px;
     color: var(--text-sub);
   }
-  .empty-state h3 {
-    font-size: 16px;
-    margin-bottom: 8px;
-  }
-  .empty-state p {
-    font-size: 13px;
-    line-height: 1.6;
+  .empty-state h3 { font-size: 16px; margin-bottom: 8px; }
+  .empty-state p { font-size: 13px; line-height: 1.6; }
+
+  /* ==================== 底部 ==================== */
+  .footer {
+    margin-top: 50px;
+    text-align: center;
+    color: rgba(255,255,255,0.15);
+    font-size: 0.82em;
+    letter-spacing: 1px;
   }
 
-  /* 错误提示 */
-  .error-msg {
-    font-size: 12px;
-    color: var(--danger);
-    margin-top: 4px;
-  }
-
-  /* 底部播放条 (移动端适配) */
+  /* ==================== 响应式 ==================== */
   @media (max-width: 600px) {
     .topbar { padding: 12px 16px; }
     .topbar h1 { font-size: 17px; }
-    .container { padding: 16px 12px 120px; }
-    .player-card { padding: 20px 16px; }
-    .now-playing .cover { width: 110px; height: 110px; font-size: 38px; }
-    .volume-slider { width: 90px; }
+    .container { padding: 18px 14px 80px; }
+    .visualizer-wrap { padding: 16px; }
+    .visualizer-wrap canvas { height: 130px; }
+    .now-playing-info .song-title { font-size: 18px; }
+    .volume-slider { width: 100px; }
+    .controls { gap: 14px; }
+    .ctrl-btn { width: 42px; height: 42px; font-size: 16px; }
+    .ctrl-btn.play-btn { width: 54px; height: 54px; font-size: 20px; }
   }
 </style>
 </head>
 <body>
 
+<!-- 背景层 -->
+<div class="bg-layer" id="bg"></div>
+<div class="bg-fade" id="bgFade"></div>
+<div class="dark-overlay"></div>
+<div class="noise-overlay"></div>
+
+<!-- 顶部栏 -->
 <div class="topbar">
-  <h1>🎵 音乐播放器</h1>
+  <h1>🎵 Vanco的音乐播放器</h1>
   <div class="topbar-actions">
-    <button class="btn" id="themeToggle">切换深色模式</button>
+    <button class="change-bg-btn" id="changeBgBtn" title="换一张背景">
+      <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+      换背景
+    </button>
   </div>
 </div>
 
 <div class="container">
 
-  <!-- 播放器主体 -->
-  <div class="player-card">
-    <div class="now-playing">
-      <div class="cover" id="cover">♪</div>
+  <!-- 可视化 + 播放器 -->
+  <div class="visualizer-wrap">
+    <canvas id="visualizer"></canvas>
+
+    <div class="now-playing-info">
       <div class="song-title" id="currentTitle">未选择歌曲</div>
       <div class="song-status" id="currentStatus">点击列表中的歌曲开始播放</div>
     </div>
@@ -385,46 +512,60 @@
   <div class="section-title">播放列表</div>
   <ul class="song-list" id="songList"></ul>
 
+  <div class="footer">© Vanco · Made with 💜</div>
 </div>
 
-<!-- ========== 内置歌曲数据（修改这里添加你的歌曲） ========== -->
+<!-- ========== 歌曲数据 ========== -->
 <script>
 var SONGS = [
-  {
-    "name": "Amidst The Jungle",
-    "url": "https://vancocn.github.io/music/Amidst The Jungle.mp3"
-  },
-  {
-    "name": "Beneath The Hel",
-    "url": "https://vancocn.github.io/music/Beneath The Hel.mp3"
-  },
-  {
-    "name": "Trader In Desert",
-    "url": "https://vancocn.github.io/music/Trader In Desert.mp3"
-  },
-  {
-    "name": "Under The Ocean",
-    "url": "https://vancocn.github.io/music/Under The Ocean.mp3"
-  },
-  {
-    "name": "ナイト・オブ・ナイツ (Vanco Remix)",
-    "url": "https://vancocn.github.io/music/ナイト・オブ・ナイツ (Vanco Remix).mp3"
-  },
-  {
-    "name": "Waiting In The Dark",
-    "url": "https://vancocn.github.io/music/waiting in the dark.mp3"
-  }
+  { "name": "Amidst The Jungle",           "url": "https://vancocn.github.io/music/Amidst The Jungle.mp3" },
+  { "name": "Beneath The Hel",            "url": "https://vancocn.github.io/music/Beneath The Hel.mp3" },
+  { "name": "Trader In Desert",           "url": "https://vancocn.github.io/music/Trader In Desert.mp3" },
+  { "name": "Under The Ocean",            "url": "https://vancocn.github.io/music/Under The Ocean.mp3" },
+  { "name": "ナイト・オブ・ナイツ (Vanco Remix)", "url": "https://vancocn.github.io/music/ナイト・オブ・ナイツ (Vanco Remix).mp3" },
+  { "name": "Waiting In The Dark",        "url": "https://vancocn.github.io/music/waiting in the dark.mp3" }
 ];
 </script>
 
-<!-- ========== 播放器逻辑 ========== -->
+<!-- ========== 背景图列表 ========== -->
+<script>
+var BG_IMAGES = [
+  "https://vancocn.github.io/bg/0-3.jpg",
+  "https://vancocn.github.io/bg/1-1.jpg",
+  "https://vancocn.github.io/bg/1-8.jpg",
+  "https://vancocn.github.io/bg/1-ZR.jpg",
+  "https://vancocn.github.io/bg/10-5.jpg",
+  "https://vancocn.github.io/bg/11-2.jpg",
+  "https://vancocn.github.io/bg/11-8-1.jpg",
+  "https://vancocn.github.io/bg/12-6-1.jpg",
+  "https://vancocn.github.io/bg/12-X.jpg",
+  "https://vancocn.github.io/bg/15-4.jpg",
+  "https://vancocn.github.io/bg/16-7-1.jpg",
+  "https://vancocn.github.io/bg/16-8.jpg",
+  "https://vancocn.github.io/bg/17-6-1.jpg",
+  "https://vancocn.github.io/bg/18-1.jpg",
+  "https://vancocn.github.io/bg/2-8.jpg",
+  "https://vancocn.github.io/bg/20-6.jpg",
+  "https://vancocn.github.io/bg/21-5-2.jpg",
+  "https://vancocn.github.io/bg/22-2-1.jpg",
+  "https://vancocn.github.io/bg/22-5.jpg",
+  "https://vancocn.github.io/bg/23-2.jpg",
+  "https://vancocn.github.io/bg/23-8.jpg",
+  "https://vancocn.github.io/bg/E-1_epilogue.jpg",
+  "https://vancocn.github.io/bg/F-7-2.jpg",
+  "https://vancocn.github.io/bg/V-10.jpg"
+];
+</script>
+
+<!-- ========== 主逻辑 ========== -->
 <script>
 (function () {
   "use strict";
 
   // ---- DOM ----
   var audio = new Audio();
-  var cover = document.getElementById("cover");
+  var canvas = document.getElementById("visualizer");
+  var ctx = canvas.getContext("2d");
   var currentTitle = document.getElementById("currentTitle");
   var currentStatus = document.getElementById("currentStatus");
   var progressBar = document.getElementById("progressBar");
@@ -436,10 +577,126 @@ var SONGS = [
   var nextBtn = document.getElementById("nextBtn");
   var volumeSlider = document.getElementById("volumeSlider");
   var songListEl = document.getElementById("songList");
-  var themeToggle = document.getElementById("themeToggle");
+  var changeBgBtn = document.getElementById("changeBgBtn");
 
   var currentIndex = -1;
   var isPlaying = false;
+
+  // ---- Web Audio API ----
+  var audioCtx = null;
+  var analyser = null;
+  var source = null;
+  var dataArray = null;
+  var bufferLength = 0;
+
+  function initAudio() {
+    if (audioCtx) return;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.85;
+      source = audioCtx.createMediaElementSource(audio);
+      source.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      bufferLength = analyser.frequencyBinCount;
+      dataArray = new Uint8Array(bufferLength);
+    } catch (e) {
+      console.warn("Web Audio API not supported:", e);
+    }
+  }
+
+  // ---- Canvas 尺寸 ----
+  function resizeCanvas() {
+    var rect = canvas.getBoundingClientRect();
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener("resize", resizeCanvas);
+
+  // ---- 可视化绘制 ----
+  function drawVisualizer() {
+    requestAnimationFrame(drawVisualizer);
+
+    var rect = canvas.getBoundingClientRect();
+    var w = rect.width;
+    var h = rect.height;
+
+    ctx.clearRect(0, 0, w, h);
+
+    if (!analyser || !isPlaying) {
+      // 空闲动画
+      drawIdle(w, h);
+      return;
+    }
+
+    analyser.getByteFrequencyData(dataArray);
+
+    var barCount = 48;
+    var gap = 3;
+    var barWidth = (w - gap * (barCount - 1)) / barCount;
+    var step = Math.floor(bufferLength / barCount);
+
+    for (var i = 0; i < barCount; i++) {
+      var val = dataArray[i * step] || 0;
+      var barHeight = (val / 255) * (h * 0.85);
+      var x = i * (barWidth + gap);
+      var y = h - barHeight;
+
+      // 渐变色
+      var hue = 230 + (i / barCount) * 40;
+      var gradient = ctx.createLinearGradient(0, h, 0, y);
+      gradient.addColorStop(0, "hsla(" + hue + ", 80%, 65%, 0.9)");
+      gradient.addColorStop(0.5, "hsla(" + (hue + 10) + ", 75%, 55%, 0.7)");
+      gradient.addColorStop(1, "hsla(" + (hue + 20) + ", 70%, 45%, 0.3)");
+
+      ctx.fillStyle = gradient;
+      ctx.shadowColor = "hsla(" + hue + ", 80%, 60%, 0.4)";
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.roundRect(x, y, barWidth, barHeight, 3);
+      ctx.fill();
+    }
+
+    ctx.shadowBlur = 0;
+  }
+
+  function drawIdle(w, h) {
+    var t = Date.now() * 0.001;
+    var barCount = 32;
+    var gap = 4;
+    var barWidth = (w - gap * (barCount - 1)) / barCount;
+
+    for (var i = 0; i < barCount; i++) {
+      var phase = (i / barCount) * Math.PI * 2;
+      var barHeight = (Math.sin(t * 1.5 + phase) * 0.5 + 0.5) * (h * 0.2) + 4;
+      var x = i * (barWidth + gap);
+      var y = h - barHeight;
+
+      ctx.fillStyle = "rgba(124, 140, 255, 0.18)";
+      ctx.beginPath();
+      ctx.roundRect(x, y, barWidth, barHeight, 3);
+      ctx.fill();
+    }
+  }
+
+  // roundRect polyfill
+  if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+      this.moveTo(x + r, y);
+      this.lineTo(x + w - r, y);
+      this.quadraticCurveTo(x + w, y, x + w, y + r);
+      this.lineTo(x + w, y + h - r);
+      this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      this.lineTo(x + r, y + h);
+      this.quadraticCurveTo(x, y + h, x, y + h - r);
+      this.lineTo(x, y + r);
+      this.quadraticCurveTo(x, y, x + r, y);
+      return this;
+    };
+  }
 
   // ---- 工具函数 ----
   function formatTime(sec) {
@@ -469,7 +726,7 @@ var SONGS = [
         + '<span class="item-index">' + (i + 1) + '</span>'
         + '<div class="item-info">'
           + '<div class="item-name">' + escapeHtml(s.name) + '</div>'
-          + '<div class="item-meta">' + escapeHtml(s.url) + '</div>'
+          + '<div class="item-meta">' + escapeHtml(s.url.split("/").pop()) + '</div>'
         + '</div>'
         + '<div class="item-actions">'
           + '<a class="icon-btn" href="' + s.url + '" download title="下载" target="_blank" rel="noopener">⬇</a>'
@@ -478,11 +735,10 @@ var SONGS = [
     }
     songListEl.innerHTML = html;
 
-    // 绑定点击
     var items = songListEl.querySelectorAll(".song-item");
     for (var j = 0; j < items.length; j++) {
       items[j].addEventListener("click", function (e) {
-        if (e.target.tagName === "A") return; // 下载按钮不触发播放
+        if (e.target.tagName === "A") return;
         var idx = parseInt(this.getAttribute("data-index"), 10);
         loadSong(idx, true);
       });
@@ -495,13 +751,17 @@ var SONGS = [
     currentIndex = index;
     var song = SONGS[index];
 
+    initAudio();
+    if (audioCtx && audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+
     audio.src = song.url;
     audio.load();
 
     currentTitle.textContent = song.name;
     currentStatus.textContent = "加载中...";
 
-    // 更新列表高亮
     var items = songListEl.querySelectorAll(".song-item");
     for (var i = 0; i < items.length; i++) {
       items[i].classList.remove("active");
@@ -523,10 +783,8 @@ var SONGS = [
     isPlaying = playing;
     playBtn.textContent = playing ? "⏸" : "▶";
     if (playing) {
-      cover.classList.add("playing");
       currentStatus.textContent = "正在播放";
     } else {
-      cover.classList.remove("playing");
       if (currentIndex >= 0) currentStatus.textContent = "已暂停";
     }
   }
@@ -604,27 +862,47 @@ var SONGS = [
     }
   });
 
-  // ---- 深浅色模式 ----
-  var savedTheme = localStorage.getItem("music-player-theme");
-  if (savedTheme === "dark") {
-    document.documentElement.setAttribute("data-theme", "dark");
-    themeToggle.textContent = "切换浅色模式";
+  // ==================== 随机背景 ====================
+  var bgEl = document.getElementById("bg");
+  var bgFadeEl = document.getElementById("bgFade");
+  var currentBgIndex = -1;
+
+  function getRandomBgIndex() {
+    if (BG_IMAGES.length <= 1) return 0;
+    var idx;
+    do {
+      idx = Math.floor(Math.random() * BG_IMAGES.length);
+    } while (idx === currentBgIndex);
+    return idx;
   }
-  themeToggle.addEventListener("click", function () {
-    var isDark = document.documentElement.getAttribute("data-theme") === "dark";
-    if (isDark) {
-      document.documentElement.removeAttribute("data-theme");
-      localStorage.setItem("music-player-theme", "light");
-      themeToggle.textContent = "切换深色模式";
-    } else {
-      document.documentElement.setAttribute("data-theme", "dark");
-      localStorage.setItem("music-player-theme", "dark");
-      themeToggle.textContent = "切换浅色模式";
-    }
-  });
+
+  function setBackground() {
+    var idx = getRandomBgIndex();
+    bgFadeEl.style.backgroundImage = "url('" + BG_IMAGES[idx] + "')";
+    bgFadeEl.classList.add("show");
+    setTimeout(function () {
+      bgEl.style.backgroundImage = "url('" + BG_IMAGES[idx] + "')";
+      bgFadeEl.classList.remove("show");
+      currentBgIndex = idx;
+    }, 1800);
+  }
+
+  changeBgBtn.addEventListener("click", setBackground);
 
   // ---- 初始化 ----
+  resizeCanvas();
   renderList();
+  drawVisualizer();
+
+  // 首次加载背景
+  var firstIdx = Math.floor(Math.random() * BG_IMAGES.length);
+  bgEl.style.backgroundImage = "url('" + BG_IMAGES[firstIdx] + "')";
+  currentBgIndex = firstIdx;
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      bgEl.classList.add("show");
+    });
+  });
 
 })();
 </script>
