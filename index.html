@@ -51,7 +51,6 @@
             opacity: 1;
         }
 
-        /* 暗色遮罩 */
         .dark-overlay {
             position: fixed;
             inset: 0;
@@ -66,7 +65,6 @@
             z-index: -2;
         }
 
-        /* 噪点纹理（增加质感） */
         .noise-overlay {
             position: fixed;
             inset: 0;
@@ -76,7 +74,6 @@
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
         }
 
-        /* ==================== 页面标题区 ==================== */
         .page-header {
             display: flex;
             align-items: center;
@@ -142,7 +139,6 @@
             margin-bottom: 40px;
         }
 
-        /* ==================== 分类标题 ==================== */
         .category-title {
             font-size: 1.4em;
             font-weight: 700;
@@ -161,7 +157,6 @@
             gap: 16px;
         }
 
-        /* ==================== 液体玻璃卡片 ==================== */
         .tool-card {
             display: flex;
             align-items: center;
@@ -171,7 +166,6 @@
             text-decoration: none;
             color: #e0e0e0;
 
-            /* 暗色液体玻璃核心 */
             background: rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(20px) saturate(180%);
             -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -186,7 +180,6 @@
             overflow: hidden;
         }
 
-        /* 液态高光扫过效果 */
         .tool-card::before {
             content: "";
             position: absolute;
@@ -209,7 +202,6 @@
             left: 100%;
         }
 
-        /* 卡片悬浮 - 液体膨胀感 */
         .tool-card:hover {
             transform: translateY(-3px) scale(1.01);
             background: rgba(255,255,255,0.1);
@@ -226,7 +218,6 @@
             transform: translateY(-1px) scale(0.998);
         }
 
-        /* ==================== 卡片内容 ==================== */
         .card-title {
             font-size: 1.25em;
             font-weight: 600;
@@ -275,7 +266,6 @@
             fill: #fff;
         }
 
-        /* ==================== 底部 ==================== */
         .footer {
             margin-top: 60px;
             text-align: center;
@@ -284,7 +274,6 @@
             letter-spacing: 1px;
         }
 
-        /* ==================== 背景切换动画层 ==================== */
         .bg-fade {
             position: fixed;
             inset: 0;
@@ -301,7 +290,6 @@
             opacity: 1;
         }
 
-        /* ==================== 响应式 ==================== */
         @media (max-width: 600px) {
             body {
                 padding: 16px 18px 40px;
@@ -331,24 +319,17 @@
 </head>
 <body>
 
-<!-- 背景层（当前） -->
+
 <div class="bg" id="bg"></div>
-<!-- 背景层（过渡用） -->
+
 <div class="bg-fade" id="bgFade"></div>
-<!-- 暗色遮罩 -->
+
 <div class="dark-overlay"></div>
-<!-- 噪点纹理 -->
+
 <div class="noise-overlay"></div>
 
-<!-- ==================== 标题区 ==================== -->
 <div class="page-header">
     <div class="page-title">Vanco的小站</div>
-    <button class="change-bg-btn" id="changeBgBtn" title="换一张背景">
-        <svg viewBox="0 0 24 24">
-            <path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-        </svg>
-        换一张背景
-    </button>
 </div>
 <div class="header-line"></div>
 
