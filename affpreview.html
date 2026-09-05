@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>谱面 2D 平面图 · Vanco的小站</title>
+
+    <link rel="preload" href="alfyt.ttf" as="font" type="font/ttf" crossorigin>
+
+    <style>
+        @font-face {
+            font-family: "AlfytFont";
+            src: url("alfyt.ttf") format("truetype");
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        [hidden] { display: none !important; }
+
+        body {
+            font-family: "AlfytFont", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            color: #e8e8e8;
+            padding: 20px 40px 60px;
+            position: relative;
+            z-index: 0;
+            background-color: #0a0a0f;
+            background-image:
+                radial-gradient(1200px 700px at 15% -10%, rgba(90, 90, 150, 0.16), transparent 60%),
+                radial-gradient(900px 600px at 100% 0%, rgba(140, 90, 150, 0.12), transparent 55%);
+            background-attachment: fixed;
+        }
+
+        .noise-overlay {
+            position: fixed;
+            inset: 0;
+            opacity: 0.04;
+            z-index: -1;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        .page-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 5px;
+        }
+
+        .page-title {
+            font-size: 2.4em;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #ffffff 0%, #a0a0c0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-meta {
+            font-size: 0.85em;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 2px;
+        }
+
+        .header-line {
+            border-top: 2px solid rgba(255,255,255,0.12);
+            margin-bottom: 26px;
+        }
+
+        .glass {
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow:
+                0 4px 24px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.08),
+                inset 0 -1px 0 rgba(0,0,0,0.2);
+        }
+
+        /* ---------- 拖放区 ---------- */
+        .drop-zone {
+            border: 1.5px dashed rgba(255,255,255,0.2);
+            border-radius: 14px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .drop-zone:hover { border-color: rgba(160,160,220,0.55); background: rgba(160,160,220,0.06); }
+        .drop-zone.dragover { border-color: rgba(160,160,220,0.9); background: rgba(160,160,220,0.12); }
+
+        .dz-icon {
+            width: 38px; height: 38px; margin: 0 auto 12px;
+            fill: rgba(255,255,255,0.28); transition: fill 0.3s;
+        }
+        .drop-zone:hover .dz-icon,
+        .drop-zone.dragover .dz-icon { fill: rgba(200,200,240,0.7); }
+
+        .dz-title { font-size: 1em; color: #d0d0e0; letter-spacing: 1px; }
+        .dz-sub { margin-top: 7px; font-size: 0.78em; color: rgba(255,255,255,0.32); letter-spacing: 1px; }
+
+        /* ---------- 控制栏 ---------- */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px 20px;
+            padding: 14px 18px;
+            margin-top: 18px;
+        }
+
+        .ctl-group { display: flex; align-items: center; gap: 9px; }
+        .ctl-label { font-size: 0.82em; color: #9a9ab4; letter-spacing: 1px; white-space: nowrap; }
+
+        .seg {
+            display: inline-flex; gap: 3px; padding: 3px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.22);
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .seg-btn {
+            padding: 6px 13px; border-radius: 7px; border: none;
+            background: transparent; color: #9090a8;
+            font-family: inherit; font-size: 0.82em; letter-spacing: 1px;
+            cursor: pointer; transition: all 0.25s ease; white-space: nowrap;
+        }
+        .seg-btn:hover { color: #e0e0e0; }
+        .seg-btn.active { color: #fff; background: rgba(160,160,220,0.28); box-shadow: 0 1px 8px rgba(0,0,0,0.3); }
+
+        input[type=range] {
+            -webkit-appearance: none; appearance: none;
+            width: 120px; height: 4px; border-radius: 99px;
+            background: rgba(255,255,255,0.14); outline: none; cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 15px; height: 15px; border-radius: 50%;
+            background: #c8c8e8; box-shadow: 0 0 10px rgba(160,160,220,0.6); cursor: pointer;
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 15px; height: 15px; border: none; border-radius: 50%;
+            background: #c8c8e8; box-shadow: 0 0 10px rgba(160,160,220,0.6); cursor: pointer;
+        }
+
+        .range-val { font-size: 0.8em; color: #c0c0d8; min-width: 158px; font-variant-numeric: tabular-nums; }
+
+        .chk {
+            display: inline-flex; align-items: center; gap: 7px;
+            font-size: 0.82em; color: #9a9ab4; cursor: pointer; user-select: none; white-space: nowrap;
+        }
+        .chk input { accent-color: #9090c8; width: 14px; height: 14px; cursor: pointer; }
+
+        .btn {
+            padding: 7px 15px; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(255,255,255,0.06);
+            color: #d0d0e4; font-family: inherit; font-size: 0.82em;
+            letter-spacing: 1px; cursor: pointer; transition: all 0.25s ease;
+            white-space: nowrap;
+        }
+        .btn:hover:not(:disabled) {
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(255,255,255,0.3); color: #fff;
+        }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn.primary {
+            border-color: rgba(160,160,220,0.4);
+            background: rgba(160,160,220,0.18); color: #fff;
+        }
+
+        input[type=number] {
+            width: 76px; padding: 6px 9px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.13);
+            background: rgba(20,20,32,0.75); color: #dcdcea;
+            font-family: inherit; font-size: 0.82em; outline: none;
+        }
+        input[type=number]:focus { border-color: rgba(160,160,220,0.55); }
+
+        /* ---------- 播放栏 ---------- */
+        .player {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px;
+            padding: 12px 18px; margin-top: 12px;
+        }
+
+        .time-display {
+            font-size: 0.9em; color: #e0e0f0; letter-spacing: 1px;
+            font-variant-numeric: tabular-nums; min-width: 118px;
+        }
+        .time-display small { color: rgba(255,255,255,0.35); }
+
+        .progress {
+            flex: 1; min-width: 160px; height: 6px; border-radius: 99px;
+            background: rgba(255,255,255,0.09); cursor: pointer; position: relative;
+        }
+        .progress i {
+            display: block; height: 100%; width: 0; border-radius: 99px;
+            background: linear-gradient(90deg, rgba(160,160,220,0.6), #b8b8e8);
+        }
+
+        /* ---------- 画布 ---------- */
+        .canvas-wrap {
+            margin-top: 14px;
+            height: 64vh;
+            min-height: 320px;
+            overflow: auto;
+            border-radius: 14px;
+            background: #0d0d14;
+            border: 1px solid rgba(255,255,255,0.07);
+            position: relative;
+        }
+        .canvas-wrap:focus { outline: 1px solid rgba(160,160,220,0.4); }
+
+        .canvas-wrap::-webkit-scrollbar { width: 10px; height: 10px; }
+        .canvas-wrap::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+        .canvas-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.16); border-radius: 99px; }
+        .canvas-wrap::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.28); }
+
+        #spacer { position: relative; width: 100%; }
+        #chart { display: block; position: sticky; top: 0; left: 0; }
+
+        /* ---------- 图例 / 统计 ---------- */
+        .legend {
+            display: flex; flex-wrap: wrap; gap: 8px 16px;
+            margin-top: 14px; font-size: 0.76em; color: #8a8aa4; letter-spacing: 0.5px;
+        }
+        .legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .legend i { width: 13px; height: 4px; border-radius: 99px; display: inline-block; }
+        .legend i.dot { width: 9px; height: 9px; border-radius: 50%; }
+
+        .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+        .stat {
+            padding: 9px 16px; border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.78em; color: #8a8aa4; letter-spacing: 1px;
+        }
+        .stat b { color: #e8e8f5; font-weight: 700; font-size: 1.2em; margin-left: 8px; font-variant-numeric: tabular-nums; }
+
+        .status {
+            margin-top: 14px; font-size: 0.82em;
+            color: rgba(255,255,255,0.45); letter-spacing: 1px;
+            min-height: 1.2em; line-height: 1.7;
+        }
+        .status.err { color: #ff8f8f; }
+        .status.ok { color: #8fe3b0; }
+
+        .note { margin-top: 18px; font-size: 0.74em; color: rgba(255,255,255,0.24); letter-spacing: 0.5px; line-height: 1.9; }
+        .note b { color: rgba(255,255,255,0.45); font-weight: 600; }
+
+        kbd {
+            display: inline-block; padding: 1px 6px; margin: 0 1px;
+            border-radius: 5px; border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.07);
+            font-family: inherit; font-size: 0.95em; color: #c8c8e0;
+        }
+
+        .footer { margin-top: 50px; text-align: center; color: rgba(255,255,255,0.2); font-size: 0.85em; letter-spacing: 1px; }
+
+        @media (max-width: 600px) {
+            body { padding: 16px 18px 40px; }
+            .page-title { font-size: 1.8em; }
+            .controls, .player { padding: 12px; gap: 10px 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="noise-overlay"></div>
+
+<div class="page-header">
+    <div class="page-title">谱面 2D 平面图</div>
+    <div class="header-meta">Arcaea .aff → 平面投影 · 纯本地解析</div>
+</div>
+<div class="header-line"></div>
+
+<div class="glass" style="padding:22px 24px">
+    <div class="drop-zone" id="dropZone">
+        <svg class="dz-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>
+        <div class="dz-title">拖拽 .aff 谱面文件到这里，或点击选择</div>
+        <div class="dz-sub">支持 timinggroup、黑线、arctap、浮点轨道等语法</div>
+        <input type="file" id="fileInput" accept=".aff,.txt" hidden>
+    </div>
+    <div class="status" id="status"></div>
+</div>
+
+<!-- 视图控制 -->
+<div class="controls glass" id="controls" hidden>
+    <div class="ctl-group">
+        <span class="ctl-label">投影</span>
+        <div class="seg" id="modeSeg">
+            <button class="seg-btn active" data-v="x">俯视 · 左右位置</button>
+            <button class="seg-btn" data-v="y">侧视 · 上下高度</button>
+        </div>
+    </div>
+
+    <div class="ctl-group">
+        <span class="ctl-label">缩放</span>
+        <input type="range" id="zoom" min="0" max="1000" value="500">
+        <span class="range-val" id="zoomVal">—</span>
+    </div>
+
+    <div class="ctl-group">
+        <label class="chk"><input type="checkbox" id="optBar" checked> 小节线</label>
+        <label class="chk"><input type="checkbox" id="optTrace" checked> 黑线</label>
+        <label class="chk"><input type="checkbox" id="optGround" checked> 地面</label>
+        <label class="chk"><input type="checkbox" id="optArctap" checked> 天键</label>
+        <label class="chk"><input type="checkbox" id="optDepth"> 高度着色</label>
+    </div>
+</div>
+
+<!-- 播放控制 -->
+<div class="player glass" id="player" hidden>
+    <button class="btn primary" id="playBtn">▶ 播放</button>
+    <div class="seg" id="speedSeg">
+        <button class="seg-btn" data-v="0.25">0.25×</button>
+        <button class="seg-btn" data-v="0.5">0.5×</button>
+        <button class="seg-btn active" data-v="1">1×</button>
+        <button class="seg-btn" data-v="2">2×</button>
+    </div>
+    <div class="time-display" id="timeDisp">0:00.000 <small>/ 0:00</small></div>
+    <div class="progress" id="progress"><i id="progressBar"></i></div>
+    <label class="chk"><input type="checkbox" id="optFollow" checked> 跟随</label>
+</div>
+
+<!-- 画布 -->
+<div class="canvas-wrap" id="canvasWrap" hidden tabindex="0">
+    <div id="spacer">
+        <canvas id="chart"></canvas>
+    </div>
+</div>
+
+<!-- 导出 -->
+<div class="controls glass" id="exportBar" hidden>
+    <div class="ctl-group">
+        <span class="ctl-label">分段高度</span>
+        <input type="number" id="segH" value="2000" min="400" max="12000" step="200">
+        <span class="ctl-label" id="segInfo">—</span>
+    </div>
+    <div class="ctl-group" style="margin-left:auto">
+        <button class="btn" id="pngBtn">导出分段 PNG（ZIP）</button>
+        <button class="btn" id="svgBtn">导出整张 SVG</button>
+    </div>
+</div>
+
+<div class="legend" id="legend" hidden>
+    <span><i style="background:#4a9eff"></i>蓝 Arc</span>
+    <span><i style="background:#ff5a7a"></i>红 Arc</span>
+    <span><i style="background:#3ddc8c"></i>绿 Arc</span>
+    <span><i style="background:#9a9aae"></i>灰 Arc</span>
+    <span><i style="background:rgba(200,200,215,.5)"></i>黑线 / 音轨</span>
+    <span><i style="background:#1f6feb;height:7px;width:13px;border-radius:1px;box-shadow:0 0 0 1px rgba(0,10,25,.85)"></i>天键 Arctap（蓝色长方形）</span>
+    <span><i style="background:#e8e8f0;height:4px;width:14px;border-radius:1px"></i>地面 Tap（白色横条）</span>
+    <span><i style="background:#b9b9d0;height:8px;width:6px"></i>长按 Hold</span>
+</div>
+
+<div class="stats" id="stats" hidden></div>
+
+<div class="note" id="note" hidden>
+    <b>操作</b><br>
+    · 时间轴<b>从下往上</b>：<kbd>↑</kbd> 往曲子后面看，<kbd>↓</kbd> 往回看（按住 <kbd>Shift</kbd> 整屏翻页）<br>
+    · <kbd>←</kbd><kbd>→</kbd> 缩放时间轴 · <kbd>空格</kbd> 播放 / 暂停 · <kbd>Home</kbd> 曲首 · <kbd>End</kbd> 曲末 · 点击画布可跳转到该时刻<br>
+    <br>
+    <b>关于坐标</b><br>
+    · 地面轨道 1~4 的中心横坐标为 <b>0.125 / 0.375 / 0.625 / 0.875</b>（换算式 x = (lane − 0.5) ÷ 4），Arc 可越界至 −0.5 ~ 1.5<br>
+    · 纵轴方向对齐游玩视角：越晚的音符离判定线越远，因此排在越上方；判定线固定在视口 62% 处，上方留给即将到来的部分<br>
+    · 「俯视」丢掉了 Arc 的高度，可用「高度着色」以明暗补回；「侧视」丢掉左右位置，改看 Arc 的升降<br>
+    · 纵轴为绝对时间，timinggroup 内外共用同一时间轴（组内 timing 只影响游戏内流速，不影响此处落点）<br>
+    · 画布采用视口渲染，仅绘制可见区域，因此超长谱面也能流畅拖动与播放
+</div>
+
+<div class="footer">Vanco的小站 · 谱面 2D 平面图</div>
+
+<script>
+/* ==================================================================
+   Arcaea .aff 解析
+   参考 Arcaea Wiki「谱面格式」
+   ================================================================== */
+
+// 地面轨道 -> 归一化横坐标。lane 1~4 => 0.125 / 0.375 / 0.625 / 0.875
+function laneToX(lane) {
+    return (lane - 0.5) / 4;
+}
+
+// 缓动：Arcaea 的 easing 均为正弦族
+const EASE_FUNCS = {
+    s:  t => t,
+    b:  t => (1 - Math.cos(Math.PI * t)) / 2,
+    si: t => 1 - Math.cos(t * Math.PI / 2),
+    so: t => Math.sin(t * Math.PI / 2)
+};
+
+function splitEasing(e) {
+    e = (e || "s").toLowerCase();
+    if (e.length >= 4) return { x: e.slice(0, 2), y: e.slice(2, 4) };
+    if (e.length === 3) return { x: e.slice(0, 1), y: e.slice(1, 3) };
+    return { x: e, y: e };
+}
+
+function easeValue(type, t) {
+    const f = EASE_FUNCS[type];
+    if (f) return f(t);
+    return t; // 未知缓动退化为直线
+}
+
+function emptyGroup(attrs) {
+    return { attrs: attrs || [], timing: [], taps: [], holds: [], arcs: [], flicks: [], scenecontrols: [], cameras: [] };
+}
+
+function parseAff(text) {
+    const chart = {
+        audioOffset: 0,
+        timingPointDensityFactor: 1,
+        ...emptyGroup([]),
+        timingGroups: [],
+        warnings: []
+    };
+
+    let cur = chart;
+    let depth = 0;
+    let lineNo = 0;
+
+    for (let raw of text.split(/\r?\n/)) {
+        lineNo++;
+        let line = raw.trim();
+        if (!line) continue;
+        if (line.startsWith("//")) continue;
+
+        // ---- timinggroup 块 ----
+        const tgOpen = /^timinggroup\s*(?:\(([^)]*)\))?\s*\{?\s*$/.exec(line);
+        if (tgOpen && depth === 0) {
+            const attrs = (tgOpen[1] || "").split("_").map(s => s.trim()).filter(Boolean);
+            cur = emptyGroup(attrs);
+            depth = 1;
+            if (line.endsWith("}")) { chart.timingGroups.push(cur); cur = chart; depth = 0; }
+            continue;
+        }
+
+        if (depth > 0 && (line === "};" || line === "}")) {
+            chart.timingGroups.push(cur); cur = chart; depth = 0; continue;
+        }
+
+        // ---- 头部信息 ----
+        const head = /^([A-Za-z][A-Za-z0-9_]*)\s*:\s*(.+)$/.exec(line);
+        if (head && depth === 0) {
+            const key = head[1], val = head[2].trim();
+            if (key === "AudioOffset") {
+                const n = parseInt(val, 10);
+                chart.audioOffset = Number.isFinite(n) ? n : 0;
+            } else if (key === "TimingPointDensityFactor") {
+                const n = parseFloat(val);
+                chart.timingPointDensityFactor = Number.isFinite(n) ? n : 1;
+            }
+            continue;
+        }
+
+        if (line === "-") continue;
+
+        // ---- timing ----
+        let m = /^timing\s*\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)\s*;?\s*$/.exec(line);
+        if (m) {
+            cur.timing.push({ t: parseFloat(m[1]), bpm: parseFloat(m[2]), beats: parseFloat(m[3]) });
+            continue;
+        }
+
+        // ---- hold ----
+        m = /^hold\s*\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)\s*;?\s*$/.exec(line);
+        if (m) {
+            cur.holds.push({ t1: parseFloat(m[1]), t2: parseFloat(m[2]), lane: parseFloat(m[3]) });
+            continue;
+        }
+
+        // ---- arc（可带 arctap 列表）----
+        m = /^arc\s*\(([^)]*)\)\s*(\[[^\]]*\])?\s*;?\s*$/.exec(line);
+        if (m) {
+            const p = m[1].split(",").map(s => s.trim());
+            if (p.length >= 10) {
+                const arc = {
+                    t1: parseFloat(p[0]), t2: parseFloat(p[1]),
+                    x1: parseFloat(p[2]), x2: parseFloat(p[3]),
+                    easing: (p[4] || "s").toLowerCase().replace(/[^a-z]/g, ""),
+                    y1: parseFloat(p[5]), y2: parseFloat(p[6]),
+                    color: parseInt(p[7], 10),
+                    hitsound: p[8],
+                    skyline: /^true$/i.test(p[9] || "false"),
+                    arctaps: []
+                };
+                if (m[2]) {
+                    const taps = m[2].match(/arctap\s*\(\s*([-\d.]+)\s*\)/g) || [];
+                    for (const t of taps) {
+                        const tm = /arctap\s*\(\s*([-\d.]+)\s*\)/.exec(t);
+                        if (tm) arc.arctaps.push(parseFloat(tm[1]));
+                    }
+                    arc.arctaps.sort((a, b) => a - b);
+                }
+                if ([arc.t1, arc.t2, arc.x1, arc.x2, arc.y1, arc.y2].some(v => !Number.isFinite(v))) {
+                    chart.warnings.push("第 " + lineNo + " 行 arc 参数异常，已跳过");
+                } else {
+                    cur.arcs.push(arc);
+                }
+            } else {
+                chart.warnings.push("第 " + lineNo + " 行 arc 字段不足，已跳过");
+            }
+            continue;
+        }
+
+        // ---- 地面 tap ----
+        m = /^\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)\s*;?\s*$/.exec(line);
+        if (m) { cur.taps.push({ time: parseFloat(m[1]), lane: parseFloat(m[2]) }); continue; }
+
+        // ---- scenecontrol ----
+        m = /^scenecontrol\s*\(\s*([-\d.]+)\s*,\s*([^,)]+)\s*(?:,\s*([-\d.]+)\s*)?(?:,\s*([-\d.]+)\s*)?\)\s*;?\s*$/.exec(line);
+        if (m) {
+            cur.scenecontrols.push({
+                t: parseFloat(m[1]), type: m[2].trim(),
+                p1: m[3] !== undefined ? parseFloat(m[3]) : null,
+                p2: m[4] !== undefined ? parseFloat(m[4]) : null
+            });
+            continue;
+        }
+
+        m = /^camera\s*\(([^)]*)\)\s*;?\s*$/.exec(line);
+        if (m) { cur.cameras.push({ raw: m[1] }); continue; }
+
+        m = /^flick\s*\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)\s*;?\s*$/.exec(line);
+        if (m) {
+            cur.flicks.push({ t: parseFloat(m[1]), x: parseFloat(m[2]), y: parseFloat(m[3]),
+                              vx: parseFloat(m[4]), vy: parseFloat(m[5]) });
+            continue;
+        }
+
+        if (depth === 0 && line.length > 0 && !/^[}\])]/.test(line)) {
+            chart.warnings.push("第 " + lineNo + " 行无法识别：" + line.slice(0, 40));
+        }
+    }
+
+    if (depth > 0) {
+        chart.timingGroups.push(cur);
+        chart.warnings.push("存在未闭合的 timinggroup，已按文件末尾自动收束");
+    }
+
+    return chart;
+}
+
+/* ==================================================================
+   派生数据：打平 timinggroup、排序、预计算剪枝所需的最大时长
+   ================================================================== */
+function flatten(chart) {
+    const arcs = chart.arcs.map(a => ({ ...a, inGroup: false, noInput: false }));
+    const taps = chart.taps.map(t => ({ ...t, inGroup: false, noInput: false }));
+    const holds = chart.holds.map(h => ({ ...h, inGroup: false, noInput: false }));
+
+    for (const g of chart.timingGroups) {
+        const noInput = g.attrs.includes("noinput");
+        for (const a of g.arcs) arcs.push({ ...a, inGroup: true, groupAttrs: g.attrs, noInput });
+        for (const t of g.taps) taps.push({ ...t, inGroup: true, noInput });
+        for (const h of g.holds) holds.push({ ...h, inGroup: true, noInput });
+    }
+
+    // 按起始时间排序，便于视口渲染时二分剪枝
+    const arcStart = a => Math.min(a.t1, a.t2);
+    arcs.sort((a, b) => arcStart(a) - arcStart(b));
+    holds.sort((a, b) => Math.min(a.t1, a.t2) - Math.min(b.t1, b.t2));
+    taps.sort((a, b) => a.time - b.time);
+
+    // 剪枝回退量：某类物件的最大持续时长
+    let maxArcDur = 0;
+    for (const a of arcs) maxArcDur = Math.max(maxArcDur, Math.abs(a.t2 - a.t1));
+    let maxHoldDur = 0;
+    for (const h of holds) maxHoldDur = Math.max(maxHoldDur, Math.abs(h.t2 - h.t1));
+
+    return { arcs, taps, holds, maxArcDur, maxHoldDur };
+}
+
+function chartStats(chart) {
+    const { arcs, taps, holds } = flatten(chart);
+
+    let last = 0;
+    const touch = t => { if (Number.isFinite(t) && t > last) last = t; };
+    arcs.forEach(a => { touch(a.t1); touch(a.t2); });
+    taps.forEach(t => touch(t.time));
+    holds.forEach(h => { touch(h.t1); touch(h.t2); });
+
+    let combo = 0, arctapCount = 0;
+    taps.forEach(t => { if (!t.noInput) combo++; });
+    holds.forEach(h => { if (!h.noInput && h.t2 > h.t1) combo++; });
+    arcs.forEach(a => {
+        if (!a.noInput && !a.skyline && a.t2 > a.t1) combo++;
+        if (!a.noInput) arctapCount += a.arctaps.length;
+    });
+    combo += arctapCount;
+
+    const bpms = chart.timing.filter(t => t.bpm > 0).map(t => t.bpm);
+    const bpmText = bpms.length
+        ? (Math.min(...bpms) === Math.max(...bpms)
+            ? Math.round(Math.max(...bpms))
+            : Math.round(Math.min(...bpms)) + "–" + Math.round(Math.max(...bpms)))
+        : "—";
+
+    return {
+        duration: last, combo,
+        taps: taps.length, holds: holds.length, arcs: arcs.length,
+        solidCount: arcs.filter(a => !a.skyline).length,
+        traceCount: arcs.filter(a => a.skyline).length,
+        arctapCount, bpmText,
+        groupCount: chart.timingGroups.length
+    };
+}
+
+// 小节线（仅顶层 timing 产生）
+function buildBarLines(chart, endT) {
+    const bars = [];
+    const timings = chart.timing.slice().sort((a, b) => a.t - b.t);
+    for (let i = 0; i < timings.length; i++) {
+        const seg = timings[i];
+        const segEnd = (i + 1 < timings.length) ? timings[i + 1].t : endT;
+        if (!(seg.bpm > 0) || !(seg.beats > 0)) continue;
+        const interval = (60000 / seg.bpm) * seg.beats;
+        if (!Number.isFinite(interval) || interval <= 0) continue;
+        for (let t = seg.t; t < segEnd; t += interval) bars.push(t);
+    }
+    return bars;
+}
+
+/* ==================================================================
+   绘制后端：canvas 与 SVG 共用一套场景描述
+   ================================================================== */
+const COLORS = {
+    0: [74, 158, 255],    // 蓝
+    1: [255, 90, 122],    // 红
+    2: [61, 220, 140],    // 绿
+    3: [154, 154, 174]    // 灰
+};
+
+const GUTTER = 62;
+const PAD_TOP = 14;
+const PAD_BOTTOM = 24;
+const PAD_X = 18;
+
+function arcPosAt(arc, t) {
+    const dur = arc.t2 - arc.t1;
+    const p = dur > 0 ? (t - arc.t1) / dur : 0;
+    const pc = p < 0 ? 0 : p > 1 ? 1 : p;
+    const e = splitEasing(arc.easing);
+    return {
+        x: arc.x1 + (arc.x2 - arc.x1) * easeValue(e.x, pc),
+        y: arc.y1 + (arc.y2 - arc.y1) * easeValue(e.y, pc)
+    };
+}
+
+function axisValue(mode, x, y) { return mode === "y" ? y : x; }
+
+function axisRange(mode, items) {
+    if (mode === "y") return [-0.05, 1.05];
+    let min = -0.25, max = 1.25;
+    for (const a of items.arcs) { min = Math.min(min, a.x1, a.x2); max = Math.max(max, a.x1, a.x2); }
+    for (const t of items.taps) { const x = laneToX(t.lane); min = Math.min(min, x); max = Math.max(max, x); }
+    for (const h of items.holds) { const x = laneToX(h.lane); min = Math.min(min, x); max = Math.max(max, x); }
+    const pad = (max - min) * 0.04;
+    return [min - pad, max + pad];
+}
+
+// 横轴范围只取决于模式与谱面内容，与视口无关。
+// 实时渲染时每帧重算会遍历全部物件，故缓存起来。
+let RANGE_CACHE = {};
+function axisRangeCached(mode, items) {
+    if (!RANGE_CACHE[mode]) RANGE_CACHE[mode] = axisRange(mode, items);
+    return RANGE_CACHE[mode];
+}
+
+function depthShade(rgb, v, on) {
+    if (!on) return "rgb(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
+    const k = 0.42 + 0.58 * Math.max(0, Math.min(1, v));
+    return "rgb(" + Math.round(rgb[0] * k) + "," + Math.round(rgb[1] * k) + "," + Math.round(rgb[2] * k) + ")";
+}
+
+/* ---------- Canvas 后端 ---------- */
+function makeCanvasSink(ctx) {
+    return {
+        clear(w, h, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, w, h);
+        },
+        rect(x, y, w, h, style) {
+            ctx.globalAlpha = style.opacity === undefined ? 1 : style.opacity;
+            ctx.fillStyle = style.fill;
+            ctx.fillRect(x, y, w, h);
+            if (style.stroke) {
+                ctx.lineWidth = style.strokeWidth || 1;
+                ctx.strokeStyle = style.stroke;
+                ctx.strokeRect(x, y, w, h);
+            }
+            ctx.globalAlpha = 1;
+        },
+        line(x1, y1, x2, y2, style) {
+            ctx.globalAlpha = style.opacity === undefined ? 1 : style.opacity;
+            ctx.strokeStyle = style.stroke;
+            ctx.lineWidth = style.width || 1;
+            ctx.setLineDash(style.dash || []);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.globalAlpha = 1;
+        },
+        polyline(pts, style) {
+            if (pts.length < 2) return;
+            ctx.strokeStyle = style.stroke;
+            ctx.lineWidth = style.width || 1;
+            ctx.lineCap = style.cap || "butt";
+            ctx.setLineDash(style.dash || []);
+            ctx.beginPath();
+            ctx.moveTo(pts[0][0], pts[0][1]);
+            for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        },
+        circle(x, y, r, style) {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = style.fill;
+            ctx.fill();
+            if (style.stroke) {
+                ctx.lineWidth = style.strokeWidth || 1;
+                ctx.strokeStyle = style.stroke;
+                ctx.stroke();
+            }
+        },
+        text(x, y, str, style) {
+            ctx.globalAlpha = style.opacity === undefined ? 1 : style.opacity;
+            ctx.fillStyle = style.fill;
+            ctx.font = (style.size || 11) + "px -apple-system, Segoe UI, sans-serif";
+            ctx.textAlign = style.anchor || "left";
+            ctx.textBaseline = style.baseline || "alphabetic";
+            ctx.fillText(str, x, y);
+            ctx.globalAlpha = 1;
+        }
+    };
+}
+
+/* ---------- SVG 后端 ---------- */
+function makeSVGSink(out) {
+    const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    return {
+        clear(w, h, color) {
+            out.push(`<rect width="${w}" height="${h}" fill="${color}"/>`);
+        },
+        rect(x, y, w, h, style) {
+            const op = style.opacity !== undefined && style.opacity < 1 ? ` fill-opacity="${style.opacity}"` : "";
+            const st = style.stroke ? ` stroke="${style.stroke}" stroke-width="${style.strokeWidth || 1}"` : "";
+            out.push(`<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" fill="${style.fill}"${op}${st}/>`);
+        },
+        line(x1, y1, x2, y2, style) {
+            const op = style.opacity !== undefined && style.opacity < 1 ? ` stroke-opacity="${style.opacity}"` : "";
+            const dash = style.dash ? ` stroke-dasharray="${style.dash.join(" ")}"` : "";
+            out.push(`<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="${style.stroke}" stroke-width="${style.width || 1}"${op}${dash}/>`);
+        },
+        polyline(pts, style) {
+            if (pts.length < 2) return;
+            const d = pts.map((p, i) => (i === 0 ? "M" : "L") + p[0].toFixed(2) + " " + p[1].toFixed(2)).join(" ");
+            const dash = style.dash ? ` stroke-dasharray="${style.dash.join(" ")}"` : "";
+            const cap = style.cap ? ` stroke-linecap="${style.cap}"` : "";
+            out.push(`<path d="${d}" fill="none" stroke="${style.stroke}" stroke-width="${style.width || 1}"${cap}${dash}/>`);
+        },
+        circle(x, y, r, style) {
+            const st = style.stroke ? ` stroke="${style.stroke}" stroke-width="${style.strokeWidth || 1}"` : "";
+            out.push(`<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${r}" fill="${style.fill}"${st}/>`);
+        },
+        text(x, y, str, style) {
+            const anchor = style.anchor ? ` text-anchor="${style.anchor}"` : "";
+            const base = style.baseline ? ` dominant-baseline="${style.baseline === "middle" ? "middle" : style.baseline}"` : "";
+            const op = style.opacity !== undefined && style.opacity < 1 ? ` fill-opacity="${style.opacity}"` : "";
+            out.push(`<text x="${x.toFixed(2)}" y="${y.toFixed(2)}" fill="${style.fill}"${op} font-size="${style.size || 11}" font-family="Segoe UI, sans-serif"${anchor}${base}>${esc(str)}</text>`);
+        }
+    };
+}
+
+/* ---------- 场景绘制（两个后端共用） ----------
+   range: {tMin, tMax} 可见时间范围（毫秒），用于剪枝
+   offsetY: 全局 y 换算到当前绘制面时的纵向偏移
+   faceH: 当前绘制面的高度
+   judgeT: 判定线时间，null 表示不画
+------------------------------------------------- */
+function drawScene(sink, scene) {
+    const { chart, items, stats, mode, pxPerMs, width, opts,
+            range, offsetY, faceH, judgeT, bars } = scene;
+
+    sink.clear(width, faceH, "#0d0d14");
+
+    const [vMin, vMax] = axisRangeCached(mode, items);
+    const vSpan = vMax - vMin || 1;
+    const plotW = width - GUTTER - PAD_X * 2;
+    const toPxX = v => GUTTER + PAD_X + ((v - vMin) / vSpan) * plotW;
+    // 时间轴从下往上：t=0 在底部，t=末尾在顶部。
+    // 与游玩时的空间感一致——越晚的音符距离判定线越远（越靠上）。
+    const contentH = stats.duration * pxPerMs;
+    const toPxT = t => PAD_TOP + contentH - t * pxPerMs;
+    const toFace = globalY => globalY + offsetY;
+    const laneW = plotW / vSpan / 4;
+
+    const visibleGlobal = y => y >= -offsetY - 40 && y <= -offsetY + faceH + 40;
+
+    // ---- 轨道底纹（仅俯视）----
+    if (mode === "x" && opts.showGround) {
+        for (let lane = 1; lane <= 4; lane++) {
+            const px = toPxX(laneToX(lane));
+            sink.rect(px - laneW / 2, toFace(PAD_TOP), laneW,
+                      Math.max(0, stats.duration * pxPerMs),
+                      { fill: "#ffffff", opacity: 0.022 });
+        }
+        for (let i = 0; i <= 4; i++) {
+            const px = toPxX(i / 4);
+            sink.line(px, toFace(PAD_TOP), px, toFace(PAD_TOP + stats.duration * pxPerMs),
+                      { stroke: "rgba(255,255,255,0.06)", width: 1 });
+        }
+    }
+
+    // ---- 小节线 ----
+    if (opts.showBar && bars) {
+        for (const t of bars) {
+            if (t < range.tMin || t > range.tMax) continue;
+            const y = toFace(toPxT(t));
+            if (y < -10 || y > faceH + 10) continue;
+            sink.line(GUTTER, y, width - PAD_X, y, { stroke: "rgba(255,255,255,0.10)", width: 1 });
+        }
+    }
+
+    // ---- 剪枝：二分定位起始下标 ----
+    function startIndex(arr, keyFn, tMinCut) {
+        let lo = 0, hi = arr.length;
+        while (lo < hi) {
+            const mid = (lo + hi) >> 1;
+            if (keyFn(arr[mid]) < tMinCut) lo = mid + 1; else hi = mid;
+        }
+        return lo;
+    }
+
+    // ---- Hold ----
+    if (opts.showGround) {
+        const i0 = startIndex(items.holds, h => Math.min(h.t1, h.t2), range.tMin - items.maxHoldDur);
+        const w = Math.max(3, mode === "x" ? laneW * 0.5 : 6);
+        const capH = Math.max(2, Math.min(4, pxPerMs * 40));
+        for (let i = i0; i < items.holds.length; i++) {
+            const h = items.holds[i];
+            // 起点越过上界即可终止（已按起点升序）；
+            // 但起点回退区间内的 hold 可能整体位于视口上方，需单独排除
+            if (Math.min(h.t1, h.t2) > range.tMax) break;
+            if (Math.max(h.t1, h.t2) < range.tMin) continue;
+            const tLo = Math.min(h.t1, h.t2), tHi = Math.max(h.t1, h.t2);
+            // 时间轴从下往上：t 越大 y 越小，故 tHi 在上、tLo 在下
+            const yTop = toFace(toPxT(tHi));
+            const yBot = toFace(toPxT(tLo));
+            const hPx = Math.max(capH, yBot - yTop);
+            const left = px2 => px2 - w / 2;
+            const x = laneToX(h.lane);
+            const px = toPxX(axisValue(mode, x, 0));
+
+            // 主体：半透明灰
+            sink.rect(left(px), yTop, w, hPx, {
+                fill: h.noInput ? "#7d8494" : "#a8a8b8",
+                opacity: h.noInput ? 0.22 : 0.45
+            });
+            // 尾端（时间较大的一端，在上方）：暗一档，标示长条结束
+            sink.rect(left(px), yTop, w, Math.min(capH, hPx), {
+                fill: h.noInput ? "#8d94a4" : "#b8b8c8",
+                opacity: h.noInput ? 0.5 : 0.9
+            });
+            // 头端（时间较小的一端，在下方）：最亮，标示长条起按点
+            sink.rect(left(px), yBot - Math.min(capH, hPx), w, Math.min(capH, hPx), {
+                fill: h.noInput ? "#c2c8d4" : "#e8e8f0",
+                opacity: h.noInput ? 0.6 : 1
+            });
+        }
+    }
+
+    // ---- Arc ----
+    const drawArcs = filter => {
+        for (let i = 0; i < items.arcs.length; i++) {
+            const a = items.arcs[i];
+            const aMin = Math.min(a.t1, a.t2), aMax = Math.max(a.t1, a.t2);
+            if (aMax < range.tMin || aMin > range.tMax) {
+                // 已排序：起点超出上界后，后续都超出
+                if (aMin > range.tMax) break;
+                continue;
+            }
+            if (!filter(a)) continue;
+
+            // 只采样可见区间，长 arc 也能正确裁剪
+            const tA = Math.max(aMin, range.tMin);
+            const tB = Math.min(aMax, range.tMax);
+            const span = tB - tA;
+            const samples = Math.max(8, Math.min(240, Math.ceil(span * pxPerMs / 3) + 8));
+
+            const pts = [];
+            for (let k = 0; k <= samples; k++) {
+                const t = tA + span * (k / samples);
+                const pos = arcPosAt(a, t);
+                pts.push([toPxX(axisValue(mode, pos.x, pos.y)), toFace(toPxT(t))]);
+            }
+
+            let stroke, lineW, dash = null;
+            if (a.skyline) {
+                stroke = a.noInput ? "rgba(150,150,170,0.30)" : "rgba(205,205,225,0.55)";
+                lineW = a.arctaps.length ? 2.4 : 1.6;
+                if (!a.arctaps.length) dash = [5, 4];
+            } else {
+                const rgb = COLORS[a.color] || [40, 40, 50];
+                if (a.noInput) {
+                    stroke = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.42)`;
+                } else {
+                    const v = mode === "y" ? (a.x1 + a.x2) / 2 : (a.y1 + a.y2) / 2;
+                    stroke = depthShade(rgb, v, opts.showDepth);
+                }
+                lineW = Math.max(1.8, Math.min(5, laneW * 0.16 + 1.8));
+            }
+            sink.polyline(pts, { stroke, width: lineW, cap: "round", dash });
+        }
+    };
+
+    if (opts.showTrace) drawArcs(a => a.skyline);
+    drawArcs(a => !a.skyline);
+
+    // ---- Arctap：蓝色长方形（贴在天键所在 Arc 的位置上）----
+    if (opts.showArctap) {
+        const w = mode === "x" ? Math.max(8, Math.min(30, laneW * 0.5)) : 14;
+        const h = Math.max(5, Math.min(9, pxPerMs * 90));
+        for (const a of items.arcs) {
+            if (!a.arctaps.length) continue;
+            for (const t of a.arctaps) {
+                if (t < range.tMin || t > range.tMax) continue;
+                const pos = arcPosAt(a, t);
+                const px = toPxX(axisValue(mode, pos.x, pos.y));
+                const py = toFace(toPxT(t));
+                if (py < -h - 6 || py > faceH + h + 6) continue;
+                sink.rect(px - w / 2, py - h / 2, w, h, {
+                    fill: a.noInput ? "#1b4a86" : "#1f6feb",
+                    stroke: "rgba(0,10,25,0.85)",
+                    strokeWidth: 1
+                });
+            }
+        }
+    }
+
+    // ---- Tap ----
+    if (opts.showGround) {
+        const i0 = startIndex(items.taps, t => t.time, range.tMin);
+        for (let i = i0; i < items.taps.length; i++) {
+            const t = items.taps[i];
+            if (t.time > range.tMax) break;
+            const px = toPxX(axisValue(mode, laneToX(t.lane), 0));
+            const py = toFace(toPxT(t.time));
+            const w = Math.max(5, mode === "x" ? laneW * 0.62 : 12);
+            const h = Math.max(3, Math.min(7, pxPerMs * 60));
+            sink.rect(px - w / 2, py - h / 2, w, h, {
+                fill: t.noInput ? "#bebed2" : "#eef0f8",
+                opacity: t.noInput ? 0.4 : 1
+            });
+        }
+    }
+
+    // ---- 左侧时间刻度（视口坐标，不随内容滚动）----
+    if (opts.showBar) {
+        // 上下界必须收敛到有限值：全量导出时 range 为 ±Infinity，
+        // 若直接拿 Infinity 做步长累加会陷入死循环
+        const tTop = Math.max(0, Number.isFinite(range.tMin) ? range.tMin : 0);
+        const tBot = Math.min(stats.duration, Number.isFinite(range.tMax) ? range.tMax : stats.duration);
+        const stepMs = pxPerMs > 0.25 ? 2000 : pxPerMs > 0.08 ? 5000 : 10000;
+        for (let t = Math.ceil(tTop / stepMs) * stepMs; t <= tBot; t += stepMs) {
+            if (t < 0) continue;
+            const y = toFace(toPxT(t));
+            if (y < 4 || y > faceH - 2) continue;
+            sink.line(GUTTER - 6, y, GUTTER, y, { stroke: "rgba(255,255,255,0.05)", width: 1 });
+            sink.text(GUTTER - 10, y, fmtTime(t), {
+                fill: "#ffffff", opacity: 0.42, size: 11, anchor: "right", baseline: "middle"
+            });
+        }
+    }
+
+    // ---- 判定线 ----
+    if (judgeT !== null && judgeT !== undefined) {
+        const y = toFace(toPxT(judgeT));
+        if (y >= -20 && y <= faceH + 20) {
+            sink.rect(GUTTER, y - 1, width - GUTTER - PAD_X, 2, { fill: "#ffe066", opacity: 0.9 });
+            sink.circle(GUTTER + PAD_X, y, 4, { fill: "#ffe066" });
+            sink.text(width - PAD_X, y - 6, fmtTime(judgeT), {
+                fill: "#ffe066", opacity: 0.85, size: 11, anchor: "right", baseline: "alphabetic"
+            });
+        }
+    }
+}
+
+/* ==================================================================
+   界面与状态
+   ================================================================== */
+const $ = id => document.getElementById(id);
+
+function fmtTime(ms) {
+    if (!Number.isFinite(ms)) ms = 0;
+    const neg = ms < 0;
+    ms = Math.abs(ms);
+    const s = Math.floor(ms / 1000);
+    return (neg ? "-" : "") + Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+}
+
+function fmtTimeMs(ms) {
+    const m = Math.floor(ms / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    const rest = Math.floor(ms % 1000);
+    return m + ":" + String(s).padStart(2, "0") + "." + String(rest).padStart(3, "0");
+}
+
+function fmtBytes(n) {
+    if (n < 1024) return n + " B";
+    if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
+    return (n / 1048576).toFixed(2) + " MB";
+}
+
+let CHART = null, STATS = null, ITEMS = null, BARS = null;
+let view = { mode: "x", pxPerMs: 0.08 };
+let play = { t: 0, on: false, speed: 1, last: 0, raf: 0 };
+let needDraw = false;
+
+// 采用视口渲染后，画布高度不再是 canvas 尺寸，而是 spacer 的 CSS 高度。
+// 真正的约束只剩浏览器滚动精度与 DOM 元素高度上限：Blink 的 LayoutUnit 上限约 33.5M，
+// 而合成器用 float32 存滚动偏移，超过 2^24 会掉精度。6e5 距两者都有充足余量。
+// （此前 24000 是全量渲染时代的遗留，导致长谱面根本放不大）
+const MAX_CONTENT_H = 600000;
+const MAX_PX_PER_MS = 2.0;      // 再大已无实际意义
+const MIN_PX_PER_MS = 0.005;
+const ZOOM_STEPS = 1000;        // 滑块档位，按对数分布
+const ZOOM_KEY_STEP = 20;       // ←→ 每次跳的档位数（约 ×1.09~1.13）
+
+function safePxPerMs(duration) {
+    const budget = MAX_CONTENT_H / Math.max(1, duration);
+    return Math.max(MIN_PX_PER_MS, Math.min(MAX_PX_PER_MS, budget));
+}
+
+// 滑块用对数刻度：线性刻度在 0.005~1.2 这样跨两个数量级的区间里几乎没法拖
+function zoomRange() {
+    const hi = safePxPerMs(STATS.duration);
+    const lo = Math.min(MIN_PX_PER_MS, hi / 2);
+    return { lo, hi };
+}
+
+function sliderToPxPerMs(v) {
+    const { lo, hi } = zoomRange();
+    return lo * Math.pow(hi / lo, Math.max(0, Math.min(ZOOM_STEPS, v)) / ZOOM_STEPS);
+}
+
+function pxPerMsToSlider(p) {
+    const { lo, hi } = zoomRange();
+    const r = Math.log(Math.max(lo, Math.min(hi, p)) / lo) / Math.log(hi / lo);
+    return Math.round(ZOOM_STEPS * Math.max(0, Math.min(1, r)));
+}
+
+// px/ms 对用户不直观，附上"一屏能看到几秒"更有参考价值
+function zoomLabel(viewH) {
+    const secPerScreen = (viewH || wrapSize().h) / view.pxPerMs / 1000;
+    return view.pxPerMs.toFixed(3) + " px/ms · " + secPerScreen.toFixed(1) + " s/屏";
+}
+
+function totalHeight() {
+    return Math.max(1, Math.round(STATS.duration * view.pxPerMs) + PAD_TOP + PAD_BOTTOM);
+}
+
+function currentOpts() {
+    return {
+        showBar: $("optBar").checked,
+        showTrace: $("optTrace").checked,
+        showGround: $("optGround").checked,
+        showArctap: $("optArctap").checked,
+        showDepth: $("optDepth").checked
+    };
+}
+
+function wrapSize() {
+    const wrap = $("canvasWrap");
+    return { w: Math.max(320, wrap.clientWidth || 900), h: Math.max(200, wrap.clientHeight || 500) };
+}
+
+// 滚动容器靠 spacer 撑出高度。任何修改 scrollTop 的操作之前都必须先同步 spacer，
+// 否则浏览器会按旧高度把赋值 clamp 掉（尤其是刚加载完或刚改过缩放时）。
+function syncSpacer() {
+    const total = totalHeight() + "px";
+    const sp = $("spacer");
+    if (sp.style.height !== total) sp.style.height = total;
+}
+
+/* ---------- 视口渲染 ---------- */
+function requestRedraw() { needDraw = true; }
+
+function drawViewport() {
+    if (!CHART) return;
+    const wrap = $("canvasWrap");
+    const { w, h } = wrapSize();
+    const canvas = $("chart");
+    const dpr = window.devicePixelRatio || 1;
+
+    if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+        canvas.width = Math.round(w * dpr);
+        canvas.height = Math.round(h * dpr);
+        canvas.style.width = w + "px";
+        canvas.style.height = h + "px";
+    }
+
+    syncSpacer();
+    const total = totalHeight();
+
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const scrollTop = wrap.scrollTop;
+    // 时间轴已翻转：视口底部对应小 t，视口顶部对应大 t
+    const range = {
+        tMin: (PAD_TOP + STATS.duration * view.pxPerMs - (scrollTop + h)) / view.pxPerMs,
+        tMax: (PAD_TOP + STATS.duration * view.pxPerMs - scrollTop) / view.pxPerMs
+    };
+
+    drawScene(makeCanvasSink(ctx), {
+        chart: CHART, items: ITEMS, stats: STATS,
+        mode: view.mode, pxPerMs: view.pxPerMs, width: w,
+        opts: currentOpts(), range,
+        offsetY: -scrollTop, faceH: h,
+        judgeT: play.t, bars: BARS
+    });
+}
+
+function paintLoop() {
+    if (!CHART) { play.raf = 0; return; }
+
+    if (play.on) {
+        const now = performance.now();
+        const dt = now - play.last;
+        play.last = now;
+        play.t += dt * play.speed;
+        if (play.t >= STATS.duration) { play.t = STATS.duration; stopPlay(); }
+        if ($("optFollow").checked) followJudge();
+        updatePlayerUI();
+        needDraw = true;
+    }
+
+    if (needDraw) {
+        needDraw = false;
+        drawViewport();
+    }
+
+    if (play.on) {
+        play.raf = requestAnimationFrame(paintLoop);
+    } else if (needDraw) {
+        play.raf = requestAnimationFrame(paintLoop);
+    } else {
+        play.raf = 0;
+    }
+}
+
+function scheduleFrame() {
+    if (!play.raf) play.raf = requestAnimationFrame(paintLoop);
+}
+
+// 判定线保持在视口 62% 高度处
+function followJudge() {
+    const wrap = $("canvasWrap");
+    const { h } = wrapSize();
+    // 判定线固定在视口 62% 高度（从顶算）：上方 62% 留给即将到来的音符，
+    // 下方 38% 是刚过去的，与游玩时"看向远方"的取景一致
+    const judgeY = PAD_TOP + STATS.duration * view.pxPerMs - play.t * view.pxPerMs;
+    const target = judgeY - h * 0.62;
+    const max = Math.max(0, totalHeight() - h);
+    const next = Math.max(0, Math.min(max, target));
+    if (Math.abs(wrap.scrollTop - next) > 0.5) {
+        wrap.scrollTop = next;
+        needDraw = true;
+    }
+}
+
+function updatePlayerUI() {
+    $("timeDisp").innerHTML = fmtTimeMs(play.t) + ' <small>/ ' + fmtTime(STATS.duration) + '</small>';
+    const pct = STATS.duration > 0 ? (play.t / STATS.duration) * 100 : 0;
+    $("progressBar").style.width = pct + "%";
+}
+
+function startPlay() {
+    if (!CHART) return;
+    if (play.t >= STATS.duration) play.t = 0;
+    play.on = true;
+    play.last = performance.now();
+    $("playBtn").textContent = "❚❚ 暂停";
+    updatePlayerUI();
+    scheduleFrame();
+}
+
+function stopPlay() {
+    play.on = false;
+    $("playBtn").textContent = "▶ 播放";
+}
+
+function togglePlay() { play.on ? stopPlay() : startPlay(); }
+
+function seekTo(t) {
+    play.t = Math.max(0, Math.min(STATS.duration, t));
+    updatePlayerUI();
+    needDraw = true;
+    scheduleFrame();
+}
+
+/* ---------- 导出：整张 SVG ---------- */
+function exportSVG() {
+    if (!CHART) return;
+    const w = Math.max(320, $("canvasWrap").clientWidth || 900);
+    const total = totalHeight();
+    const out = [];
+    drawScene(makeSVGSink(out), {
+        chart: CHART, items: ITEMS, stats: STATS,
+        mode: view.mode, pxPerMs: view.pxPerMs, width: w,
+        opts: currentOpts(),
+        range: { tMin: -Infinity, tMax: Infinity },
+        offsetY: 0, faceH: total,
+        judgeT: null, bars: BARS
+    });
+    out.unshift(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${total}" viewBox="0 0 ${w} ${total}">`);
+    out.push("</svg>");
+    const svg = '<?xml version="1.0" encoding="UTF-8"?>\n' + out.join("\n");
+    download(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }), baseName() + "-2d.svg");
+}
+
+/* ---------- 导出：分段 PNG + ZIP ---------- */
+const ZIP_MAX_SEGMENTS = 600;
+
+function crc32(u8) {
+    if (!crc32.table) {
+        crc32.table = new Uint32Array(256);
+        for (let i = 0; i < 256; i++) {
+            let c = i;
+            for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+            crc32.table[i] = c >>> 0;
+        }
+    }
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < u8.length; i++) c = crc32.table[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+// 最小 ZIP 打包器（stored 模式，PNG 本身已压缩）
+function buildZip(files) {
+    const enc = new TextEncoder();
+    const parts = [], central = [];
+    let offset = 0;
+
+    const d = new Date();
+    const dosTime = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+    const dosDate = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+
+    for (const f of files) {
+        const nameBytes = enc.encode(f.name);
+        const crc = crc32(f.data);
+        const size = f.data.length;
+
+        const lh = new ArrayBuffer(30 + nameBytes.length);
+        const lv = new DataView(lh);
+        const lu = new Uint8Array(lh);
+        lv.setUint32(0, 0x04034b50, true);
+        lv.setUint16(4, 20, true);
+        lv.setUint16(6, 0x0800, true);   // UTF-8 文件名
+        lv.setUint16(8, 0, true);        // stored
+        lv.setUint16(10, dosTime, true);
+        lv.setUint16(12, dosDate, true);
+        lv.setUint32(14, crc, true);
+        lv.setUint32(18, size, true);
+        lv.setUint32(22, size, true);
+        lv.setUint16(26, nameBytes.length, true);
+        lv.setUint16(28, 0, true);
+        lu.set(nameBytes, 30);
+        parts.push(lu);
+        parts.push(f.data);   // 数据体紧跟 local header
+
+        const ch = new ArrayBuffer(46 + nameBytes.length);
+        const cv = new DataView(ch);
+        const cu = new Uint8Array(ch);
+        cv.setUint32(0, 0x02014b50, true);
+        cv.setUint16(4, 20, true);
+        cv.setUint16(6, 20, true);
+        cv.setUint16(8, 0x0800, true);
+        cv.setUint16(10, 0, true);
+        cv.setUint16(12, dosTime, true);
+        cv.setUint16(14, dosDate, true);
+        cv.setUint32(16, crc, true);
+        cv.setUint32(20, size, true);
+        cv.setUint32(24, size, true);
+        cv.setUint16(28, nameBytes.length, true);
+        cv.setUint16(30, 0, true);
+        cv.setUint16(32, 0, true);
+        cv.setUint16(34, 0, true);
+        cv.setUint16(36, 0, true);
+        cv.setUint32(38, 0, true);
+        cv.setUint32(42, offset, true);
+        cu.set(nameBytes, 46);
+        central.push(cu);
+
+        offset += lh.byteLength + size;
+    }
+
+    const cdSize = central.reduce((a, b) => a + b.length, 0);
+    const eocd = new ArrayBuffer(22);
+    const ev = new DataView(eocd);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(4, 0, true);
+    ev.setUint16(6, 0, true);
+    ev.setUint16(8, files.length, true);
+    ev.setUint16(10, files.length, true);
+    ev.setUint32(12, cdSize, true);
+    ev.setUint32(16, offset, true);
+    ev.setUint16(20, 0, true);
+
+    return new Blob([...parts, ...central, new Uint8Array(eocd)], { type: "application/zip" });
+}
+
+function renderSegmentToCanvas(segTop, segH, width) {
+    const dpr = window.devicePixelRatio || 1;
+    const cv = document.createElement("canvas");
+    cv.width = Math.round(width * dpr);
+    cv.height = Math.round(segH * dpr);
+    const ctx = cv.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    drawScene(makeCanvasSink(ctx), {
+        chart: CHART, items: ITEMS, stats: STATS,
+        mode: view.mode, pxPerMs: view.pxPerMs, width,
+        opts: currentOpts(),
+        // 段底部对应小 t，段顶部对应大 t
+        range: {
+            tMin: (PAD_TOP + STATS.duration * view.pxPerMs - (segTop + segH)) / view.pxPerMs,
+            tMax: (PAD_TOP + STATS.duration * view.pxPerMs - segTop) / view.pxPerMs
+        },
+        offsetY: -segTop, faceH: segH,
+        judgeT: null, bars: BARS
+    });
+    return cv;
+}
+
+function canvasToU8(cv) {
+    return new Promise((resolve, reject) => {
+        cv.toBlob(b => {
+            if (!b) return reject(new Error("PNG 编码失败"));
+            b.arrayBuffer().then(ab => resolve(new Uint8Array(ab)))
+                           .catch(reject);
+        }, "image/png");
+    });
+}
+
+async function exportSegmentedPNG() {
+    if (!CHART) return;
+    const btn = $("pngBtn"), st = $("status");
+    const width = Math.max(320, $("canvasWrap").clientWidth || 900);
+    const total = totalHeight();
+    const segH = Math.max(200, Math.min(total, parseInt($("segH").value, 10) || 2000));
+    const count = Math.ceil(total / segH);
+
+    if (count > ZIP_MAX_SEGMENTS) {
+        st.className = "status err";
+        st.textContent = `段数 ${count} 超过上限 ${ZIP_MAX_SEGMENTS}，请调大分段高度`;
+        return;
+    }
+
+    btn.disabled = true;
+    st.className = "status";
+    const pad = String(count).length;
+    const files = [];
+
+    try {
+        for (let i = 0; i < count; i++) {
+            // 从图底部（歌曲开头）往上切，保证第 1 段就是开头
+            const segBottom = total - i * segH;
+            const segTop = Math.max(0, segBottom - segH);
+            const h = segBottom - segTop;
+            st.textContent = `正在生成第 ${i + 1} / ${count} 段…`;
+            await new Promise(r => setTimeout(r, 0)); // 让出主线程
+            const cv = renderSegmentToCanvas(segTop, h, width);
+            const u8 = await canvasToU8(cv);
+            files.push({ name: `${baseName()}-2d-${String(i + 1).padStart(pad, "0")}.png`, data: u8 });
+            cv.width = cv.height = 0; // 及时释放
+        }
+        st.textContent = "正在打包…";
+        await new Promise(r => setTimeout(r, 0));
+        const zip = buildZip(files);
+        download(zip, baseName() + "-2d-segments.zip");
+        st.className = "status ok";
+        st.textContent = `已导出 ${count} 段 · ${width}×${segH}px · ${fmtBytes(zip.size)}`;
+    } catch (err) {
+        st.className = "status err";
+        st.textContent = "导出失败：" + (err && err.message ? err.message : err);
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function updateSegInfo() {
+    if (!CHART) return;
+    const total = totalHeight();
+    const segH = Math.max(200, parseInt($("segH").value, 10) || 2000);
+    const count = Math.ceil(total / segH);
+    const width = Math.max(320, $("canvasWrap").clientWidth || 900);
+    $("segInfo").textContent = `→ ${count} 段 · 每段 ${width}×${segH}px`;
+}
+
+/* ---------- 文件加载 ---------- */
+function loadText(text, name) {
+    const t0 = performance.now();
+    CHART = parseAff(text);
+    STATS = chartStats(CHART);
+    ITEMS = flatten(CHART);
+    BARS = buildBarLines(CHART, STATS.duration);
+    const cost = Math.round(performance.now() - t0);
+
+    RANGE_CACHE = {};
+    stopPlay();
+    play.t = 0;
+
+    // 初次打开给一个能看清段落结构的尺度（约 15 屏），放大上限则放宽到接近游玩流速
+    const targetH = 7000;
+    const hi = safePxPerMs(STATS.duration);
+    view.pxPerMs = Math.max(MIN_PX_PER_MS, Math.min(hi, targetH / Math.max(1, STATS.duration)));
+    $("zoom").max = String(ZOOM_STEPS);
+    $("zoom").value = String(pxPerMsToSlider(view.pxPerMs));
+    $("zoomVal").textContent = zoomLabel();
+
+    $("controls").hidden = false;
+    $("player").hidden = false;
+    $("canvasWrap").hidden = false;
+    $("exportBar").hidden = false;
+    $("legend").hidden = false;
+    $("stats").hidden = false;
+    $("note").hidden = false;
+
+    renderStats();
+    updateSegInfo();
+    updatePlayerUI();
+
+    // 时间轴从下往上，歌曲开头在图底部 —— 初次打开应停在开头
+    syncSpacer();
+    $("canvasWrap").scrollTop = Math.max(0, totalHeight() - wrapSize().h);
+    needDraw = true;
+    scheduleFrame();
+
+    const st = $("status");
+    let msg = `已解析 <b>${name}</b> · ${fmtBytes(new Blob([text]).size)} · 耗时 ${cost}ms`;
+    if (CHART.audioOffset) msg += ` · AudioOffset ${CHART.audioOffset}ms`;
+    if (CHART.warnings.length) {
+        st.className = "status err";
+        msg += `<br>⚠ ${CHART.warnings.length} 条提示：` + CHART.warnings.slice(0, 3).join("；")
+             + (CHART.warnings.length > 3 ? ` …（共 ${CHART.warnings.length} 条）` : "");
+    } else {
+        st.className = "status ok";
+    }
+    st.innerHTML = msg;
+}
+
+function renderStats() {
+    const s = STATS;
+    const cells = [
+        ["时长", fmtTime(s.duration)],
+        ["物量", s.combo],
+        ["地面单键", s.taps],
+        ["长按", s.holds],
+        ["Arc", s.arcs],
+        ["黑线", s.traceCount],
+        ["天键", s.arctapCount],
+        ["BPM", s.bpmText]
+    ];
+    if (s.groupCount) cells.push(["TimingGroup", s.groupCount]);
+    $("stats").innerHTML = cells.map(([k, v]) => `<div class="stat">${k}<b>${v}</b></div>`).join("");
+}
+
+function baseName() {
+    return (window.lastFileName || "chart").replace(/\.(aff|txt)$/i, "");
+}
+
+function download(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
+}
+
+/* ---------- 事件绑定 ---------- */
+const dropZone = $("dropZone");
+const fileInput = $("fileInput");
+
+function readFile(f) {
+    window.lastFileName = f.name;
+    const r = new FileReader();
+    r.onload = () => loadText(String(r.result), f.name);
+    r.onerror = () => { $("status").className = "status err"; $("status").textContent = "读取文件失败"; };
+    r.readAsText(f, "utf-8");
+}
+
+dropZone.addEventListener("click", e => { if (e.target !== fileInput) fileInput.click(); });
+fileInput.addEventListener("change", () => {
+    const f = fileInput.files && fileInput.files[0];
+    if (f) readFile(f);
+    fileInput.value = "";
+});
+
+["dragenter", "dragover"].forEach(ev =>
+    dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add("dragover"); })
+);
+["dragleave", "drop"].forEach(ev =>
+    dropZone.addEventListener(ev, e => {
+        e.preventDefault();
+        if (ev === "dragleave" && dropZone.contains(e.relatedTarget)) return;
+        dropZone.classList.remove("dragover");
+    })
+);
+dropZone.addEventListener("drop", e => {
+    const f = (e.dataTransfer.files || [])[0];
+    if (f) readFile(f);
+});
+
+$("modeSeg").addEventListener("click", e => {
+    const b = e.target.closest(".seg-btn");
+    if (!b) return;
+    [...$("modeSeg").querySelectorAll(".seg-btn")].forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    view.mode = b.dataset.v;
+    needDraw = true;
+    scheduleFrame();
+});
+
+$("speedSeg").addEventListener("click", e => {
+    const b = e.target.closest(".seg-btn");
+    if (!b) return;
+    [...$("speedSeg").querySelectorAll(".seg-btn")].forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    play.speed = parseFloat(b.dataset.v);
+});
+
+$("zoom").addEventListener("input", e => {
+    const wrap = $("canvasWrap");
+    const h = wrapSize().h;
+    // 保持视口中心对应的时间不变，缩放更跟手
+    const centerT = (PAD_TOP + STATS.duration * view.pxPerMs - (wrap.scrollTop + h / 2)) / view.pxPerMs;
+    view.pxPerMs = sliderToPxPerMs(parseInt(e.target.value, 10));
+    $("zoomVal").textContent = zoomLabel(h);
+    syncSpacer();   // 先撑到新的总高，否则下面的赋值会被旧高度 clamp
+    wrap.scrollTop = Math.max(0,
+        PAD_TOP + STATS.duration * view.pxPerMs - centerT * view.pxPerMs - h / 2);
+    updateSegInfo();
+    needDraw = true;
+    scheduleFrame();
+});
+
+["optBar", "optTrace", "optGround", "optArctap", "optDepth"].forEach(id =>
+    $(id).addEventListener("change", () => { needDraw = true; scheduleFrame(); })
+);
+
+$("playBtn").addEventListener("click", togglePlay);
+
+$("progress").addEventListener("click", e => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const p = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    seekTo(p * STATS.duration);
+    if ($("optFollow").checked) followJudge();
+    needDraw = true;
+    scheduleFrame();
+});
+
+// 点击画布跳转
+$("chart").addEventListener("click", e => {
+    if (!CHART) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    seekTo((PAD_TOP + STATS.duration * view.pxPerMs - (y + $("canvasWrap").scrollTop)) / view.pxPerMs);
+    needDraw = true;
+    scheduleFrame();
+});
+
+$("canvasWrap").addEventListener("scroll", () => { needDraw = true; scheduleFrame(); });
+
+$("segH").addEventListener("input", updateSegInfo);
+$("pngBtn").addEventListener("click", exportSegmentedPNG);
+$("svgBtn").addEventListener("click", exportSVG);
+
+/* ---------- 键盘：方向键拖动 / 缩放 / 播放 ---------- */
+document.addEventListener("keydown", e => {
+    if (!CHART) return;
+    const tag = (e.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "select") return;
+
+    const wrap = $("canvasWrap");
+    const { h } = wrapSize();
+
+    // 时间轴从下往上：↑ 是时间前进（往曲子后面看），↓ 是时间后退
+    switch (e.key) {
+        case "ArrowUp":
+            wrap.scrollTop -= e.shiftKey ? h * 0.9 : h * 0.12;
+            e.preventDefault();
+            break;
+        case "ArrowDown":
+            wrap.scrollTop += e.shiftKey ? h * 0.9 : h * 0.12;
+            e.preventDefault();
+            break;
+        case "ArrowLeft":     // 对数刻度下按固定档位步进，各尺度手感一致
+        case "ArrowRight": {
+            const dir = e.key === "ArrowRight" ? 1 : -1;
+            const cur = pxPerMsToSlider(view.pxPerMs);
+            const next = Math.max(0, Math.min(ZOOM_STEPS, cur + dir * ZOOM_KEY_STEP));
+            if (next !== cur) {
+                $("zoom").value = String(next);
+                $("zoom").dispatchEvent(new Event("input"));
+            }
+            e.preventDefault();
+            break;
+        }
+        case "PageUp":
+            wrap.scrollTop -= h * 0.9;
+            e.preventDefault();
+            break;
+        case "PageDown":
+            wrap.scrollTop += h * 0.9;
+            e.preventDefault();
+            break;
+        case "Home":  // 歌曲开头 = 图底部
+            syncSpacer();
+            wrap.scrollTop = totalHeight();
+            e.preventDefault();
+            break;
+        case "End":   // 歌曲结尾 = 图顶部
+            wrap.scrollTop = 0;
+            e.preventDefault();
+            break;
+        case " ":
+            togglePlay();
+            e.preventDefault();
+            break;
+        default:
+            return;
+    }
+
+    // 滚动后手动同步判定线（未播放时也让判定线跟着走，便于定位）
+    if (!play.on && (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "PageUp" ||
+                     e.key === "PageDown" || e.key === "Home" || e.key === "End")) {
+        play.t = Math.max(0, Math.min(STATS.duration,
+            (PAD_TOP + STATS.duration * view.pxPerMs - (wrap.scrollTop + h * 0.62)) / view.pxPerMs));
+        updatePlayerUI();
+    }
+
+    needDraw = true;
+    scheduleFrame();
+});
+
+window.addEventListener("resize", () => {
+    if (!CHART) return;
+    $("zoomVal").textContent = zoomLabel();
+    updateSegInfo();
+    needDraw = true;
+    scheduleFrame();
+});
+</script>
+
+</body>
+</html>
