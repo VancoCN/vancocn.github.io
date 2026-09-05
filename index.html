@@ -33,42 +33,17 @@
             position: relative;
             z-index: 0;
             background-color: #0a0a0f;
+            background-image:
+                radial-gradient(1200px 700px at 15% -10%, rgba(90, 90, 150, 0.16), transparent 60%),
+                radial-gradient(900px 600px at 100% 0%, rgba(140, 90, 150, 0.12), transparent 55%);
+            background-attachment: fixed;
         }
 
-        /* ==================== 背景层 ==================== */
-        .bg {
-            position: fixed;
-            inset: 0;
-            background-size: cover;
-            background-position: center;
-            filter: blur(28px) saturate(1.3) brightness(0.45);
-            z-index: -3;
-            opacity: 0;
-            transition: opacity 1.8s ease-in-out;
-        }
-
-        .bg.show {
-            opacity: 1;
-        }
-
-        .dark-overlay {
-            position: fixed;
-            inset: 0;
-            background: linear-gradient(
-                160deg,
-                rgba(10, 10, 20, 0.55) 0%,
-                rgba(10, 10, 20, 0.75) 50%,
-                rgba(10, 10, 20, 0.6) 100%
-            );
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            z-index: -2;
-        }
-
+        /* ==================== 噪点层 ==================== */
         .noise-overlay {
             position: fixed;
             inset: 0;
-            opacity: 0.035;
+            opacity: 0.04;
             z-index: -1;
             pointer-events: none;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
@@ -93,45 +68,11 @@
             background-clip: text;
         }
 
-        /* 换背景按钮 */
-        .change-bg-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.06);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            color: #ccc;
-            font-family: inherit;
-            font-size: 0.9em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .change-bg-btn:hover {
-            background: rgba(255,255,255,0.12);
-            border-color: rgba(255,255,255,0.3);
-            color: #fff;
-            transform: scale(1.03);
-        }
-
-        .change-bg-btn svg {
-            width: 18px;
-            height: 18px;
-            fill: currentColor;
-            animation: spin 8s linear infinite;
-        }
-
-        .change-bg-btn:hover svg {
-            animation-duration: 2s;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to   { transform: rotate(360deg); }
+        /* 日期 / 副标题 */
+        .header-meta {
+            font-size: 0.85em;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 2px;
         }
 
         .header-line {
@@ -274,20 +215,309 @@
             letter-spacing: 1px;
         }
 
-        .bg-fade {
-            position: fixed;
-            inset: 0;
-            background-size: cover;
-            background-position: center;
-            filter: blur(28px) saturate(1.3) brightness(0.45);
-            z-index: -4;
-            opacity: 0;
-            transition: opacity 1.5s ease-in-out;
-            pointer-events: none;
+        /* ==================== 今日运势 ==================== */
+        .fortune-card {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            padding: 26px 30px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow:
+                0 4px 24px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.08),
+                inset 0 -1px 0 rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.4s ease, box-shadow 0.4s ease;
         }
 
-        .bg-fade.show {
+        .fortune-card:hover {
+            border-color: rgba(255,255,255,0.18);
+            box-shadow:
+                0 12px 40px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.15),
+                inset 0 -1px 0 rgba(0,0,0,0.15);
+        }
+
+        /* 今日一图 */
+        .fortune-photo {
+            position: relative;
+            flex: 0 0 auto;
+            width: 200px;
+            aspect-ratio: 4 / 3;
+            border-radius: 14px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.14);
+            background:
+                linear-gradient(120deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 加载中骨架微光 */
+        .fortune-photo::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                100deg,
+                transparent 20%,
+                rgba(255,255,255,0.07) 50%,
+                transparent 80%
+            );
+            transform: translateX(-100%);
+            animation: shimmer 1.6s ease-in-out infinite;
+        }
+
+        .fortune-photo.loaded::after {
+            display: none;
+        }
+
+        @keyframes shimmer {
+            to { transform: translateX(100%); }
+        }
+
+        .fortune-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            opacity: 0;
+            transform: scale(1.05);
+            transition: opacity 0.9s ease, transform 0.9s ease;
+        }
+
+        .fortune-photo img.loaded {
             opacity: 1;
+            transform: scale(1);
+        }
+
+        .fortune-photo:hover img.loaded {
+            transform: scale(1.06);
+        }
+
+        /* 换图按钮 */
+        .photo-shuffle {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            z-index: 2;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(10,10,20,0.5);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transform: scale(0.85);
+            transition: all 0.3s ease;
+        }
+
+        .fortune-photo:hover .photo-shuffle {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .photo-shuffle:hover {
+            background: rgba(255,255,255,0.18);
+            border-color: rgba(255,255,255,0.35);
+        }
+
+        .photo-shuffle svg {
+            width: 15px;
+            height: 15px;
+            fill: #fff;
+        }
+
+        .photo-shuffle:hover svg {
+            animation: spin 0.7s ease;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+        /* 加载失败占位 */
+        .photo-fallback {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72em;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 1px;
+        }
+
+        .fortune-photo.failed .photo-fallback {
+            display: flex;
+        }
+
+        .fortune-photo.failed::after {
+            display: none;
+        }
+
+        /* 数字区 */
+        .fortune-score-wrap {
+            flex: 0 0 auto;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .fortune-score {
+            font-size: 3.2em;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -1px;
+            font-variant-numeric: tabular-nums;
+            background: linear-gradient(135deg, #ffffff 0%, #a0a0c0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: filter 0.4s ease;
+        }
+
+        .fortune-score-unit {
+            font-size: 0.32em;
+            font-weight: 600;
+            -webkit-text-fill-color: #8a8a9e;
+            color: #8a8a9e;
+            margin-left: 4px;
+            letter-spacing: 1px;
+        }
+
+        .fortune-score-label {
+            margin-top: 8px;
+            font-size: 0.76em;
+            color: #8a8a9e;
+            letter-spacing: 3px;
+        }
+
+        /* 右侧主体 */
+        .fortune-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .fortune-top {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .fortune-level {
+            font-size: 1.2em;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #cfcfe4;
+            transition: color 0.4s ease, text-shadow 0.4s ease;
+        }
+
+        .fortune-date {
+            font-size: 0.8em;
+            color: #7c7c90;
+            letter-spacing: 1px;
+        }
+
+        .fortune-bar {
+            height: 10px;
+            border-radius: 99px;
+            background: rgba(255,255,255,0.07);
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.45);
+        }
+
+        .fortune-bar-fill {
+            height: 100%;
+            width: 0;
+            border-radius: 99px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.25), #cfcfe4);
+            transition: width 1.4s cubic-bezier(0.22, 0.9, 0.25, 1), background 0.6s ease, box-shadow 0.6s ease;
+        }
+
+        .fortune-comment {
+            margin-top: 14px;
+            font-size: 0.92em;
+            color: #9a9ab0;
+            line-height: 1.7;
+        }
+
+        .fortune-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .fortune-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78em;
+            color: #8f8fa6;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 99px;
+            padding: 5px 13px;
+            letter-spacing: 1px;
+        }
+
+        .fortune-tag b {
+            color: #dcdcea;
+            font-weight: 600;
+        }
+
+        .fortune-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #999;
+            display: inline-block;
+        }
+
+        .fortune-hint {
+            margin-top: 14px;
+            font-size: 0.72em;
+            color: rgba(255,255,255,0.22);
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 900px) {
+            .fortune-card {
+                flex-wrap: wrap;
+                gap: 22px;
+            }
+            .fortune-photo {
+                width: 170px;
+            }
+            .fortune-score-wrap {
+                flex: 1;
+                display: flex;
+                align-items: baseline;
+                justify-content: center;
+                gap: 12px;
+                min-width: 0;
+            }
+            .fortune-score-label {
+                margin-top: 0;
+            }
+            .fortune-main {
+                flex: 1 1 100%;
+            }
         }
 
         @media (max-width: 600px) {
@@ -310,9 +540,31 @@
                 width: 38px;
                 height: 38px;
             }
-            .change-bg-btn {
-                padding: 8px 14px;
-                font-size: 0.82em;
+            .fortune-card {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 20px;
+                padding: 22px 20px;
+            }
+            .fortune-photo {
+                width: 100%;
+                aspect-ratio: 16 / 9;
+            }
+            .photo-shuffle {
+                opacity: 1;
+                transform: scale(1);
+            }
+            .fortune-score-wrap {
+                display: flex;
+                align-items: baseline;
+                justify-content: center;
+                gap: 12px;
+            }
+            .fortune-score {
+                font-size: 2.8em;
+            }
+            .fortune-score-label {
+                margin-top: 0;
             }
         }
     </style>
@@ -320,18 +572,44 @@
 <body>
 
 
-<div class="bg" id="bg"></div>
-
-<div class="bg-fade" id="bgFade"></div>
-
-<div class="dark-overlay"></div>
-
 <div class="noise-overlay"></div>
 
 <div class="page-header">
     <div class="page-title">Vanco的小站</div>
+    <div class="header-meta" id="headerMeta"></div>
 </div>
 <div class="header-line"></div>
+
+<!-- ==================== 今日运势 ==================== -->
+<div class="category-title">今日运势</div>
+<div class="fortune-card" id="fortuneCard">
+    <div class="fortune-photo" id="fortunePhoto" title="换一张">
+        <img id="fortuneImg" alt="今日一图" loading="lazy" decoding="async">
+        <div class="photo-fallback">图片加载失败</div>
+        <div class="photo-shuffle" id="photoShuffle" role="button" aria-label="换一张图片">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4V1L8 5l4 4V6a6 6 0 0 1 6 6h3A9 9 0 0 0 12 4zm0 14a6 6 0 0 1-6-6H3a9 9 0 0 0 9 9v3l4-4-4-4v2z"/></svg>
+        </div>
+    </div>
+    <div class="fortune-score-wrap">
+        <div class="fortune-score"><span id="fortuneScore">--</span><span class="fortune-score-unit">/100</span></div>
+        <div class="fortune-score-label">今日运气值</div>
+    </div>
+    <div class="fortune-main">
+        <div class="fortune-top">
+            <span class="fortune-level" id="fortuneLevel">测算中…</span>
+            <span class="fortune-date" id="fortuneDate"></span>
+        </div>
+        <div class="fortune-bar"><div class="fortune-bar-fill" id="fortuneBar"></div></div>
+        <div class="fortune-comment" id="fortuneComment"></div>
+        <div class="fortune-tags">
+            <span class="fortune-tag">幸运数字 <b id="fortuneNum">-</b></span>
+            <span class="fortune-tag">幸运色 <i class="fortune-dot" id="fortuneDot"></i> <b id="fortuneColorText">-</b></span>
+            <span class="fortune-tag">宜 <b id="fortuneYi">-</b></span>
+            <span class="fortune-tag">忌 <b id="fortuneJi">-</b></span>
+        </div>
+        <div class="fortune-hint">运势每日 00:00 重置 · 结果按本地日期锁定 · 点击图片可临时换一张</div>
+    </div>
+</div>
 
 <!-- ==================== 外部账号 ==================== -->
 <div class="category-title">外部账号</div>
@@ -358,7 +636,7 @@
 
     <a href="https://vancocn.github.io/musicplayer.html" class="tool-card" target="_blank">
         <div class="card-title">在线音乐播放器</div>
-        <div class="card-desc">Vanco 原创曲 & 下载</div>
+        <div class="card-desc">Vanco 原创曲 &amp; 下载</div>
         <div class="card-play-btn">
             <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
         </div>
@@ -370,7 +648,7 @@
 <div class="card-list">
     <a href="https://vancocn.github.io/arg-arc/" class="tool-card" target="_blank">
         <div class="card-title">A.R.C.</div>
-        <div class="card-desc">SHADOW ARC ORGANIZATION · 桥梁计划（网页解密）</div>
+        <div class="card-desc">SHADOW ARC ORGANIZATION · 桥梁计划（ARG）</div>
         <div class="card-play-btn">
             <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
         </div>
@@ -382,7 +660,11 @@
 
 <!-- ==================== JS ==================== -->
 <script>
+    /* ==================== 今日运势 ==================== */
+    const FORTUNE_KEY = "vanco_fortune_v1";
+
     // 背景图列表（来自 vancocn.github.io/bg/）
+    const BG_BASE_URL = "https://vancocn.github.io/bg/";
     const bgImages = [
         "0-3.jpg", "1-1.jpg", "1-8.jpg", "1-ZR.jpg",
         "10-5.jpg", "11-2.jpg", "11-8-1.jpg", "12-6-1.jpg",
@@ -392,57 +674,273 @@
         "23-8.jpg", "E-1_epilogue.jpg", "F-7-2.jpg", "V-10.jpg"
     ];
 
-    const BASE_URL = "https://vancocn.github.io/bg/";
-    let currentBgIndex = -1;
+    // 等级配置（从高到低判断）
+    const FORTUNE_LEVELS = [
+        {
+            min: 95, name: "欧皇附体", color: "#ffd76e",
+            comments: [
+                "今天你就是被概率女神亲吻过的人，抽卡、摇号、抢票，闭眼中。",
+                "运气值溢出，建议把今天攒的运气拿去干一件一直不敢干的事。",
+                "走路都能捡到钱的水平，别浪费，去试试那个一直没敢点的按钮。"
+            ]
+        },
+        {
+            min: 85, name: "大吉", color: "#ffc95c",
+            comments: [
+                "诸事顺遂，适合推进搁置已久的计划。",
+                "今天的努力会被超额回报，放心大胆地冲。",
+                "贵人运在线，多和人聊聊天，机会可能就藏在对话里。"
+            ]
+        },
+        {
+            min: 70, name: "吉", color: "#8fe3b0",
+            comments: [
+                "整体向好，小有惊喜，按计划行事即可。",
+                "稳中有进的一天，适合把待办清单清一清。",
+                "状态不错，适合学习新东西或攻克一个小难点。"
+            ]
+        },
+        {
+            min: 55, name: "小吉", color: "#7fc8ff",
+            comments: [
+                "平平淡淡才是真，做好手头的事就有收获。",
+                "运势温和，没有惊喜也没有惊吓，稳住节奏。",
+                "适合整理、复盘和摸鱼式思考，别给自己太大压力。"
+            ]
+        },
+        {
+            min: 40, name: "平", color: "#a9a9c4",
+            comments: [
+                "无风无浪的一天，按部就班最省心。",
+                "运势中性，别做重大决定，也别担心，就这样挺好。",
+                "适合躺平、听歌、发呆，把能量留到明天。"
+            ]
+        },
+        {
+            min: 25, name: "小凶", color: "#ffab6b",
+            comments: [
+                "小磕小绊难免，出门记得检查钥匙、手机和电量。",
+                "容易在小事上卡壳，重要操作多确认一遍再提交。",
+                "今天适合做简单重复的事，复杂决策建议改天。"
+            ]
+        },
+        {
+            min: 10, name: "凶", color: "#ff7d7d",
+            comments: [
+                "诸事谨慎，文件记得随手保存，别和 BUG 硬碰硬。",
+                "水逆般的一天，能推的事就往后推一推。",
+                "情绪容易烦躁，先照顾好自己，再谈效率。"
+            ]
+        },
+        {
+            min: 0, name: "大凶", color: "#ff5f6d",
+            comments: [
+                "今日宜苟：备份、早睡、别上头。",
+                "建议把今天当练习模式，输了不亏，赢了血赚。",
+                "凡事留三分余地，明天会好起来的——大概率。"
+            ]
+        }
+    ];
 
-    const bgEl = document.getElementById("bg");
-    const bgFadeEl = document.getElementById("bgFade");
+    const YI_LIST = ["截图存档", "听歌摸鱼", "清理桌面", "重构代码", "早睡", "喝杯热饮", "联系老友", "整理歌单", "散步", "写点东西"];
+    const JI_LIST = ["熬夜冲刺", "冲动消费", "删库跑路", "硬刚 BUG", "和人抬杠", "空腹开会", "临时改需求", "点开抽奖", "半夜发消息", "相信玄学"];
 
-    // 随机选一张（不与当前重复）
-    function getRandomIndex() {
-        if (bgImages.length <= 1) return 0;
-        let idx;
-        do {
-            idx = Math.floor(Math.random() * bgImages.length);
-        } while (idx === currentBgIndex);
-        return idx;
+    const WEEKDAYS = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+
+    // 本地日期 key（按本地时区，00:00 翻篇）
+    function getDateKey(d) {
+        d = d || new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
     }
 
-    // 首次加载背景
-    function loadInitialBg() {
-        currentBgIndex = getRandomIndex();
-        const url = `url('${BASE_URL}${bgImages[currentBgIndex]}')`;
-        bgEl.style.backgroundImage = url;
-        // 触发淡入
+    // 字符串 -> 32 位种子（FNV-1a）
+    function hashSeed(str) {
+        let h = 2166136261;
+        for (let i = 0; i < str.length; i++) {
+            h ^= str.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+        }
+        return h >>> 0;
+    }
+
+    // 确定性伪随机数生成器（同一天种子 -> 同一串数字）
+    function mulberry32(a) {
+        return function () {
+            a |= 0;
+            a = (a + 0x6D2B79F5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
+    function pickLevel(score) {
+        for (let i = 0; i < FORTUNE_LEVELS.length; i++) {
+            if (score >= FORTUNE_LEVELS[i].min) return FORTUNE_LEVELS[i];
+        }
+        return FORTUNE_LEVELS[FORTUNE_LEVELS.length - 1];
+    }
+
+    // 依据日期生成当天的运势（纯函数：同一天永远同一结果）
+    function buildFortune(dateKey) {
+        const rand = mulberry32(hashSeed("vanco-fortune::" + dateKey));
+
+        // 三次采样取平均 -> 中间多、两极少，再适度拉伸铺满 0~100
+        const raw = (rand() + rand() + rand()) / 3;
+        const stretched = 0.5 + (raw - 0.5) * 1.35;
+        const score = Math.max(0, Math.min(100, Math.round(stretched * 100)));
+
+        const level = pickLevel(score);
+        const luckyNumber = 1 + Math.floor(rand() * 99);
+        const hue = Math.floor(rand() * 360);
+        const luckyColor = `hsl(${hue}, 70%, 62%)`;
+
+        const comment = level.comments[Math.floor(rand() * level.comments.length)];
+        const yi = YI_LIST[Math.floor(rand() * YI_LIST.length)];
+        let ji = JI_LIST[Math.floor(rand() * JI_LIST.length)];
+        if (ji === yi) ji = JI_LIST[(JI_LIST.indexOf(ji) + 1) % JI_LIST.length];
+
+        return {
+            dateKey, score, levelName: level.name, color: level.color,
+            luckyNumber, luckyColor, comment, yi, ji
+        };
+    }
+
+    // 读取：优先 localStorage，缺失/跨天则重新生成并落盘
+    function loadFortune() {
+        const today = getDateKey();
+        let data = null;
+        try {
+            const cached = JSON.parse(localStorage.getItem(FORTUNE_KEY) || "null");
+            if (cached && cached.dateKey === today && typeof cached.score === "number") {
+                data = cached;
+            }
+        } catch (e) { /* localStorage 不可用（隐私模式等）时忽略 */ }
+
+        if (!data) {
+            data = buildFortune(today);
+            try { localStorage.setItem(FORTUNE_KEY, JSON.stringify(data)); } catch (e) {}
+        }
+        return data;
+    }
+
+    // 数字滚动动画
+    function animateNumber(el, target, duration) {
+        duration = duration || 1300;
+        const start = performance.now();
+        function frame(now) {
+            const p = Math.min(1, (now - start) / duration);
+            const eased = 1 - Math.pow(1 - p, 3);
+            el.textContent = Math.round(target * eased);
+            if (p < 1) requestAnimationFrame(frame);
+            else el.textContent = target;
+        }
+        requestAnimationFrame(frame);
+    }
+
+    function renderFortune(data) {
+        const now = new Date();
+        const dateText = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 · ${WEEKDAYS[now.getDay()]}`;
+
+        document.getElementById("fortuneDate").textContent = dateText;
+        document.getElementById("headerMeta").textContent = dateText;
+
+        document.getElementById("fortuneLevel").textContent = data.levelName;
+        document.getElementById("fortuneLevel").style.color = data.color;
+        document.getElementById("fortuneLevel").style.textShadow = `0 0 18px ${data.color}55`;
+
+        document.getElementById("fortuneComment").textContent = data.comment;
+        document.getElementById("fortuneNum").textContent = data.luckyNumber;
+        document.getElementById("fortuneColorText").textContent = data.luckyColor;
+
+        const dot = document.getElementById("fortuneDot");
+        dot.style.background = data.luckyColor;
+        dot.style.boxShadow = `0 0 10px ${data.luckyColor}`;
+
+        document.getElementById("fortuneYi").textContent = data.yi;
+        document.getElementById("fortuneJi").textContent = data.ji;
+
+        const bar = document.getElementById("fortuneBar");
+        bar.style.background = `linear-gradient(90deg, ${data.color}55, ${data.color})`;
+        bar.style.boxShadow = `0 0 14px ${data.color}88`;
+
+        animateNumber(document.getElementById("fortuneScore"), data.score);
+
+        // 下一帧再设宽度，保证 transition 生效
         requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                bgEl.classList.add("show");
-            });
+            requestAnimationFrame(() => { bar.style.width = data.score + "%"; });
         });
     }
 
-    // 切换背景（淡入淡出）
-    function changeBackground() {
-        const newIndex = getRandomIndex();
-        const newUrl = `url('${BASE_URL}${bgImages[newIndex]}')`;
+    /* ---------- 今日一图 ---------- */
+    const photoEl = document.getElementById("fortunePhoto");
+    const imgEl = document.getElementById("fortuneImg");
 
-        // 先把新图放进 fade 层
-        bgFadeEl.style.backgroundImage = newUrl;
-        bgFadeEl.classList.add("show");
-
-        // 等淡入完成后，把主层换掉，再淡出 fade 层
-        setTimeout(() => {
-            bgEl.style.backgroundImage = newUrl;
-            bgFadeEl.classList.remove("show");
-            currentBgIndex = newIndex;
-        }, 1500); // 与 CSS transition 时间匹配
+    // 当天固定那一张：同一天种子 -> 同一 index，无需存 localStorage
+    function dailyImageIndex(dateKey) {
+        return hashSeed("vanco-fortune-img::" + dateKey) % bgImages.length;
     }
 
-    // 绑定按钮
-    document.getElementById("changeBgBtn").addEventListener("click", changeBackground);
+    let imageIndex = -1;
 
-    // 页面加载完成后启动
-    window.addEventListener("DOMContentLoaded", loadInitialBg);
+    function showImage(index) {
+        if (index < 0 || index >= bgImages.length) return;
+        imageIndex = index;
+        const file = bgImages[index];
+
+        photoEl.classList.remove("loaded", "failed");
+        imgEl.classList.remove("loaded");
+
+        // 预加载，成功后才淡入，避免闪白边
+        const loader = new Image();
+        loader.onload = () => {
+            imgEl.src = loader.src;
+            imgEl.classList.add("loaded");
+            photoEl.classList.add("loaded");
+        };
+        loader.onerror = () => {
+            photoEl.classList.add("failed");
+        };
+        loader.src = BG_BASE_URL + encodeURIComponent(file);
+    }
+
+    // 换一张（仅本次会话，刷新回到当天那张）
+    function shuffleImage() {
+        if (bgImages.length <= 1) return;
+        let idx;
+        do {
+            idx = Math.floor(Math.random() * bgImages.length);
+        } while (idx === imageIndex);
+        showImage(idx);
+    }
+
+    function initFortune() {
+        renderFortune(loadFortune());
+        showImage(dailyImageIndex(getDateKey()));
+
+        // 点击图片或右上角按钮换一张
+        photoEl.addEventListener("click", shuffleImage);
+
+        // 跨零点自动刷新（页面长时间挂着也不会停留在昨天的运势）
+        let todayKey = getDateKey();
+        setInterval(() => {
+            const key = getDateKey();
+            if (key !== todayKey) {
+                todayKey = key;
+                renderFortune(loadFortune());
+                showImage(dailyImageIndex(key));
+            }
+        }, 30000);
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initFortune);
+    } else {
+        initFortune();
+    }
 </script>
 
 </body>
