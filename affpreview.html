@@ -177,6 +177,7 @@
             border-color: rgba(160,160,220,0.4);
             background: rgba(160,160,220,0.18); color: #fff;
         }
+        .btn.tiny { padding: 4px 11px; font-size: 0.76em; border-radius: 8px; }
 
         input[type=number] {
             width: 76px; padding: 6px 9px; border-radius: 8px;
@@ -266,6 +267,36 @@
 
         .footer { margin-top: 50px; text-align: center; color: rgba(255,255,255,0.2); font-size: 0.85em; letter-spacing: 1px; }
 
+        /* 上传区：谱面 + 音乐并排 */
+        .upload-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .drop-zone.alt { border-style: dashed; }
+        .drop-zone.alt .dz-icon { opacity: 0.5; }
+        .optional {
+            display: inline-block; margin-left: 8px; padding: 1px 8px;
+            border-radius: 999px; font-size: 0.72em; letter-spacing: 1px;
+            background: rgba(160,160,220,0.16); color: #a0a0d0;
+            vertical-align: 2px;
+        }
+        .music-bar {
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+            margin-top: 14px; padding: 9px 14px; border-radius: 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.82em;
+        }
+        .mb-name {
+            flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+            white-space: nowrap; color: #a8e6c0;
+        }
+        .mb-time { color: #8888a8; font-variant-numeric: tabular-nums; }
+
+        @media (max-width: 760px) {
+            .upload-row { grid-template-columns: 1fr; }
+        }
         @media (max-width: 600px) {
             body { padding: 16px 18px 40px; }
             .page-title { font-size: 1.8em; }
@@ -284,11 +315,27 @@
 <div class="header-line"></div>
 
 <div class="glass" style="padding:22px 24px">
-    <div class="drop-zone" id="dropZone">
-        <svg class="dz-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>
-        <div class="dz-title">拖拽 .aff 谱面文件到这里，或点击选择</div>
-        <div class="dz-sub">支持 timinggroup、黑线、arctap、浮点轨道等语法</div>
-        <input type="file" id="fileInput" accept=".aff,.txt" hidden>
+    <div class="upload-row">
+        <div class="drop-zone" id="dropZone">
+            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>
+            <div class="dz-title">拖拽 .aff 谱面到这里</div>
+            <div class="dz-sub">支持 timinggroup、黑线、arctap、浮点轨道等语法</div>
+            <input type="file" id="fileInput" accept=".aff,.txt" hidden>
+        </div>
+
+        <div class="drop-zone alt" id="musicZone">
+            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6zm0 14a2 2 0 1 1-2-2 2 2 0 0 1 2 2z"/></svg>
+            <div class="dz-title">上传 base.ogg 音乐<span class="optional">可选</span></div>
+            <div class="dz-sub">不传也能看谱；传了会随谱面一起播放，音画同步</div>
+            <input type="file" id="musicInput" accept=".ogg,audio/ogg" hidden>
+        </div>
+    </div>
+    <div class="music-bar" id="musicBar" hidden>
+        <span class="mb-name" id="musicName">—</span>
+        <span class="mb-time" id="musicTime">0:00</span>
+        <span class="ctl-label" style="margin-left:6px">音量</span>
+        <input type="range" id="musicVol" min="0" max="100" value="70" style="width:76px">
+        <button class="btn tiny" id="musicClear">移除</button>
     </div>
     <div class="status" id="status"></div>
 </div>
@@ -381,11 +428,17 @@
     · 画布采用视口渲染，仅绘制可见区域，因此超长谱面也能流畅拖动与播放<br>
     <br>
     <b>打击音效</b><br>
-    · <b>地面音</b>（低沉的「咚」）：地键、长条头<br>
-    · <b>空中音</b>（清脆的「叮」）：天键、蛇（arc）的头部<br>
+    · <b>地面音</b>（<code>tap.wav</code>）：地键、长条头<br>
+    · <b>空中音</b>（<code>arc.wav</code>）：天键、蛇（arc）的头部<br>
+    · 音源取自站上；若取不到（跨域 / 离线）会自动回退到内置合成音，不会变成哑巴<br>
     · 长条按住过程不再发声，只在头部判定一次；黑线（skyline）头部不判定，但其上的天键照常发声<br>
     · timinggroup 标了 <code>noinput</code> 的物件不参与判定，也不发声<br>
-    · 音效由代码合成、不加载任何外部资源；排期走音频时钟，不靠 rAF，因此不会抖动
+    · 排期走音频时钟，不靠 rAF，因此不会抖动<br>
+    <br>
+    <b>背景音乐</b><br>
+    · 可上传 <code>base.ogg</code>，与谱面一起播放；不传也能正常看谱<br>
+    · 有音乐时，播放位置由音频时钟驱动，音画严格同步且不会漂移；音乐放完会自动退回计时播放<br>
+    · 轨道宽度固定为 620px 并居中，宽屏下音符不会被拉散
 </div>
 
 <div class="footer">Vanco的小站 · 谱面 2D 平面图</div>
@@ -650,13 +703,34 @@ function synthBuffer(ctx, kind) {
     return buf;
 }
 
+/* ---------- 打击音源 ----------
+   优先用站上的真实音源；取不到（跨域 / 404 / 离线）时回退到代码合成音，
+   保证任何情况下都有打击反馈，不会变成哑巴。                              */
+const HIT_SOUND_URLS = {
+    [HIT_GROUND]: "https://vancocn.github.io/music/tap.wav",   // 地键 / 长条
+    [HIT_AIR]:    "https://vancocn.github.io/music/arc.wav"    // 天键 / 蛇
+};
+
 /* ---------- 音频引擎 ---------- */
 const audio = {
     ctx: null, master: null, bufs: null,
     hitIdx: 0,          // 事件游标（只前进）
     pending: [],        // 已排期但未播完的节点，seek 时需掐掉
     voices: 0,          // 当前在响的声部数
-    failed: false
+    failed: false,
+    srcState: "synth",  // synth | loading | external
+    loading: false
+};
+
+/* ---------- 背景音乐 ---------- */
+const music = {
+    buf: null,          // 解码后的 AudioBuffer
+    name: "",
+    src: null,          // 当前播放中的 BufferSource
+    gain: null,
+    playing: false,
+    startedAt: 0,       // 本次 start 对应的音频时钟（秒）
+    startOffset: 0      // 本次 start 对应的谱面位置（秒）
 };
 
 function audioEnabled() {
@@ -686,12 +760,123 @@ function initAudio() {
         tail.connect(ctx.destination);
         audio.ctx = ctx;
         audio.master = master;
+        // 先用合成音顶上，外部音源到位后自动替换
         audio.bufs = [synthBuffer(ctx, HIT_GROUND), synthBuffer(ctx, HIT_AIR)];
+
+        // 音乐通道（与打击音分开，可独立调音量）
+        const mg = ctx.createGain();
+        mg.gain.value = ($("musicVol").value / 100) * 0.85;
+        mg.connect(ctx.destination);
+        music.gain = mg;
+
+        loadHitSounds();
         return ctx;
     } catch (e) {
         audio.failed = true;
         return null;
     }
+}
+
+// 拉取并解码外部打击音源。任一环节失败都静默保留合成音。
+async function loadHitSounds() {
+    if (audio.loading || audio.srcState === "external") return;
+    if (!audio.ctx || !window.fetch || !audio.ctx.decodeAudioData) return;
+    audio.loading = true;
+    audio.srcState = "loading";
+    try {
+        const got = await Promise.all([HIT_GROUND, HIT_AIR].map(async kind => {
+            const res = await fetch(HIT_SOUND_URLS[kind], { mode: "cors", cache: "force-cache" });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            const raw = await res.arrayBuffer();
+            // decodeAudioData 在部分浏览器上仍是回调式，需兼容两种签名
+            return await new Promise((resolve, reject) => {
+                const p = audio.ctx.decodeAudioData(raw, resolve, reject);
+                if (p && typeof p.then === "function") p.then(resolve, reject);
+            });
+        }));
+        audio.bufs = got;
+        audio.srcState = "external";
+    } catch (e) {
+        // 跨域、404、离线都走这里：合成音仍在，功能不受影响
+        audio.srcState = "synth";
+    } finally {
+        audio.loading = false;
+    }
+}
+
+/* ---------- 背景音乐加载 ---------- */
+async function loadMusicFile(file) {
+    const ctx = initAudio();
+    if (!ctx) { setStatus("音频初始化失败，音乐不可用", true); return; }
+    setStatus("正在解码音乐…");
+    try {
+        const raw = await file.arrayBuffer();
+        const buf = await new Promise((resolve, reject) => {
+            const p = ctx.decodeAudioData(raw, resolve, reject);
+            if (p && typeof p.then === "function") p.then(resolve, reject);
+        });
+        stopMusic();
+        music.buf = buf;
+        music.name = file.name;
+        $("musicName").textContent = file.name;
+        $("musicTime").textContent = fmtTime(buf.duration * 1000);
+        $("musicBar").hidden = false;
+        setStatus(`音乐已载入：${file.name}（${fmtTime(buf.duration * 1000)}）`, false, true);
+        // 谱面时长与音乐时长不一致时给出提示，避免误以为同步有问题
+        if (STATS && Math.abs(buf.duration * 1000 - STATS.duration) > 2000) {
+            console.info("[谱面] 音乐时长与谱面时长相差 " +
+                Math.round(Math.abs(buf.duration * 1000 - STATS.duration)) + "ms");
+        }
+    } catch (e) {
+        setStatus("音乐解码失败（需 ogg/vorbis 等浏览器可解的格式）", true);
+    }
+}
+
+function clearMusic() {
+    stopMusic();
+    music.buf = null;
+    music.name = "";
+    $("musicBar").hidden = true;
+    $("musicInput").value = "";
+    setStatus("已移除音乐");
+}
+
+// 从谱面位置 tSec（秒）开始播放音乐
+function startMusic(tSec) {
+    if (!audio.ctx || !music.buf) return;
+    stopMusic();
+    const src = audio.ctx.createBufferSource();
+    src.buffer = music.buf;
+    src.playbackRate.value = play.speed || 1;
+    src.connect(music.gain);
+    // 起点超出音乐长度时不再启动，避免抛错
+    const off = Math.max(0, Math.min(tSec, music.buf.duration - 0.01));
+    src.start(audio.ctx.currentTime, off);
+    music.src = src;
+    music.playing = true;
+    music.startedAt = audio.ctx.currentTime;
+    music.startOffset = off;
+    src.onended = () => {
+        if (music.src !== src) return;      // 已被新的 start 取代
+        music.playing = false;
+        music.src = null;
+    };
+}
+
+function stopMusic() {
+    if (music.src) {
+        try { music.src.onended = null; music.src.stop(); } catch (e) { /* 已结束 */ }
+        try { music.src.disconnect(); } catch (e) { /* 已断开 */ }
+    }
+    music.src = null;
+    music.playing = false;
+}
+
+// 音乐播放时用音频时钟反推谱面位置，音画严格同步、不会漂移
+function musicPositionMs() {
+    if (!music.playing || !audio.ctx) return null;
+    const elapsed = (audio.ctx.currentTime - music.startedAt) * (play.speed || 1);
+    return (music.startOffset + elapsed) * 1000;
 }
 
 // seek / 变速 / 停止时调用：掐掉所有还没响的排期音
@@ -748,7 +933,8 @@ function resetHitCursor() {
 
 function playHit(kind, when) {
     const ctx = audio.ctx;
-    if (!ctx || audio.voices > 24) return;   // 声部上限，避免削波
+    if (!ctx || !audio.bufs || !audio.bufs[kind]) return;
+    if (audio.voices > 24) return;   // 声部上限，避免削波
     const src = ctx.createBufferSource();
     src.buffer = audio.bufs[kind];
     // 轻微随机音高，长时间连续听不机械
@@ -862,6 +1048,8 @@ const GUTTER = 62;
 const PAD_TOP = 14;
 const PAD_BOTTOM = 24;
 const PAD_X = 18;
+// 绘图区（地面四轨）固定像素宽度，居中放置，避免宽屏下轨道被拉散
+const TRACK_W = 620;
 
 function arcPosAt(arc, t) {
     const dur = arc.t2 - arc.t1;
@@ -1016,8 +1204,16 @@ function drawScene(sink, scene) {
 
     const [vMin, vMax] = axisRangeCached(mode, items);
     const vSpan = vMax - vMin || 1;
-    const plotW = width - GUTTER - PAD_X * 2;
-    const toPxX = v => GUTTER + PAD_X + ((v - vMin) / vSpan) * plotW;
+    // 轨道宽度固定，不随浏览器窗口变化：屏幕越宽，两侧留白越多，
+    // 而四轨本身的视觉宽度恒定——否则宽屏上音符会被拉散，反而更难读。
+    const avail = width - GUTTER - PAD_X;
+    const plotW = Math.min(TRACK_W, Math.max(240, avail));
+    // 在画布内居中；左侧至少留出时间刻度栏
+    const plotX = Math.max(GUTTER + 8, Math.round((width - plotW) / 2));
+    const plotR = plotX + plotW;                 // 绘图区右边界
+    // 时间刻度紧贴轨道左侧，宽屏下才不会孤立在角落
+    const tickR = plotX - 8;
+    const toPxX = v => plotX + ((v - vMin) / vSpan) * plotW;
     // 时间轴从下往上：t=0 在底部，t=末尾在顶部。
     // 与游玩时的空间感一致——越晚的音符距离判定线越远（越靠上）。
     const contentH = stats.duration * pxPerMs;
@@ -1048,7 +1244,7 @@ function drawScene(sink, scene) {
             if (t < range.tMin || t > range.tMax) continue;
             const y = toFace(toPxT(t));
             if (y < -10 || y > faceH + 10) continue;
-            sink.line(GUTTER, y, width - PAD_X, y, { stroke: "rgba(255,255,255,0.10)", width: 1 });
+            sink.line(plotX, y, plotR, y, { stroke: "rgba(255,255,255,0.10)", width: 1 });
         }
     }
 
@@ -1196,8 +1392,8 @@ function drawScene(sink, scene) {
             if (t < 0) continue;
             const y = toFace(toPxT(t));
             if (y < 4 || y > faceH - 2) continue;
-            sink.line(GUTTER - 6, y, GUTTER, y, { stroke: "rgba(255,255,255,0.05)", width: 1 });
-            sink.text(GUTTER - 10, y, fmtTime(t), {
+            sink.line(tickR - 6, y, tickR, y, { stroke: "rgba(255,255,255,0.05)", width: 1 });
+            sink.text(tickR - 10, y, fmtTime(t), {
                 fill: "#ffffff", opacity: 0.42, size: 11, anchor: "right", baseline: "middle"
             });
         }
@@ -1207,9 +1403,9 @@ function drawScene(sink, scene) {
     if (judgeT !== null && judgeT !== undefined) {
         const y = toFace(toPxT(judgeT));
         if (y >= -20 && y <= faceH + 20) {
-            sink.rect(GUTTER, y - 1, width - GUTTER - PAD_X, 2, { fill: "#ffe066", opacity: 0.9 });
-            sink.circle(GUTTER + PAD_X, y, 4, { fill: "#ffe066" });
-            sink.text(width - PAD_X, y - 6, fmtTime(judgeT), {
+            sink.rect(plotX, y - 1, plotW, 2, { fill: "#ffe066", opacity: 0.9 });
+            sink.circle(plotX, y, 4, { fill: "#ffe066" });
+            sink.text(plotR, y - 6, fmtTime(judgeT), {
                 fill: "#ffe066", opacity: 0.85, size: 11, anchor: "right", baseline: "alphabetic"
             });
         }
@@ -1360,7 +1556,11 @@ function paintLoop() {
         const now = performance.now();
         const dt = now - play.last;
         play.last = now;
-        play.t += dt * play.speed;
+        // 有音乐时用音频时钟反推位置——音画严格同步，也不会累积漂移；
+        // 没有音乐才退回 rAF 计时。
+        const mp = musicPositionMs();
+        if (mp !== null) play.t = mp;
+        else play.t += dt * play.speed;
         if (play.t >= STATS.duration) { play.t = STATS.duration; }
         if ($("optFollow").checked) followJudge();
         updatePlayerUI();
@@ -1419,9 +1619,11 @@ function startPlay() {
     if (play.t >= STATS.duration) play.t = 0;
     play.on = true;
     play.last = performance.now();
+    initAudio();
     // 浏览器自动播放策略要求音频在用户手势中恢复
-    if (audioEnabled() && initAudio() && audio.ctx.state === "suspended") audio.ctx.resume();
+    if (audio.ctx && audio.ctx.state === "suspended") audio.ctx.resume();
     resetHitCursor();
+    startMusic(play.t / 1000);
     $("playBtn").textContent = "❚❚ 暂停";
     updatePlayerUI();
     scheduleFrame();
@@ -1430,6 +1632,7 @@ function startPlay() {
 function stopPlay() {
     play.on = false;
     cancelPending();   // 暂停后不该再冒出排期中的音
+    stopMusic();
     $("playBtn").textContent = "▶ 播放";
 }
 
@@ -1438,6 +1641,11 @@ function togglePlay() { play.on ? stopPlay() : startPlay(); }
 function seekTo(t) {
     play.t = Math.max(0, Math.min(STATS.duration, t));
     resetHitCursor();
+    // 播放中跳转要重启音乐，否则音乐还在旧位置跑
+    if (play.on) {
+        stopMusic();
+        startMusic(play.t / 1000);
+    }
     updatePlayerUI();
     needDraw = true;
     scheduleFrame();
@@ -1731,6 +1939,12 @@ function download(blob, filename) {
 const dropZone = $("dropZone");
 const fileInput = $("fileInput");
 
+function setStatus(text, isErr, isOk) {
+    const st = $("status");
+    st.className = "status" + (isErr ? " err" : isOk ? " ok" : "");
+    st.textContent = text;
+}
+
 function readFile(f) {
     window.lastFileName = f.name;
     const r = new FileReader();
@@ -1761,6 +1975,30 @@ dropZone.addEventListener("drop", e => {
     if (f) readFile(f);
 });
 
+/* 音乐上传：与谱面区分开，只接受音频 */
+const musicZone = $("musicZone");
+const musicInput = $("musicInput");
+
+musicZone.addEventListener("click", e => { if (e.target !== musicInput) musicInput.click(); });
+musicInput.addEventListener("change", () => {
+    const f = musicInput.files && musicInput.files[0];
+    if (f) loadMusicFile(f);
+});
+["dragenter", "dragover"].forEach(ev =>
+    musicZone.addEventListener(ev, e => { e.preventDefault(); musicZone.classList.add("dragover"); })
+);
+["dragleave", "drop"].forEach(ev =>
+    musicZone.addEventListener(ev, e => {
+        e.preventDefault();
+        if (ev === "dragleave" && musicZone.contains(e.relatedTarget)) return;
+        musicZone.classList.remove("dragover");
+    })
+);
+musicZone.addEventListener("drop", e => {
+    const f = (e.dataTransfer.files || [])[0];
+    if (f) loadMusicFile(f);
+});
+
 $("modeSeg").addEventListener("click", e => {
     const b = e.target.closest(".seg-btn");
     if (!b) return;
@@ -1777,9 +2015,23 @@ $("speedSeg").addEventListener("click", e => {
     [...$("speedSeg").querySelectorAll(".seg-btn")].forEach(x => x.classList.remove("active"));
     b.classList.add("active");
     play.speed = parseFloat(b.dataset.v);
-    // 已排期的音是按旧速率换算的时刻，必须作废重排
-    if (play.on) resetHitCursor();
+    // 已排期的音是按旧速率换算的时刻，必须作废重排；
+    // 音乐也要按新速率重启，否则会继续按旧速率跑
+    if (play.on) {
+        resetHitCursor();
+        stopMusic();
+        startMusic(play.t / 1000);
+    }
 });
+
+$("musicVol").addEventListener("input", () => {
+    if (music.gain && audio.ctx) {
+        const v = ($("musicVol").value / 100) * 0.85;
+        music.gain.gain.setTargetAtTime(v, audio.ctx.currentTime, 0.01);
+    }
+});
+
+$("musicClear").addEventListener("click", clearMusic);
 
 $("hitVol").addEventListener("input", applyHitVolume);
 
