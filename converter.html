@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vanco的格式转换工具</title>
+
+    <!-- 预加载字体 -->
+    <link rel="preload" href="alfyt.ttf" as="font" type="font/ttf" crossorigin>
+
+    <style>
+        /* ==================== 自定义字体 ==================== */
+        @font-face {
+            font-family: "AlfytFont";
+            src: url("alfyt.ttf") format("truetype");
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        /* ==================== 全局重置 ==================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        [hidden] { display: none !important; }
+
+        body {
+            font-family: "AlfytFont", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            color: #e8e8e8;
+            padding: 20px 40px 60px;
+            position: relative;
+            z-index: 0;
+            background-color: #0a0a0f;
+            background-image:
+                radial-gradient(1200px 700px at 15% -10%, rgba(90, 90, 150, 0.16), transparent 60%),
+                radial-gradient(900px 600px at 100% 0%, rgba(140, 90, 150, 0.12), transparent 55%);
+            background-attachment: fixed;
+        }
+
+        .noise-overlay {
+            position: fixed;
+            inset: 0;
+            opacity: 0.04;
+            z-index: -1;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        .page-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 5px;
+        }
+
+        .page-title {
+            font-size: 2.4em;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #ffffff 0%, #a0a0c0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-meta {
+            font-size: 0.85em;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 2px;
+        }
+
+        .header-line {
+            border-top: 2px solid rgba(255,255,255,0.12);
+            margin-bottom: 30px;
+        }
+
+        .category-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin-top: 35px;
+            margin-bottom: 16px;
+            color: #b0b0d0;
+            letter-spacing: 1px;
+            padding-left: 4px;
+            border-left: 3px solid rgba(160, 160, 220, 0.6);
+            padding-left: 12px;
+        }
+
+        /* ==================== 玻璃卡片 ==================== */
+        .glass {
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow:
+                0 4px 24px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.08),
+                inset 0 -1px 0 rgba(0,0,0,0.2);
+        }
+
+        /* ==================== 标签页 ==================== */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .tab {
+            padding: 11px 26px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: #999;
+            font-family: inherit;
+            font-size: 0.95em;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab:hover {
+            color: #e0e0e0;
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.22);
+        }
+
+        .tab.active {
+            color: #fff;
+            background: rgba(160,160,220,0.16);
+            border-color: rgba(160,160,220,0.5);
+            box-shadow: 0 0 22px rgba(160,160,220,0.16);
+        }
+
+        /* ==================== 面板 ==================== */
+        .panel-card {
+            padding: 26px 30px;
+        }
+
+        /* 拖放区 */
+        .drop-zone {
+            border: 1.5px dashed rgba(255,255,255,0.2);
+            border-radius: 14px;
+            padding: 34px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .drop-zone:hover {
+            border-color: rgba(160,160,220,0.55);
+            background: rgba(160,160,220,0.06);
+        }
+
+        .drop-zone.dragover {
+            border-color: rgba(160,160,220,0.9);
+            background: rgba(160,160,220,0.12);
+            transform: scale(1.008);
+        }
+
+        .dz-icon {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 14px;
+            fill: rgba(255,255,255,0.28);
+            transition: fill 0.3s;
+        }
+
+        .drop-zone:hover .dz-icon,
+        .drop-zone.dragover .dz-icon {
+            fill: rgba(200,200,240,0.7);
+        }
+
+        .dz-title {
+            font-size: 1em;
+            color: #d0d0e0;
+            letter-spacing: 1px;
+        }
+
+        .dz-sub {
+            margin-top: 8px;
+            font-size: 0.78em;
+            color: rgba(255,255,255,0.32);
+            letter-spacing: 1px;
+            line-height: 1.7;
+        }
+
+        /* 文件列表 */
+        .file-list {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .fi-icon {
+            flex: 0 0 auto;
+            width: 42px;
+            height: 42px;
+            border-radius: 9px;
+            background: rgba(255,255,255,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.62em;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #b8b8d4;
+            text-transform: uppercase;
+            overflow: hidden;
+        }
+
+        .fi-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .fi-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .fi-name {
+            font-size: 0.9em;
+            color: #dcdcea;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fi-meta {
+            margin-top: 4px;
+            font-size: 0.74em;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 0.5px;
+        }
+
+        .fi-meta.done { color: #8fe3b0; }
+        .fi-meta.err  { color: #ff8f8f; }
+
+        .fi-prog {
+            margin-top: 7px;
+            height: 4px;
+            border-radius: 99px;
+            background: rgba(255,255,255,0.07);
+            overflow: hidden;
+        }
+
+        .fi-prog i {
+            display: block;
+            height: 100%;
+            width: 0;
+            border-radius: 99px;
+            background: linear-gradient(90deg, rgba(160,160,220,0.5), #b8b8e8);
+            transition: width 0.25s ease;
+        }
+
+        .fi-del {
+            flex: 0 0 auto;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: rgba(255,255,255,0.3);
+            font-size: 1.1em;
+            line-height: 1;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+
+        .fi-del:hover {
+            color: #ff8f8f;
+            background: rgba(255,120,120,0.1);
+            border-color: rgba(255,120,120,0.25);
+        }
+
+        /* 选项行 */
+        .opt-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .opt-label {
+            font-size: 0.85em;
+            color: #a8a8c0;
+            letter-spacing: 1px;
+            min-width: 76px;
+        }
+
+        .seg {
+            display: inline-flex;
+            gap: 4px;
+            padding: 4px;
+            border-radius: 11px;
+            background: rgba(0,0,0,0.22);
+            border: 1px solid rgba(255,255,255,0.07);
+            flex-wrap: wrap;
+        }
+
+        .seg-btn {
+            padding: 7px 16px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: #9090a8;
+            font-family: inherit;
+            font-size: 0.85em;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .seg-btn:hover { color: #e0e0e0; }
+
+        .seg-btn.active {
+            color: #fff;
+            background: rgba(160,160,220,0.28);
+            box-shadow: 0 1px 8px rgba(0,0,0,0.3);
+        }
+
+        select.sel {
+            padding: 8px 14px;
+            border-radius: 9px;
+            border: 1px solid rgba(255,255,255,0.13);
+            background: rgba(20,20,32,0.75);
+            color: #dcdcea;
+            font-family: inherit;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        select.sel:focus { border-color: rgba(160,160,220,0.55); }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 170px;
+            height: 4px;
+            border-radius: 99px;
+            background: rgba(255,255,255,0.14);
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #c8c8e8;
+            box-shadow: 0 0 10px rgba(160,160,220,0.6);
+            cursor: pointer;
+        }
+
+        input[type=range]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border: none;
+            border-radius: 50%;
+            background: #c8c8e8;
+            box-shadow: 0 0 10px rgba(160,160,220,0.6);
+            cursor: pointer;
+        }
+
+        .range-val {
+            font-size: 0.82em;
+            color: #c0c0d8;
+            min-width: 42px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .chk {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+            color: #a8a8c0;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .chk input { accent-color: #9090c8; width: 15px; height: 15px; cursor: pointer; }
+
+        /* 运行按钮 */
+        .run-btn {
+            margin-top: 24px;
+            width: 100%;
+            padding: 15px;
+            border-radius: 13px;
+            border: 1px solid rgba(160,160,220,0.35);
+            background: linear-gradient(135deg, rgba(160,160,220,0.22), rgba(120,120,180,0.14));
+            color: #fff;
+            font-family: inherit;
+            font-size: 1em;
+            font-weight: 600;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .run-btn:hover:not(:disabled) {
+            border-color: rgba(160,160,220,0.7);
+            box-shadow: 0 0 26px rgba(160,160,220,0.2);
+            transform: translateY(-1px);
+        }
+
+        .run-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* 状态条 */
+        .status {
+            margin-top: 16px;
+            font-size: 0.82em;
+            color: rgba(255,255,255,0.45);
+            letter-spacing: 1px;
+            min-height: 1.2em;
+            line-height: 1.7;
+        }
+
+        .status.err { color: #ff8f8f; }
+        .status.ok  { color: #8fe3b0; }
+
+        .note {
+            margin-top: 18px;
+            font-size: 0.74em;
+            color: rgba(255,255,255,0.24);
+            letter-spacing: 0.5px;
+            line-height: 1.9;
+        }
+
+        .note b { color: rgba(255,255,255,0.45); font-weight: 600; }
+
+        /* 统计 */
+        .stat-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .stat {
+            padding: 8px 16px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.78em;
+            color: #9090a8;
+            letter-spacing: 1px;
+        }
+
+        .stat b {
+            color: #e0e0f0;
+            font-weight: 700;
+            font-size: 1.15em;
+            margin-left: 6px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .footer {
+            margin-top: 55px;
+            text-align: center;
+            color: rgba(255,255,255,0.2);
+            font-size: 0.85em;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 16px 18px 40px; }
+            .page-title { font-size: 1.8em; }
+            .panel-card { padding: 20px 16px; }
+            .opt-label { min-width: 100%; }
+            .category-title { margin-top: 28px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="noise-overlay"></div>
+
+<div class="page-header">
+    <div class="page-title">格式转换工具</div>
+    <div class="header-meta">纯本地处理 · 文件不会离开你的设备</div>
+</div>
+<div class="header-line"></div>
+
+<div class="tabs">
+    <button class="tab active" data-tab="audio">音频转换</button>
+    <button class="tab" data-tab="image">图片转换</button>
+    <button class="tab" data-tab="lang">MO / PO</button>
+</div>
+
+<!-- ==================== 音频 ==================== -->
+<section class="panel" id="panel-audio">
+    <div class="panel-card glass">
+        <div class="drop-zone" id="audioDrop">
+            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
+            <div class="dz-title">拖拽音频文件到这里，或点击选择</div>
+            <div class="dz-sub">支持 mp3 / wav / ogg / flac / m4a / aac / opus / webm 等浏览器可解码格式<br>可一次选择多个文件</div>
+            <input type="file" id="audioInput" accept="audio/*" multiple hidden>
+        </div>
+
+        <div class="file-list" id="audioFiles"></div>
+
+        <div class="opt-row">
+            <span class="opt-label">输出格式</span>
+            <div class="seg" id="audioFormat">
+                <button class="seg-btn" data-v="wav">WAV</button>
+                <button class="seg-btn active" data-v="mp3">MP3</button>
+                <button class="seg-btn" data-v="ogg">OGG</button>
+            </div>
+        </div>
+
+        <div class="opt-row" id="audioOptMp3">
+            <span class="opt-label">MP3 比特率</span>
+            <div class="seg" id="audioBitrate">
+                <button class="seg-btn" data-v="128">128 kbps</button>
+                <button class="seg-btn active" data-v="192">192 kbps</button>
+                <button class="seg-btn" data-v="256">256 kbps</button>
+                <button class="seg-btn" data-v="320">320 kbps</button>
+            </div>
+        </div>
+
+        <div class="opt-row" id="audioOptOgg" hidden>
+            <span class="opt-label">OGG 质量</span>
+            <div class="seg" id="audioQuality">
+                <button class="seg-btn" data-v="0.3">低 · 约96k</button>
+                <button class="seg-btn active" data-v="0.5">中 · 约160k</button>
+                <button class="seg-btn" data-v="0.7">高 · 约224k</button>
+                <button class="seg-btn" data-v="0.9">极高 · 约320k</button>
+            </div>
+        </div>
+
+        <div class="opt-row" id="audioOptWav" hidden>
+            <span class="opt-label">WAV 位深</span>
+            <div class="seg" id="audioDepth">
+                <button class="seg-btn active" data-v="16">16 bit</button>
+                <button class="seg-btn" data-v="24">24 bit</button>
+            </div>
+        </div>
+
+        <button class="run-btn" id="audioRun">开 始 转 换</button>
+        <div class="status" id="audioStatus"></div>
+
+        <div class="note">
+            <b>说明</b><br>
+            · 解码由浏览器原生完成，能播就能转；编码由 lamejs（MP3）与 libvorbis（OGG）在页面内完成<br>
+            · MP3 / OGG 是纯 JS 编码器，首次切换格式时需下载解码库（OGG 约 2 MB），之后同一页面内不再重复下载<br>
+            · 超过两声道的音源在转 MP3 / OGG 时会取前两声道；WAV 保留全部声道<br>
+            · 有损转无损（如 mp3 → wav）不会恢复丢失的细节，只是换容器
+        </div>
+    </div>
+</section>
+
+<!-- ==================== 图片 ==================== -->
+<section class="panel" id="panel-image" hidden>
+    <div class="panel-card glass">
+        <div class="drop-zone" id="imageDrop">
+            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            <div class="dz-title">拖拽图片文件到这里，或点击选择</div>
+            <div class="dz-sub">支持 png / jpg / jpeg / webp / gif / bmp / ico / avif 等浏览器可解码格式<br>可一次选择多个文件（GIF 只取第一帧）</div>
+            <input type="file" id="imageInput" accept="image/*" multiple hidden>
+        </div>
+
+        <div class="file-list" id="imageFiles"></div>
+
+        <div class="opt-row">
+            <span class="opt-label">输出格式</span>
+            <div class="seg" id="imageFormat">
+                <button class="seg-btn active" data-v="png">PNG</button>
+                <button class="seg-btn" data-v="jpeg">JPEG</button>
+                <button class="seg-btn" data-v="webp">WEBP</button>
+                <button class="seg-btn" data-v="bmp">BMP</button>
+                <button class="seg-btn" data-v="ico">ICO</button>
+            </div>
+        </div>
+
+        <div class="opt-row" id="imgOptQuality">
+            <span class="opt-label">编码质量</span>
+            <input type="range" id="imgQuality" min="30" max="100" value="92">
+            <span class="range-val" id="imgQualityVal">92</span>
+        </div>
+
+        <div class="opt-row" id="imgOptBg" hidden>
+            <span class="opt-label">透明填充</span>
+            <div class="seg" id="imgBg">
+                <button class="seg-btn active" data-v="#ffffff">白色</button>
+                <button class="seg-btn" data-v="#000000">黑色</button>
+            </div>
+        </div>
+
+        <div class="opt-row" id="imgOptIco" hidden>
+            <span class="opt-label">ICO 尺寸</span>
+            <select class="sel" id="icoSize">
+                <option value="256" selected>256 × 256</option>
+                <option value="128">128 × 128</option>
+                <option value="64">64 × 64</option>
+                <option value="48">48 × 48</option>
+                <option value="32">32 × 32</option>
+                <option value="16">16 × 16</option>
+            </select>
+        </div>
+
+        <div class="opt-row">
+            <span class="opt-label">限制最长边</span>
+            <select class="sel" id="imgMax">
+                <option value="0" selected>保持原始尺寸</option>
+                <option value="4096">4096 px</option>
+                <option value="2048">2048 px</option>
+                <option value="1024">1024 px</option>
+                <option value="512">512 px</option>
+                <option value="256">256 px</option>
+            </select>
+        </div>
+
+        <button class="run-btn" id="imageRun">开 始 转 换</button>
+        <div class="status" id="imageStatus"></div>
+
+        <div class="note">
+            <b>说明</b><br>
+            · PNG / JPEG / WEBP 走浏览器原生编码器；BMP 与 ICO 由页面自行拼装字节<br>
+            · JPEG 不支持透明，透明区域会按上方选择的颜色填充；BMP 输出为 32 位带透明通道<br>
+            · ICO 内嵌 PNG 数据，需 Windows Vista 及以后的系统才能正确识别<br>
+            · 画布上限约 16384 px，超长图请先限制尺寸；EXIF 方向由浏览器自动处理
+        </div>
+    </div>
+</section>
+
+<!-- ==================== MO / PO ==================== -->
+<section class="panel" id="panel-lang" hidden>
+    <div class="panel-card glass">
+        <div class="opt-row" style="margin-top:0;padding-top:0;border-top:none">
+            <span class="opt-label">转换方向</span>
+            <div class="seg" id="langMode">
+                <button class="seg-btn active" data-v="mo2po">MO → PO（反编译）</button>
+                <button class="seg-btn" data-v="po2mo">PO → MO（编译）</button>
+            </div>
+        </div>
+
+        <div class="drop-zone" id="langDrop" style="margin-top:20px">
+            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M14 6V4h-4v2H5v2h14V6h-5zm-1 4h-2v2H5v2h6v2h2v-2h6v-2h-6v-2zm-3 8v-2h4v2h-4z"/></svg>
+            <div class="dz-title" id="langDropTitle">拖拽 .mo 文件到这里，或点击选择</div>
+            <div class="dz-sub" id="langDropSub">编译后的二进制语言包 → 可编辑的 gettext 源文件<br>可一次选择多个文件</div>
+            <input type="file" id="langInput" accept=".mo,.po" multiple hidden>
+        </div>
+
+        <div class="file-list" id="langFiles"></div>
+
+        <div class="opt-row" id="langOptMo2Po">
+            <span class="opt-label">导出选项</span>
+            <label class="chk"><input type="checkbox" id="onlyTranslated"> 仅导出已翻译条目</label>
+        </div>
+
+        <div class="opt-row" id="langOptPo2Mo" hidden>
+            <span class="opt-label">编译选项</span>
+            <label class="chk"><input type="checkbox" id="includeFuzzy"> 包含 fuzzy（模糊）条目</label>
+        </div>
+
+        <button class="run-btn" id="langRun">开 始 转 换</button>
+        <div class="status" id="langStatus"></div>
+
+        <div class="stat-row" id="langStats" hidden>
+            <div class="stat">条目总数<b id="stTotal">0</b></div>
+            <div class="stat">已翻译<b id="stTrans">0</b></div>
+            <div class="stat">未翻译<b id="stUntrans">0</b></div>
+            <div class="stat">复数条目<b id="stPlural">0</b></div>
+            <div class="stat">带上下文<b id="stCtx">0</b></div>
+        </div>
+
+        <div class="note">
+            <b>说明</b><br>
+            · .mo 是 gettext 编译后的二进制文件，反编译即还原出可编辑的 .po 源码（含 msgctxt、复数形式与转义）<br>
+            · 自动识别大端 / 小端序，并按 .mo 头部声明的字符集解码（缺省 UTF-8）<br>
+            · PO → MO 会跳过 <code>#~</code> 废弃条目，默认排除 fuzzy 条目，与 msgfmt 的行为一致<br>
+            · 生成的 .mo 不含哈希表，字符串表按字节序排序，可被 gettext / PHP / Python 正常读取
+        </div>
+    </div>
+</section>
+
+<div class="footer">Vanco的小站 · 格式转换</div>
+
+<!-- ==================== JS ==================== -->
+<script>
+/* ==================== 公用 ==================== */
+const $ = id => document.getElementById(id);
+
+function fmtBytes(n) {
+    if (n < 1024) return n + " B";
+    if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
+    if (n < 1073741824) return (n / 1048576).toFixed(2) + " MB";
+    return (n / 1073741824).toFixed(2) + " GB";
+}
+
+function extOf(name) {
+    const i = name.lastIndexOf(".");
+    return i < 0 ? "" : name.slice(i + 1).toLowerCase();
+}
+
+function baseName(name) {
+    const i = name.lastIndexOf(".");
+    return i < 0 ? name : name.slice(0, i);
+}
+
+function yieldUI() { return new Promise(r => setTimeout(r, 0)); }
+
+function download(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
+}
+
+/* ==================== 按需加载编码库 ==================== */
+const LIBS = {
+    lame:   "https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js",
+    vorbis: "https://cdn.jsdelivr.net/npm/vorbis-encoder-js@1.0.2/dist/libvorbis.js"
+};
+
+let _lamejs = null;
+let _libvorbis = null;
+
+// 带进度的 fetch，返回 UTF-8 文本
+async function fetchText(url, onProgress) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("下载失败：HTTP " + res.status);
+
+    if (!res.body || !res.headers.get("content-length")) {
+        return await res.text();
+    }
+    const total = +res.headers.get("content-length");
+    const reader = res.body.getReader();
+    const chunks = [];
+    let received = 0;
+    for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        if (onProgress) onProgress(received, total);
+    }
+    const all = new Uint8Array(received);
+    let p = 0;
+    for (const c of chunks) { all.set(c, p); p += c.length; }
+    return new TextDecoder("utf-8").decode(all);
+}
+
+// 在受控作用域里执行脚本并取回它创建的全局对象。
+// 这两个库都不是 UMD：lamejs 靠 `function lamejs(){...}lamejs();` 挂全局，
+// libvorbis 是 emscripten 产物，靠 `var Module` + `module.exports = Module`。
+function evalModule(src, globalName) {
+    const body = src + "\n;return (typeof " + globalName + " !== 'undefined' ? " + globalName + " : module.exports);";
+    const fn = new Function("module", "exports", "window", "self", "globalThis", body);
+    const mo = { exports: {} };
+    return fn(mo, mo.exports, window, window, window);
+}
+
+async function ensureLame(onProgress) {
+    if (_lamejs) return _lamejs;
+    const src = await fetchText(LIBS.lame, onProgress);
+    const m = evalModule(src, "lamejs");
+    _lamejs = (m && m.Mp3Encoder) ? m : (m && m.default && m.default.Mp3Encoder) ? m.default : m;
+    if (!_lamejs || !_lamejs.Mp3Encoder) throw new Error("lamejs 加载异常，缺少 Mp3Encoder");
+    return _lamejs;
+}
+
+async function ensureVorbis(onProgress) {
+    if (_libvorbis) return _libvorbis;
+    const src = await fetchText(LIBS.vorbis, onProgress);
+    const m = evalModule(src, "Module");
+    if (!m || typeof m._encoder_init !== "function") throw new Error("libvorbis 加载异常，缺少编码器入口");
+    _libvorbis = m;
+    return _libvorbis;
+}
+
+/* ==================== 音频编解码 ==================== */
+let _audioCtx = null;
+function getAudioCtx() {
+    if (!_audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) throw new Error("当前浏览器不支持 Web Audio");
+        _audioCtx = new AC();
+    }
+    return _audioCtx;
+}
+
+async function decodeAudioFile(file) {
+    const buf = await file.arrayBuffer();
+    return await getAudioCtx().decodeAudioData(buf);
+}
+
+function channelsOf(ab, maxCh) {
+    const n = Math.min(ab.numberOfChannels, maxCh);
+    const out = [];
+    for (let c = 0; c < n; c++) out.push(ab.getChannelData(c));
+    return out;
+}
+
+function toInt16(f32) {
+    const out = new Int16Array(f32.length);
+    for (let i = 0; i < f32.length; i++) {
+        let s = f32[i];
+        s = s < -1 ? -1 : s > 1 ? 1 : s;
+        out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    return out;
+}
+
+// ---- WAV ----
+function encodeWav(ab, bitDepth) {
+    const numCh = ab.numberOfChannels;
+    const sr = ab.sampleRate;
+    const n = ab.length;
+    const bytes = bitDepth / 8;
+    const blockAlign = numCh * bytes;
+    const dataSize = n * blockAlign;
+    const buf = new ArrayBuffer(44 + dataSize);
+    const dv = new DataView(buf);
+    const wr = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+
+    wr(0, "RIFF");
+    dv.setUint32(4, 36 + dataSize, true);
+    wr(8, "WAVE");
+    wr(12, "fmt ");
+    dv.setUint32(16, 16, true);
+    dv.setUint16(20, 1, true);            // PCM
+    dv.setUint16(22, numCh, true);
+    dv.setUint32(24, sr, true);
+    dv.setUint32(28, sr * blockAlign, true);
+    dv.setUint16(32, blockAlign, true);
+    dv.setUint16(34, bitDepth, true);
+    wr(36, "data");
+    dv.setUint32(40, dataSize, true);
+
+    const chans = channelsOf(ab, numCh);
+    let off = 44;
+    for (let i = 0; i < n; i++) {
+        for (let c = 0; c < numCh; c++) {
+            let s = chans[c][i];
+            s = s < -1 ? -1 : s > 1 ? 1 : s;
+            if (bytes === 2) {
+                dv.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            } else {
+                const v = Math.round(s < 0 ? s * 8388608 : s * 8388607);
+                dv.setUint8(off, v & 0xff);
+                dv.setUint8(off + 1, (v >> 8) & 0xff);
+                dv.setUint8(off + 2, (v >> 16) & 0xff);
+            }
+            off += bytes;
+        }
+    }
+    return new Blob([buf], { type: "audio/wav" });
+}
+
+// ---- MP3 ----
+async function encodeMp3(ab, kbps, onProgress) {
+    const lamejs = await ensureLame();
+    const sr = ab.sampleRate;
+    const chans = channelsOf(ab, 2);
+    const stereo = chans.length === 2;
+    const n = ab.length;
+
+    const enc = new lamejs.Mp3Encoder(chans.length, sr, kbps);
+    const i16 = chans.map(toInt16);
+    const parts = [];
+    const BLOCK = 1152;
+    const total = Math.ceil(n / BLOCK);
+
+    for (let b = 0, i = 0; b < total; b++, i += BLOCK) {
+        const len = Math.min(BLOCK, n - i);
+        const l = i16[0].subarray(i, i + len);
+        const buf = stereo ? enc.encodeBuffer(l, i16[1].subarray(i, i + len)) : enc.encodeBuffer(l);
+        if (buf.length) parts.push(new Uint8Array(buf));
+        if (b % 40 === 0) {
+            if (onProgress) onProgress(i / n);
+            await yieldUI();
+        }
+    }
+    const tail = enc.flush();
+    if (tail.length) parts.push(new Uint8Array(tail));
+    if (onProgress) onProgress(1);
+    return new Blob(parts, { type: "audio/mpeg" });
+}
+
+// ---- OGG Vorbis ----
+async function encodeOgg(ab, quality, onProgress) {
+    const M = await ensureVorbis();
+    const sr = ab.sampleRate;
+    const chans = channelsOf(ab, 2);
+    const numCh = chans.length;
+    const n = ab.length;
+
+    const setTag = M.cwrap("encoder_set_tag", null, ["number", "string", "string"]);
+    const enc = M._encoder_init(numCh, sr, quality);
+    setTag(enc, "ENCODER", "vancocn-converter");
+    M._encoder_stream_init(enc);
+
+    const pages = [];
+    const pull = () => {
+        const len = M._encoder_data_len(enc);
+        if (len > 0) {
+            const p = M._encoder_transfer_data(enc);
+            pages.push(new Uint8Array(M.HEAPU8.subarray(p, p + len)));
+        }
+    };
+    pull(); // 头部三页
+
+    const BLOCK = 1024;
+    const total = Math.ceil(n / BLOCK);
+    for (let b = 0, i = 0; b < total; b++, i += BLOCK) {
+        const len = Math.min(BLOCK, n - i);
+        const ab_ptr = M._encoder_analysis_buffer(enc, len) >> 2;
+        for (let c = 0; c < numCh; c++) {
+            M.HEAPF32.set(chans[c].subarray(i, i + len), M.HEAPU32[ab_ptr + c] >> 2);
+        }
+        M._encoder_process(enc, len);
+        pull();
+        if (b % 40 === 0) {
+            if (onProgress) onProgress(i / n);
+            await yieldUI();
+        }
+    }
+    M._encoder_process(enc, 0); // flush
+    pull();
+    M._encoder_clear(enc);
+
+    if (onProgress) onProgress(1);
+    return new Blob(pages, { type: "audio/ogg" });
+}
+
+/* ==================== 图片编解码 ==================== */
+function loadImage(file) {
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("无法解码该图片")); };
+        img.src = url;
+    });
+}
+
+function drawToCanvas(img, maxEdge, bgColor) {
+    let w = img.naturalWidth || img.width;
+    let h = img.naturalHeight || img.height;
+    if (!w || !h) throw new Error("图片尺寸异常");
+
+    if (maxEdge > 0 && Math.max(w, h) > maxEdge) {
+        const k = maxEdge / Math.max(w, h);
+        w = Math.max(1, Math.round(w * k));
+        h = Math.max(1, Math.round(h * k));
+    }
+    const MAX = 16384;
+    if (w > MAX || h > MAX) throw new Error("尺寸过大（" + w + "×" + h + "），请限制最长边");
+
+    const cv = document.createElement("canvas");
+    cv.width = w;
+    cv.height = h;
+    const ctx = cv.getContext("2d");
+    if (bgColor) { ctx.fillStyle = bgColor; ctx.fillRect(0, 0, w, h); }
+    ctx.drawImage(img, 0, 0, w, h);
+    return cv;
+}
+
+function canvasToBlob(cv, type, quality) {
+    return new Promise((resolve, reject) => {
+        cv.toBlob(b => b ? resolve(b) : reject(new Error("编码失败，浏览器可能不支持该格式")), type, quality);
+    });
+}
+
+// ---- BMP（32 位 BGRA，自下而上）----
+function encodeBmp(imageData) {
+    const w = imageData.width, h = imageData.height, d = imageData.data;
+    const pixelSize = w * h * 4;
+    const buf = new ArrayBuffer(54 + pixelSize);
+    const dv = new DataView(buf);
+
+    dv.setUint8(0, 0x42); dv.setUint8(1, 0x4D);          // BM
+    dv.setUint32(2, 54 + pixelSize, true);
+    dv.setUint32(10, 54, true);                           // 数据偏移
+    dv.setUint32(14, 40, true);                           // BITMAPINFOHEADER
+    dv.setInt32(18, w, true);
+    dv.setInt32(22, h, true);
+    dv.setUint16(26, 1, true);
+    dv.setUint16(28, 32, true);
+    dv.setUint32(30, 0, true);                            // BI_RGB
+    dv.setUint32(34, pixelSize, true);
+
+    let off = 54;
+    for (let y = h - 1; y >= 0; y--) {
+        for (let x = 0; x < w; x++) {
+            const i = (y * w + x) * 4;
+            dv.setUint8(off, d[i + 2]);     // B
+            dv.setUint8(off + 1, d[i + 1]); // G
+            dv.setUint8(off + 2, d[i]);     // R
+            dv.setUint8(off + 3, d[i + 3]); // A
+            off += 4;
+        }
+    }
+    return new Blob([buf], { type: "image/bmp" });
+}
+
+// ---- ICO（单尺寸，内嵌 PNG）----
+function buildIco(size, pngBytes) {
+    const buf = new ArrayBuffer(22);
+    const dv = new DataView(buf);
+    dv.setUint16(0, 0, true);      // reserved
+    dv.setUint16(2, 1, true);      // type = icon
+    dv.setUint16(4, 1, true);      // count
+    dv.setUint8(6, size >= 256 ? 0 : size);
+    dv.setUint8(7, size >= 256 ? 0 : size);
+    dv.setUint8(8, 0);             // 调色板
+    dv.setUint8(9, 0);             // reserved
+    dv.setUint16(10, 1, true);     // 色彩平面
+    dv.setUint16(12, 32, true);    // 位深
+    dv.setUint32(14, pngBytes.length, true);
+    dv.setUint32(18, 22, true);    // 数据偏移
+    return new Blob([buf, pngBytes], { type: "image/x-icon" });
+}
+
+// 高质量缩放（多次降采样，避免直接缩放产生锯齿）
+function resizeCanvas(src, size) {
+    let cur = src;
+    while (cur.width > size * 2 && cur.height > size * 2) {
+        const tmp = document.createElement("canvas");
+        tmp.width = Math.max(1, Math.round(cur.width / 2));
+        tmp.height = Math.max(1, Math.round(cur.height / 2));
+        const c = tmp.getContext("2d");
+        c.imageSmoothingEnabled = true;
+        c.imageSmoothingQuality = "high";
+        c.drawImage(cur, 0, 0, tmp.width, tmp.height);
+        cur = tmp;
+    }
+    const out = document.createElement("canvas");
+    out.width = size;
+    out.height = size;
+    const c = out.getContext("2d");
+    c.imageSmoothingEnabled = true;
+    c.imageSmoothingQuality = "high";
+    c.drawImage(cur, 0, 0, size, size);
+    return out;
+}
+
+/* ==================== MO / PO ==================== */
+const EOT = "\u0004"; // 上下文分隔
+const NUL = "\u0000"; // 复数分隔
+
+// ---- 解析 .mo（返回原始字节，字符集稍后决定）----
+function parseMoBytes(buf) {
+    const dv = new DataView(buf);
+    if (buf.byteLength < 28) throw new Error("文件过小，不是有效的 .mo 文件");
+    const magic = dv.getUint32(0, true);
+    let le;
+    if (magic === 0x950412de) le = true;
+    else if (magic === 0xde120495) le = false;
+    else throw new Error("魔数为 0x" + magic.toString(16) + "，不是 .mo 文件");
+
+    const u32 = o => dv.getUint32(o, le);
+    const N = u32(8), offO = u32(12), offT = u32(16);
+    if (N === 0) throw new Error("该 .mo 不含任何条目");
+    if (offO + N * 8 > buf.byteLength || offT + N * 8 > buf.byteLength) {
+        throw new Error("字符串表越界（" + N + " 条），文件可能已损坏");
+    }
+    const rawAt = (tbl, i) => {
+        const len = u32(tbl + i * 8), off = u32(tbl + i * 8 + 4);
+        if (off + len > buf.byteLength) throw new Error("第 " + i + " 条字符串越界，文件已损坏");
+        return new Uint8Array(buf, off, len);
+    };
+    const pairs = [];
+    for (let i = 0; i < N; i++) pairs.push({ id: rawAt(offO, i), str: rawAt(offT, i) });
+    return { count: N, pairs, endian: le ? "little" : "big" };
+}
+
+function detectCharset(headerIdBytes, headerStrBytes) {
+    // 头部条目 msgstr 里通常有 charset=XXX
+    const txt = new TextDecoder("utf-8").decode(headerStrBytes);
+    const m = /charset\s*=\s*([\w-]+)/i.exec(txt);
+    let cs = m ? m[1].toLowerCase() : "utf-8";
+    if (cs === "utf8" || cs === "utf-8") cs = "utf-8";
+    if (cs === "charset" || cs === "none") cs = "utf-8";
+    return cs;
+}
+
+function decodeMo(mo) {
+    // 先用 UTF-8 读头部，取出声明的字符集
+    let charset = "utf-8";
+    for (const p of mo.pairs) {
+        if (p.id.length === 0) { charset = detectCharset(p.id, p.str); break; }
+    }
+    let dec;
+    try { dec = new TextDecoder(charset); }
+    catch (e) { dec = new TextDecoder("utf-8"); charset = "utf-8"; }
+
+    return {
+        count: mo.count,
+        endian: mo.endian,
+        charset,
+        entries: mo.pairs.map(p => ({ msgid: dec.decode(p.id), msgstr: dec.decode(p.str) }))
+    };
+}
+
+// ---- MO 条目 -> 结构化 ----
+function splitMoEntry(e) {
+    let ctx = "", id = e.msgid, plural = "";
+    const eot = id.indexOf(EOT);
+    if (eot >= 0) { ctx = id.slice(0, eot); id = id.slice(eot + 1); }
+    const nul = id.indexOf(NUL);
+    if (nul >= 0) { plural = id.slice(nul + 1); id = id.slice(0, nul); }
+    return { msgctxt: ctx, msgid: id, msgid_plural: plural, msgstr: e.msgstr.split(NUL) };
+}
+
+// ---- PO 转义 / 分行 ----
+const ESC_MAP = { "\\": "\\\\", '"': '\\"', "\n": "\\n", "\t": "\\t", "\r": "\\r" };
+function poEscape(s) { return s.replace(/[\\"\n\t\r]/g, c => ESC_MAP[c]); }
+
+function poLines(keyword, s) {
+    if (s === "") return [keyword + ' ""'];
+    if (s.indexOf("\n") < 0) return [keyword + ' "' + poEscape(s) + '"'];
+    const parts = s.split("\n");
+    const out = [keyword + ' ""'];
+    for (let i = 0; i < parts.length; i++) {
+        out.push('"' + poEscape(parts[i]) + (i < parts.length - 1 ? "\\n" : "") + '"');
+    }
+    return out;
+}
+
+function defaultHeader() {
+    return [
+        "Project-Id-Version: PACKAGE VERSION\n",
+        "Report-Msgid-Bugs-To: \n",
+        "Language: zh_CN\n",
+        "MIME-Version: 1.0\n",
+        "Content-Type: text/plain; charset=UTF-8\n",
+        "Content-Transfer-Encoding: 8bit\n",
+        "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+    ].join("");
+}
+
+// ---- MO -> PO ----
+function moToPo(mo, opts) {
+    const lines = [];
+    let header = null;
+    const list = [];
+    for (const e of mo.entries) {
+        if (e.msgid === "") { header = e.msgstr; continue; }
+        list.push(splitMoEntry(e));
+    }
+
+    lines.push("# 由 .mo 反编译生成", "#");
+    lines.push(...poLines("msgid", ""));
+    let hdr = (header && /\S/.test(header)) ? header : defaultHeader();
+    if (!/\n$/.test(hdr)) hdr += "\n";
+    lines.push(...poLines("msgstr", hdr));
+    lines.push("");
+
+    let translated = 0, untranslated = 0, pluralCount = 0, ctxCount = 0;
+    for (const it of list) {
+        const isTrans = it.msgstr.some(s => s !== "");
+        if (opts.onlyTranslated && !isTrans) continue;
+        if (isTrans) translated++; else untranslated++;
+        if (it.msgid_plural) pluralCount++;
+        if (it.msgctxt) ctxCount++;
+
+        if (it.msgctxt) lines.push(...poLines("msgctxt", it.msgctxt));
+        lines.push(...poLines("msgid", it.msgid));
+        if (it.msgid_plural) lines.push(...poLines("msgid_plural", it.msgid_plural));
+        if (it.msgstr.length > 1) {
+            it.msgstr.forEach((s, i) => lines.push(...poLines("msgstr[" + i + "]", s)));
+        } else {
+            lines.push(...poLines("msgstr", it.msgstr[0] || ""));
+        }
+        lines.push("");
+    }
+
+    return {
+        text: lines.join("\n").replace(/\n+$/, "\n"),
+        stats: { total: list.length, translated, untranslated, pluralCount, ctxCount }
+    };
+}
+
+// ---- 解析 .po ----
+function poUnescape(s) {
+    return s.replace(/\\(.)/g, (m, c) => {
+        if (c === "n") return "\n";
+        if (c === "t") return "\t";
+        if (c === "r") return "\r";
+        if (c === "\\") return "\\";
+        if (c === '"') return '"';
+        return c;
+    });
+}
+
+function newEntry() {
+    return { msgctxt: "", msgid: "", msgid_plural: "", msgstr: [], fuzzy: false, obsolete: false };
+}
+
+function parsePo(text) {
+    const lines = text.split(/\r?\n/);
+    const entries = [];
+    let cur = null;
+    let mode = null;   // 当前正在收集的字段
+    let idx = -1;
+
+    const flush = () => { if (cur) entries.push(cur); cur = null; mode = null; idx = -1; };
+    const ensure = () => { if (!cur) cur = newEntry(); return cur; };
+
+    for (let li = 0; li < lines.length; li++) {
+        const line = lines[li].trim();
+
+        if (line === "") { flush(); continue; }
+
+        if (line.charAt(0) === "#") {
+            if (!cur || mode !== null) flush();       // 注释开启新条目
+            const e = ensure();
+            if (/^#~/.test(line)) e.obsolete = true;
+            else if (/^#,/.test(line) && /\bfuzzy\b/.test(line)) e.fuzzy = true;
+            continue;
+        }
+
+        const kw = /^(msgctxt|msgid_plural|msgid|msgstr|msgstr\[(\d+)\])\s*"(.*)"$/.exec(line);
+        if (kw) {
+            const e = ensure();
+            const text0 = poUnescape(kw[3]);
+            if (kw[1] === "msgctxt") { e.msgctxt = text0; mode = "msgctxt"; }
+            else if (kw[1] === "msgid") { e.msgid = text0; mode = "msgid"; }
+            else if (kw[1] === "msgid_plural") { e.msgid_plural = text0; mode = "msgid_plural"; }
+            else if (kw[1] === "msgstr") { e.msgstr = [text0]; mode = "msgstr"; idx = -1; }
+            else { idx = parseInt(kw[2], 10); mode = "msgstrN"; e.msgstr = e.msgstr || []; e.msgstr[idx] = text0; }
+            continue;
+        }
+
+        const cont = /^"(.*)"$/.exec(line);
+        if (cont && cur) {
+            const add = poUnescape(cont[1]);
+            if (mode === "msgctxt") cur.msgctxt += add;
+            else if (mode === "msgid") cur.msgid += add;
+            else if (mode === "msgid_plural") cur.msgid_plural += add;
+            else if (mode === "msgstr") cur.msgstr[0] += add;
+            else if (mode === "msgstrN") cur.msgstr[idx] = (cur.msgstr[idx] || "") + add;
+        }
+    }
+    flush();
+    return entries;
+}
+
+// ---- PO -> MO ----
+function cmpUtf8(a, b) {
+    const ba = new TextEncoder().encode(a);
+    const bb = new TextEncoder().encode(b);
+    const n = Math.min(ba.length, bb.length);
+    for (let i = 0; i < n; i++) {
+        if (ba[i] !== bb[i]) return ba[i] - bb[i];
+    }
+    return ba.length - bb.length;
+}
+
+function buildMo(entries, includeFuzzy) {
+    const enc = new TextEncoder();
+    let list = entries.filter(e => !e.obsolete && (includeFuzzy || !e.fuzzy));
+
+    // 保证有头部条目，并置于首位
+    let header = list.find(e => e.msgid === "");
+    if (!header) {
+        header = newEntry();
+        header.msgstr = [defaultHeader()];
+        list = [header].concat(list);
+    }
+    // 头部不参与排序，永远放最前
+    const rest = list.filter(e => e !== header);
+
+    const pairs = rest.map(e => ({
+        orig: (e.msgctxt ? e.msgctxt + EOT : "") + e.msgid + (e.msgid_plural ? NUL + e.msgid_plural : ""),
+        trans: (e.msgstr || []).join(NUL)
+    }));
+    pairs.sort((a, b) => cmpUtf8(a.orig, b.orig));
+
+    const all = [{ orig: "", trans: (header.msgstr || []).join(NUL) }].concat(pairs);
+
+    const N = all.length;
+    const tblSize = N * 8;
+    const offO = 28, offT = offO + tblSize;
+    let cursor = offT + tblSize;
+
+    const origMeta = [], transMeta = [], dataParts = [];
+    const push = (bytes, meta) => {
+        meta.push({ off: cursor, len: bytes.length });
+        dataParts.push(bytes, new Uint8Array([0]));
+        cursor += bytes.length + 1;
+    };
+    all.forEach(p => push(enc.encode(p.orig), origMeta));
+    all.forEach(p => push(enc.encode(p.trans), transMeta));
+
+    const buf = new ArrayBuffer(cursor);
+    const dv = new DataView(buf);
+    const u8 = new Uint8Array(buf);
+
+    dv.setUint32(0, 0x950412de, true);   // magic（小端）
+    dv.setUint32(4, 0, true);            // revision
+    dv.setUint32(8, N, true);
+    dv.setUint32(12, offO, true);
+    dv.setUint32(16, offT, true);
+    dv.setUint32(20, 0, true);           // 哈希表大小 0
+    dv.setUint32(24, offT + tblSize, true);
+
+    for (let i = 0; i < N; i++) {
+        dv.setUint32(offO + i * 8, origMeta[i].len, true);
+        dv.setUint32(offO + i * 8 + 4, origMeta[i].off, true);
+        dv.setUint32(offT + i * 8, transMeta[i].len, true);
+        dv.setUint32(offT + i * 8 + 4, transMeta[i].off, true);
+    }
+    let p = offT + tblSize;
+    for (const part of dataParts) { u8.set(part, p); p += part.length; }
+
+    return { blob: new Blob([buf], { type: "application/octet-stream" }), count: N };
+}
+
+/* ==================== 文件列表 UI ==================== */
+function makeFileList(container) {
+    let items = [];
+    let seq = 0;
+
+    function render() {
+        container.innerHTML = "";
+        items.forEach(it => {
+            const row = document.createElement("div");
+            row.className = "file-item";
+
+            const icon = document.createElement("div");
+            icon.className = "fi-icon";
+            if (it.thumbUrl) {
+                const im = document.createElement("img");
+                im.src = it.thumbUrl;
+                icon.appendChild(im);
+            } else {
+                icon.textContent = extOf(it.file.name) || "?";
+            }
+
+            const main = document.createElement("div");
+            main.className = "fi-main";
+            const nm = document.createElement("div");
+            nm.className = "fi-name";
+            nm.textContent = it.file.name;
+            const meta = document.createElement("div");
+            meta.className = "fi-meta" + (it.state === "done" ? " done" : it.state === "err" ? " err" : "");
+            meta.textContent = it.meta || fmtBytes(it.file.size);
+            main.appendChild(nm);
+            main.appendChild(meta);
+
+            const prog = document.createElement("div");
+            prog.className = "fi-prog";
+            const bar = document.createElement("i");
+            prog.appendChild(bar);
+            main.appendChild(prog);
+
+            const del = document.createElement("button");
+            del.className = "fi-del";
+            del.type = "button";
+            del.textContent = "×";
+            del.title = "移除";
+            del.addEventListener("click", () => {
+                items = items.filter(x => x.id !== it.id);
+                if (it.thumbUrl) URL.revokeObjectURL(it.thumbUrl);
+                render();
+            });
+
+            row.appendChild(icon);
+            row.appendChild(main);
+            row.appendChild(del);
+            container.appendChild(row);
+
+            it._metaEl = meta;
+            it._barEl = bar;
+        });
+    }
+
+    return {
+        add(files) {
+            if (!files.length) return [];
+            const added = files.map(f => ({ id: ++seq, file: f, meta: fmtBytes(f.size), state: "idle" }));
+            items = items.concat(added);
+            render();
+            return added;
+        },
+        all() { return items; },
+        clear() { items = []; render(); },
+        setMeta(it, text, state) {
+            it.meta = text;
+            if (state) it.state = state;
+            if (it._metaEl) {
+                it._metaEl.textContent = text;
+                it._metaEl.className = "fi-meta" + (state === "done" ? " done" : state === "err" ? " err" : "");
+            }
+        },
+        setProgress(it, v) { if (it._barEl) it._barEl.style.width = Math.round(v * 100) + "%"; },
+        render
+    };
+}
+
+function bindDropZone(zone, input, onFiles) {
+    zone.addEventListener("click", e => {
+        // input.click() 触发的 click 会冒泡回这里，不拦截会无限递归
+        if (e.target === input) return;
+        input.click();
+    });
+    input.addEventListener("change", () => {
+        if (input.files && input.files.length) onFiles(Array.from(input.files));
+        input.value = "";
+    });
+    ["dragenter", "dragover"].forEach(ev =>
+        zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add("dragover"); })
+    );
+    ["dragleave", "drop"].forEach(ev =>
+        zone.addEventListener(ev, e => {
+            e.preventDefault();
+            if (ev === "dragleave" && zone.contains(e.relatedTarget)) return;
+            zone.classList.remove("dragover");
+        })
+    );
+    zone.addEventListener("drop", e => {
+        const fs = Array.from(e.dataTransfer.files || []);
+        if (fs.length) onFiles(fs);
+    });
+}
+
+function bindSeg(segId, onChange) {
+    const seg = $(segId);
+    seg.addEventListener("click", e => {
+        const btn = e.target.closest(".seg-btn");
+        if (!btn) return;
+        Array.from(seg.querySelectorAll(".seg-btn")).forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        onChange(btn.dataset.v);
+    });
+    const active = seg.querySelector(".seg-btn.active");
+    return active ? active.dataset.v : seg.querySelector(".seg-btn").dataset.v;
+}
+
+/* ==================== 标签页 ==================== */
+document.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        document.querySelectorAll(".panel").forEach(p => { p.hidden = true; });
+        $("panel-" + tab.dataset.tab).hidden = false;
+    });
+});
+
+/* ==================== 音频面板 ==================== */
+const audioFiles = makeFileList($("audioFiles"));
+let audioFmt = bindSeg("audioFormat", v => {
+    audioFmt = v;
+    $("audioOptMp3").hidden = v !== "mp3";
+    $("audioOptOgg").hidden = v !== "ogg";
+    $("audioOptWav").hidden = v !== "wav";
+});
+let audioBitrate = bindSeg("audioBitrate", v => { audioBitrate = v; });
+let audioQuality = bindSeg("audioQuality", v => { audioQuality = v; });
+let audioDepth = bindSeg("audioDepth", v => { audioDepth = v; });
+
+bindDropZone($("audioDrop"), $("audioInput"), files => {
+    audioFiles.add(files.filter(f => f.type.startsWith("audio/") || /\.(mp3|wav|ogg|oga|flac|m4a|aac|opus|weba|webm)$/i.test(f.name)));
+});
+
+$("audioRun").addEventListener("click", async () => {
+    const btn = $("audioRun"), st = $("audioStatus");
+    const items = audioFiles.all();
+    if (!items.length) { st.className = "status err"; st.textContent = "请先选择音频文件"; return; }
+
+    btn.disabled = true;
+    st.className = "status";
+
+    let ok = 0, fail = 0;
+    for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        const name = it.file.name;
+        try {
+            audioFiles.setMeta(it, "解码中…");
+            audioFiles.setProgress(it, 0.05);
+            await yieldUI();
+
+            if (audioFmt === "mp3" || audioFmt === "ogg") {
+                const isMp3 = audioFmt === "mp3";
+                await (isMp3 ? ensureLame : ensureVorbis)(() => {
+                    st.textContent = "正在加载 " + (isMp3 ? "MP3" : "OGG") + " 编码器…";
+                });
+            }
+
+            const ab = await decodeAudioFile(it.file);
+            const secs = ab.duration;
+            const info = (secs >= 60 ? Math.floor(secs / 60) + "分" + Math.round(secs % 60) + "秒" : secs.toFixed(1) + "秒")
+                + " · " + (ab.sampleRate / 1000).toFixed(1) + "kHz · " + ab.numberOfChannels + "声道";
+
+            audioFiles.setMeta(it, "编码中… " + info);
+            st.textContent = "(" + (i + 1) + "/" + items.length + ") 正在编码 " + name;
+
+            let blob, ext;
+            if (audioFmt === "wav") {
+                blob = encodeWav(ab, parseInt(audioDepth, 10));
+                ext = "wav";
+            } else if (audioFmt === "mp3") {
+                blob = await encodeMp3(ab, parseInt(audioBitrate, 10), v => audioFiles.setProgress(it, v));
+                ext = "mp3";
+            } else {
+                blob = await encodeOgg(ab, parseFloat(audioQuality), v => audioFiles.setProgress(it, v));
+                ext = "ogg";
+            }
+
+            audioFiles.setProgress(it, 1);
+            audioFiles.setMeta(it, "完成 · " + fmtBytes(blob.size) + " · " + info, "done");
+            download(blob, baseName(name) + "." + ext);
+            ok++;
+            await new Promise(r => setTimeout(r, 400)); // 多文件时错开下载
+        } catch (err) {
+            fail++;
+            audioFiles.setProgress(it, 0);
+            audioFiles.setMeta(it, "失败：" + (err && err.message ? err.message : err), "err");
+        }
+    }
+
+    st.className = "status " + (fail ? "err" : "ok");
+    st.textContent = "完成 " + ok + " 个" + (fail ? "，失败 " + fail + " 个" : "");
+    btn.disabled = false;
+});
+
+/* ==================== 图片面板 ==================== */
+const imageFiles = makeFileList($("imageFiles"));
+let imageFmt = bindSeg("imageFormat", v => {
+    imageFmt = v;
+    $("imgOptQuality").hidden = !(v === "jpeg" || v === "webp");
+    $("imgOptBg").hidden = !(v === "jpeg" || v === "bmp");
+    $("imgOptIco").hidden = v !== "ico";
+});
+let imgBg = bindSeg("imgBg", v => { imgBg = v; });
+
+$("imgQuality").addEventListener("input", e => { $("imgQualityVal").textContent = e.target.value; });
+
+bindDropZone($("imageDrop"), $("imageInput"), files => {
+    const imgs = files.filter(f => f.type.startsWith("image/"));
+    const added = imageFiles.add(imgs);
+    // 生成缩略图
+    added.forEach(it => {
+        const url = URL.createObjectURL(it.file);
+        it.thumbUrl = url;
+    });
+    imageFiles.render();
+});
+
+$("imageRun").addEventListener("click", async () => {
+    const btn = $("imageRun"), st = $("imageStatus");
+    const items = imageFiles.all();
+    if (!items.length) { st.className = "status err"; st.textContent = "请先选择图片文件"; return; }
+
+    btn.disabled = true;
+    st.className = "status";
+
+    const quality = parseInt($("imgQuality").value, 10) / 100;
+    const maxEdge = parseInt($("imgMax").value, 10);
+    const icoSize = parseInt($("icoSize").value, 10);
+    const fmt = imageFmt;
+    const needBg = (fmt === "jpeg" || fmt === "bmp") ? imgBg : null;
+
+    let ok = 0, fail = 0;
+    for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        const name = it.file.name;
+        try {
+            st.textContent = "(" + (i + 1) + "/" + items.length + ") 正在处理 " + name;
+            imageFiles.setMeta(it, "解码中…");
+            imageFiles.setProgress(it, 0.15);
+            await yieldUI();
+
+            const img = await loadImage(it.file);
+            let blob, dim, ext = fmt === "jpeg" ? "jpg" : fmt;
+
+            if (fmt === "ico") {
+                // 先按原尺寸画一次，再逐级降采样到目标尺寸
+                const src = drawToCanvas(img, 0, null);
+                const sq = resizeCanvas(src, icoSize);
+                const png = await canvasToBlob(sq, "image/png");
+                blob = buildIco(icoSize, new Uint8Array(await png.arrayBuffer()));
+                dim = icoSize + "×" + icoSize;
+            } else {
+                // 只在需要时才重画：缩放或填充背景色
+                const cv = drawToCanvas(img, maxEdge, needBg);
+                if (fmt === "bmp") {
+                    const ctx = cv.getContext("2d", { willReadFrequently: true });
+                    blob = encodeBmp(ctx.getImageData(0, 0, cv.width, cv.height));
+                } else {
+                    blob = await canvasToBlob(cv, "image/" + fmt, fmt === "png" ? undefined : quality);
+                }
+                dim = cv.width + "×" + cv.height;
+            }
+
+            imageFiles.setProgress(it, 1);
+            imageFiles.setMeta(it, "完成 · " + dim + " · " + fmtBytes(blob.size), "done");
+            download(blob, baseName(name) + "." + ext);
+            ok++;
+            await new Promise(r => setTimeout(r, 400));
+        } catch (err) {
+            fail++;
+            imageFiles.setProgress(it, 0);
+            imageFiles.setMeta(it, "失败：" + (err && err.message ? err.message : err), "err");
+        }
+    }
+
+    st.className = "status " + (fail ? "err" : "ok");
+    st.textContent = "完成 " + ok + " 个" + (fail ? "，失败 " + fail + " 个" : "");
+    btn.disabled = false;
+});
+
+/* ==================== MO / PO 面板 ==================== */
+const langFiles = makeFileList($("langFiles"));
+let langMode = bindSeg("langMode", v => {
+    langMode = v;
+    const mo2po = v === "mo2po";
+    $("langDropTitle").textContent = mo2po ? "拖拽 .mo 文件到这里，或点击选择" : "拖拽 .po 文件到这里，或点击选择";
+    $("langDropSub").innerHTML = mo2po
+        ? "编译后的二进制语言包 → 可编辑的 gettext 源文件<br>可一次选择多个文件"
+        : "可编辑的 gettext 源文件 → 编译后的二进制语言包<br>可一次选择多个文件";
+    $("langInput").accept = mo2po ? ".mo" : ".po";
+    $("langOptMo2Po").hidden = !mo2po;
+    $("langOptPo2Mo").hidden = mo2po;
+    langFiles.clear();
+    $("langStats").hidden = true;
+    $("langStatus").textContent = "";
+});
+
+bindDropZone($("langDrop"), $("langInput"), files => {
+    const want = langMode === "mo2po" ? ".mo" : ".po";
+    langFiles.add(files.filter(f => extOf(f.name) === want.slice(1)));
+});
+
+$("langRun").addEventListener("click", async () => {
+    const btn = $("langRun"), st = $("langStatus");
+    const items = langFiles.all();
+    if (!items.length) { st.className = "status err"; st.textContent = "请先选择文件"; return; }
+
+    btn.disabled = true;
+    st.className = "status";
+    $("langStats").hidden = true;
+
+    const mo2po = langMode === "mo2po";
+    const onlyTrans = $("onlyTranslated").checked;
+    const incFuzzy = $("includeFuzzy").checked;
+
+    let ok = 0, fail = 0;
+    const agg = { total: 0, translated: 0, untranslated: 0, pluralCount: 0, ctxCount: 0 };
+
+    for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        const name = it.file.name;
+        try {
+            st.textContent = "(" + (i + 1) + "/" + items.length + ") 正在解析 " + name;
+            await yieldUI();
+
+            if (mo2po) {
+                const mo = decodeMo(parseMoBytes(await it.file.arrayBuffer()));
+                const { text, stats } = moToPo(mo, { onlyTranslated: onlyTrans });
+                Object.keys(agg).forEach(k => agg[k] += stats[k]);
+                st.textContent = "(" + (i + 1) + "/" + items.length + ") " + name
+                    + " · " + stats.total + " 条 · " + mo.charset + " · " + mo.endian + " endian";
+                download(new Blob([text], { type: "text/plain;charset=utf-8" }), baseName(name) + ".po");
+            } else {
+                const text = await it.file.text();
+                const entries = parsePo(text);
+                const { blob, count } = buildMo(entries, incFuzzy);
+                const trans = entries.filter(e => e.msgid !== "" && e.msgstr.some(s => s !== "") && !e.obsolete).length;
+                const plural = entries.filter(e => e.msgid_plural && !e.obsolete).length;
+                const ctx = entries.filter(e => e.msgctxt && !e.obsolete).length;
+                const fuzzySkipped = entries.filter(e => e.fuzzy && !e.obsolete).length;
+                agg.total += count - 1;
+                agg.translated += trans;
+                agg.untranslated += Math.max(0, count - 1 - trans);
+                agg.pluralCount += plural;
+                agg.ctxCount += ctx;
+                st.textContent = "(" + (i + 1) + "/" + items.length + ") " + name
+                    + " · 写入 " + (count - 1) + " 条"
+                    + (incFuzzy ? "" : " · 跳过 " + fuzzySkipped + " 条 fuzzy");
+                download(blob, baseName(name) + ".mo");
+            }
+
+            langFiles.setProgress(it, 1);
+            langFiles.setMeta(it, "完成 · 已开始下载", "done");
+            ok++;
+            await new Promise(r => setTimeout(r, 400));
+        } catch (err) {
+            fail++;
+            langFiles.setProgress(it, 0);
+            langFiles.setMeta(it, "失败：" + (err && err.message ? err.message : err), "err");
+        }
+    }
+
+    $("stTotal").textContent = agg.total;
+    $("stTrans").textContent = agg.translated;
+    $("stUntrans").textContent = agg.untranslated;
+    $("stPlural").textContent = agg.pluralCount;
+    $("stCtx").textContent = agg.ctxCount;
+    $("langStats").hidden = false;
+
+    st.className = "status " + (fail ? "err" : "ok");
+    st.textContent = "完成 " + ok + " 个" + (fail ? "，失败 " + fail + " 个" : "");
+    btn.disabled = false;
+});
+</script>
+
+</body>
+</html>
