@@ -330,6 +330,9 @@
     <div class="time-display" id="timeDisp">0:00.000 <small>/ 0:00</small></div>
     <div class="progress" id="progress"><i id="progressBar"></i></div>
     <label class="chk"><input type="checkbox" id="optFollow" checked> 跟随</label>
+    <label class="chk"><input type="checkbox" id="optHitSound" checked> 打击音效</label>
+    <span class="ctl-label" style="margin-left:2px">音量</span>
+    <input type="range" id="hitVol" min="0" max="100" value="55" style="width:80px">
 </div>
 
 <!-- 画布 -->
@@ -375,7 +378,14 @@
     · 纵轴方向对齐游玩视角：越晚的音符离判定线越远，因此排在越上方；判定线固定在视口 62% 处，上方留给即将到来的部分<br>
     · 「俯视」丢掉了 Arc 的高度，可用「高度着色」以明暗补回；「侧视」丢掉左右位置，改看 Arc 的升降<br>
     · 纵轴为绝对时间，timinggroup 内外共用同一时间轴（组内 timing 只影响游戏内流速，不影响此处落点）<br>
-    · 画布采用视口渲染，仅绘制可见区域，因此超长谱面也能流畅拖动与播放
+    · 画布采用视口渲染，仅绘制可见区域，因此超长谱面也能流畅拖动与播放<br>
+    <br>
+    <b>打击音效</b><br>
+    · <b>地面音</b>（低沉的「咚」）：地键、长条头<br>
+    · <b>空中音</b>（清脆的「叮」）：天键、蛇（arc）的头部<br>
+    · 长条按住过程不再发声，只在头部判定一次；黑线（skyline）头部不判定，但其上的天键照常发声<br>
+    · timinggroup 标了 <code>noinput</code> 的物件不参与判定，也不发声<br>
+    · 音效由代码合成、不加载任何外部资源；排期走音频时钟，不靠 rAF，因此不会抖动
 </div>
 
 <div class="footer">Vanco的小站 · 谱面 2D 平面图</div>
@@ -549,6 +559,213 @@ function parseAff(text) {
     }
 
     return chart;
+}
+
+/* ==================================================================
+   打击音效：把谱面压成一串「判定点」事件
+   ------------------------------------------------------------------
+   判定点的归属遵循 Arcaea 的实际判定：
+     · 地键 tap        —— 地面
+     · 长条 hold       —— 地面，只在头部判定一次（按住过程不再发声）
+     · 天键 arctap     —— 空中
+     · 蛇 arc          —— 空中，头部入键点判定一次；黑线（skyline）只是视觉
+                          轨迹，头部不判定，但挂在它上面的天键仍照常发声
+   timinggroup 里的 noinput 物件不参与判定，同样不发声。
+   两类共用音色：地面一种、空中一种。
+   ================================================================== */
+const HIT_GROUND = 0;
+const HIT_AIR = 1;
+
+function buildHitEvents(items) {
+    const ev = [];
+    for (const t of items.taps) {
+        if (t.noInput) continue;
+        ev.push({ t: t.time, kind: HIT_GROUND });
+    }
+    for (const h of items.holds) {
+        // t1==t2 的退化长条不占物量、不判定；t1/t2 可能反写，取较小者为头
+        if (h.noInput || h.t2 === h.t1) continue;
+        ev.push({ t: Math.min(h.t1, h.t2), kind: HIT_GROUND });
+    }
+    for (const a of items.arcs) {
+        if (a.noInput) continue;
+        // 黑线只是视觉轨迹，头部不判定；但挂在它上面的天键仍是独立音符，照常发声
+        if (!a.skyline && a.t2 !== a.t1) ev.push({ t: Math.min(a.t1, a.t2), kind: HIT_AIR });
+        for (const at of a.arctaps) ev.push({ t: at, kind: HIT_AIR });
+    }
+    // 必须按时间升序：调度器只向前推进游标
+    ev.sort((p, q) => p.t - q.t);
+    return ev;
+}
+
+/* ---------- 音效合成（纯代码生成，无外部资源）----------
+   地面：低沉的「咚」——噪声击打 + 190Hz 音体，快速衰减
+   空中：清脆的「叮」——高通噪声 + 1100Hz 音体，更短更亮
+   两者都预渲染成 AudioBuffer，播放时只做 BufferSource，开销极低。      */
+function synthBuffer(ctx, kind) {
+    const sr = ctx.sampleRate;
+    const ground = kind === HIT_GROUND;
+
+    const cfg = ground
+        // 地面（地键 / 长条头）：低沉的「咚」，190Hz 音体 + 短促击打瞬态
+        ? { dur: 0.085, f0: 190, glide: 7, bodyDecay: 38, clickDecay: 280,
+            lpCoef: 0.30, hpCoef: 0, clickMix: 0.60, peak: 0.90, seed: 0x2f6e2b1 }
+        // 空中（天键 / 蛇头）：清脆的「叮」，1150Hz 音体 + 更亮的瞬态
+        : { dur: 0.060, f0: 1150, glide: 4, bodyDecay: 62, clickDecay: 380,
+            lpCoef: 0.70, hpCoef: 0.05, clickMix: 0.50, peak: 0.85, seed: 0x5a17c3d };
+
+    const n = Math.max(1, Math.floor(sr * cfg.dur));
+    const buf = ctx.createBuffer(1, n, sr);
+    const d = buf.getChannelData(0);
+
+    // 定点伪随机：每次生成的音色完全一致，便于回归测试
+    let seed = cfg.seed;
+    const noise = () => {
+        seed = (Math.imul(seed, 1103515245) + 12345) & 0x7fffffff;
+        return seed / 0x3fffffff - 1;
+    };
+
+    const fadeOut = Math.min(n, Math.floor(sr * 0.008));   // 尾部 8ms 淡出
+    let lp = 0, hp = 0, phase = 0;
+    for (let i = 0; i < n; i++) {
+        const t = i / sr;
+        // 频率随时间轻微下滑，听感更像敲击而非持续蜂鸣。
+        // 必须对瞬时频率积分求相位——直接写 sin(2π·f(t)·t) 会产生错误的调频。
+        const f = cfg.f0 * Math.exp(-t * cfg.glide);
+        phase += 2 * Math.PI * f / sr;
+        const body = Math.sin(phase);
+
+        // 击打瞬态：一阶低通噪声，衰减远快于音体，只留起音那一下
+        lp += cfg.lpCoef * (noise() - lp);
+        let click = lp;
+        if (cfg.hpCoef) { hp += cfg.hpCoef * (click - hp); click -= hp; }
+
+        const v = body * Math.exp(-t * cfg.bodyDecay)
+                + click * cfg.clickMix * Math.exp(-t * cfg.clickDecay);
+        // 1.5ms 淡入避免起音爆音；尾部再淡出，避免缓冲区被硬截断产生杂音
+        const atk = Math.min(1, t / 0.0015);
+        const rel = Math.min(1, (n - 1 - i) / fadeOut);
+        d[i] = v * atk * rel * cfg.peak;
+    }
+    return buf;
+}
+
+/* ---------- 音频引擎 ---------- */
+const audio = {
+    ctx: null, master: null, bufs: null,
+    hitIdx: 0,          // 事件游标（只前进）
+    pending: [],        // 已排期但未播完的节点，seek 时需掐掉
+    voices: 0,          // 当前在响的声部数
+    failed: false
+};
+
+function audioEnabled() {
+    return !audio.failed && $("optHitSound").checked;
+}
+
+function initAudio() {
+    if (audio.ctx || audio.failed) return audio.ctx;
+    try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) { audio.failed = true; return null; }
+        const ctx = new AC();
+        const master = ctx.createGain();
+        master.gain.value = ($("hitVol").value / 100) * 0.9;
+        // 密集段可能有十几个音同时响，加一级限幅避免叠加削波
+        let tail = master;
+        if (ctx.createDynamicsCompressor) {
+            const comp = ctx.createDynamicsCompressor();
+            comp.threshold.value = -10;
+            comp.knee.value = 6;
+            comp.ratio.value = 12;
+            comp.attack.value = 0.003;
+            comp.release.value = 0.12;
+            master.connect(comp);
+            tail = comp;
+        }
+        tail.connect(ctx.destination);
+        audio.ctx = ctx;
+        audio.master = master;
+        audio.bufs = [synthBuffer(ctx, HIT_GROUND), synthBuffer(ctx, HIT_AIR)];
+        return ctx;
+    } catch (e) {
+        audio.failed = true;
+        return null;
+    }
+}
+
+// seek / 变速 / 停止时调用：掐掉所有还没响的排期音
+function cancelPending() {
+    if (!audio.ctx) return;
+    for (const src of audio.pending) {
+        try { src.stop(); } catch (e) { /* 已结束，忽略 */ }
+        try { src.disconnect(); } catch (e) { /* 已断开 */ }
+    }
+    audio.pending.length = 0;
+    audio.voices = 0;
+}
+
+function applyHitVolume() {
+    if (audio.master && audio.ctx) {
+        const v = ($("hitVol").value / 100) * 0.9;
+        audio.master.gain.setTargetAtTime(v, audio.ctx.currentTime, 0.01);
+    }
+}
+
+// 把截止到 toT 的判定点排到音频时钟上。游标只前进，因此天然不重不漏。
+// 每帧都用「当前 play.t ↔ ctx.currentTime」重新锚定，不会累积漂移。
+function scheduleHits(toT) {
+    const ctx = audio.ctx;
+    if (!ctx || !HIT_EVENTS.length) return;
+    const now = ctx.currentTime;
+    const speed = play.speed || 1;
+
+    let budget = 16;   // 单帧最多排 16 个，防止密集段把音频图撑爆
+    while (audio.hitIdx < HIT_EVENTS.length && budget-- > 0) {
+        const ev = HIT_EVENTS[audio.hitIdx];
+        if (ev.t > toT) break;
+        // 落后超过 0.5 秒说明是卡顿/切后台导致的积压，丢弃而不是补发一串
+        if (play.t - ev.t > 500) { audio.hitIdx++; continue; }
+        // 谱面时间是毫秒，ctx.currentTime 是秒 —— 必须换算，否则会排到几分钟后
+        const when = Math.max(now, now + (ev.t - play.t) / speed / 1000);
+        playHit(ev.kind, when);
+        audio.hitIdx++;
+    }
+}
+
+// seek / 变速 / 起停都会让排期基线失效，必须重排游标并掐掉已排期的音
+function resetHitCursor() {
+    // 二分定位到当前谱面时间，使游标与 play.t 重新对齐
+    let lo = 0, hi = HIT_EVENTS.length;
+    const t = play.t;
+    while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (HIT_EVENTS[mid].t < t) lo = mid + 1; else hi = mid;
+    }
+    audio.hitIdx = lo;
+    cancelPending();
+}
+
+function playHit(kind, when) {
+    const ctx = audio.ctx;
+    if (!ctx || audio.voices > 24) return;   // 声部上限，避免削波
+    const src = ctx.createBufferSource();
+    src.buffer = audio.bufs[kind];
+    // 轻微随机音高，长时间连续听不机械
+    src.playbackRate.value = 0.97 + Math.random() * 0.06;
+    const g = ctx.createGain();
+    g.gain.value = 1;
+    src.connect(g);
+    g.connect(audio.master);
+    src.start(when);
+    audio.voices++;
+    audio.pending.push(src);
+    src.onended = () => {
+        audio.voices--;
+        const i = audio.pending.indexOf(src);
+        if (i >= 0) audio.pending.splice(i, 1);
+        try { g.disconnect(); } catch (e) { /* 已断开 */ }
+    };
 }
 
 /* ==================================================================
@@ -1026,6 +1243,7 @@ function fmtBytes(n) {
 }
 
 let CHART = null, STATS = null, ITEMS = null, BARS = null;
+let HIT_EVENTS = [];
 let view = { mode: "x", pxPerMs: 0.08 };
 let play = { t: 0, on: false, speed: 1, last: 0, raf: 0 };
 let needDraw = false;
@@ -1143,9 +1361,16 @@ function paintLoop() {
         const dt = now - play.last;
         play.last = now;
         play.t += dt * play.speed;
-        if (play.t >= STATS.duration) { play.t = STATS.duration; stopPlay(); }
+        if (play.t >= STATS.duration) { play.t = STATS.duration; }
         if ($("optFollow").checked) followJudge();
         updatePlayerUI();
+        if (audioEnabled() && initAudio()) {
+            // 排期窗口：提前 120ms（音频时间）把判定点挂上音频时钟，
+            // 换算成谱面时间要乘播放速率；用 rAF 直接触发会抖，必须走音频时钟排期
+            const lead = 0.12 * play.speed * 1000;
+            scheduleHits(play.t + lead);
+        }
+        if (play.t >= STATS.duration) stopPlay();
         needDraw = true;
     }
 
@@ -1194,6 +1419,9 @@ function startPlay() {
     if (play.t >= STATS.duration) play.t = 0;
     play.on = true;
     play.last = performance.now();
+    // 浏览器自动播放策略要求音频在用户手势中恢复
+    if (audioEnabled() && initAudio() && audio.ctx.state === "suspended") audio.ctx.resume();
+    resetHitCursor();
     $("playBtn").textContent = "❚❚ 暂停";
     updatePlayerUI();
     scheduleFrame();
@@ -1201,6 +1429,7 @@ function startPlay() {
 
 function stopPlay() {
     play.on = false;
+    cancelPending();   // 暂停后不该再冒出排期中的音
     $("playBtn").textContent = "▶ 播放";
 }
 
@@ -1208,6 +1437,7 @@ function togglePlay() { play.on ? stopPlay() : startPlay(); }
 
 function seekTo(t) {
     play.t = Math.max(0, Math.min(STATS.duration, t));
+    resetHitCursor();
     updatePlayerUI();
     needDraw = true;
     scheduleFrame();
@@ -1419,11 +1649,14 @@ function loadText(text, name) {
     STATS = chartStats(CHART);
     ITEMS = flatten(CHART);
     BARS = buildBarLines(CHART, STATS.duration);
+    HIT_EVENTS = buildHitEvents(ITEMS);
     const cost = Math.round(performance.now() - t0);
 
     RANGE_CACHE = {};
     stopPlay();
     play.t = 0;
+    cancelPending();
+    audio.hitIdx = 0;
 
     // 初次打开给一个能看清段落结构的尺度（约 15 屏），放大上限则放宽到接近游玩流速
     const targetH = 7000;
@@ -1544,6 +1777,17 @@ $("speedSeg").addEventListener("click", e => {
     [...$("speedSeg").querySelectorAll(".seg-btn")].forEach(x => x.classList.remove("active"));
     b.classList.add("active");
     play.speed = parseFloat(b.dataset.v);
+    // 已排期的音是按旧速率换算的时刻，必须作废重排
+    if (play.on) resetHitCursor();
+});
+
+$("hitVol").addEventListener("input", applyHitVolume);
+
+$("optHitSound").addEventListener("change", () => {
+    if (!audioEnabled()) { cancelPending(); return; }
+    if (initAudio() && audio.ctx.state === "suspended") audio.ctx.resume();
+    applyHitVolume();
+    if (play.on) resetHitCursor();
 });
 
 $("zoom").addEventListener("input", e => {
