@@ -294,6 +294,24 @@
         }
         .mb-time { color: #8888a8; font-variant-numeric: tabular-nums; }
 
+        /* 预设曲目 */
+        .preset-row {
+            display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+            margin-top: 14px; padding-top: 14px;
+            border-top: 1px solid rgba(255,255,255,0.07);
+        }
+        #presetBtn { display: inline-flex; align-items: center; gap: 8px; }
+        .preset-icon { width: 14px; height: 14px; fill: currentColor; flex: none; }
+        .preset-icon.spin { animation: preset-spin 0.9s linear infinite; }
+        @keyframes preset-spin { to { transform: rotate(360deg); } }
+        .preset-hint {
+            font-size: 0.76em; color: rgba(255,255,255,0.28); letter-spacing: 0.5px;
+        }
+        .preset-hint code {
+            padding: 1px 5px; border-radius: 4px; font-size: 0.95em;
+            background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.45);
+        }
+
         @media (max-width: 760px) {
             .upload-row { grid-template-columns: 1fr; }
         }
@@ -336,6 +354,14 @@
         <span class="ctl-label" style="margin-left:6px">音量</span>
         <input type="range" id="musicVol" min="0" max="100" value="70" style="width:76px">
         <button class="btn tiny" id="musicClear">移除</button>
+    </div>
+
+    <div class="preset-row">
+        <button class="btn primary" id="presetBtn">
+            <svg class="preset-icon" viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5a2.83 2.83 0 0 0-4-4L4 16v4zm13.5-13.5 2-2a2.83 2.83 0 0 0-4-4l-2 2 4 4z"/></svg>
+            加载预设谱面
+        </button>
+        <span class="preset-hint">内置自检曲目 · 自动载入 <code>4.aff</code> 与 <code>base.ogg</code></span>
     </div>
     <div class="status" id="status"></div>
 </div>
@@ -451,6 +477,11 @@
     · timinggroup 标了 <code>noinput</code> 的物件不参与判定，也不发声<br>
     · 排期走音频时钟，不靠 rAF，因此不会抖动<br>
     <br>
+    <b>内置自检曲目</b><br>
+    · 点「加载预设谱面」自动载入站上的 <code>test/4.aff</code> 与 <code>test/base.ogg</code>，用于快速自检<br>
+    · 谱面与音乐独立处理：音乐拿不到时谱面照常显示，只是没声音<br>
+    · 若提示加载失败，多半是跨域限制（同源部署或用本地文件打开时不会有此问题）<br>
+    <br>
     <b>背景音乐</b><br>
     · 可上传 <code>base.ogg</code>，与谱面一起播放；不传也能正常看谱<br>
     · 有音乐时，播放位置由音频时钟驱动，音画严格同步且不会漂移；音乐放完会自动退回计时播放<br>
@@ -530,12 +561,29 @@ function parseAff(text) {
         if (line.startsWith("//")) continue;
 
         // ---- timinggroup 块 ----
-        const tgOpen = /^timinggroup\s*(?:\(([^)]*)\))?\s*\{?\s*$/.exec(line);
+        // 三种形态都要认：
+        //   timinggroup(x)          —— 花括号在下一行
+        //   timinggroup(x){         —— 花括号在行尾
+        //   timinggroup(x){ ... };  —— 整块写在一行
+        // 旧正则要求 \{ 之后即行尾，第三种会被整块丢弃（连告警都没有）。
+        const tgOpen = /^timinggroup\s*(?:\(([^)]*)\))?\s*(\{?)([\s\S]*)$/.exec(line);
         if (tgOpen && depth === 0) {
             const attrs = (tgOpen[1] || "").split("_").map(s => s.trim()).filter(Boolean);
+            let rest = (tgOpen[3] || "").trim();
             cur = emptyGroup(attrs);
             depth = 1;
-            if (line.endsWith("}")) { chart.timingGroups.push(cur); cur = chart; depth = 0; }
+            const closed = /\}\s*;?$/.test(rest);
+            if (closed) rest = rest.replace(/\}\s*;?$/, "").trim();
+            if (rest) {
+                for (const stmt of splitStatements(rest)) {
+                    const t2 = stmt.trim();
+                    if (!t2 || t2 === "}") continue;
+                    if (!parseStatement(t2, cur, chart, lineNo)) {
+                        chart.warnings.push("第 " + lineNo + " 行无法识别：" + t2.slice(0, 40));
+                    }
+                }
+            }
+            if (closed) { chart.timingGroups.push(cur); cur = chart; depth = 0; }
             continue;
         }
 
@@ -559,22 +607,65 @@ function parseAff(text) {
 
         if (line === "-") continue;
 
+        // 一行可能写了多条语句（手工编辑或复制粘贴时常见）。
+        // 此前所有正则都锚定整行，这种情况会被整条静默丢弃——不报错也不入谱。
+        // 现在按分号切分后逐条解析，避免无声丢音符。
+        for (const stmt of splitStatements(line)) {
+            if (!parseStatement(stmt, cur, chart, lineNo)) {
+                if (depth === 0 && !/^[}\])]/.test(stmt)) {
+                    chart.warnings.push("第 " + lineNo + " 行无法识别：" + stmt.slice(0, 40));
+                }
+            }
+        }
+    }
+
+    if (depth > 0) {
+        chart.timingGroups.push(cur);
+        chart.warnings.push("存在未闭合的 timinggroup，已按文件末尾自动收束");
+    }
+
+    return chart;
+}
+
+/* 按分号切分一行里的多条语句。
+   括号 / 方括号内不切分，否则 arc(...)[arctap(1),arctap(2)]; 会被拦腰截断。
+   行尾注释也要先剥掉，否则注释里的分号会制造出空语句。 */
+function splitStatements(line) {
+    const c = line.indexOf("//");
+    const body = c >= 0 ? line.slice(0, c) : line;
+    const out = [];
+    let cur = "", depth = 0;
+    for (const ch of body) {
+        if (ch === "(" || ch === "[") depth++;
+        else if (ch === ")" || ch === "]") depth = Math.max(0, depth - 1);
+        if (ch === ";" && depth === 0) {
+            if (cur.trim()) out.push(cur.trim());
+            cur = "";
+        } else cur += ch;
+    }
+    if (cur.trim()) out.push(cur.trim());
+    return out;
+}
+
+/* 解析单条语句（不含分号）。返回 true 表示已识别。 */
+function parseStatement(stmt, cur, chart, lineNo) {
+    {
         // ---- timing ----
-        let m = /^timing\s*\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)\s*;?\s*$/.exec(line);
+        let m = /^timing\s*\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)\s*;?\s*$/.exec(stmt);
         if (m) {
             cur.timing.push({ t: parseFloat(m[1]), bpm: parseFloat(m[2]), beats: parseFloat(m[3]) });
-            continue;
+            return true;
         }
 
         // ---- hold ----
-        m = /^hold\s*\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)\s*;?\s*$/.exec(line);
+        m = /^hold\s*\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)\s*;?\s*$/.exec(stmt);
         if (m) {
             cur.holds.push({ t1: parseFloat(m[1]), t2: parseFloat(m[2]), lane: parseFloat(m[3]) });
-            continue;
+            return true;
         }
 
         // ---- arc（可带 arctap 列表）----
-        m = /^arc\s*\(([^)]*)\)\s*(\[[^\]]*\])?\s*;?\s*$/.exec(line);
+        m = /^arc\s*\(([^)]*)\)\s*(\[[^\]]*\])?\s*;?\s*$/.exec(stmt);
         if (m) {
             const p = m[1].split(",").map(s => s.trim());
             if (p.length >= 10) {
@@ -603,46 +694,38 @@ function parseAff(text) {
                 }
             } else {
                 chart.warnings.push("第 " + lineNo + " 行 arc 字段不足，已跳过");
+                return true;   // 已识别为 arc，只是字段不足
             }
-            continue;
+            return true;
         }
 
         // ---- 地面 tap ----
-        m = /^\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)\s*;?\s*$/.exec(line);
-        if (m) { cur.taps.push({ time: parseFloat(m[1]), lane: parseFloat(m[2]) }); continue; }
+        m = /^\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)\s*;?\s*$/.exec(stmt);
+        if (m) { cur.taps.push({ time: parseFloat(m[1]), lane: parseFloat(m[2]) }); return true; }
 
         // ---- scenecontrol ----
-        m = /^scenecontrol\s*\(\s*([-\d.]+)\s*,\s*([^,)]+)\s*(?:,\s*([-\d.]+)\s*)?(?:,\s*([-\d.]+)\s*)?\)\s*;?\s*$/.exec(line);
+        m = /^scenecontrol\s*\(\s*([-\d.]+)\s*,\s*([^,)]+)\s*(?:,\s*([-\d.]+)\s*)?(?:,\s*([-\d.]+)\s*)?\)\s*;?\s*$/.exec(stmt);
         if (m) {
             cur.scenecontrols.push({
                 t: parseFloat(m[1]), type: m[2].trim(),
                 p1: m[3] !== undefined ? parseFloat(m[3]) : null,
                 p2: m[4] !== undefined ? parseFloat(m[4]) : null
             });
-            continue;
+            return true;
         }
 
-        m = /^camera\s*\(([^)]*)\)\s*;?\s*$/.exec(line);
-        if (m) { cur.cameras.push({ raw: m[1] }); continue; }
+        m = /^camera\s*\(([^)]*)\)\s*;?\s*$/.exec(stmt);
+        if (m) { cur.cameras.push({ raw: m[1] }); return true; }
 
-        m = /^flick\s*\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)\s*;?\s*$/.exec(line);
+        m = /^flick\s*\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)\s*;?\s*$/.exec(stmt);
         if (m) {
             cur.flicks.push({ t: parseFloat(m[1]), x: parseFloat(m[2]), y: parseFloat(m[3]),
                               vx: parseFloat(m[4]), vy: parseFloat(m[5]) });
-            continue;
+            return true;
         }
 
-        if (depth === 0 && line.length > 0 && !/^[}\])]/.test(line)) {
-            chart.warnings.push("第 " + lineNo + " 行无法识别：" + line.slice(0, 40));
-        }
+        return false;
     }
-
-    if (depth > 0) {
-        chart.timingGroups.push(cur);
-        chart.warnings.push("存在未闭合的 timinggroup，已按文件末尾自动收束");
-    }
-
-    return chart;
 }
 
 /* ==================================================================
@@ -742,6 +825,14 @@ const HIT_SOUND_URLS = {
     [HIT_AIR]:    "https://vancocn.github.io/music/arc.wav"    // 天键 / 蛇
 };
 
+/* 内置自检曲目：点一下即可加载谱面 + 音乐，用于快速验证功能是否正常 */
+const PRESET = {
+    chartUrl: "https://vancocn.github.io/test/4.aff",
+    musicUrl: "https://vancocn.github.io/test/base.ogg",
+    chartName: "4.aff",
+    musicName: "base.ogg"
+};
+
 /* ---------- 音频引擎 ---------- */
 const audio = {
     ctx: null, master: null, bufs: null,
@@ -836,41 +927,68 @@ async function loadHitSounds() {
 }
 
 /* ---------- 背景音乐加载 ---------- */
-async function loadMusicFile(file) {
+/* 解码并装载音乐。核心路径与来源无关，File 和 URL 共用。
+   raw 为已读到的 ArrayBuffer。name 仅用于展示。 */
+async function loadMusicBuffer(name, raw) {
     const ctx = initAudio();
-    if (!ctx) { setStatus("音频初始化失败，音乐不可用", true); return; }
+    if (!ctx) { setStatus("音频初始化失败，音乐不可用", true); return false; }
     setStatus("正在解码音乐…");
     try {
-        const raw = await file.arrayBuffer();
         const buf = await new Promise((resolve, reject) => {
             const p = ctx.decodeAudioData(raw, resolve, reject);
             if (p && typeof p.then === "function") p.then(resolve, reject);
         });
         stopMusic();
         music.buf = buf;
-        music.name = file.name;
-        $("musicName").textContent = file.name;
+        music.name = name;
+        $("musicName").textContent = name;
         $("musicTime").textContent = fmtTime(buf.duration * 1000);
         $("musicBar").hidden = false;
-        setStatus(`音乐已载入：${file.name}（${fmtTime(buf.duration * 1000)}）`, false, true);
+        setStatus(`音乐已载入：${name}（${fmtTime(buf.duration * 1000)}）`, false, true);
         // 谱面时长与音乐时长不一致时给出提示，避免误以为同步有问题
         if (STATS && Math.abs(buf.duration * 1000 - STATS.duration) > 2000) {
             console.info("[谱面] 音乐时长与谱面时长相差 " +
                 Math.round(Math.abs(buf.duration * 1000 - STATS.duration)) + "ms");
         }
+        return true;
     } catch (e) {
         setStatus("音乐解码失败（需 ogg/vorbis 等浏览器可解的格式）", true);
+        return false;
     }
 }
 
-function clearMusic() {
+async function loadMusicFile(file) {
+    try {
+        await loadMusicBuffer(file.name, await file.arrayBuffer());
+    } catch (e) {
+        setStatus("音乐读取失败", true);
+    }
+}
+
+// 从 URL 拉取并解码音乐（预设曲目用）
+async function loadMusicUrl(url, fallbackName) {
+    try {
+        const res = await fetch(url, { cache: "force-cache" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const name = fallbackName || url.split("/").pop() || "music";
+        return await loadMusicBuffer(name, await res.arrayBuffer());
+    } catch (e) {
+        setStatus("预设音乐加载失败（跨域或文件不存在）：" + e.message, true);
+        return false;
+    }
+}
+
+// 只清空不提示，便于调用方用自己的文案覆盖状态栏
+function resetMusic(silent) {
     stopMusic();
     music.buf = null;
     music.name = "";
     $("musicBar").hidden = true;
     $("musicInput").value = "";
-    setStatus("已移除音乐");
+    if (!silent) setStatus("已移除音乐");
 }
+
+function clearMusic() { resetMusic(false); }
 
 // 从谱面位置 tSec（秒）开始播放音乐
 function startMusic(tSec) {
@@ -2045,6 +2163,55 @@ function readFile(f) {
     r.readAsText(f, "utf-8");
 }
 
+/* ---------- 内置自检曲目 ----------
+   谱面与音乐是两件独立的事：谱面拿不到就是没得看，音乐拿不到只影响听感。
+   所以分开处理——音乐失败不回滚谱面，只提示一声。                      */
+let presetBusy = false;
+
+async function loadTextUrl(url, name) {
+    const res = await fetch(url, { cache: "no-cache" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.text();
+}
+
+async function loadPreset() {
+    if (presetBusy) return;
+    presetBusy = true;
+    const btn = $("presetBtn");
+    const label = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="preset-icon spin" viewBox="0 0 24 24"><path d="M12 4V2A10 10 0 0 0 2 12h2a8 8 0 0 1 8-8z"/></svg>载入中…';
+
+    let chartOk = false, musicOk = false;
+    try {
+        setStatus("正在载入预设谱面…");
+        const text = await loadTextUrl(PRESET.chartUrl, PRESET.chartName);
+        window.lastFileName = PRESET.chartName;
+        loadText(text, PRESET.chartName);
+        chartOk = true;
+    } catch (e) {
+        setStatus(`预设谱面加载失败：${e.message}（需同域或目标允许跨域）`, true);
+    }
+
+    // 谱面成功后才拉音乐——没有谱面时音乐也没处挂
+    if (chartOk) {
+        setStatus("谱面已载入，正在载入音乐…");
+        // 谱面已经换过了，旧音乐必然对不上；先停掉，失败时再彻底丢弃，
+        // 否则会出现"新谱面配旧音乐"的音画错位。
+        stopMusic();
+        musicOk = await loadMusicUrl(PRESET.musicUrl, PRESET.musicName);
+        if (musicOk) {
+            setStatus(`预设已载入：${PRESET.chartName} + ${PRESET.musicName} · 物量 ${STATS.combo}`, false, true);
+        } else {
+            resetMusic(true);   // 静默丢弃旧音乐，保留上面的失败提示
+        }
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = label;
+    presetBusy = false;
+}
+
 dropZone.addEventListener("click", e => { if (e.target !== fileInput) fileInput.click(); });
 fileInput.addEventListener("change", () => {
     const f = fileInput.files && fileInput.files[0];
@@ -2124,6 +2291,8 @@ $("musicVol").addEventListener("input", () => {
 });
 
 $("musicClear").addEventListener("click", clearMusic);
+
+$("presetBtn").addEventListener("click", loadPreset);
 
 $("hitVol").addEventListener("input", applyHitVolume);
 
