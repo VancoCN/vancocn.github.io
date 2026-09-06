@@ -1,0 +1,2035 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>谱面 3D 视图 · Vanco的小站</title>
+<link rel="preload" href="alfyt.ttf" as="font" type="font/ttf" crossorigin>
+<style>
+
+        @font-face {
+            font-family: "AlfytFont";
+            src: url("alfyt.ttf") format("truetype");
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        [hidden] { display: none !important; }
+
+        body {
+            font-family: "AlfytFont", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            color: #e8e8e8;
+            padding: 20px 40px 60px;
+            position: relative;
+            z-index: 0;
+            background-color: #0a0a0f;
+            background-image:
+                radial-gradient(1200px 700px at 15% -10%, rgba(90, 90, 150, 0.16), transparent 60%),
+                radial-gradient(900px 600px at 100% 0%, rgba(140, 90, 150, 0.12), transparent 55%);
+            background-attachment: fixed;
+        }
+
+        .noise-overlay {
+            position: fixed;
+            inset: 0;
+            opacity: 0.04;
+            z-index: -1;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        .page-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 5px;
+        }
+
+        .page-title {
+            font-size: 2.4em;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #ffffff 0%, #a0a0c0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-meta {
+            font-size: 0.85em;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 2px;
+        }
+
+        .header-line {
+            border-top: 2px solid rgba(255,255,255,0.12);
+            margin-bottom: 26px;
+        }
+
+        .glass {
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow:
+                0 4px 24px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.08),
+                inset 0 -1px 0 rgba(0,0,0,0.2);
+        }
+
+        /* ---------- 拖放区 ---------- */
+        .drop-zone {
+            border: 1.5px dashed rgba(255,255,255,0.2);
+            border-radius: 14px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .drop-zone:hover { border-color: rgba(160,160,220,0.55); background: rgba(160,160,220,0.06); }
+        .drop-zone.dragover { border-color: rgba(160,160,220,0.9); background: rgba(160,160,220,0.12); }
+
+        .dz-icon {
+            width: 38px; height: 38px; margin: 0 auto 12px;
+            fill: rgba(255,255,255,0.28); transition: fill 0.3s;
+        }
+        .drop-zone:hover .dz-icon,
+        .drop-zone.dragover .dz-icon { fill: rgba(200,200,240,0.7); }
+
+        .dz-title { font-size: 1em; color: #d0d0e0; letter-spacing: 1px; }
+        .dz-sub { margin-top: 7px; font-size: 0.78em; color: rgba(255,255,255,0.32); letter-spacing: 1px; }
+
+        /* ---------- 控制栏 ---------- */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px 20px;
+            padding: 14px 18px;
+            margin-top: 18px;
+        }
+
+        .ctl-group { display: flex; align-items: center; gap: 9px; }
+        .ctl-label { font-size: 0.82em; color: #9a9ab4; letter-spacing: 1px; white-space: nowrap; }
+
+        .seg {
+            display: inline-flex; gap: 3px; padding: 3px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.22);
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .seg-btn {
+            padding: 6px 13px; border-radius: 7px; border: none;
+            background: transparent; color: #9090a8;
+            font-family: inherit; font-size: 0.82em; letter-spacing: 1px;
+            cursor: pointer; transition: all 0.25s ease; white-space: nowrap;
+        }
+        .seg-btn:hover { color: #e0e0e0; }
+        .seg-btn.active { color: #fff; background: rgba(160,160,220,0.28); box-shadow: 0 1px 8px rgba(0,0,0,0.3); }
+
+        input[type=range] {
+            -webkit-appearance: none; appearance: none;
+            width: 120px; height: 4px; border-radius: 99px;
+            background: rgba(255,255,255,0.14); outline: none; cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 15px; height: 15px; border-radius: 50%;
+            background: #c8c8e8; box-shadow: 0 0 10px rgba(160,160,220,0.6); cursor: pointer;
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 15px; height: 15px; border: none; border-radius: 50%;
+            background: #c8c8e8; box-shadow: 0 0 10px rgba(160,160,220,0.6); cursor: pointer;
+        }
+
+        .range-val { font-size: 0.8em; color: #c0c0d8; min-width: 158px; font-variant-numeric: tabular-nums; }
+
+        .chk {
+            display: inline-flex; align-items: center; gap: 7px;
+            font-size: 0.82em; color: #9a9ab4; cursor: pointer; user-select: none; white-space: nowrap;
+        }
+        .chk input { accent-color: #9090c8; width: 14px; height: 14px; cursor: pointer; }
+
+        .btn {
+            padding: 7px 15px; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(255,255,255,0.06);
+            color: #d0d0e4; font-family: inherit; font-size: 0.82em;
+            letter-spacing: 1px; cursor: pointer; transition: all 0.25s ease;
+            white-space: nowrap;
+        }
+        .btn:hover:not(:disabled) {
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(255,255,255,0.3); color: #fff;
+        }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn.primary {
+            border-color: rgba(160,160,220,0.4);
+            background: rgba(160,160,220,0.18); color: #fff;
+        }
+        .btn.tiny { padding: 4px 11px; font-size: 0.76em; border-radius: 8px; }
+
+        input[type=number] {
+            width: 76px; padding: 6px 9px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.13);
+            background: rgba(20,20,32,0.75); color: #dcdcea;
+            font-family: inherit; font-size: 0.82em; outline: none;
+        }
+        input[type=number]:focus { border-color: rgba(160,160,220,0.55); }
+
+        /* ---------- 播放栏 ---------- */
+        .player {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px;
+            padding: 12px 18px; margin-top: 12px;
+        }
+
+        .time-display {
+            font-size: 0.9em; color: #e0e0f0; letter-spacing: 1px;
+            font-variant-numeric: tabular-nums; min-width: 118px;
+        }
+        .time-display small { color: rgba(255,255,255,0.35); }
+
+        .progress {
+            flex: 1; min-width: 160px; height: 6px; border-radius: 99px;
+            background: rgba(255,255,255,0.09); cursor: pointer; position: relative;
+        }
+        .progress i {
+            display: block; height: 100%; width: 0; border-radius: 99px;
+            background: linear-gradient(90deg, rgba(160,160,220,0.6), #b8b8e8);
+        }
+
+        /* ---------- 画布 ----------
+           3D 视图不滚动：画布尺寸即视口尺寸，画布外没有内容。
+           （2D 版的滚动容器样式已移除，避免与下面的 .canvas-wrap 冲突） */
+
+        /* ---------- 图例 / 统计 ---------- */
+        .legend {
+            display: flex; flex-wrap: wrap; gap: 8px 16px;
+            margin-top: 14px; font-size: 0.76em; color: #8a8aa4; letter-spacing: 0.5px;
+        }
+        .legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .legend i { width: 13px; height: 4px; border-radius: 99px; display: inline-block; }
+        .legend i.dot { width: 9px; height: 9px; border-radius: 50%; }
+
+        .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+        .stat {
+            padding: 9px 16px; border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.78em; color: #8a8aa4; letter-spacing: 1px;
+        }
+        .stat b { color: #e8e8f5; font-weight: 700; font-size: 1.2em; margin-left: 8px; font-variant-numeric: tabular-nums; }
+
+        .status {
+            margin-top: 14px; font-size: 0.82em;
+            color: rgba(255,255,255,0.45); letter-spacing: 1px;
+            min-height: 1.2em; line-height: 1.7;
+        }
+        .status.err { color: #ff8f8f; }
+        .status.ok { color: #8fe3b0; }
+
+        .note { margin-top: 18px; font-size: 0.74em; color: rgba(255,255,255,0.24); letter-spacing: 0.5px; line-height: 1.9; }
+        .note b { color: rgba(255,255,255,0.45); font-weight: 600; }
+
+        kbd {
+            display: inline-block; padding: 1px 6px; margin: 0 1px;
+            border-radius: 5px; border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.07);
+            font-family: inherit; font-size: 0.95em; color: #c8c8e0;
+        }
+
+        .footer { margin-top: 50px; text-align: center; color: rgba(255,255,255,0.2); font-size: 0.85em; letter-spacing: 1px; }
+
+        /* 上传区：谱面 + 音乐并排 */
+        .upload-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .drop-zone.alt { border-style: dashed; }
+        .drop-zone.alt .dz-icon { opacity: 0.5; }
+        .optional {
+            display: inline-block; margin-left: 8px; padding: 1px 8px;
+            border-radius: 999px; font-size: 0.72em; letter-spacing: 1px;
+            background: rgba(160,160,220,0.16); color: #a0a0d0;
+            vertical-align: 2px;
+        }
+        .music-bar {
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+            margin-top: 14px; padding: 9px 14px; border-radius: 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.82em;
+        }
+        .mb-name {
+            flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+            white-space: nowrap; color: #a8e6c0;
+        }
+        .mb-time { color: #8888a8; font-variant-numeric: tabular-nums; }
+
+        /* 预设曲目 */
+        .preset-row {
+            display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+            margin-top: 14px; padding-top: 14px;
+            border-top: 1px solid rgba(255,255,255,0.07);
+        }
+        #presetBtn { display: inline-flex; align-items: center; gap: 8px; }
+        .preset-icon { width: 14px; height: 14px; fill: currentColor; flex: none; }
+        .preset-icon.spin { animation: preset-spin 0.9s linear infinite; }
+        @keyframes preset-spin { to { transform: rotate(360deg); } }
+        .preset-hint {
+            font-size: 0.76em; color: rgba(255,255,255,0.28); letter-spacing: 0.5px;
+        }
+        .preset-hint code {
+            padding: 1px 5px; border-radius: 4px; font-size: 0.95em;
+            background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.45);
+        }
+
+        @media (max-width: 760px) {
+            .upload-row { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 600px) {
+            body { padding: 16px 18px 40px; }
+            .page-title { font-size: 1.8em; }
+            .controls, .player { padding: 12px; gap: 10px 12px; }
+        }
+
+        /* ===== 3D 视图特有 ===== */
+        .canvas-wrap {
+            position: relative; border-radius: 16px; overflow: hidden; margin-top: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 44px rgba(0, 0, 0, 0.5);
+            background: #06070d; line-height: 0;
+        }
+        #view3d { display: block; width: 100%; cursor: grab; touch-action: none; }
+        #view3d.dragging { cursor: grabbing; }
+        .hud {
+            position: absolute; left: 0; right: 0; bottom: 0;
+            display: flex; justify-content: space-between; gap: 12px;
+            padding: 8px 14px; line-height: 1.4;
+            font-size: 0.76em; letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.45);
+            background: linear-gradient(to top, rgba(0,0,0,0.55), transparent);
+            pointer-events: none; font-variant-numeric: tabular-nums;
+        }
+        .vp-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .ctl-group.grow { flex: 1 1 auto; }
+        @media (max-width: 700px) { .hud { font-size: 0.68em; } }
+
+</style>
+</head>
+<body>
+
+<div class="noise-overlay"></div>
+
+<div class="page-header">
+    <div class="page-title">谱面 3D 视图</div>
+    <div class="header-meta">Arcaea .aff → 透视空间 · 纯本地解析</div>
+</div>
+<div class="header-line"></div>
+
+<div class="glass" style="padding:22px 24px">
+    <div class="upload-row">
+        <div class="drop-zone" id="dropZone">
+            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>
+            <div class="dz-title">拖拽 .aff 谱面到这里</div>
+            <div class="dz-sub">支持 timinggroup、黑线、arctap、浮点轨道等语法</div>
+            <input type="file" id="fileInput" accept=".aff,.txt" hidden>
+        </div>
+        <div class="drop-zone alt" id="musicZone">
+            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6zm0 14a2 2 0 1 1-2-2 2 2 0 0 1 2 2z"/></svg>
+            <div class="dz-title">上传 base.ogg 音乐<span class="optional">可选</span></div>
+            <div class="dz-sub">不传也能看谱；传了会随谱面一起播放，音画同步</div>
+            <input type="file" id="musicInput" accept=".ogg,audio/ogg" hidden>
+        </div>
+    </div>
+
+    <div class="music-bar" id="musicBar" hidden>
+        <span class="mb-name" id="musicName">—</span>
+        <span class="mb-time" id="musicTime">0:00</span>
+        <span class="ctl-label" style="margin-left:6px">音量</span>
+        <input type="range" id="musicVol" min="0" max="100" value="70" style="width:76px">
+        <button class="btn tiny" id="musicClear">移除</button>
+    </div>
+
+    <div class="preset-row">
+        <button class="btn primary" id="presetBtn">
+            <svg class="preset-icon" viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5a2.83 2.83 0 0 0-4-4L4 16v4zm13.5-13.5 2-2a2.83 2.83 0 0 0-4-4l-2 2 4 4z"/></svg>
+            加载预设谱面
+        </button>
+        <span class="preset-hint">内置自检曲目 · 自动载入 <code>4.aff</code> 与 <code>base.ogg</code></span>
+    </div>
+    <div class="status" id="status"></div>
+</div>
+
+<div class="controls glass" id="controls" hidden>
+    <div class="ctl-group">
+        <span class="ctl-label">流速</span>
+        <input type="range" id="speed" min="0" max="1000" value="500">
+        <span class="range-val" id="speedVal">2.60 s</span>
+    </div>
+    <div class="ctl-group">
+        <span class="ctl-label">横向</span>
+        <input type="range" id="xSpread" min="60" max="220" value="115">
+        <span class="range-val" id="xSpreadVal">1.15</span>
+    </div>
+    <div class="ctl-group">
+        <span class="ctl-label">左右</span>
+        <input type="range" id="yaw" min="-3142" max="3142" value="-180">
+        <span class="range-val" id="yawVal">-10°</span>
+    </div>
+    <div class="ctl-group">
+        <span class="ctl-label">俯仰</span>
+        <input type="range" id="pitch" min="-250" max="1300" value="120">
+        <span class="range-val" id="pitchVal">7°</span>
+    </div>
+    <div class="ctl-group">
+        <span class="ctl-label">远近</span>
+        <input type="range" id="dist" min="20" max="180" value="58">
+        <span class="range-val" id="distVal">5.8</span>
+    </div>
+    <div class="ctl-group">
+        <span class="ctl-label">视野</span>
+        <input type="range" id="fov" min="60" max="300" value="135">
+        <span class="range-val" id="fovVal">1.35</span>
+    </div>
+    <div class="ctl-group grow">
+        <span class="ctl-label">机位</span>
+        <div class="vp-row">
+            <button class="btn tiny" id="vp_play">游玩</button>
+            <button class="btn tiny" id="vp_top">俯视</button>
+            <button class="btn tiny" id="vp_side">侧视</button>
+            <button class="btn tiny" id="vp_front">正面</button>
+            <button class="btn tiny" id="resetCam">重置</button>
+        </div>
+    </div>
+    <div class="ctl-group">
+        <label class="chk"><input type="checkbox" id="optGround" checked> 地面</label>
+        <label class="chk"><input type="checkbox" id="optBar" checked> 小节线</label>
+        <label class="chk"><input type="checkbox" id="optArctap" checked> 天键</label>
+        <label class="chk"><input type="checkbox" id="optFog" checked> 渐隐</label>
+    </div>
+</div>
+
+<div class="canvas-wrap" id="canvasWrap" hidden>
+    <canvas id="view3d"></canvas>
+    <div class="hud">
+        <span id="hudTime">0:00.000 / 0:00</span>
+        <span id="hudInfo"></span>
+    </div>
+</div>
+
+<div class="player glass" id="player" hidden>
+    <button class="btn primary" id="playBtn">▶ 播放</button>
+    <button class="btn tiny" id="stopBtn">■ 停止</button>
+    <div class="seg" id="speedSeg">
+        <button class="seg-btn" id="spd025" data-v="0.25">0.25×</button>
+        <button class="seg-btn" id="spd05" data-v="0.5">0.5×</button>
+        <button class="seg-btn active" id="spd1" data-v="1">1×</button>
+        <button class="seg-btn" id="spd2" data-v="2">2×</button>
+    </div>
+    <span class="time-display" id="curTime">0:00</span>
+    <span style="color:#666">/</span>
+    <span class="time-display" id="totTime">0:00</span>
+    <input type="range" id="prog" min="0" max="1000" value="0" style="flex:1;min-width:120px">
+    <label class="chk"><input type="checkbox" id="optHitSound" checked> 打击音效</label>
+    <span class="ctl-label" style="margin-left:2px">音量</span>
+    <input type="range" id="hitVol" min="0" max="100" value="55" style="width:80px">
+</div>
+
+<div class="legend glass" id="legend" hidden>
+    <span class="lg-item"><i class="sw" style="background:#4a9eff"></i>蓝弧</span>
+    <span class="lg-item"><i class="sw" style="background:#ff5c6c"></i>红弧</span>
+    <span class="lg-item"><i class="sw" style="background:#4ad991"></i>绿弧</span>
+    <span class="lg-item"><i class="sw" style="background:#74747e"></i>黑线</span>
+    <span class="lg-item"><i class="sw" style="background:#eef0f8"></i>地键 / 长按</span>
+    <span class="lg-item"><i class="sw" style="background:#1f6feb"></i>天键</span>
+    <span class="lg-item"><i class="sw" style="background:#ffe066"></i>判定线</span>
+</div>
+
+<div class="stats glass" id="stats" hidden>
+    <div class="stat"><span class="k">地键 / 长按</span><span class="v" id="statNotes">—</span></div>
+    <div class="stat"><span class="k">弧 / 天键</span><span class="v" id="statArcs">—</span></div>
+    <div class="stat"><span class="k">物量</span><span class="v" id="statCombo">—</span></div>
+    <div class="stat"><span class="k">时长</span><span class="v" id="statDur">—</span></div>
+    <div class="stat"><span class="k">渲染</span><span class="v" id="statFps">—</span></div>
+</div>
+
+<div class="export-bar glass" id="exportBar" hidden>
+    <span class="ctl-label">导出当前视角</span>
+    <button class="btn" id="exp1x">PNG · 1×</button>
+    <button class="btn" id="exp2x">PNG · 2×</button>
+</div>
+
+<div class="note glass" id="note" hidden>
+    <b>操作</b><br>
+    · 鼠标<b>拖动</b>旋转视角，<b>滚轮</b>调流速，<b>Shift + 滚轮</b>调远近<br>
+    · 空格播放/暂停，↑↓ 前后 1 秒，←→ 前后 120ms，Home / End 跳到首尾<br>
+    · 视角与流速会自动记住（存 localStorage），「重置」可回到默认<br>
+    <br>
+    <b>空间约定</b><br>
+    · 横轴为轨道位置，纵轴为高度（0 = 地面，1 = 空中最高），<b>深度轴为时间</b><br>
+    · z = 0 即判定线平面，音符从远处（未来的时间）向判定线飞来，与游玩视角一致<br>
+    · <code>si</code> = Sine <b>Out</b>（起手快）· <code>so</code> = Sine <b>In</b>（起手慢）· <code>b</code> = 贝塞尔<br>
+    <br>
+    <b>内置自检曲目</b><br>
+    · 点「加载预设谱面」自动载入站上的 <code>test/4.aff</code> 与 <code>test/base.ogg</code><br>
+</div>
+
+<script>const $ = id => document.getElementById(id);
+
+function fmtTime(ms) {
+    if (!Number.isFinite(ms)) ms = 0;
+    const neg = ms < 0;
+    ms = Math.abs(ms);
+    const s = Math.floor(ms / 1000);
+    return (neg ? "-" : "") + Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+}
+
+function fmtTimeMs(ms) {
+    const m = Math.floor(ms / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    const rest = Math.floor(ms % 1000);
+    return m + ":" + String(s).padStart(2, "0") + "." + String(rest).padStart(3, "0");
+}
+
+function fmtBytes(n) {
+    if (n < 1024) return n + " B";
+    if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
+    return (n / 1048576).toFixed(2) + " MB";
+}
+
+
+/* ---------- 全局状态 ---------- */
+let CHART = null, STATS = null, ITEMS = null, BARS = null;
+let HIT_EVENTS = [];
+let play = { t: 0, on: false, speed: 1, last: 0 };
+let view = { visibleMs: 2600 };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+function setStatus(text, isErr, isOk) {
+    const st = $("status");
+    if (!st) return;
+    st.className = "status" + (isErr ? " err" : isOk ? " ok" : "");
+    st.textContent = text;
+}
+
+
+/* ==================================================================
+   Arcaea .aff 解析
+   参考 Arcaea Wiki「谱面格式」
+   ================================================================== */
+
+// 地面轨道 -> 归一化横坐标。lane 1~4 => 0.125 / 0.375 / 0.625 / 0.875
+function laneToX(lane) {
+    return (lane - 0.5) / 4;
+}
+
+/* 缓动：Arcaea 的 easing 均为正弦族
+   ------------------------------------------------------------------
+   此前 si / so 写反了。以 arcfutil 0.13.0 源码（作者 .direwolf，MIT）为准：
+
+       def sine(percent):   return sin(percent * (pi / 2))
+       def cosine(percent): return cos((percent * (pi / 2)) + pi) + 1   # == 1 - cos(t·π/2)
+       elif type == "si": return sine(percent)
+       elif type == "so": return cosine(percent)
+
+   即 si = sin(t·π/2)、so = 1 - cos(t·π/2)，与现行 wiki「si = Sine Out、
+   so = Sine In」一致。直觉记法：si 在 t=0.2 时已走到 0.309（起手就冲出去），
+   so 只走到 0.049（先慢后快）。
+
+   b 是三次贝塞尔 cubic-bezier(1/3, 0, 2/3, 1)。该控制点组合下 x(u) ≡ u，
+   无需牛顿反解，曲线精确退化为 smoothstep： y = 3t² - 2t³。
+   旧写法 (1 - cos(πt))/2 是近似，最大偏差约 0.010（1%）。                */
+const EASE_FUNCS = {
+    s:  t => t,
+    b:  t => t * t * (3 - 2 * t),              // = cubic-bezier(1/3,0,2/3,1)，精确解
+    si: t => Math.sin(t * Math.PI / 2),         // Sine Out：起手快、收尾慢
+    so: t => 1 - Math.cos(t * Math.PI / 2)      // Sine In ：起手慢、收尾快
+};
+
+function splitEasing(e) {
+    e = (e || "s").toLowerCase();
+    if (e.length >= 4) return { x: e.slice(0, 2), y: e.slice(2, 4) };
+    if (e.length === 3) return { x: e.slice(0, 1), y: e.slice(1, 3) };
+    return { x: e, y: e };
+}
+
+function easeValue(type, t) {
+    const f = EASE_FUNCS[type];
+    if (f) return f(t);
+    return t; // 未知缓动退化为直线
+}
+
+function emptyGroup(attrs) {
+    return { attrs: attrs || [], timing: [], taps: [], holds: [], arcs: [], flicks: [], scenecontrols: [], cameras: [] };
+}
+
+function parseAff(text) {
+    const chart = {
+        audioOffset: 0,
+        timingPointDensityFactor: 1,
+        ...emptyGroup([]),
+        timingGroups: [],
+        warnings: []
+    };
+
+    let cur = chart;
+    let depth = 0;
+    let lineNo = 0;
+
+    for (let raw of text.split(/\r?\n/)) {
+        lineNo++;
+        let line = raw.trim();
+        if (!line) continue;
+        if (line.startsWith("//")) continue;
+
+        // ---- timinggroup 块 ----
+        // 三种形态都要认：
+        //   timinggroup(x)          —— 花括号在下一行
+        //   timinggroup(x){         —— 花括号在行尾
+        //   timinggroup(x){ ... };  —— 整块写在一行
+        // 旧正则要求 \{ 之后即行尾，第三种会被整块丢弃（连告警都没有）。
+        const tgOpen = /^timinggroup\s*(?:\(([^)]*)\))?\s*(\{?)([\s\S]*)$/.exec(line);
+        if (tgOpen && depth === 0) {
+            const attrs = (tgOpen[1] || "").split("_").map(s => s.trim()).filter(Boolean);
+            let rest = (tgOpen[3] || "").trim();
+            cur = emptyGroup(attrs);
+            depth = 1;
+            const closed = /\}\s*;?$/.test(rest);
+            if (closed) rest = rest.replace(/\}\s*;?$/, "").trim();
+            if (rest) {
+                for (const stmt of splitStatements(rest)) {
+                    const t2 = stmt.trim();
+                    if (!t2 || t2 === "}") continue;
+                    if (!parseStatement(t2, cur, chart, lineNo)) {
+                        chart.warnings.push("第 " + lineNo + " 行无法识别：" + t2.slice(0, 40));
+                    }
+                }
+            }
+            if (closed) { chart.timingGroups.push(cur); cur = chart; depth = 0; }
+            continue;
+        }
+
+        if (depth > 0 && (line === "};" || line === "}")) {
+            chart.timingGroups.push(cur); cur = chart; depth = 0; continue;
+        }
+
+        // ---- 头部信息 ----
+        const head = /^([A-Za-z][A-Za-z0-9_]*)\s*:\s*(.+)$/.exec(line);
+        if (head && depth === 0) {
+            const key = head[1], val = head[2].trim();
+            if (key === "AudioOffset") {
+                const n = parseInt(val, 10);
+                chart.audioOffset = Number.isFinite(n) ? n : 0;
+            } else if (key === "TimingPointDensityFactor") {
+                const n = parseFloat(val);
+                chart.timingPointDensityFactor = Number.isFinite(n) ? n : 1;
+            }
+            continue;
+        }
+
+        if (line === "-") continue;
+
+        // 一行可能写了多条语句（手工编辑或复制粘贴时常见）。
+        // 此前所有正则都锚定整行，这种情况会被整条静默丢弃——不报错也不入谱。
+        // 现在按分号切分后逐条解析，避免无声丢音符。
+        for (const stmt of splitStatements(line)) {
+            if (!parseStatement(stmt, cur, chart, lineNo)) {
+                if (depth === 0 && !/^[}\])]/.test(stmt)) {
+                    chart.warnings.push("第 " + lineNo + " 行无法识别：" + stmt.slice(0, 40));
+                }
+            }
+        }
+    }
+
+    if (depth > 0) {
+        chart.timingGroups.push(cur);
+        chart.warnings.push("存在未闭合的 timinggroup，已按文件末尾自动收束");
+    }
+
+    return chart;
+}
+
+/* 按分号切分一行里的多条语句。
+   括号 / 方括号内不切分，否则 arc(...)[arctap(1),arctap(2)]; 会被拦腰截断。
+   行尾注释也要先剥掉，否则注释里的分号会制造出空语句。 */
+function splitStatements(line) {
+    const c = line.indexOf("//");
+    const body = c >= 0 ? line.slice(0, c) : line;
+    const out = [];
+    let cur = "", depth = 0;
+    for (const ch of body) {
+        if (ch === "(" || ch === "[") depth++;
+        else if (ch === ")" || ch === "]") depth = Math.max(0, depth - 1);
+        if (ch === ";" && depth === 0) {
+            if (cur.trim()) out.push(cur.trim());
+            cur = "";
+        } else cur += ch;
+    }
+    if (cur.trim()) out.push(cur.trim());
+    return out;
+}
+
+/* 解析单条语句（不含分号）。返回 true 表示已识别。 */
+function parseStatement(stmt, cur, chart, lineNo) {
+    {
+        // ---- timing ----
+        let m = /^timing\s*\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)\s*;?\s*$/.exec(stmt);
+        if (m) {
+            cur.timing.push({ t: parseFloat(m[1]), bpm: parseFloat(m[2]), beats: parseFloat(m[3]) });
+            return true;
+        }
+
+        // ---- hold ----
+        m = /^hold\s*\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)\s*;?\s*$/.exec(stmt);
+        if (m) {
+            cur.holds.push({ t1: parseFloat(m[1]), t2: parseFloat(m[2]), lane: parseFloat(m[3]) });
+            return true;
+        }
+
+        // ---- arc（可带 arctap 列表）----
+        m = /^arc\s*\(([^)]*)\)\s*(\[[^\]]*\])?\s*;?\s*$/.exec(stmt);
+        if (m) {
+            const p = m[1].split(",").map(s => s.trim());
+            if (p.length >= 10) {
+                const arc = {
+                    t1: parseFloat(p[0]), t2: parseFloat(p[1]),
+                    x1: parseFloat(p[2]), x2: parseFloat(p[3]),
+                    easing: (p[4] || "s").toLowerCase().replace(/[^a-z]/g, ""),
+                    y1: parseFloat(p[5]), y2: parseFloat(p[6]),
+                    color: parseInt(p[7], 10),
+                    hitsound: p[8],
+                    skyline: /^true$/i.test(p[9] || "false"),
+                    arctaps: []
+                };
+                if (m[2]) {
+                    const taps = m[2].match(/arctap\s*\(\s*([-\d.]+)\s*\)/g) || [];
+                    for (const t of taps) {
+                        const tm = /arctap\s*\(\s*([-\d.]+)\s*\)/.exec(t);
+                        if (tm) arc.arctaps.push(parseFloat(tm[1]));
+                    }
+                    arc.arctaps.sort((a, b) => a - b);
+                }
+                if ([arc.t1, arc.t2, arc.x1, arc.x2, arc.y1, arc.y2].some(v => !Number.isFinite(v))) {
+                    chart.warnings.push("第 " + lineNo + " 行 arc 参数异常，已跳过");
+                } else {
+                    cur.arcs.push(arc);
+                }
+            } else {
+                chart.warnings.push("第 " + lineNo + " 行 arc 字段不足，已跳过");
+                return true;   // 已识别为 arc，只是字段不足
+            }
+            return true;
+        }
+
+        // ---- 地面 tap ----
+        m = /^\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)\s*;?\s*$/.exec(stmt);
+        if (m) { cur.taps.push({ time: parseFloat(m[1]), lane: parseFloat(m[2]) }); return true; }
+
+        // ---- scenecontrol ----
+        m = /^scenecontrol\s*\(\s*([-\d.]+)\s*,\s*([^,)]+)\s*(?:,\s*([-\d.]+)\s*)?(?:,\s*([-\d.]+)\s*)?\)\s*;?\s*$/.exec(stmt);
+        if (m) {
+            cur.scenecontrols.push({
+                t: parseFloat(m[1]), type: m[2].trim(),
+                p1: m[3] !== undefined ? parseFloat(m[3]) : null,
+                p2: m[4] !== undefined ? parseFloat(m[4]) : null
+            });
+            return true;
+        }
+
+        m = /^camera\s*\(([^)]*)\)\s*;?\s*$/.exec(stmt);
+        if (m) { cur.cameras.push({ raw: m[1] }); return true; }
+
+        m = /^flick\s*\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)\s*;?\s*$/.exec(stmt);
+        if (m) {
+            cur.flicks.push({ t: parseFloat(m[1]), x: parseFloat(m[2]), y: parseFloat(m[3]),
+                              vx: parseFloat(m[4]), vy: parseFloat(m[5]) });
+            return true;
+        }
+
+        return false;
+    }
+}
+
+/* ==================================================================
+   打击音效：把谱面压成一串「判定点」事件
+   ------------------------------------------------------------------
+   判定点的归属遵循 Arcaea 的实际判定：
+     · 地键 tap        —— 地面
+     · 长条 hold       —— 地面，只在头部判定一次（按住过程不再发声）
+     · 天键 arctap     —— 空中
+     · 蛇 arc          —— 空中，头部入键点判定一次；黑线（skyline）只是视觉
+                          轨迹，头部不判定，但挂在它上面的天键仍照常发声
+   timinggroup 里的 noinput 物件不参与判定，同样不发声。
+   两类共用音色：地面一种、空中一种。
+   ================================================================== */
+const HIT_GROUND = 0;
+const HIT_AIR = 1;
+
+function buildHitEvents(items) {
+    const ev = [];
+    for (const t of items.taps) {
+        if (t.noInput) continue;
+        ev.push({ t: t.time, kind: HIT_GROUND });
+    }
+    for (const h of items.holds) {
+        // t1==t2 的退化长条不占物量、不判定；t1/t2 可能反写，取较小者为头
+        if (h.noInput || h.t2 === h.t1) continue;
+        ev.push({ t: Math.min(h.t1, h.t2), kind: HIT_GROUND });
+    }
+    for (const a of items.arcs) {
+        if (a.noInput) continue;
+        // 黑线只是视觉轨迹，头部不判定；但挂在它上面的天键仍是独立音符，照常发声
+        if (!a.skyline && a.t2 !== a.t1) ev.push({ t: Math.min(a.t1, a.t2), kind: HIT_AIR });
+        for (const at of a.arctaps) ev.push({ t: at, kind: HIT_AIR });
+    }
+    // 必须按时间升序：调度器只向前推进游标
+    ev.sort((p, q) => p.t - q.t);
+    return ev;
+}
+
+/* ---------- 音效合成（纯代码生成，无外部资源）----------
+   地面：低沉的「咚」——噪声击打 + 190Hz 音体，快速衰减
+   空中：清脆的「叮」——高通噪声 + 1100Hz 音体，更短更亮
+   两者都预渲染成 AudioBuffer，播放时只做 BufferSource，开销极低。      */
+function synthBuffer(ctx, kind) {
+    const sr = ctx.sampleRate;
+    const ground = kind === HIT_GROUND;
+
+    const cfg = ground
+        // 地面（地键 / 长条头）：低沉的「咚」，190Hz 音体 + 短促击打瞬态
+        ? { dur: 0.085, f0: 190, glide: 7, bodyDecay: 38, clickDecay: 280,
+            lpCoef: 0.30, hpCoef: 0, clickMix: 0.60, peak: 0.90, seed: 0x2f6e2b1 }
+        // 空中（天键 / 蛇头）：清脆的「叮」，1150Hz 音体 + 更亮的瞬态
+        : { dur: 0.060, f0: 1150, glide: 4, bodyDecay: 62, clickDecay: 380,
+            lpCoef: 0.70, hpCoef: 0.05, clickMix: 0.50, peak: 0.85, seed: 0x5a17c3d };
+
+    const n = Math.max(1, Math.floor(sr * cfg.dur));
+    const buf = ctx.createBuffer(1, n, sr);
+    const d = buf.getChannelData(0);
+
+    // 定点伪随机：每次生成的音色完全一致，便于回归测试
+    let seed = cfg.seed;
+    const noise = () => {
+        seed = (Math.imul(seed, 1103515245) + 12345) & 0x7fffffff;
+        return seed / 0x3fffffff - 1;
+    };
+
+    const fadeOut = Math.min(n, Math.floor(sr * 0.008));   // 尾部 8ms 淡出
+    let lp = 0, hp = 0, phase = 0;
+    for (let i = 0; i < n; i++) {
+        const t = i / sr;
+        // 频率随时间轻微下滑，听感更像敲击而非持续蜂鸣。
+        // 必须对瞬时频率积分求相位——直接写 sin(2π·f(t)·t) 会产生错误的调频。
+        const f = cfg.f0 * Math.exp(-t * cfg.glide);
+        phase += 2 * Math.PI * f / sr;
+        const body = Math.sin(phase);
+
+        // 击打瞬态：一阶低通噪声，衰减远快于音体，只留起音那一下
+        lp += cfg.lpCoef * (noise() - lp);
+        let click = lp;
+        if (cfg.hpCoef) { hp += cfg.hpCoef * (click - hp); click -= hp; }
+
+        const v = body * Math.exp(-t * cfg.bodyDecay)
+                + click * cfg.clickMix * Math.exp(-t * cfg.clickDecay);
+        // 1.5ms 淡入避免起音爆音；尾部再淡出，避免缓冲区被硬截断产生杂音
+        const atk = Math.min(1, t / 0.0015);
+        const rel = Math.min(1, (n - 1 - i) / fadeOut);
+        d[i] = v * atk * rel * cfg.peak;
+    }
+    return buf;
+}
+
+/* ---------- 打击音源 ----------
+   优先用站上的真实音源；取不到（跨域 / 404 / 离线）时回退到代码合成音，
+   保证任何情况下都有打击反馈，不会变成哑巴。                              */
+const HIT_SOUND_URLS = {
+    [HIT_GROUND]: "https://vancocn.github.io/music/tap.wav",   // 地键 / 长条
+    [HIT_AIR]:    "https://vancocn.github.io/music/arc.wav"    // 天键 / 蛇
+};
+
+/* 内置自检曲目：点一下即可加载谱面 + 音乐，用于快速验证功能是否正常 */
+const PRESET = {
+    chartUrl: "https://vancocn.github.io/test/4.aff",
+    musicUrl: "https://vancocn.github.io/test/base.ogg",
+    chartName: "4.aff",
+    musicName: "base.ogg"
+};
+
+/* ---------- 音频引擎 ---------- */
+const audio = {
+    ctx: null, master: null, bufs: null,
+    hitIdx: 0,          // 事件游标（只前进）
+    pending: [],        // 已排期但未播完的节点，seek 时需掐掉
+    voices: 0,          // 当前在响的声部数
+    failed: false,
+    srcState: "synth",  // synth | loading | external
+    loading: false
+};
+
+/* ---------- 背景音乐 ---------- */
+const music = {
+    buf: null,          // 解码后的 AudioBuffer
+    name: "",
+    src: null,          // 当前播放中的 BufferSource
+    gain: null,
+    playing: false,
+    startedAt: 0,       // 本次 start 对应的音频时钟（秒）
+    startOffset: 0      // 本次 start 对应的谱面位置（秒）
+};
+
+function audioEnabled() {
+    return !audio.failed && $("optHitSound").checked;
+}
+
+function initAudio() {
+    if (audio.ctx || audio.failed) return audio.ctx;
+    try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) { audio.failed = true; return null; }
+        const ctx = new AC();
+        const master = ctx.createGain();
+        master.gain.value = ($("hitVol").value / 100) * 0.9;
+        // 密集段可能有十几个音同时响，加一级限幅避免叠加削波
+        let tail = master;
+        if (ctx.createDynamicsCompressor) {
+            const comp = ctx.createDynamicsCompressor();
+            comp.threshold.value = -10;
+            comp.knee.value = 6;
+            comp.ratio.value = 12;
+            comp.attack.value = 0.003;
+            comp.release.value = 0.12;
+            master.connect(comp);
+            tail = comp;
+        }
+        tail.connect(ctx.destination);
+        audio.ctx = ctx;
+        audio.master = master;
+        // 先用合成音顶上，外部音源到位后自动替换
+        audio.bufs = [synthBuffer(ctx, HIT_GROUND), synthBuffer(ctx, HIT_AIR)];
+
+        // 音乐通道（与打击音分开，可独立调音量）
+        const mg = ctx.createGain();
+        mg.gain.value = ($("musicVol").value / 100) * 0.85;
+        mg.connect(ctx.destination);
+        music.gain = mg;
+
+        loadHitSounds();
+        return ctx;
+    } catch (e) {
+        audio.failed = true;
+        return null;
+    }
+}
+
+// 拉取并解码外部打击音源。任一环节失败都静默保留合成音。
+async function loadHitSounds() {
+    if (audio.loading || audio.srcState === "external") return;
+    if (!audio.ctx || !window.fetch || !audio.ctx.decodeAudioData) return;
+    audio.loading = true;
+    audio.srcState = "loading";
+    try {
+        const got = await Promise.all([HIT_GROUND, HIT_AIR].map(async kind => {
+            const res = await fetch(HIT_SOUND_URLS[kind], { mode: "cors", cache: "force-cache" });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            const raw = await res.arrayBuffer();
+            // decodeAudioData 在部分浏览器上仍是回调式，需兼容两种签名
+            return await new Promise((resolve, reject) => {
+                const p = audio.ctx.decodeAudioData(raw, resolve, reject);
+                if (p && typeof p.then === "function") p.then(resolve, reject);
+            });
+        }));
+        audio.bufs = got;
+        audio.srcState = "external";
+    } catch (e) {
+        // 跨域、404、离线都走这里：合成音仍在，功能不受影响
+        audio.srcState = "synth";
+    } finally {
+        audio.loading = false;
+    }
+}
+
+/* ---------- 背景音乐加载 ---------- */
+/* 解码并装载音乐。核心路径与来源无关，File 和 URL 共用。
+   raw 为已读到的 ArrayBuffer。name 仅用于展示。 */
+async function loadMusicBuffer(name, raw) {
+    const ctx = initAudio();
+    if (!ctx) { setStatus("音频初始化失败，音乐不可用", true); return false; }
+    setStatus("正在解码音乐…");
+    try {
+        const buf = await new Promise((resolve, reject) => {
+            const p = ctx.decodeAudioData(raw, resolve, reject);
+            if (p && typeof p.then === "function") p.then(resolve, reject);
+        });
+        stopMusic();
+        music.buf = buf;
+        music.name = name;
+        $("musicName").textContent = name;
+        $("musicTime").textContent = fmtTime(buf.duration * 1000);
+        $("musicBar").hidden = false;
+        setStatus(`音乐已载入：${name}（${fmtTime(buf.duration * 1000)}）`, false, true);
+        // 谱面时长与音乐时长不一致时给出提示，避免误以为同步有问题
+        if (STATS && Math.abs(buf.duration * 1000 - STATS.duration) > 2000) {
+            console.info("[谱面] 音乐时长与谱面时长相差 " +
+                Math.round(Math.abs(buf.duration * 1000 - STATS.duration)) + "ms");
+        }
+        return true;
+    } catch (e) {
+        setStatus("音乐解码失败（需 ogg/vorbis 等浏览器可解的格式）", true);
+        return false;
+    }
+}
+
+async function loadMusicFile(file) {
+    try {
+        await loadMusicBuffer(file.name, await file.arrayBuffer());
+    } catch (e) {
+        setStatus("音乐读取失败", true);
+    }
+}
+
+// 从 URL 拉取并解码音乐（预设曲目用）
+async function loadMusicUrl(url, fallbackName) {
+    try {
+        const res = await fetch(url, { cache: "force-cache" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const name = fallbackName || url.split("/").pop() || "music";
+        return await loadMusicBuffer(name, await res.arrayBuffer());
+    } catch (e) {
+        setStatus("预设音乐加载失败（跨域或文件不存在）：" + e.message, true);
+        return false;
+    }
+}
+
+// 只清空不提示，便于调用方用自己的文案覆盖状态栏
+function resetMusic(silent) {
+    stopMusic();
+    music.buf = null;
+    music.name = "";
+    $("musicBar").hidden = true;
+    $("musicInput").value = "";
+    if (!silent) setStatus("已移除音乐");
+}
+
+function clearMusic() { resetMusic(false); }
+
+// 从谱面位置 tSec（秒）开始播放音乐
+function startMusic(tSec) {
+    if (!audio.ctx || !music.buf) return;
+    stopMusic();
+    const src = audio.ctx.createBufferSource();
+    src.buffer = music.buf;
+    src.playbackRate.value = play.speed || 1;
+    src.connect(music.gain);
+    // 起点超出音乐长度时不再启动，避免抛错
+    const off = Math.max(0, Math.min(tSec, music.buf.duration - 0.01));
+    src.start(audio.ctx.currentTime, off);
+    music.src = src;
+    music.playing = true;
+    music.startedAt = audio.ctx.currentTime;
+    music.startOffset = off;
+    src.onended = () => {
+        if (music.src !== src) return;      // 已被新的 start 取代
+        music.playing = false;
+        music.src = null;
+    };
+}
+
+function stopMusic() {
+    if (music.src) {
+        try { music.src.onended = null; music.src.stop(); } catch (e) { /* 已结束 */ }
+        try { music.src.disconnect(); } catch (e) { /* 已断开 */ }
+    }
+    music.src = null;
+    music.playing = false;
+}
+
+// 音乐播放时用音频时钟反推谱面位置，音画严格同步、不会漂移
+function musicPositionMs() {
+    if (!music.playing || !audio.ctx) return null;
+    const elapsed = (audio.ctx.currentTime - music.startedAt) * (play.speed || 1);
+    return (music.startOffset + elapsed) * 1000;
+}
+
+// seek / 变速 / 停止时调用：掐掉所有还没响的排期音
+function cancelPending() {
+    if (!audio.ctx) return;
+    for (const src of audio.pending) {
+        try { src.stop(); } catch (e) { /* 已结束，忽略 */ }
+        try { src.disconnect(); } catch (e) { /* 已断开 */ }
+    }
+    audio.pending.length = 0;
+    audio.voices = 0;
+}
+
+function applyHitVolume() {
+    if (audio.master && audio.ctx) {
+        const v = ($("hitVol").value / 100) * 0.9;
+        audio.master.gain.setTargetAtTime(v, audio.ctx.currentTime, 0.01);
+    }
+}
+
+// 把截止到 toT 的判定点排到音频时钟上。游标只前进，因此天然不重不漏。
+// 每帧都用「当前 play.t ↔ ctx.currentTime」重新锚定，不会累积漂移。
+function scheduleHits(toT) {
+    const ctx = audio.ctx;
+    if (!ctx || !HIT_EVENTS.length) return;
+    const now = ctx.currentTime;
+    const speed = play.speed || 1;
+
+    let budget = 16;   // 单帧最多排 16 个，防止密集段把音频图撑爆
+    while (audio.hitIdx < HIT_EVENTS.length && budget-- > 0) {
+        const ev = HIT_EVENTS[audio.hitIdx];
+        if (ev.t > toT) break;
+        // 落后超过 0.5 秒说明是卡顿/切后台导致的积压，丢弃而不是补发一串
+        if (play.t - ev.t > 500) { audio.hitIdx++; continue; }
+        // 谱面时间是毫秒，ctx.currentTime 是秒 —— 必须换算，否则会排到几分钟后
+        const when = Math.max(now, now + (ev.t - play.t) / speed / 1000);
+        playHit(ev.kind, when);
+        audio.hitIdx++;
+    }
+}
+
+// seek / 变速 / 起停都会让排期基线失效，必须重排游标并掐掉已排期的音
+function resetHitCursor() {
+    // 二分定位到当前谱面时间，使游标与 play.t 重新对齐
+    let lo = 0, hi = HIT_EVENTS.length;
+    const t = play.t;
+    while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (HIT_EVENTS[mid].t < t) lo = mid + 1; else hi = mid;
+    }
+    audio.hitIdx = lo;
+    cancelPending();
+}
+
+function playHit(kind, when) {
+    const ctx = audio.ctx;
+    if (!ctx || !audio.bufs || !audio.bufs[kind]) return;
+    if (audio.voices > 24) return;   // 声部上限，避免削波
+    const src = ctx.createBufferSource();
+    src.buffer = audio.bufs[kind];
+    // 轻微随机音高，长时间连续听不机械
+    src.playbackRate.value = 0.97 + Math.random() * 0.06;
+    const g = ctx.createGain();
+    g.gain.value = 1;
+    src.connect(g);
+    g.connect(audio.master);
+    src.start(when);
+    audio.voices++;
+    audio.pending.push(src);
+    src.onended = () => {
+        audio.voices--;
+        const i = audio.pending.indexOf(src);
+        if (i >= 0) audio.pending.splice(i, 1);
+        try { g.disconnect(); } catch (e) { /* 已断开 */ }
+    };
+}
+function flatten(chart) {
+    const arcs = chart.arcs.map(a => ({ ...a, inGroup: false, noInput: false }));
+    const taps = chart.taps.map(t => ({ ...t, inGroup: false, noInput: false }));
+    const holds = chart.holds.map(h => ({ ...h, inGroup: false, noInput: false }));
+
+    for (const g of chart.timingGroups) {
+        const noInput = g.attrs.includes("noinput");
+        for (const a of g.arcs) arcs.push({ ...a, inGroup: true, groupAttrs: g.attrs, noInput });
+        for (const t of g.taps) taps.push({ ...t, inGroup: true, noInput });
+        for (const h of g.holds) holds.push({ ...h, inGroup: true, noInput });
+    }
+
+    // 按起始时间排序，便于视口渲染时二分剪枝
+    const arcStart = a => Math.min(a.t1, a.t2);
+    arcs.sort((a, b) => arcStart(a) - arcStart(b));
+    holds.sort((a, b) => Math.min(a.t1, a.t2) - Math.min(b.t1, b.t2));
+    taps.sort((a, b) => a.time - b.time);
+
+    // 剪枝回退量：某类物件的最大持续时长
+    let maxArcDur = 0;
+    for (const a of arcs) maxArcDur = Math.max(maxArcDur, Math.abs(a.t2 - a.t1));
+    let maxHoldDur = 0;
+    for (const h of holds) maxHoldDur = Math.max(maxHoldDur, Math.abs(h.t2 - h.t1));
+
+    return { arcs, taps, holds, maxArcDur, maxHoldDur };
+}
+
+function chartStats(chart) {
+    const { arcs, taps, holds } = flatten(chart);
+
+    let last = 0;
+    const touch = t => { if (Number.isFinite(t) && t > last) last = t; };
+    arcs.forEach(a => { touch(a.t1); touch(a.t2); });
+    taps.forEach(t => touch(t.time));
+    holds.forEach(h => { touch(h.t1); touch(h.t2); });
+
+    let combo = 0, arctapCount = 0;
+    taps.forEach(t => { if (!t.noInput) combo++; });
+    holds.forEach(h => { if (!h.noInput && h.t2 > h.t1) combo++; });
+    arcs.forEach(a => {
+        if (!a.noInput && !a.skyline && a.t2 > a.t1) combo++;
+        if (!a.noInput) arctapCount += a.arctaps.length;
+    });
+    combo += arctapCount;
+
+    const bpms = chart.timing.filter(t => t.bpm > 0).map(t => t.bpm);
+    const bpmText = bpms.length
+        ? (Math.min(...bpms) === Math.max(...bpms)
+            ? Math.round(Math.max(...bpms))
+            : Math.round(Math.min(...bpms)) + "–" + Math.round(Math.max(...bpms)))
+        : "—";
+
+    return {
+        duration: last, combo,
+        taps: taps.length, holds: holds.length, arcs: arcs.length,
+        solidCount: arcs.filter(a => !a.skyline).length,
+        traceCount: arcs.filter(a => a.skyline).length,
+        arctapCount, bpmText,
+        groupCount: chart.timingGroups.length
+    };
+}
+
+// 小节线（仅顶层 timing 产生）
+function buildBarLines(chart, endT) {
+    const bars = [];
+    const timings = chart.timing.slice().sort((a, b) => a.t - b.t);
+    for (let i = 0; i < timings.length; i++) {
+        const seg = timings[i];
+        const segEnd = (i + 1 < timings.length) ? timings[i + 1].t : endT;
+        if (!(seg.bpm > 0) || !(seg.beats > 0)) continue;
+        const interval = (60000 / seg.bpm) * seg.beats;
+        if (!Number.isFinite(interval) || interval <= 0) continue;
+        for (let t = seg.t; t < segEnd; t += interval) bars.push(t);
+    }
+    return bars;
+}
+function arcPosAt(arc, t) {
+    const dur = arc.t2 - arc.t1;
+    const p = dur > 0 ? (t - arc.t1) / dur : 0;
+    const pc = p < 0 ? 0 : p > 1 ? 1 : p;
+    const e = splitEasing(arc.easing);
+    return {
+        x: arc.x1 + (arc.x2 - arc.x1) * easeValue(e.x, pc),
+        y: arc.y1 + (arc.y2 - arc.y1) * easeValue(e.y, pc)
+    };
+}
+
+
+/* ==================================================================
+   3D 视图：透视投影与场景渲染
+   ------------------------------------------------------------------
+   世界坐标沿用 Arcaea 的定义：
+     x —— 横向，四轨中心落在 0.125 / 0.375 / 0.625 / 0.875
+     y —— 高度，0 = 地面，1 = 空中最高
+     z —— 深度，随时间线性增长。z=0 即判定线所在平面
+   相机是轨道相机（始终看向 target），拖动时绕着谱面转而不是原地转头。
+   ================================================================== */
+
+const ZNEAR = -1.0;     // 判定线后方仍可见的深度（刚打过的音符）
+const ZFAR  = 26.0;     // 可见的最远处
+const NEAR  = 0.06;     // 近裁剪，避免除零导致投影翻转
+
+const CAM_DEFAULT = { tx: 0.5, ty: 0.15, tz: 3.3, dist: 5.8, yaw: -0.18, pitch: 0.12, fov: 1.35 };
+let cam = { ...CAM_DEFAULT };
+
+// 四轨只占 x∈[0,1]，横屏下判定线偏窄，用它横向拉伸（保持中心不动）
+let xSpread = 1.15;
+
+function msPerUnit() { return view.visibleMs / (ZFAR - ZNEAR); }
+function zAt(t) { return (t - play.t) / msPerUnit(); }
+function tAt(z) { return play.t + z * msPerUnit(); }
+
+const V3 = {
+    dot:   (a, b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2],
+    cross: (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]],
+    norm:  a => { const L = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0]/L, a[1]/L, a[2]/L]; }
+};
+
+/* 由 yaw / pitch / dist 求出相机位姿。
+   right = cross(worldUp, fwd) —— 注意不是 cross(fwd, worldUp)，
+   后者在右手系下会得到指向 -x 的向右向量，导致画面左右镜像。 */
+function camFrame() {
+    const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+    const cyw = Math.cos(cam.yaw), syw = Math.sin(cam.yaw);
+    const off = [-syw*cp*cam.dist, sp*cam.dist, -cyw*cp*cam.dist];
+    const tgt = [cam.tx, cam.ty, cam.tz];
+    const pos = [tgt[0]+off[0], tgt[1]+off[1], tgt[2]+off[2]];
+    const fwd = V3.norm([-off[0], -off[1], -off[2]]);
+    const right = V3.norm([fwd[2], 0, -fwd[0]]);
+    const up = V3.cross(fwd, right);
+    return { pos, fwd, right, up };
+}
+
+let FR = null, FOCAL = 0, VW = 0, VH = 0;
+
+function beginFrame(W, H) {
+    FR = camFrame();
+    FOCAL = H * cam.fov;
+    VW = W; VH = H;
+}
+
+function project(x, y, z) {
+    const F = FR;
+    if (!F) return null;
+    const wx = (x - 0.5) * xSpread + 0.5;
+    const dx = wx - F.pos[0], dy = y - F.pos[1], dz = z - F.pos[2];
+    const cz = dx*F.fwd[0] + dy*F.fwd[1] + dz*F.fwd[2];
+    if (cz <= NEAR) return null;
+    const cx = dx*F.right[0] + dy*F.right[1] + dz*F.right[2];
+    const cy = dx*F.up[0]    + dy*F.up[1]    + dz*F.up[2];
+    const s = FOCAL / cz;
+    return { x: VW*0.5 + cx*s, y: VH*0.5 - cy*s, s, cz, z };
+}
+
+// 远处淡出、判定线后方也淡出，避免音符在边界上突然出现/消失
+function depthAlpha(z) {
+    if (z > ZFAR || z < ZNEAR) return 0;
+    if (!fogOn()) return 1;
+    const far  = (ZFAR - z) / (ZFAR * 0.42);
+    const near = (z - ZNEAR) / 0.55;
+    return Math.max(0, Math.min(1, Math.min(far, near)));
+}
+function fogOn() { return !$("optFog") || $("optFog").checked; }
+
+const ARC_RGB = [[74,158,255], [255,92,108], [74,217,145], [200,200,208]];
+const SKYLINE_RGB = [116,116,130];
+const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+
+const GROUND_XL = -0.16, GROUND_XR = 1.16;
+
+function fillQuad(ctx, pts, color, alpha) {
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+}
+
+/* ---------- 背景 ---------- */
+function drawSky(ctx, W, H) {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0,    "#080a16");
+    g.addColorStop(0.32, "#151b36");
+    g.addColorStop(0.40, "#0e1222");
+    g.addColorStop(1,    "#06070d");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+}
+
+/* ---------- 地面 ---------- */
+function drawGround(ctx, W, H) {
+    const a = project(GROUND_XL, 0, ZNEAR), b = project(GROUND_XR, 0, ZNEAR);
+    const c = project(GROUND_XR, 0, ZFAR),  d = project(GROUND_XL, 0, ZFAR);
+    if (!a || !b || !c || !d) return;
+
+    // 地面底色：远处融进背景
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y);
+    ctx.closePath();
+    const g = ctx.createLinearGradient(0, Math.min(d.y, c.y), 0, Math.max(a.y, b.y));
+    g.addColorStop(0,   "rgba(26,30,50,0.10)");
+    g.addColorStop(0.4, "rgba(30,34,58,0.52)");
+    g.addColorStop(1,   "rgba(40,44,72,0.78)");
+    ctx.fillStyle = g;
+    ctx.fill();
+
+    // 四轨区域稍亮，突出可判定范围
+    const ta = project(0, 0, ZNEAR), tb = project(1, 0, ZNEAR);
+    const tc = project(1, 0, ZFAR),  td = project(0, 0, ZFAR);
+    if (ta && tb && tc && td) {
+        ctx.beginPath();
+        ctx.moveTo(ta.x, ta.y); ctx.lineTo(tb.x, tb.y); ctx.lineTo(tc.x, tc.y); ctx.lineTo(td.x, td.y);
+        ctx.closePath();
+        ctx.fillStyle = "rgba(58,64,100,0.20)";
+        ctx.fill();
+    }
+
+    // 轨道分隔线
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+        const x = i * 0.25;
+        const p1 = project(x, 0, ZNEAR), p2 = project(x, 0, ZFAR);
+        if (!p1 || !p2) continue;
+        ctx.strokeStyle = (i === 0 || i === 4) ? "rgba(150,160,220,0.30)" : "rgba(130,140,200,0.16)";
+        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+    }
+
+    // 横向网格：每 1 个深度单位一条，远处渐隐
+    for (let z = 0; z <= ZFAR; z += 1) {
+        const al = depthAlpha(z) * 0.14;
+        if (al <= 0.01) continue;
+        const p1 = project(GROUND_XL, 0, z), p2 = project(GROUND_XR, 0, z);
+        if (!p1 || !p2) continue;
+        ctx.strokeStyle = `rgba(150,160,220,${al})`;
+        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+    }
+
+    // 小节线（亮一些，能看出节奏）
+    if (BARS && BARS.length && $("optBar").checked) {
+        for (const bt of BARS) {
+            const z = zAt(bt);
+            const al = depthAlpha(z) * 0.34;
+            if (al <= 0.01) continue;
+            const p1 = project(GROUND_XL, 0, z), p2 = project(GROUND_XR, 0, z);
+            if (!p1 || !p2) continue;
+            ctx.strokeStyle = `rgba(190,200,255,${al})`;
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+        }
+    }
+}
+
+/* ---------- 判定线 ---------- */
+function drawJudgeLine(ctx) {
+    const a = project(GROUND_XL, 0, 0), b = project(GROUND_XR, 0, 0);
+    if (!a || !b) return;
+    const w = Math.max(2, a.s * 0.014);
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,224,102,0.30)";
+    ctx.lineWidth = w * 3;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    ctx.strokeStyle = "rgba(255,224,102,0.95)";
+    ctx.lineWidth = w;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    ctx.restore();
+}
+
+/* ---------- 物件收集 ---------- */
+function collectScene(prims, tMin, tMax) {
+    const I = ITEMS;
+    if (!I) return;
+
+    // 地面 tap
+    for (const tp of I.taps) {
+        if (tp.time < tMin || tp.time > tMax) continue;
+        const z = zAt(tp.time);
+        const al = depthAlpha(z);
+        if (al <= 0.01) continue;
+        const x = laneToX(tp.lane);
+        const hw = 0.105, hd = 0.030, h = 0.014;
+        const bl = project(x-hw, 0, z-hd), br = project(x+hw, 0, z-hd);
+        const fr = project(x+hw, 0, z+hd), fl = project(x-hw, 0, z+hd);
+        const tl = project(x-hw, h, z-hd), tr = project(x+hw, h, z-hd);
+        const tr2 = project(x+hw, h, z+hd), tl2 = project(x-hw, h, z+hd);
+        if (!bl || !br || !fr || !fl || !tl || !tr || !tr2 || !tl2) continue;
+        const zc = (bl.cz + br.cz + fr.cz + fl.cz) / 4;
+        const dim = tp.noInput ? 0.45 : 1;
+        prims.push({ zc, fn: () => {
+            // 前侧面（朝相机的一边），给一点厚度感
+            fillQuad(ctxRef, [bl, br, tr, tl], "rgba(120,126,160,0.9)", al * dim);
+            fillQuad(ctxRef, [tl, tr, tr2, tl2], "#eef0f8", al * dim);
+        }});
+    }
+
+    // 长条：body 半透明灰 + 头尾端帽
+    for (const hd of I.holds) {
+        const tLo = Math.min(hd.t1, hd.t2), tHi = Math.max(hd.t1, hd.t2);
+        if (tHi < tMin || tLo > tMax) continue;
+        const zLo = zAt(tLo), zHi = zAt(tHi);
+        const x = laneToX(hd.lane);
+        const hw = 0.105, h = 0.012;
+        const al = depthAlpha((Math.max(zLo, ZNEAR) + Math.min(zHi, ZFAR)) / 2);
+        if (al <= 0.01) continue;
+        const a1 = project(x-hw, h, zLo), b1 = project(x+hw, h, zLo);
+        const b2 = project(x+hw, h, zHi), a2 = project(x-hw, h, zHi);
+        if (!a1 || !b1 || !b2 || !a2) continue;
+        const zc = (a1.cz + b2.cz) / 2;
+        const dim = hd.noInput ? 0.45 : 1;
+        prims.push({ zc, fn: () => {
+            fillQuad(ctxRef, [a1, b1, b2, a2], "rgba(168,168,184,0.45)", al * dim);
+        }});
+        // 端帽：时间小的一端是头
+        const capZ = zLo, capA = depthAlpha(capZ);
+        if (capA > 0.01 && capZ >= ZNEAR && capZ <= ZFAR) {
+            const c1 = project(x-hw, h+0.004, capZ-0.02), c2 = project(x+hw, h+0.004, capZ-0.02);
+            const c3 = project(x+hw, h+0.004, capZ+0.05), c4 = project(x-hw, h+0.004, capZ+0.05);
+            if (c1 && c2 && c3 && c4) prims.push({ zc: c1.cz - 0.01, fn: () =>
+                fillQuad(ctxRef, [c1, c2, c3, c4], "rgba(238,240,248,0.95)", capA * dim) });
+        }
+    }
+
+    // Arc：按深度切段后排序，段内为空间折线
+    for (const arc of I.arcs) {
+        const lo = Math.max(Math.min(arc.t1, arc.t2), tMin);
+        const hi = Math.min(Math.max(arc.t1, arc.t2), tMax);
+        if (hi <= lo) continue;
+        const span = hi - lo;
+        const n = Math.max(2, Math.min(180, Math.round(span / 22)));
+        const rgb = arc.skyline ? SKYLINE_RGB
+                  : (ARC_RGB[arc.color] || ARC_RGB[3]);
+        const base = arc.skyline ? 0.55 : 1;
+
+        // 采样
+        const pts = new Array(n + 1);
+        for (let i = 0; i <= n; i++) {
+            const t = lo + span * i / n;
+            const s = arcPosAt(arc, t);
+            pts[i] = project(s.x, s.y, zAt(t));
+        }
+
+        // 切成若干段参与全局排序（段数随长度增加，保证遮挡关系正确）
+        const segCount = Math.min(10, Math.max(1, Math.floor(n / 8)));
+        const per = Math.ceil((n + 1) / segCount);
+        for (let k = 0; k < segCount; k++) {
+            const s0 = k * per;
+            const s1 = Math.min(n, s0 + per);
+            if (s1 <= s0) break;
+            const seg = [];
+            let zsum = 0, cnt = 0;
+            for (let i = s0; i <= s1; i++) {
+                seg.push(pts[i]);
+                if (pts[i]) { zsum += pts[i].cz; cnt++; }
+            }
+            if (!cnt) continue;
+            const zc = zsum / cnt;
+            if (k > 0) seg.unshift(pts[s0 - 1]);   // 与上一段重叠一点，避免接缝
+            const midT = lo + span * ((s0 + s1) / 2) / n;
+            const al = depthAlpha(zAt(midT)) * base;
+            if (al <= 0.01) continue;
+            prims.push({ zc, fn: () => {
+                const ctx = ctxRef;
+                ctx.beginPath();
+                let started = false;
+                for (const p of seg) {
+                    if (!p) { started = false; continue; }
+                    if (!started) { ctx.moveTo(p.x, p.y); started = true; }
+                    else ctx.lineTo(p.x, p.y);
+                }
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round";
+                const w = Math.max(1.2, Math.min(18, FOCAL / zc * 0.030));
+                ctx.strokeStyle = rgba(rgb, al * 0.9);
+                ctx.lineWidth = w;
+                ctx.stroke();
+                ctx.strokeStyle = rgba([Math.min(255, rgb[0]+70), Math.min(255, rgb[1]+70), Math.min(255, rgb[2]+70)], al * 0.85);
+                ctx.lineWidth = Math.max(0.6, w * 0.36);
+                ctx.stroke();
+            }});
+        }
+
+        // 挂在弧上的天键
+        if (!arc.arctaps || !arc.arctaps.length) continue;
+        if (!$("optArctap").checked) continue;
+        for (const at of arc.arctaps) {
+            if (at < tMin || at > tMax) continue;
+            const z = zAt(at);
+            const al = depthAlpha(z);
+            if (al <= 0.01) continue;
+            const s = arcPosAt(arc, at);
+            const p = project(s.x, s.y, z);
+            if (!p) continue;
+            prims.push({ zc: p.cz - 0.02, fn: () => {
+                const ctx = ctxRef;
+                const w = Math.max(2, p.s * 0.075), h = Math.max(1.2, p.s * 0.030);
+                ctx.globalAlpha = al;
+                ctx.fillStyle = arc.noInput ? "#1b4a86" : "#1f6feb";
+                ctx.fillRect(p.x - w, p.y - h, w * 2, h * 2);
+                ctx.strokeStyle = "rgba(10,30,60,0.85)";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(p.x - w, p.y - h, w * 2, h * 2);
+                ctx.globalAlpha = 1;
+            }});
+        }
+    }
+}
+
+/* ---------- 主渲染 ---------- */
+let ctxRef = null;
+
+function renderTo(ctx, W, H) {
+    ctxRef = ctx;
+    beginFrame(W, H);
+    drawSky(ctx, W, H);
+    if (!ITEMS) return;
+    if (!$("optGround") || $("optGround").checked) drawGround(ctx, W, H);
+
+    const tMin = tAt(ZNEAR), tMax = tAt(ZFAR);
+    const prims = [];
+    collectScene(prims, tMin, tMax);
+
+    const jz = (() => {
+        const p = project(0.5, 0, 0);
+        return p ? p.cz : 1;
+    })();
+    prims.push({ zc: jz, fn: () => drawJudgeLine(ctx) });
+
+    // 画家算法：远的先画
+    prims.sort((a, b) => b.zc - a.zc);
+    for (const p of prims) p.fn();
+    lastPrimCount = prims.length;
+}
+
+let lastPrimCount = 0;
+
+
+/* ==================================================================
+   视图偏好持久化
+   ================================================================== */
+const LS_PREFIX = "aff3d.";
+
+function lsGet(k, d) {
+    try { const v = localStorage.getItem(LS_PREFIX + k); return v === null ? d : v; }
+    catch (e) { return d; }
+}
+function lsSet(k, v) { try { localStorage.setItem(LS_PREFIX + k, String(v)); } catch (e) {} }
+function lsRemove(k) { try { localStorage.removeItem(LS_PREFIX + k); } catch (e) {} }
+
+let saveTimer = 0;
+function savePrefs() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+        lsSet("visibleMs", view.visibleMs);
+        lsSet("yaw", cam.yaw);   lsSet("pitch", cam.pitch);
+        lsSet("dist", cam.dist); lsSet("fov", cam.fov);
+        lsSet("xSpread", xSpread);
+    }, 250);
+}
+
+const num = (v, d) => { const n = parseFloat(v); return Number.isFinite(n) ? n : d; };
+
+function restorePrefs() {
+    view.visibleMs = clamp(num(lsGet("visibleMs", ""), 2600), 300, 12000);
+    cam.yaw   = clamp(num(lsGet("yaw", ""), CAM_DEFAULT.yaw), -Math.PI, Math.PI);
+    cam.pitch = clamp(num(lsGet("pitch", ""), CAM_DEFAULT.pitch), -0.25, 1.30);
+    cam.dist  = clamp(num(lsGet("dist", ""), CAM_DEFAULT.dist), 2, 18);
+    cam.fov   = clamp(num(lsGet("fov", ""), CAM_DEFAULT.fov), 0.6, 3.0);
+    xSpread   = clamp(num(lsGet("xSpread", ""), 1.15), 0.6, 2.2);
+}
+
+function syncCamUI() {
+    $("yaw").value   = String(Math.round(cam.yaw * 1000));
+    $("pitch").value = String(Math.round(cam.pitch * 1000));
+    $("dist").value  = String(cam.dist);
+    $("fov").value   = String(Math.round(cam.fov * 100));
+    $("xSpread").value = String(Math.round(xSpread * 100));
+    $("yawVal").textContent   = (cam.yaw * 180 / Math.PI).toFixed(0) + "°";
+    $("pitchVal").textContent = (cam.pitch * 180 / Math.PI).toFixed(0) + "°";
+    $("distVal").textContent  = cam.dist.toFixed(1);
+    $("fovVal").textContent   = cam.fov.toFixed(2);
+    $("xSpreadVal").textContent = xSpread.toFixed(2);
+    $("speedVal").textContent = (view.visibleMs / 1000).toFixed(2) + " s";
+    $("speed").value = String(speedToSlider(view.visibleMs));
+}
+
+/* ---------- 画布 ---------- */
+const canvas = $("view3d");
+let cctx = null;
+
+function layout() {
+    const wrap = $("canvasWrap");
+    const W = Math.max(320, wrap.clientWidth || 900);
+    const H = clamp(Math.round(W * 0.64), 340, 720);
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    cctx = canvas.getContext("2d");
+    cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    VW = W; VH = H;
+}
+
+function render() {
+    if (!cctx) return;
+    renderTo(cctx, VW, VH);
+    $("hudTime").textContent = fmtTimeMs(play.t) + " / " + fmtTime(STATS ? STATS.duration : 0);
+    $("hudInfo").textContent = lastPrimCount + " 个可见物件 · " + (view.visibleMs / 1000).toFixed(2) + " s/屏";
+}
+
+let needDraw = false;
+function requestRedraw() { needDraw = true; }
+
+let fpsT = 0, fpsN = 0, fpsVal = 0;
+function paintLoop(ts) {
+    if (needDraw || play.on) {
+        needDraw = false;
+        render();
+    }
+    fpsN++;
+    if (ts - fpsT > 500) {
+        fpsVal = Math.round(fpsN * 1000 / (ts - fpsT));
+        fpsT = ts; fpsN = 0;
+        if ($("statFps")) $("statFps").textContent = fpsVal + " fps";
+    }
+    requestAnimationFrame(paintLoop);
+}
+
+/* ---------- 播放 ---------- */
+function tick(ts) {
+    if (!play.on) return;
+    const dt = ts - play.last;
+    play.last = ts;
+    if (music.playing && music.buf) {
+        play.t = musicPositionMs();
+    } else {
+        play.t += dt * play.speed;
+    }
+    if (play.t >= (STATS ? STATS.duration : 0)) play.t = STATS ? STATS.duration : 0;
+    // 先排期再判定结束：否则正好落在末尾的判定点会因为提前 return 而永远不发声。
+    // 提前 120ms（音频时间）挂单，用 rAF 直接触发会跟着渲染帧抖。
+    if (audioEnabled() && initAudio()) {
+        scheduleHits(play.t + 0.12 * play.speed * 1000);
+    }
+    if (play.t >= (STATS ? STATS.duration : 0)) { stopPlay(); return; }
+    updatePlayerUI();
+    requestAnimationFrame(tick);
+}
+
+function startPlay() {
+    if (play.on || !STATS) return;
+    if (play.t >= STATS.duration) play.t = 0;
+    initAudio();
+    resetHitCursor();
+    startMusic(play.t / 1000);
+    play.on = true;
+    play.last = performance.now();
+    $("playBtn").textContent = "暂停";
+    requestAnimationFrame(tick);
+}
+
+function stopPlay() {
+    if (!play.on) return;
+    play.on = false;
+    stopMusic();
+    cancelPending();
+    $("playBtn").textContent = "播放";
+}
+
+function togglePlay() { play.on ? stopPlay() : startPlay(); }
+
+function seekTo(t) {
+    if (!STATS) return;
+    play.t = clamp(t, 0, STATS.duration);
+    resetHitCursor();
+    if (play.on) startMusic(play.t / 1000);
+    updatePlayerUI();
+    requestRedraw();
+}
+
+function updatePlayerUI() {
+    if (!STATS) return;
+    $("prog").value = String(Math.round(play.t / STATS.duration * 1000));
+    $("curTime").textContent = fmtTime(play.t);
+    $("totTime").textContent = fmtTime(STATS.duration);
+}
+
+/* ---------- 加载谱面 ---------- */
+function loadChart(text, name) {
+    CHART = parseAff(text);
+    STATS = chartStats(CHART);
+    ITEMS = flatten(CHART);
+    BARS = buildBarLines(CHART, STATS.duration);
+    HIT_EVENTS = buildHitEvents(ITEMS);
+
+    stopPlay();
+    play.t = 0;
+    cancelPending();
+    audio.hitIdx = 0;
+
+    restorePrefs();
+    syncCamUI();
+
+    $("controls").hidden = false;
+    $("player").hidden = false;
+    $("canvasWrap").hidden = false;
+    $("exportBar").hidden = false;
+    $("legend").hidden = false;
+    $("stats").hidden = false;
+    $("note").hidden = false;
+
+    renderStats();
+    updatePlayerUI();
+    layout();
+    requestRedraw();
+    setStatus(`已载入 ${name} · 物量 ${STATS.combo} · ${fmtTime(STATS.duration)}`, false, true);
+}
+
+function renderStats() {
+    const I = ITEMS;
+    $("statNotes").textContent = I.taps.length + " 地键 · " + I.holds.length + " 长按";
+    $("statArcs").textContent  = I.arcs.length + " 弧 · " +
+        I.arcs.reduce((s, a) => s + a.arctaps.length, 0) + " 天键";
+    $("statCombo").textContent = STATS.combo;
+    $("statDur").textContent   = fmtTime(STATS.duration);
+    if (CHART.warnings.length) {
+        console.warn("[谱面] " + CHART.warnings.length + " 条告警");
+    }
+}
+
+/* ---------- 预设 ---------- */
+async function loadTextUrl(url) {
+    const res = await fetch(url, { cache: "no-cache" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.text();
+}
+
+async function loadMusicUrl(url, fallbackName) {
+    try {
+        const res = await fetch(url, { cache: "force-cache" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return await loadMusicBuffer(fallbackName || url.split("/").pop() || "music",
+                                     await res.arrayBuffer());
+    } catch (e) {
+        setStatus("预设音乐加载失败（跨域或文件不存在）：" + e.message, true);
+        return false;
+    }
+}
+
+let presetBusy = false;
+async function loadPreset() {
+    if (presetBusy) return;
+    presetBusy = true;
+    const btn = $("presetBtn");
+    const label = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="preset-icon spin" viewBox="0 0 24 24"><path d="M12 4V2A10 10 0 0 0 2 12h2a8 8 0 0 1 8-8z"/></svg>载入中…';
+
+    let chartOk = false;
+    try {
+        setStatus("正在载入预设谱面…");
+        loadChart(await loadTextUrl(PRESET.chartUrl), PRESET.chartName);
+        chartOk = true;
+    } catch (e) {
+        setStatus(`预设谱面加载失败：${e.message}（需同域或目标允许跨域）`, true);
+    }
+    if (chartOk) {
+        setStatus("谱面已载入，正在载入音乐…");
+        stopMusic();
+        const ok = await loadMusicUrl(PRESET.musicUrl, PRESET.musicName);
+        if (ok) setStatus(`预设已载入：${PRESET.chartName} + ${PRESET.musicName} · 物量 ${STATS.combo}`, false, true);
+        else resetMusic(true);
+    }
+    btn.disabled = false;
+    btn.innerHTML = label;
+    presetBusy = false;
+}
+
+/* ---------- 导出 ---------- */
+function downloadBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function exportPNG(scale) {
+    const W = VW, H = VH;
+    const c = document.createElement("canvas");
+    c.width = Math.round(W * scale);
+    c.height = Math.round(H * scale);
+    const cx = c.getContext("2d");
+    cx.setTransform(scale, 0, 0, scale, 0, 0);
+    renderTo(cx, W, H);
+    c.toBlob(b => {
+        if (!b) { setStatus("导出失败", true); return; }
+        downloadBlob(b, "chart-3d-" + W + "x" + H + (scale > 1 ? "@" + scale + "x" : "") + ".png");
+        setStatus(`已导出 ${c.width}×${c.height} PNG（${fmtBytes(b.size)}）`, false, true);
+    }, "image/png");
+}
+
+/* ---------- 速度滑块（对数刻度） ---------- */
+const SPEED_STEPS = 1000;
+const SPD_MIN = 300, SPD_MAX = 12000;
+function sliderToSpeed(v) {
+    return SPD_MIN * Math.pow(SPD_MAX / SPD_MIN, clamp(v, 0, SPEED_STEPS) / SPEED_STEPS);
+}
+function speedToSlider(ms) {
+    const r = Math.log(clamp(ms, SPD_MIN, SPD_MAX) / SPD_MIN) / Math.log(SPD_MAX / SPD_MIN);
+    return Math.round(SPEED_STEPS * clamp(r, 0, 1));
+}
+
+
+/* ==================================================================
+   事件绑定
+   ================================================================== */
+const dropZone = $("dropZone"), fileInput = $("fileInput");
+const musicZone = $("musicZone"), musicInput = $("musicInput");
+
+dropZone.addEventListener("click", e => { if (e.target !== fileInput) fileInput.click(); });
+musicZone.addEventListener("click", e => { if (e.target !== musicInput) musicInput.click(); });
+
+fileInput.addEventListener("change", () => {
+    const f = fileInput.files && fileInput.files[0];
+    if (f) readFile(f);
+});
+musicInput.addEventListener("change", () => {
+    const f = musicInput.files && musicInput.files[0];
+    if (f) loadMusicFile(f);
+});
+
+["dragenter", "dragover"].forEach(t => {
+    dropZone.addEventListener(t, e => { e.preventDefault(); dropZone.classList.add("over"); });
+    musicZone.addEventListener(t, e => { e.preventDefault(); musicZone.classList.add("over"); });
+});
+["dragleave", "drop"].forEach(t => {
+    dropZone.addEventListener(t, e => { e.preventDefault(); dropZone.classList.remove("over"); });
+    musicZone.addEventListener(t, e => { e.preventDefault(); musicZone.classList.remove("over"); });
+});
+dropZone.addEventListener("drop", e => {
+    const f = e.dataTransfer && e.dataTransfer.files[0];
+    if (f) readFile(f);
+});
+musicZone.addEventListener("drop", e => {
+    const f = e.dataTransfer && e.dataTransfer.files[0];
+    if (f) loadMusicFile(f);
+});
+
+function readFile(f) {
+    const r = new FileReader();
+    r.onload = () => loadChart(String(r.result), f.name);
+    r.onerror = () => setStatus("读取文件失败", true);
+    r.readAsText(f, "utf-8");
+}
+
+/* ---------- 相机拖动 ---------- */
+let drag = null;
+canvas.addEventListener("pointerdown", e => {
+    drag = { x: e.clientX, y: e.clientY, yaw: cam.yaw, pitch: cam.pitch };
+    canvas.classList.add("dragging");
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+});
+canvas.addEventListener("pointermove", e => {
+    if (!drag) return;
+    cam.yaw   = drag.yaw   + (e.clientX - drag.x) * 0.006;
+    cam.pitch = clamp(drag.pitch + (e.clientY - drag.y) * 0.005, -0.25, 1.30);
+    syncCamUI();
+    requestRedraw();
+    savePrefs();
+});
+["pointerup", "pointercancel"].forEach(t =>
+    canvas.addEventListener(t, () => { drag = null; canvas.classList.remove("dragging"); }));
+
+canvas.addEventListener("wheel", e => {
+    e.preventDefault();
+    const dir = Math.sign(e.deltaY);
+    if (e.shiftKey) {
+        cam.dist = clamp(cam.dist * (1 + dir * 0.08), 2, 18);
+    } else {
+        view.visibleMs = clamp(view.visibleMs * (1 + dir * 0.10), SPD_MIN, SPD_MAX);
+    }
+    syncCamUI();
+    requestRedraw();
+    savePrefs();
+}, { passive: false });
+
+/* ---------- 视角预设 ---------- */
+/* 四组快捷机位。参数经投影验算：判定线、最高天键、远端都落在画面内
+   （俯视机位下 26 单位深度会略微溢出顶端，属正常——轨道向上延伸出画面）。 */
+const VIEW_PRESETS = {
+    play:  { tx:0.5, ty:0.15, tz:3.3, dist:5.8,  yaw:-0.18, pitch:0.12, fov:1.35 },
+    top:   { tx:0.5, ty:0.10, tz:4.0, dist:7.5,  yaw:0.00,  pitch:0.90, fov:0.65 },
+    side:  { tx:0.5, ty:0.35, tz:8.0, dist:12.0, yaw:-1.45, pitch:0.50, fov:0.60 },
+    front: { tx:0.5, ty:0.30, tz:1.5, dist:5.0,  yaw:0.00,  pitch:0.10, fov:1.30 }
+};
+Object.keys(VIEW_PRESETS).forEach(k => {
+    const el = $("vp_" + k);
+    if (el) el.addEventListener("click", () => {
+        Object.assign(cam, VIEW_PRESETS[k]);
+        syncCamUI(); requestRedraw(); savePrefs();
+    });
+});
+
+/* ---------- 控件 ---------- */
+function bindRange(id, valId, apply, fmt) {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("input", () => {
+        apply(parseFloat(el.value));
+        if (valId && fmt) $(valId).textContent = fmt();
+        requestRedraw();
+        savePrefs();
+    });
+}
+bindRange("yaw", "yawVal",
+    v => { cam.yaw = v / 1000; }, () => (cam.yaw * 180 / Math.PI).toFixed(0) + "°");
+bindRange("pitch", "pitchVal",
+    v => { cam.pitch = clamp(v / 1000, -0.25, 1.30); }, () => (cam.pitch * 180 / Math.PI).toFixed(0) + "°");
+bindRange("dist", "distVal",
+    v => { cam.dist = clamp(v, 2, 18); }, () => cam.dist.toFixed(1));
+bindRange("fov", "fovVal",
+    v => { cam.fov = clamp(v / 100, 0.6, 3.0); }, () => cam.fov.toFixed(2));
+bindRange("xSpread", "xSpreadVal",
+    v => { xSpread = clamp(v / 100, 0.6, 2.2); }, () => xSpread.toFixed(2));
+bindRange("speed", "speedVal",
+    v => { view.visibleMs = clamp(sliderToSpeed(v), SPD_MIN, SPD_MAX); },
+    () => (view.visibleMs / 1000).toFixed(2) + " s");
+
+/* 播放速率。变速会让音频排期基线失效，必须重排游标并重启音乐。 */
+const SPD_BTNS = [["spd025", 0.25], ["spd05", 0.5], ["spd1", 1], ["spd2", 2]];
+SPD_BTNS.forEach(([id, v]) => {
+    $(id).addEventListener("click", () => {
+        play.speed = v;
+        SPD_BTNS.forEach(([x]) => $(x).classList.remove("active"));
+        $(id).classList.add("active");
+        resetHitCursor();
+        if (play.on) startMusic(play.t / 1000);
+    });
+});
+
+$("hitVol").addEventListener("input", applyHitVolume);
+$("musicVol").addEventListener("input", () => { music.vol = $("musicVol").value / 100; });
+$("musicClear").addEventListener("click", clearMusic);
+$("presetBtn").addEventListener("click", loadPreset);
+$("playBtn").addEventListener("click", togglePlay);
+$("stopBtn").addEventListener("click", () => { stopPlay(); seekTo(0); });
+
+$("prog").addEventListener("input", () => {
+    if (!STATS) return;
+    seekTo(STATS.duration * ($("prog").value / 1000));
+});
+
+$("resetCam").addEventListener("click", () => {
+    Object.assign(cam, CAM_DEFAULT);
+    xSpread = 1.15;
+    view.visibleMs = 2600;
+    lsRemove("yaw"); lsRemove("pitch"); lsRemove("dist");
+    lsRemove("fov"); lsRemove("xSpread"); lsRemove("visibleMs");
+    syncCamUI(); requestRedraw();
+    setStatus("已重置视角与流速");
+});
+
+["optArctap", "optGround", "optBar", "optFog"].forEach(id =>
+    $(id).addEventListener("change", requestRedraw));
+
+$("exp1x").addEventListener("click", () => exportPNG(1));
+$("exp2x").addEventListener("click", () => exportPNG(2));
+
+/* ---------- 键盘 ---------- */
+document.addEventListener("keydown", e => {
+    const tag = (e.target && e.target.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    if (!STATS) return;
+    let handled = true;
+    switch (e.key) {
+        case " ":          togglePlay(); break;
+        case "ArrowUp":    seekTo(play.t - 1000); break;
+        case "ArrowDown":  seekTo(play.t + 1000); break;
+        case "ArrowLeft":  seekTo(play.t - 120); break;
+        case "ArrowRight": seekTo(play.t + 120); break;
+        case "Home":       seekTo(0); break;
+        case "End":        seekTo(STATS.duration); break;
+        default: handled = false;
+    }
+    if (handled) { e.preventDefault(); requestRedraw(); }
+});
+
+window.addEventListener("resize", () => { layout(); requestRedraw(); });
+
+/* ---------- 启动 ---------- */
+syncCamUI();
+requestAnimationFrame(paintLoop);
+</script>
+
+</body>
+</html>
