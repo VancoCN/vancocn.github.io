@@ -504,7 +504,13 @@
             .opt-label { min-width: 100%; }
             .category-title { margin-top: 28px; }
         }
+        .crypto-box { display: flex; flex-direction: column; gap: 8px; }
+        .crypto-label { font-size: 0.85em; color: #a8a8c0; letter-spacing: 1px; }
+        .ta { width: 100%; min-height: 180px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px; color: #dcdcea; font-family: inherit; font-size: 0.9em; line-height: 1.6; resize: vertical; outline: none; }
+        .ta:focus { border-color: rgba(160,160,220,0.5); }
+        .crypto-hint { font-size: 0.78em; color: rgba(255,255,255,0.3); text-align: right; letter-spacing: 0.5px; }
     </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -520,6 +526,7 @@
     <button class="tab active" data-tab="audio">音频转换</button>
     <button class="tab" data-tab="image">图片转换</button>
     <button class="tab" data-tab="lang">MO / PO</button>
+    <button class="tab" data-tab="crypto">加解密</button>
 </div>
 
 <!-- ==================== 音频 ==================== -->
@@ -705,6 +712,54 @@
             · 自动识别大端 / 小端序，并按 .mo 头部声明的字符集解码（缺省 UTF-8）<br>
             · PO → MO 会跳过 <code>#~</code> 废弃条目，默认排除 fuzzy 条目，与 msgfmt 的行为一致<br>
             · 生成的 .mo 不含哈希表，字符串表按字节序排序，可被 gettext / PHP / Python 正常读取
+        </div>
+    </div>
+</section>
+
+<!-- ==================== 加解密 ==================== -->
+<section class="panel" id="panel-crypto" hidden>
+    <div class="panel-card glass">
+        <div class="crypto-box">
+            <div class="crypto-label">输入</div>
+            <textarea class="ta" id="cryptoIn" placeholder="在此输入文本，或拖拽文件到此处…"></textarea>
+            <div class="crypto-hint" id="cryptoInHint">0 字符</div>
+        </div>
+        <div class="opt-row" style="margin-top:20px;">
+            <span class="opt-label">方向</span>
+            <div class="seg" id="cryptoDir">
+                <button class="seg-btn active" data-v="enc">加密 / 编码</button>
+                <button class="seg-btn" data-v="dec">解密 / 解码</button>
+            </div>
+        </div>
+        <div class="opt-row">
+            <span class="opt-label">算法</span>
+            <div class="seg" id="cryptoAlgo">
+                <button class="seg-btn active" data-v="base64">Base64</button>
+                <button class="seg-btn" data-v="base32">Base32</button>
+                <button class="seg-btn" data-v="base16">Base16</button>
+                <button class="seg-btn" data-v="base58">Base58</button>
+                <button class="seg-btn" data-v="base62">Base62</button>
+                <button class="seg-btn" data-v="base85">Base85</button>
+                <button class="seg-btn" data-v="base91">Base91</button>
+            </div>
+        </div>
+        <button class="run-btn" id="cryptoRun">执 行 转 换</button>
+        <div class="status" id="cryptoStatus"></div>
+        <div class="crypto-box" style="margin-top:20px;">
+            <div class="crypto-label">输出</div>
+            <textarea class="ta" id="cryptoOut" readonly placeholder="结果将显示在这里…"></textarea>
+            <div class="crypto-hint" id="cryptoOutHint">0 字符</div>
+        </div>
+        <div class="opt-row" style="border-top:none;padding-top:10px;">
+            <button class="run-btn" id="cryptoCopy" style="width:auto;flex:1;margin-top:0;background:rgba(255,255,255,0.08);">复 制 结 果</button>
+            <button class="run-btn" id="cryptoDown" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);">下 载 结 果</button>
+        </div>
+        <div class="note">
+            <b>说明</b><br>
+            · 加密：将输入文本按 UTF-8 编码为字节后，再做 Base 转换<br>
+            · 解密：将 Base 字符串还原为字节后，再按 UTF-8 解码为文本；若字节流不是合法 UTF-8，则提供二进制下载<br>
+            · Base16 即 Hex；Base85 采用 Adobe ASCII85 字符集（不含 &lt;~ ~&gt; 包裹符）；Base91 采用 Henke 标准字符集<br>
+            · 支持拖拽文本文件到输入框自动读取
         </div>
     </div>
 </section>
@@ -1734,6 +1789,259 @@ $("langRun").addEventListener("click", async () => {
     st.textContent = "完成 " + ok + " 个" + (fail ? "，失败 " + fail + " 个" : "");
     btn.disabled = false;
 });
+
+/* ==================== Base 编解码器 ==================== */
+function utf8ToBytes(str) { return new TextEncoder().encode(str); }
+function bytesToUtf8(bytes) {
+  try { return new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
+  catch (e) { return null; }
+}
+
+const Base16 = {
+  encode: (bytes) => Array.from(bytes, b => b.toString(16).padStart(2, "0")).join(""),
+  decode: (str) => {
+    const m = str.match(/[0-9a-fA-F]{2}/g);
+    return m ? new Uint8Array(m.map(b => parseInt(b, 16))) : new Uint8Array(0);
+  }
+};
+
+const Base32 = {
+  alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567",
+  encode: (bytes) => {
+    let out = "", bits = 0, val = 0;
+    for (let i = 0; i < bytes.length; i++) {
+      val = (val << 8) | bytes[i]; bits += 8;
+      while (bits >= 5) { out += Base32.alphabet[(val >> (bits - 5)) & 31]; bits -= 5; }
+    }
+    if (bits > 0) out += Base32.alphabet[(val << (5 - bits)) & 31];
+    while (out.length % 8 !== 0) out += "=";
+    return out;
+  },
+  decode: (str) => {
+    const out = []; let bits = 0, val = 0;
+    for (let i = 0; i < str.length; i++) {
+      const c = str[i]; if (c === "=") break;
+      const idx = Base32.alphabet.indexOf(c);
+      if (idx < 0) throw new Error("非法字符");
+      val = (val << 5) | idx; bits += 5;
+      while (bits >= 8) { out.push((val >> (bits - 8)) & 0xff); bits -= 8; }
+    }
+    return new Uint8Array(out);
+  }
+};
+
+const Base58 = {
+  alphabet: "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz",
+  encode: (bytes) => {
+    let zeros = 0; while (zeros < bytes.length && bytes[zeros] === 0) zeros++;
+    let num = BigInt("0x" + Array.from(bytes, b => b.toString(16).padStart(2, "0")).join(""));
+    let out = ""; const base = 58n;
+    while (num > 0n) { out = Base58.alphabet[Number(num % base)] + out; num /= base; }
+    return "1".repeat(zeros) + out;
+  },
+  decode: (str) => {
+    let zeros = 0; while (zeros < str.length && str[zeros] === "1") zeros++;
+    let num = 0n; const base = 58n;
+    for (let c of str.slice(zeros)) {
+      const i = Base58.alphabet.indexOf(c); if (i < 0) throw new Error("非法字符");
+      num = num * base + BigInt(i);
+    }
+    let hex = num.toString(16); if (hex.length % 2) hex = "0" + hex;
+    const out = new Uint8Array(zeros + hex.length / 2); out.fill(0, 0, zeros);
+    for (let i = 0; i < hex.length / 2; i++) out[zeros + i] = parseInt(hex.substr(i * 2, 2), 16);
+    return out;
+  }
+};
+
+const Base62 = {
+  alphabet: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+  encode: (bytes) => {
+    let zeros = 0; while (zeros < bytes.length && bytes[zeros] === 0) zeros++;
+    let num = BigInt("0x" + Array.from(bytes, b => b.toString(16).padStart(2, "0")).join(""));
+    let out = ""; const base = 62n;
+    while (num > 0n) { out = Base62.alphabet[Number(num % base)] + out; num /= base; }
+    return "0".repeat(zeros) + out;
+  },
+  decode: (str) => {
+    let zeros = 0; while (zeros < str.length && str[zeros] === "0") zeros++;
+    let num = 0n; const base = 62n;
+    for (let c of str.slice(zeros)) {
+      const i = Base62.alphabet.indexOf(c); if (i < 0) throw new Error("非法字符");
+      num = num * base + BigInt(i);
+    }
+    let hex = num.toString(16); if (hex.length % 2) hex = "0" + hex;
+    const out = new Uint8Array(zeros + hex.length / 2); out.fill(0, 0, zeros);
+    for (let i = 0; i < hex.length / 2; i++) out[zeros + i] = parseInt(hex.substr(i * 2, 2), 16);
+    return out;
+  }
+};
+
+const Base64 = {
+  encode: (bytes) => {
+    const bin = Array.from(bytes, b => String.fromCharCode(b)).join("");
+    return btoa(bin);
+  },
+  decode: (str) => {
+    const bin = atob(str);
+    return new Uint8Array(Array.from(bin, c => c.charCodeAt(0)));
+  }
+};
+
+const Base85 = {
+  alphabet: '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstu',
+  encode: (data) => {
+    let out = "", i = 0, n = data.length;
+    while (i < n) {
+      let chunk = 0, pad = 0;
+      for (let j = 0; j < 4; j++) {
+        if (i < n) chunk = chunk * 256 + data[i++];
+        else { chunk = chunk * 256; pad++; }
+      }
+      if (pad === 0 && chunk === 0) { out += "z"; continue; }
+      let chars = "";
+      for (let j = 0; j < 5; j++) { chars = Base85.alphabet[chunk % 85] + chars; chunk = Math.floor(chunk / 85); }
+      out += chars.slice(0, 5 - pad);
+    }
+    return out;
+  },
+  decode: (str) => {
+    const out = []; let i = 0;
+    while (i < str.length) {
+      if (str[i] === "z") { out.push(0, 0, 0, 0); i++; continue; }
+      let chunk = 0, charsRead = 0;
+      for (; charsRead < 5 && i < str.length; ) {
+        const c = str[i++];
+        if (/\s/.test(c)) continue;
+        const idx = Base85.alphabet.indexOf(c);
+        if (idx < 0) throw new Error("非法字符");
+        chunk = chunk * 85 + idx; charsRead++;
+      }
+      if (charsRead === 0) break;
+      const realChars = charsRead;
+      while (charsRead < 5) { chunk = chunk * 85 + 84; charsRead++; }
+      let j = i; while (j < str.length && /\s/.test(str[j])) j++;
+      const isLast = j >= str.length;
+      const bytesOut = isLast ? Math.max(1, realChars - 1) : 4;
+      for (let b = 3; b >= 4 - bytesOut; b--) out.push((chunk >> (b * 8)) & 0xff);
+    }
+    return new Uint8Array(out);
+  }
+};
+
+const Base91 = {
+  alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,./:;<=>?@[]^_`{|}~"',
+  encode: (data) => {
+    let b = 0, n = 0, out = "", a = Base91.alphabet;
+    for (let i = 0; i < data.length; i++) {
+      b |= data[i] << n; n += 8;
+      if (n > 13) {
+        let v = b & 8191;
+        if (v > 88) { b >>= 13; n -= 13; }
+        else { v = b & 16383; b >>= 14; n -= 14; }
+        out += a[v % 91] + a[Math.floor(v / 91)];
+      }
+    }
+    if (n > 0) {
+      out += a[b % 91];
+      if (n > 7 || b > 90) out += a[Math.floor(b / 91)];
+    }
+    return out;
+  },
+  decode: (str) => {
+    const out = []; let b = 0, n = 0, v = -1; const a = Base91.alphabet;
+    for (let i = 0; i < str.length; i++) {
+      const idx = a.indexOf(str[i]); if (idx < 0) continue;
+      if (v < 0) { v = idx; continue; }
+      v += idx * 91;
+      b |= v << n;
+      n += (v & 8191) > 88 ? 13 : 14;
+      while (n > 7) { out.push(b & 0xff); b >>= 8; n -= 8; }
+      v = -1;
+    }
+    if (v >= 0) out.push((b | v << n) & 0xff);
+    return new Uint8Array(out);
+  }
+};
+
+/* ==================== 加解密面板 ==================== */
+let cryptoDir = bindSeg("cryptoDir", v => { cryptoDir = v; });
+let cryptoAlgo = bindSeg("cryptoAlgo", v => { cryptoAlgo = v; });
+
+const cryptoIn = $("cryptoIn"), cryptoOut = $("cryptoOut");
+const cryptoStatus = $("cryptoStatus");
+const cryptoInHint = $("cryptoInHint"), cryptoOutHint = $("cryptoOutHint");
+
+function updateCryptoHints() {
+  cryptoInHint.textContent = cryptoIn.value.length + " 字符";
+  cryptoOutHint.textContent = cryptoOut.value.length + " 字符";
+}
+cryptoIn.addEventListener("input", updateCryptoHints);
+
+cryptoIn.addEventListener("dragover", e => { e.preventDefault(); cryptoIn.style.borderColor = "rgba(160,160,220,0.55)"; });
+cryptoIn.addEventListener("dragleave", e => { e.preventDefault(); cryptoIn.style.borderColor = ""; });
+cryptoIn.addEventListener("drop", async e => {
+  e.preventDefault(); cryptoIn.style.borderColor = "";
+  const files = Array.from(e.dataTransfer.files);
+  if (!files.length) return;
+  try { cryptoIn.value = await files[0].text(); updateCryptoHints(); } catch (err) {}
+});
+
+$("cryptoRun").addEventListener("click", () => {
+  const text = cryptoIn.value;
+  if (!text) { cryptoStatus.className = "status err"; cryptoStatus.textContent = "请输入内容"; return; }
+  cryptoStatus.className = "status"; cryptoStatus.textContent = "处理中…";
+  try {
+    const algo = cryptoAlgo; const isEnc = cryptoDir === "enc";
+    let result = ""; let outBytes = null;
+    if (isEnc) {
+      const bytes = utf8ToBytes(text);
+      switch (algo) {
+        case "base16": result = Base16.encode(bytes); break;
+        case "base32": result = Base32.encode(bytes); break;
+        case "base58": result = Base58.encode(bytes); break;
+        case "base62": result = Base62.encode(bytes); break;
+        case "base64": result = Base64.encode(bytes); break;
+        case "base85": result = Base85.encode(bytes); break;
+        case "base91": result = Base91.encode(bytes); break;
+      }
+    } else {
+      let bytes;
+      switch (algo) {
+        case "base16": bytes = Base16.decode(text); break;
+        case "base32": bytes = Base32.decode(text); break;
+        case "base58": bytes = Base58.decode(text); break;
+        case "base62": bytes = Base62.decode(text); break;
+        case "base64": bytes = Base64.decode(text); break;
+        case "base85": bytes = Base85.decode(text); break;
+        case "base91": bytes = Base91.decode(text); break;
+      }
+      outBytes = bytes;
+      const txt = bytesToUtf8(bytes);
+      result = txt !== null ? txt : "[二进制数据，无法以 UTF-8 文本显示，请使用「下载结果」保存为文件]";
+    }
+    cryptoOut.value = result;
+    if (outBytes) cryptoOut._bytes = outBytes; else delete cryptoOut._bytes;
+    updateCryptoHints();
+    cryptoStatus.className = "status ok"; cryptoStatus.textContent = "完成";
+  } catch (err) {
+    cryptoStatus.className = "status err";
+    cryptoStatus.textContent = "失败：" + (err && err.message ? err.message : err);
+  }
+});
+
+$("cryptoCopy").addEventListener("click", async () => {
+  if (!cryptoOut.value) return;
+  try { await navigator.clipboard.writeText(cryptoOut.value); cryptoStatus.className = "status ok"; cryptoStatus.textContent = "已复制到剪贴板"; }
+  catch (e) { cryptoStatus.className = "status err"; cryptoStatus.textContent = "复制失败"; }
+});
+
+$("cryptoDown").addEventListener("click", () => {
+  if (!cryptoOut.value && !cryptoOut._bytes) { cryptoStatus.className = "status err"; cryptoStatus.textContent = "没有可下载的内容"; return; }
+  if (cryptoOut._bytes) download(new Blob([cryptoOut._bytes], { type: "application/octet-stream" }), "decoded.bin");
+  else download(new Blob([cryptoOut.value], { type: "text/plain;charset=utf-8" }), "encoded.txt");
+  cryptoStatus.className = "status ok"; cryptoStatus.textContent = "已开始下载";
+});
+
 </script>
 
 </body>
