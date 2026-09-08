@@ -350,26 +350,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .song-item .item-actions { display: flex; gap: 6px; flex-shrink: 0; }
-  .icon-btn {
-    width: 34px;
-    height: 34px;
-    border: 1px solid var(--glass-border);
-    border-radius: 8px;
-    cursor: pointer;
-    background: var(--glass-bg);
-    color: var(--text);
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    text-decoration: none;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-  .icon-btn:hover { background: var(--accent); color: #fff; border-color: transparent; }
-
   /* ==================== 换背景按钮 ==================== */
   .change-bg-btn {
     display: flex;
@@ -410,6 +390,65 @@
     letter-spacing: 1px;
   }
 
+  /* ==================== 迷你播放器（底部悬浮） ==================== */
+  .mini-player {
+    position: fixed;
+    left: 50%;
+    bottom: 16px;
+    width: min(920px, calc(100% - 32px));
+    transform: translate(-50%, 150%);
+    z-index: 200;
+    background: rgba(18, 18, 32, 0.72);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.4s cubic-bezier(.22,.68,.36,1), opacity 0.35s ease;
+  }
+  .mini-player.show { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+  .mini-progress { width: 100%; height: 4px; background: rgba(255,255,255,0.09); cursor: pointer; overflow: hidden; }
+  .mini-progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--accent), #b0a0ff);
+    box-shadow: 0 0 8px var(--accent-glow);
+    transition: width 0.1s linear;
+  }
+  .mini-body { display: flex; align-items: center; gap: 14px; padding: 10px 14px 12px; }
+  .mini-info { flex: 1; min-width: 0; cursor: pointer; }
+  .mini-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mini-time { font-size: 11px; color: var(--text-sub); margin-top: 3px; letter-spacing: 0.5px; }
+  .mini-controls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .mini-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.25s;
+    font-family: inherit;
+  }
+  .mini-btn:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); transform: scale(1.06); }
+  .mini-btn.play {
+    width: 44px; height: 44px; font-size: 18px;
+    border: none; color: #fff;
+    background: linear-gradient(135deg, var(--accent), #6a5cff);
+    box-shadow: 0 4px 16px var(--accent-glow);
+  }
+  .mini-btn.play:hover { background: linear-gradient(135deg, var(--accent-hover), #8a7cff); }
+  .mini-eq { display: flex; align-items: flex-end; gap: 2px; width: 16px; height: 14px; flex-shrink: 0; }
+  .mini-eq i { width: 3px; border-radius: 2px; background: var(--accent); height: 25%; animation: eq 0.9s ease-in-out infinite; }
+  .mini-eq i:nth-child(2) { animation-delay: 0.15s; }
+  .mini-eq i:nth-child(3) { animation-delay: 0.3s; }
+  .mini-player:not(.playing) .mini-eq i { animation-play-state: paused; height: 25%; }
+  @keyframes eq { 0%, 100% { height: 25%; } 50% { height: 100%; } }
+
   /* ==================== 响应式 ==================== */
   @media (max-width: 600px) {
     .topbar { padding: 12px 16px; }
@@ -422,6 +461,12 @@
     .controls { gap: 14px; }
     .ctrl-btn { width: 42px; height: 42px; font-size: 16px; }
     .ctrl-btn.play-btn { width: 54px; height: 54px; font-size: 20px; }
+    .mini-player { width: calc(100% - 16px); bottom: 10px; border-radius: 14px; }
+    .mini-body { padding: 8px 12px 10px; gap: 10px; }
+    .mini-title { font-size: 13px; }
+    .mini-btn { width: 32px; height: 32px; font-size: 13px; }
+    .mini-btn.play { width: 40px; height: 40px; font-size: 16px; }
+    .mini-controls { gap: 6px; }
   }
 </style>
 </head>
@@ -482,6 +527,25 @@
   <ul class="song-list" id="songList"></ul>
 
   <div class="footer"></div>
+</div>
+
+<!-- ========== 迷你播放器（主界面滚出视口时显示） ========== -->
+<div class="mini-player" id="miniPlayer">
+  <div class="mini-progress" id="miniProgressBar" title="点击跳转">
+    <div class="mini-progress-fill" id="miniProgressFill"></div>
+  </div>
+  <div class="mini-body">
+    <div class="mini-eq" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="mini-info" id="miniInfo" title="回到播放器">
+      <div class="mini-title" id="miniTitle">未选择歌曲</div>
+      <div class="mini-time"><span id="miniCurrentTime">0:00</span> / <span id="miniTotalTime">0:00</span></div>
+    </div>
+    <div class="mini-controls">
+      <button class="mini-btn" id="miniPrevBtn" title="上一首">⏮</button>
+      <button class="mini-btn play" id="miniPlayBtn" title="播放/暂停">▶</button>
+      <button class="mini-btn" id="miniNextBtn" title="下一首">⏭</button>
+    </div>
+  </div>
 </div>
 
 <!-- ========== 配置：音乐仓库 VancoCN/music ========== -->
@@ -572,6 +636,20 @@ var BG_IMAGES = [
   var songListEl = document.getElementById("songList");
   var listTitleEl = document.getElementById("listTitle");
   var changeBgBtn = document.getElementById("changeBgBtn");
+
+  // 迷你播放器
+  var mainPlayer = document.querySelector(".visualizer-wrap");
+  var controlsEl = document.querySelector(".controls");
+  var miniPlayer = document.getElementById("miniPlayer");
+  var miniProgressBar = document.getElementById("miniProgressBar");
+  var miniProgressFill = document.getElementById("miniProgressFill");
+  var miniTitle = document.getElementById("miniTitle");
+  var miniInfo = document.getElementById("miniInfo");
+  var miniCurrentTimeEl = document.getElementById("miniCurrentTime");
+  var miniTotalTimeEl = document.getElementById("miniTotalTime");
+  var miniPlayBtn = document.getElementById("miniPlayBtn");
+  var miniPrevBtn = document.getElementById("miniPrevBtn");
+  var miniNextBtn = document.getElementById("miniNextBtn");
 
   var currentIndex = -1;
   var isPlaying = false;
@@ -789,9 +867,6 @@ var BG_IMAGES = [
           + '<div class="item-name">' + escapeHtml(s.name) + '</div>'
           + '<div class="item-meta">' + escapeHtml(s.file) + '</div>'
         + '</div>'
-        + '<div class="item-actions">'
-          + '<a class="icon-btn" href="' + s.url + '" download title="下载" target="_blank" rel="noopener">⬇</a>'
-        + '</div>'
       + '</li>';
     }
     songListEl.innerHTML = html;
@@ -799,7 +874,6 @@ var BG_IMAGES = [
     var items = songListEl.querySelectorAll(".song-item");
     for (var j = 0; j < items.length; j++) {
       items[j].addEventListener("click", function (e) {
-        if (e.target.tagName === "A") return;
         loadSong(parseInt(this.getAttribute("data-index"), 10), true);
       });
     }
@@ -820,6 +894,7 @@ var BG_IMAGES = [
     audio.load();
 
     currentTitle.textContent = song.name;
+    miniTitle.textContent = song.name;
     currentStatus.textContent = "加载中...";
 
     var items = songListEl.querySelectorAll(".song-item");
@@ -842,6 +917,8 @@ var BG_IMAGES = [
   function setPlaying(playing) {
     isPlaying = playing;
     playBtn.textContent = playing ? "⏸" : "▶";
+    miniPlayBtn.textContent = playing ? "⏸" : "▶";
+    miniPlayer.classList.toggle("playing", playing);
     if (playing) {
       currentStatus.textContent = "正在播放";
     } else {
@@ -850,7 +927,7 @@ var BG_IMAGES = [
   }
 
   // ---- 控制按钮 ----
-  playBtn.addEventListener("click", function () {
+  function togglePlay() {
     if (currentIndex < 0) {
       if (SONGS.length > 0) loadSong(0, true);
       return;
@@ -861,18 +938,30 @@ var BG_IMAGES = [
       audio.pause();
       setPlaying(false);
     }
-  });
+  }
 
-  prevBtn.addEventListener("click", function () {
+  function playPrev() {
     if (!SONGS.length) return;
     var idx = currentIndex <= 0 ? SONGS.length - 1 : currentIndex - 1;
     loadSong(idx, isPlaying);
-  });
+  }
 
-  nextBtn.addEventListener("click", function () {
+  function playNext() {
     if (!SONGS.length) return;
     var idx = currentIndex >= SONGS.length - 1 ? 0 : currentIndex + 1;
     loadSong(idx, isPlaying);
+  }
+
+  playBtn.addEventListener("click", togglePlay);
+  miniPlayBtn.addEventListener("click", togglePlay);
+  prevBtn.addEventListener("click", playPrev);
+  miniPrevBtn.addEventListener("click", playPrev);
+  nextBtn.addEventListener("click", playNext);
+  miniNextBtn.addEventListener("click", playNext);
+
+  // 点击迷你播放器歌曲名 → 回到主播放界面
+  miniInfo.addEventListener("click", function () {
+    mainPlayer.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 
   // ---- 进度条 ----
@@ -881,10 +970,13 @@ var BG_IMAGES = [
     var pct = (audio.currentTime / audio.duration) * 100;
     progressFill.style.width = pct + "%";
     currentTimeEl.textContent = formatTime(audio.currentTime);
+    miniProgressFill.style.width = pct + "%";
+    miniCurrentTimeEl.textContent = formatTime(audio.currentTime);
   });
 
   audio.addEventListener("loadedmetadata", function () {
     totalTimeEl.textContent = formatTime(audio.duration);
+    miniTotalTimeEl.textContent = formatTime(audio.duration);
   });
 
   audio.addEventListener("ended", function () { nextBtn.click(); });
@@ -894,12 +986,17 @@ var BG_IMAGES = [
     setPlaying(false);
   });
 
-  progressBar.addEventListener("click", function (e) {
+  // 进度条跳转（主界面 / 迷你播放器 共用）
+  function seekFromBar(bar, e) {
     if (!audio.duration) return;
-    var rect = progressBar.getBoundingClientRect();
+    var rect = bar.getBoundingClientRect();
     var pct = (e.clientX - rect.left) / rect.width;
+    pct = Math.max(0, Math.min(1, pct));
     audio.currentTime = pct * audio.duration;
-  });
+  }
+
+  progressBar.addEventListener("click", function (e) { seekFromBar(progressBar, e); });
+  miniProgressBar.addEventListener("click", function (e) { seekFromBar(miniProgressBar, e); });
 
   // ---- 音量 ----
   audio.volume = volumeSlider.value;
@@ -951,6 +1048,25 @@ var BG_IMAGES = [
   resizeCanvas();
   songListEl.innerHTML = '<div class="empty-state"><h3>加载中…</h3><p>正在读取播放列表</p></div>';
   drawVisualizer();
+
+  // ==================== 迷你播放器显隐 ====================
+  // 主界面的控制按钮区滚出视口 → 底部浮出迷你播放器
+  function updateMiniVisibility() {
+    if (!controlsEl) return;
+    var rect = controlsEl.getBoundingClientRect();
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    var visibleH = Math.min(rect.bottom, vh) - Math.max(rect.top, 0);
+    var need = Math.min(rect.height, 40);
+    miniPlayer.classList.toggle("show", visibleH < need);
+  }
+
+  if (window.IntersectionObserver && controlsEl) {
+    new IntersectionObserver(updateMiniVisibility, { threshold: [0, 0.25, 0.5, 0.75, 1] })
+      .observe(controlsEl);
+  }
+  window.addEventListener("scroll", updateMiniVisibility, { passive: true });
+  window.addEventListener("resize", updateMiniVisibility);
+  updateMiniVisibility();
 
   loadPlaylist(function () {
     renderList();
