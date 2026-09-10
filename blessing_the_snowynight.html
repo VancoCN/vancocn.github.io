@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>祝福：雪夜问魂</title>
+<style>
+/* ==========================================================
+   《祝福：雪夜问魂》 —— 木刻版画风格 视觉小说 + 轻解谜
+   全部视觉由 CSS / SVG / Canvas 绘制，无外部依赖
+   ========================================================== */
+
+/* ---------- 基础与配色 ---------- */
+:root{
+  --ink:#0a0f13;            /* 夜色 */
+  --ink2:#131c22;           /* 次夜色 */
+  --snow:#dfe6e8;           /* 雪白 */
+  --paper:rgba(226,220,206,.10);  /* 宣纸 */
+  --paper2:rgba(226,220,206,.16);
+  --red:#8e2b2b;            /* 暗红（福字 / 门槛） */
+  --red2:#b8453c;           /* 亮一点的红 */
+  --gold:#c8a86b;           /* 烛光 */
+  --grey:#8b969c;           /* 灰蓝 */
+  --line:rgba(142,43,43,.55);
+  --serif:"Songti SC","STSong","SimSun","Noto Serif CJK SC","Source Han Serif SC","WenQuanYi Micro Hei",serif;
+  --kai:"Kaiti SC","STKaiti","KaiTi","Noto Serif CJK SC",var(--serif);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0;padding:0;
+  background:
+    radial-gradient(120% 90% at 50% 0%, #1b262d 0%, #0d1418 55%, #060a0c 100%);
+  color:var(--snow);
+  font-family:var(--serif);
+  font-size:16px;line-height:1.95;
+  overflow-x:hidden;
+  letter-spacing:.02em;
+}
+/* 木刻噪点质感：用重复渐变模拟刻痕 */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.35;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.020) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.16) 0 1px, transparent 1px 4px);
+  mix-blend-mode:overlay;
+}
+/* 暗角 */
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:1;
+  background:radial-gradient(80% 70% at 50% 45%, transparent 40%, rgba(0,0,0,.72) 100%);
+}
+
+/* ---------- 雪（Canvas） ---------- */
+#snow{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;}
+
+/* ---------- 爆竹闪光 ---------- */
+#flash{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:0;background:radial-gradient(60% 50% at 70% 20%, #ffd9a8 0%, rgba(255,120,60,.25) 40%, transparent 70%);}
+#flash.on{animation:flash .5s ease-out;}
+@keyframes flash{0%{opacity:0}12%{opacity:.75}100%{opacity:0}}
+
+/* ---------- 布局 ---------- */
+#app{position:relative;z-index:4;max-width:820px;margin:0 auto;padding:18px 16px 60px;min-height:100vh;display:flex;flex-direction:column;}
+
+/* 顶部条 */
+.topbar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:8px 12px;margin-bottom:14px;
+  background:var(--paper);border:1px solid var(--line);
+  border-radius:2px;backdrop-filter:blur(3px);
+  box-shadow:inset 0 0 40px rgba(0,0,0,.35);
+  font-size:13px;color:#b9c4c8;
+}
+.topbar .chap{color:var(--gold);letter-spacing:.12em;}
+.topbar .sp{flex:1}
+.mini{
+  font-family:var(--serif);cursor:pointer;
+  background:transparent;border:1px solid var(--line);color:#c9d2d5;
+  padding:3px 9px;border-radius:2px;font-size:12.5px;letter-spacing:.08em;
+  transition:.18s;
+}
+.mini:hover{background:rgba(142,43,43,.28);color:#fff;border-color:var(--red2);}
+.mini:active{transform:translateY(1px)}
+.frag{color:var(--red2);}
+
+/* ---------- 开始界面 ---------- */
+#start{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;flex:1;gap:26px;min-height:78vh;position:relative;}
+.vtitle{
+  writing-mode:vertical-rl;text-orientation:upright;
+  font-size:clamp(30px,7.2vw,50px);letter-spacing:.16em;
+  color:#e9eef0;font-weight:600;line-height:1.15;
+  text-shadow:0 0 24px rgba(180,70,60,.45), 2px 2px 0 #000;
+  padding:14px 10px;border-right:2px solid var(--red);border-left:2px solid var(--red);
+}
+.vsub{writing-mode:vertical-rl;text-orientation:upright;font-size:14px;color:var(--grey);letter-spacing:.3em;height:210px;}
+.startbtns{display:flex;flex-direction:column;gap:12px;width:min(320px,80vw);}
+.btn{
+  font-family:var(--serif);cursor:pointer;width:100%;
+  background:linear-gradient(180deg, rgba(142,43,43,.30), rgba(142,43,43,.10));
+  border:1px solid var(--red);color:#f0e9e0;
+  padding:13px 18px;font-size:17px;letter-spacing:.24em;border-radius:2px;
+  transition:.22s;position:relative;overflow:hidden;
+}
+.btn:hover{background:linear-gradient(180deg, rgba(184,69,60,.45), rgba(142,43,43,.2));box-shadow:0 0 18px rgba(142,43,43,.45);letter-spacing:.32em;}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:rgba(226,220,206,.05);border-color:rgba(200,200,200,.28);}
+.btn.ghost:hover{background:rgba(226,220,206,.13);box-shadow:none;}
+.startnote{font-size:12.5px;color:#6f7a80;max-width:520px;line-height:2;letter-spacing:.06em;}
+.seal{
+  width:52px;height:52px;border:2px solid var(--red);color:var(--red2);
+  display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1.1;
+  writing-mode:vertical-rl;border-radius:2px;opacity:.85;transform:rotate(-4deg);
+  font-family:var(--kai);
+}
+
+/* ---------- 游戏主面板 ---------- */
+#game{display:none;}
+.panel{
+  background:var(--paper);border:1px solid var(--line);border-radius:2px;
+  backdrop-filter:blur(4px);box-shadow:inset 0 0 60px rgba(0,0,0,.4), 0 6px 30px rgba(0,0,0,.4);
+  padding:22px 22px 20px;position:relative;
+}
+.panel::before,.panel::after{
+  content:"";position:absolute;width:14px;height:14px;border:1px solid var(--red);opacity:.8;
+}
+.panel::before{left:6px;top:6px;border-right:0;border-bottom:0;}
+.panel::after{right:6px;bottom:6px;border-left:0;border-top:0;}
+.sceneTitle{
+  font-size:15px;color:var(--gold);letter-spacing:.3em;margin:0 0 4px;
+}
+.sceneSub{font-size:12.5px;color:#7d888d;letter-spacing:.16em;margin:0 0 16px;}
+.textBox{min-height:190px;font-size:16.5px;line-height:2.15;color:#e3e8ea;}
+.textBox p{margin:0 0 14px;text-indent:2em;}
+.textBox p.noindent{text-indent:0;}
+.textBox em{color:var(--red2);font-style:normal;}
+.textBox .quote{
+  display:block;text-indent:0;color:#f0d9b0;font-family:var(--kai);font-size:17.5px;
+  border-left:2px solid var(--red);padding:4px 0 4px 14px;margin:12px 0 16px;
+  background:linear-gradient(90deg, rgba(142,43,43,.14), transparent 70%);
+}
+.cursor{display:inline-block;width:9px;background:var(--red2);animation:blink .8s steps(1) infinite;color:transparent;}
+@keyframes blink{50%{opacity:0}}
+
+/* ---------- 选项 ---------- */
+#choices{display:flex;flex-direction:column;gap:10px;margin-top:20px;}
+.choice{
+  font-family:var(--serif);text-align:left;cursor:pointer;
+  background:rgba(226,220,206,.055);border:1px solid rgba(226,220,206,.18);
+  color:#dfe6e8;padding:12px 16px;font-size:15.5px;line-height:1.75;border-radius:2px;
+  transition:.2s;position:relative;padding-left:34px;
+}
+.choice::before{
+  content:"○";position:absolute;left:13px;top:12px;color:var(--red2);font-size:13px;
+}
+.choice:hover{background:rgba(142,43,43,.22);border-color:var(--red);transform:translateX(4px);}
+.choice:active{transform:translateX(4px) translateY(1px)}
+.choice.locked{opacity:.4;pointer-events:none;filter:grayscale(1);}
+
+/* ---------- 状态条（耐心 / 洁净） ---------- */
+.status{
+  display:flex;gap:14px;flex-wrap:wrap;margin:14px 0 2px;font-size:12.5px;color:#8e999e;
+  border-top:1px dashed rgba(226,220,206,.14);padding-top:10px;
+}
+.bar{display:flex;align-items:center;gap:7px;}
+.bar .track{width:96px;height:5px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden;}
+.bar .fill{height:100%;background:linear-gradient(90deg,#6d7f88,#c8d2d6);width:60%;transition:width .5s;}
+.bar .fill.low{background:linear-gradient(90deg,#8e2b2b,#b8453c);}
+.verdict{color:var(--red2);letter-spacing:.1em;}
+
+/* ---------- 小游戏舞台 ---------- */
+#stage{margin-top:18px;border-top:1px dashed rgba(226,220,206,.18);padding-top:16px;}
+.stageTip{font-size:13px;color:#8e999e;letter-spacing:.1em;margin-bottom:12px;}
+.stageArea{
+  position:relative;height:250px;border:1px solid rgba(226,220,206,.16);border-radius:2px;
+  background:
+    linear-gradient(180deg, rgba(20,28,34,.55), rgba(8,12,15,.75)),
+    repeating-linear-gradient(-14deg, rgba(255,255,255,.03) 0 2px, transparent 2px 7px);
+  overflow:hidden;touch-action:none;
+}
+.stageArea .ground{
+  position:absolute;left:0;right:0;bottom:0;height:64px;
+  background:linear-gradient(180deg,#cfd8dc 0%, #9fb0b6 100%);
+  clip-path:polygon(0 26%, 14% 12%, 30% 22%, 48% 8%, 66% 20%, 84% 10%, 100% 24%, 100% 100%, 0 100%);
+  opacity:.85;
+}
+.stageArea .ground::after{
+  content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.08) 0 1px, transparent 1px 4px);
+}
+
+/* 可点击物件 */
+.obj{
+  position:absolute;cursor:pointer;transition:.25s;text-align:center;
+  font-size:12px;color:#c8d2d6;letter-spacing:.1em;
+}
+.obj .glyph{
+  display:block;width:100%;height:100%;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.7));
+  transition:.25s;
+}
+.obj:hover .glyph{transform:translateY(-4px) scale(1.05);filter:drop-shadow(0 0 12px rgba(200,168,107,.6));}
+.obj.done{opacity:.5;pointer-events:none;}
+.obj.done .glyph{filter:none;}
+.obj .tag{position:absolute;left:50%;transform:translateX(-50%);bottom:-16px;white-space:nowrap;font-size:11px;color:var(--gold);}
+.hint{position:absolute;border-radius:50%;cursor:pointer;
+  background:radial-gradient(circle, rgba(255,255,255,.22), transparent 65%);
+  animation:pulse 2.6s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.35}50%{transform:scale(1.35);opacity:.9}}
+
+/* 供品 / 福礼 */
+.fuliBar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+.fuliBar button{
+  font-family:var(--serif);cursor:pointer;background:rgba(226,220,206,.06);
+  border:1px solid rgba(226,220,206,.2);color:#e3e8ea;padding:7px 12px;font-size:14px;border-radius:2px;transition:.2s;
+}
+.fuliBar button:hover{background:rgba(142,43,43,.25);border-color:var(--red);}
+.fuliBar button.used{opacity:.32;pointer-events:none;text-decoration:line-through;}
+.fuliBar button.she{background:rgba(142,43,43,.3);border-color:var(--red2);}
+#table{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);width:78%;height:96px;}
+#table .top{position:absolute;left:0;right:0;top:0;height:12px;background:#5b3a22;border-top:1px solid #8a5a33;}
+#table .leg{position:absolute;top:12px;width:8px;height:74px;background:#4a2f1c;}
+#table .leg.l{left:12px}#table .leg.r{right:12px}
+.placed{position:absolute;bottom:14px;font-size:12px;color:#e8dcc4;text-align:center;transition:.4s;}
+.placed .g{display:block;font-size:22px;line-height:1.1}
+
+/* 门槛拖拽 */
+#temple{position:absolute;right:6%;top:32px;width:150px;height:130px;}
+#dropzone{position:absolute;left:50%;bottom:42px;transform:translateX(-50%);width:132px;height:34px;
+  border:2px dashed rgba(226,220,206,.35);border-radius:2px;
+  display:flex;align-items:center;justify-content:center;font-size:11.5px;color:#8e999e;letter-spacing:.1em;}
+#dropzone.hot{border-color:var(--gold);background:rgba(200,168,107,.12);color:var(--gold);}
+#beam{position:absolute;left:16px;top:150px;width:120px;height:22px;cursor:grab;
+  background:linear-gradient(180deg,#7d2b26,#4e1a17);border:1px solid #2c0f0d;border-radius:2px;
+  display:flex;align-items:center;justify-content:center;font-size:11px;color:#e6cfb0;letter-spacing:.2em;
+  box-shadow:0 4px 10px rgba(0,0,0,.6);touch-action:none;z-index:6;}
+#beam.dragging{cursor:grabbing;box-shadow:0 8px 22px rgba(0,0,0,.8);}
+#beam.locked{left:50%;transform:translateX(-50%);top:auto;bottom:42px;cursor:default;border-color:var(--gold);}
+#beam .ch{letter-spacing:0;font-family:var(--kai);font-size:13px;color:#f0d9b0;}
+
+/* 攒钱 */
+.coinbox{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:#c8d2d6;}
+.coins{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px;}
+.coin{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#e6dcc0,#9a8a63);
+  border:1px solid #6b5c3c;box-shadow:0 1px 3px rgba(0,0,0,.6);animation:coinin .4s ease-out;}
+@keyframes coinin{from{transform:scale(0) rotate(-90deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+
+/* 刻字 */
+#carveTarget{cursor:pointer;transition:.3s;}
+#carveTarget:hover{filter:drop-shadow(0 0 10px rgba(200,168,107,.7))}
+#carveTarget.done{cursor:default}
+
+/* 烛火 */
+.candle{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);width:60px;height:110px;}
+.flame{position:absolute;left:50%;top:-14px;margin-left:-7px;width:14px;height:26px;
+  background:radial-gradient(60% 40% at 50% 80%, #fff2c0 0%, #ffb347 45%, rgba(184,69,60,0) 78%);
+  border-radius:50% 50% 45% 45%;animation:flick 1.7s infinite ease-in-out;filter:blur(.4px);}
+@keyframes flick{0%,100%{transform:scale(1) translateY(0);opacity:.95}25%{transform:scale(1.08,.94) translateY(-1px);opacity:1}50%{transform:scale(.94,1.08)}75%{transform:scale(1.05,.97)}}
+.glow{position:absolute;left:50%;top:-40px;margin-left:-90px;width:180px;height:120px;
+  background:radial-gradient(circle, rgba(255,180,90,.28), transparent 68%);animation:flick 2.1s infinite ease-in-out;pointer-events:none;}
+
+/* 碎片提示 */
+.mem{
+  margin-top:14px;font-family:var(--kai);font-size:14.5px;color:#cbb98f;
+  border-left:2px solid var(--gold);padding:8px 0 8px 12px;line-height:2;
+  background:linear-gradient(90deg, rgba(200,168,107,.10), transparent 75%);
+  animation:fadein .8s;
+}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.blocked{
+  margin-top:12px;font-family:var(--kai);font-size:16px;color:#f0c9c2;
+  text-align:center;letter-spacing:.12em;animation:shake .4s;
+}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* 底部 */
+.footer{display:flex;gap:10px;justify-content:center;margin-top:22px;flex-wrap:wrap}
+.footer .mini{padding:6px 14px;font-size:12.5px}
+
+/* 结局 */
+#ending{display:none;text-align:center;}
+.endTitle{font-size:clamp(26px,6vw,40px);letter-spacing:.34em;color:#f0e4cf;margin:0 0 6px;font-weight:600;}
+.endTag{font-size:12.5px;letter-spacing:.4em;color:var(--red2);margin-bottom:26px;}
+.endBody{max-width:560px;margin:0 auto;font-size:16px;line-height:2.2;color:#dfe6e8;text-align:left;}
+.endBody p{margin:0 0 14px;text-indent:2em;}
+.endBody .q{text-indent:0;text-align:center;font-family:var(--kai);color:var(--gold);font-size:18px;letter-spacing:.14em;margin:18px 0;}
+.bigQuestion{font-size:clamp(22px,5.5vw,34px);letter-spacing:.4em;color:#fff;margin:34px 0 10px;font-family:var(--kai);}
+/* 雪幕：置于内容之下，只把背景埋进雪里，不影响文字可读性 */
+.snowveil{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity 3.5s ease;
+  background:linear-gradient(180deg, rgba(226,233,235,.15) 0%, rgba(226,233,235,.62) 45%, rgba(226,233,235,.92) 100%);}
+.snowveil.on{opacity:1;}
+/* 雪幕后文字转为墨色 */
+#ending.onWhite .endTitle{color:#2b1f16 !important;text-shadow:none !important;}
+#ending.onWhite .endTag{color:#7d2b26 !important;}
+#ending.onWhite .endBody{color:#1e2a30 !important;}
+#ending.onWhite .panel{border-color:rgba(120,90,60,.5)}
+/* 选项被雪盖住 */
+.snowed{opacity:0 !important;pointer-events:none !important;transition:opacity 2.5s ease;}
+.faint{color:#6f7a80;font-size:12.5px;letter-spacing:.2em;text-align:center;margin-top:16px}
+
+.hiddenEnd{text-align:center;}
+.hiddenEnd .bigQuestion{animation:breathe 5s ease-in-out infinite;}
+@keyframes breathe{0%,100%{opacity:.55;letter-spacing:.4em}50%{opacity:1;letter-spacing:.5em}}
+
+/* 响应式 */
+@media (max-width:560px){
+  body{font-size:15px}
+  #app{padding:12px 11px 50px}
+  .panel{padding:16px 14px 15px}
+  .textBox{font-size:15.5px;line-height:2.05;min-height:150px}
+  .textBox p{text-indent:2em;margin-bottom:12px}
+  .choice{font-size:14.5px;padding:11px 12px 11px 30px}
+  .stageArea{height:210px}
+  .vsub{height:170px}
+  .topbar{font-size:12px;gap:7px}
+}
+@media (min-width:900px){ .textBox{min-height:210px} }
+</style>
+</head>
+<body>
+
+<canvas id="snow"></canvas>
+<div id="flash"></div>
+<div class="snowveil" id="veil"></div>
+
+<div id="app">
+
+  <!-- ============ 开始界面 ============ -->
+  <div id="start">
+    <div style="display:flex;align-items:flex-start;gap:18px;justify-content:center">
+      <div class="vsub">一个旁观者的自白</div>
+      <h1 class="vtitle">祝福：雪夜问魂</h1>
+      <div class="vsub" style="height:150px">又名·门槛</div>
+    </div>
+
+    <!-- 木刻风格：雪夜中的提篮女人剪影 -->
+    <svg width="200" height="150" viewBox="0 0 200 150" aria-label="雪夜中的女人剪影" style="opacity:.9">
+      <defs>
+        <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e8eef0"/><stop offset="1" stop-color="#93a3aa"/>
+        </linearGradient>
+      </defs>
+      <!-- 雪地 -->
+      <path d="M0 122 Q40 108 80 120 T160 112 T200 120 L200 150 L0 150Z" fill="#c9d4d8" opacity=".55"/>
+      <!-- 身影 -->
+      <g fill="#0c1216" stroke="#c3ced2" stroke-width="1">
+        <ellipse cx="98" cy="52" rx="11" ry="13"/>
+        <path d="M98 65 q-20 6 -24 34 q-3 22 4 34 l14 2 q4 -14 6 -30 l4 30 l14 -2 q7 -12 4 -34 q-4 -28 -22 -34Z"/>
+        <rect x="116" y="112" width="26" height="16" rx="2"/>
+        <path d="M118 112 q5 -9 11 -9 q6 0 11 9"/>
+        <line x1="76" y1="30" x2="64" y2="134" stroke="#c3ced2" stroke-width="2.5"/>
+        <line x1="64" y1="128" x2="64" y2="140" stroke="#c3ced2" stroke-width="2.5"/>
+      </g>
+      <g fill="#dfe6e8" opacity=".8">
+        <circle cx="40" cy="30" r="1.6"/><circle cx="150" cy="24" r="1.3"/><circle cx="170" cy="60" r="1.5"/>
+        <circle cx="24" cy="72" r="1.2"/><circle cx="128" cy="14" r="1.1"/><circle cx="60" cy="96" r="1.4"/>
+      </g>
+    </svg>
+
+    <div class="startbtns">
+      <button class="btn" id="btnNew">新 的 一 夜</button>
+      <button class="btn ghost" id="btnContinue" style="display:none">继 续 未 完</button>
+    </div>
+    <p class="startnote">
+      你是“我”，一个回鲁镇过年的新派知识分子。<br>
+      你读新书，知道“鬼神者，宗教家之妄说也”，<br>
+      却仍然答不出一个临死女人的问题。<br>
+      ——这里没有拯救，只有经历、追问与“说不清”。
+    </p>
+    <div class="seal">说不清</div>
+  </div>
+
+  <!-- ============ 游戏界面 ============ -->
+  <div id="game">
+    <div class="topbar">
+      <span class="chap" id="chapText">序章</span>
+      <span id="fragText" class="frag">碎片 0/9</span>
+      <span class="sp"></span>
+      <button class="mini" id="btnMute" title="环境音开关">♪ 静音</button>
+      <button class="mini" id="btnRestart" title="清空进度，重新开始">重新开始</button>
+    </div>
+
+    <div class="panel">
+      <h2 class="sceneTitle" id="sceneTitle"></h2>
+      <p class="sceneSub" id="sceneSub"></p>
+      <div class="textBox" id="textBox"></div>
+      <div id="status" class="status"></div>
+      <div id="stage"></div>
+      <div id="choices"></div>
+    </div>
+
+    <div class="footer">
+      <button class="mini" id="btnSkip">跳过打字</button>
+      <button class="mini" id="btnBack">返回标题</button>
+    </div>
+  </div>
+
+  <!-- ============ 结局界面 ============ -->
+  <div id="ending">
+    <div class="panel">
+      <h2 class="endTitle" id="endTitle"></h2>
+      <div class="endTag" id="endTag"></div>
+      <div class="endBody" id="endBody"></div>
+      <div class="footer" style="margin-top:30px">
+        <button class="btn" id="btnAgain" style="width:auto;padding:11px 30px">再 来 一 夜</button>
+        <button class="btn ghost" id="btnBack2" style="width:auto;padding:11px 26px">回 到 标 题</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* =========================================================================
+   《祝福：雪夜问魂》逻辑
+   1) 雪 Canvas        2) Web Audio 环境音      3) 场景节点系统
+   4) 小游戏（福礼/寻物/攒钱/拖门槛/刻字/书房点击）
+   5) 变量：耐心值、祭祀资格（恒为 false）、记忆碎片、沉默标记
+   6) localStorage 存档 + 重新开始
+   ========================================================================= */
+
+/* ---------------- 0. 全局状态 ---------------- */
+const SAVE_KEY = 'zhufu_xueye_wenhun_v1';
+let S = null;                       // 游戏状态
+let typing = false;                 // 是否正在打字
+let typeTimer = null;
+let crackerTimer = null;
+
+function freshState(){
+  return {
+    scene:'prologue_arrive',
+    frag:0,                         // 收集到的记忆碎片数（共9）
+    patience:5,                     // 周围人的耐心（0-5）
+    heard:0,                        // 听阿毛故事的次数
+    clean:false,                    // 祭祀资格 —— 永远为 false
+    money:0,
+    silentMarks:{},                 // 关键沉默点：m1/m2/m3/m4/m5
+    silentCount:0,
+    soul:null,                      // 灵魂之问的选择结果
+    mg:{},                          // 小游戏完成记录
+    seen:{},                        // 已看过的场景（用于重入判定）
+    log:[]
+  };
+}
+
+/* ---------------- 1. 雪（Canvas） ---------------- */
+const snowCv = document.getElementById('snow');
+const sctx = snowCv.getContext('2d');
+let flakes = [], W=0, H=0, wind=0.35, density=1;
+
+function initSnow(){
+  resizeSnow();
+  flakes = [];
+  const n = Math.round(W*H/9000*density);
+  for(let i=0;i<n;i++) flakes.push(newFlake(true));
+  requestAnimationFrame(drawSnow);
+}
+function newFlake(init){
+  return {
+    x:Math.random()*W,
+    y:init?Math.random()*H:-10,
+    r:Math.random()*1.9+0.5,
+    sp:Math.random()*0.9+0.35,
+    sw:Math.random()*1.6+0.4,       // 摆动幅度
+    ph:Math.random()*Math.PI*2,
+    a:Math.random()*0.55+0.25
+  };
+}
+function resizeSnow(){
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  snowCv.width = W*dpr; snowCv.height = H*dpr;
+  snowCv.style.width = W+'px'; snowCv.style.height = H+'px';
+  sctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize', ()=>{ resizeSnow(); initSnow(); });
+
+function drawSnow(){
+  sctx.clearRect(0,0,W,H);
+  sctx.fillStyle = '#ffffff';
+  for(const f of flakes){
+    f.ph += 0.012;
+    f.y += f.sp*density;
+    f.x += Math.sin(f.ph)*f.sw*0.35 + wind;
+    if(f.y > H+6 || f.x > W+8 || f.x < -8) Object.assign(f, newFlake(false), {x:Math.random()*W});
+    sctx.globalAlpha = f.a;
+    sctx.beginPath();
+    sctx.arc(f.x, f.y, f.r, 0, Math.PI*2);
+    sctx.fill();
+  }
+  sctx.globalAlpha = 1;
+  requestAnimationFrame(drawSnow);
+}
+initSnow();
+/* 暴雪模式：某些场景加大雪量与风 */
+function setSnow(mode){
+  if(mode==='heavy'){ density=2.1; wind=0.75; }
+  else if(mode==='calm'){ density=0.65; wind=0.18; }
+  else { density=1; wind=0.35; }
+}
+
+/* ---------------- 2. Web Audio 环境音 ---------------- */
+const Audio_ = {
+  ctx:null, master:null, windGain:null, muted:false, started:false, noise:null,
+  ensure(){
+    if(this.ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = this.muted?0:0.9;
+    this.master.connect(this.ctx.destination);
+    // 生成一段棕噪声缓冲，循环使用
+    const dur=3, len=this.ctx.sampleRate*dur;
+    const buf=this.ctx.createBuffer(1,len,this.ctx.sampleRate);
+    const d=buf.getChannelData(0); let last=0;
+    for(let i=0;i<len;i++){ const w=Math.random()*2-1; last=(last+0.02*w)/1.02; d[i]=last*3.2; }
+    this.noise = buf;
+  },
+  startAmbient(){
+    this.ensure(); if(!this.ctx || this.started) return;
+    this.started = true;
+    if(this.ctx.state==='suspended') this.ctx.resume();
+    // 风声（低通噪声 + 缓慢起伏）
+    const src=this.ctx.createBufferSource(); src.buffer=this.noise; src.loop=true;
+    const lp=this.ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=420;
+    const g=this.ctx.createGain(); g.gain.value=0.055;
+    const lfo=this.ctx.createOscillator(); lfo.frequency.value=0.07;
+    const lg=this.ctx.createGain(); lg.gain.value=0.03;
+    lfo.connect(lg).connect(g.gain);
+    src.connect(lp).connect(g).connect(this.master);
+    src.start(); lfo.start();
+    this.windGain = g;
+    // 极低沉的音床
+    const o=this.ctx.createOscillator(); o.type='sine'; o.frequency.value=54;
+    const og=this.ctx.createGain(); og.gain.value=0.028;
+    o.connect(og).connect(this.master); o.start();
+  },
+  /** 爆竹：带通噪声爆发 + 屏幕闪光 */
+  cracker(){
+    if(!this.ctx || this.muted) { flash(); return; }
+    const t=this.ctx.currentTime;
+    const n=1+Math.floor(Math.random()*3);
+    for(let i=0;i<n;i++){
+      const st=t+i*(0.06+Math.random()*0.12);
+      const src=this.ctx.createBufferSource(); src.buffer=this.noise; src.loop=true;
+      const bp=this.ctx.createBiquadFilter(); bp.type='bandpass';
+      bp.frequency.value=900+Math.random()*1400; bp.Q.value=1.1;
+      const g=this.ctx.createGain();
+      g.gain.setValueAtTime(0.0001,st);
+      g.gain.linearRampToValueAtTime(0.35, st+0.006);
+      g.gain.exponentialRampToValueAtTime(0.0008, st+0.16+Math.random()*0.12);
+      src.connect(bp).connect(g).connect(this.master);
+      src.start(st); src.stop(st+0.4);
+    }
+    flash();
+  },
+  /** 低语：人声般的窄带噪声流动 */
+  whisper(){
+    if(!this.ctx || this.muted) return;
+    const t=this.ctx.currentTime, dur=1.6;
+    const src=this.ctx.createBufferSource(); src.buffer=this.noise; src.loop=true;
+    const bp=this.ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=700; bp.Q.value=6;
+    const g=this.ctx.createGain(); g.gain.value=0;
+    const lfo=this.ctx.createOscillator(); lfo.frequency.value=3.1;
+    const lg=this.ctx.createGain(); lg.gain.value=0.06;
+    lfo.connect(lg).connect(g.gain);
+    // 频率游走
+    bp.frequency.setValueAtTime(520,t);
+    bp.frequency.linearRampToValueAtTime(980,t+dur);
+    src.connect(bp).connect(g).connect(this.master);
+    g.gain.linearRampToValueAtTime(0.05,t+0.4);
+    g.gain.linearRampToValueAtTime(0,t+dur);
+    src.start(t); lfo.start(t); src.stop(t+dur+0.1); lfo.stop(t+dur+0.1);
+  },
+  /** 钟 / 罄 一声 */
+  bell(){
+    if(!this.ctx || this.muted) return;
+    const t=this.ctx.currentTime;
+    const o=this.ctx.createOscillator(); o.type='sine'; o.frequency.value=196;
+    const o2=this.ctx.createOscillator(); o2.type='sine'; o2.frequency.value=294;
+    const g=this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.linearRampToValueAtTime(0.14,t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0005,t+2.6);
+    o.connect(g); o2.connect(g); g.connect(this.master);
+    o.start(t); o2.start(t); o.stop(t+2.8); o2.stop(t+2.8);
+  },
+  toggle(){
+    this.muted = !this.muted;
+    if(this.master) this.master.gain.value = this.muted?0:0.9;
+    return this.muted;
+  }
+};
+function flash(){
+  const f=document.getElementById('flash');
+  f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+}
+/* 随机爆竹：带 cracker 效果的场景内循环 */
+function startCrackers(){ stopCrackers(); crackerTimer = setInterval(()=>{ if(Math.random()<0.6) Audio_.cracker(); }, 2600); }
+function stopCrackers(){ if(crackerTimer){ clearInterval(crackerTimer); crackerTimer=null; } }
+
+/* ---------------- 3. 通用工具 ---------------- */
+const $ = id => document.getElementById(id);
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
+function loadSave(){ try{ const raw=localStorage.getItem(SAVE_KEY); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
+function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
+
+/** 祭祀资格判定 —— 原著核心：无论她如何努力，结果恒为 false */
+function judgePurity(reason){
+  const reasons = [
+    '再嫁之妇，不洁。',
+    '克夫克子，不祥。',
+    '败坏风俗，不净。',
+    '虽捐门槛，千人踏万人跨，仍不足以赎。'
+  ];
+  return { ok:false, verdict: reasons[Math.min(S.log.length, reasons.length-1)] || reasons[0], note:reason||'' };
+}
+function addFrag(n){ S.frag = Math.min(9, S.frag + (n||1)); }
+function markSilent(key){
+  if(!S.silentMarks[key]){ S.silentMarks[key]=true; S.silentCount++; }
+}
+/** 是否满足隐藏结局：灵魂之问说不清 + 终章沉默 + 至少三处沉默 */
+function hiddenReady(){
+  return !!S.silentMarks.m4 && !!S.silentMarks.m5 && S.silentCount>=3;
+}
+
+/* ---------------- 4. SVG 素材（全部手绘） ---------------- */
+const SVG = {
+  // 福字（暗红方印 + 笔画化的“福”）
+  fu:`<svg viewBox="0 0 60 60" class="glyph"><rect x="4" y="4" width="52" height="52" fill="#8e2b2b" stroke="#5d1c1c"/>
+      <g fill="#f3e3c6"><rect x="15" y="14" width="5" height="20"/><rect x="13" y="12" width="9" height="3"/>
+      <rect x="24" y="12" width="22" height="3"/><rect x="24" y="20" width="22" height="3"/><rect x="31" y="12" width="3" height="11"/>
+      <rect x="16" y="27" width="6" height="20"/><rect x="14" y="34" width="10" height="3"/><rect x="14" y="42" width="10" height="3"/>
+      <rect x="28" y="27" width="18" height="4"/><rect x="28" y="27" width="4" height="20"/><rect x="42" y="27" width="4" height="20"/>
+      <rect x="28" y="43" width="18" height="4"/></g></svg>`,
+  // 红烛
+  candle:`<svg viewBox="0 0 40 70" class="glyph"><rect x="8" y="34" width="24" height="34" fill="#a83a34" stroke="#5d1c1c"/>
+      <rect x="8" y="34" width="6" height="34" fill="#c2534a" opacity=".5"/>
+      <ellipse cx="20" cy="30" rx="9" ry="7" fill="#ffd27a"/>
+      <ellipse cx="20" cy="29" rx="4" ry="4" fill="#fff6d0"/>
+      <rect x="18" y="24" width="4" height="7" fill="#2a1a10"/></svg>`,
+  // 雪地脚印
+  steps:`<svg viewBox="0 0 90 40" class="glyph"><g fill="#e6eef1" opacity=".9">
+      <ellipse cx="12" cy="30" rx="6" ry="4"/><ellipse cx="30" cy="22" rx="6" ry="4"/>
+      <ellipse cx="48" cy="30" rx="6" ry="4"/><ellipse cx="66" cy="22" rx="6" ry="4"/>
+      <ellipse cx="82" cy="30" rx="5" ry="3.5"/></g>
+      <g fill="none" stroke="#e6eef1" stroke-width="1" opacity=".5" stroke-dasharray="3 4">
+      <path d="M6 34 C30 20 60 34 86 20"/></g></svg>`,
+  // 旧竹篮 + 破碗
+  basket:`<svg viewBox="0 0 60 50" class="glyph"><path d="M8 22 h44 l-6 24 h-32 Z" fill="#7a5a34" stroke="#c9ae7c" stroke-width="1.2"/>
+      <path d="M12 30 h36 M14 38 h32" stroke="#c9ae7c" stroke-width="1"/>
+      <path d="M14 22 q16 -14 32 0" fill="none" stroke="#c9ae7c" stroke-width="1.6"/>
+      <ellipse cx="30" cy="20" rx="13" ry="4" fill="#d9d2c2" opacity=".85"/>
+      <path d="M24 18 l4 3 l4 -3 l4 3" fill="none" stroke="#3a3128" stroke-width="1.2"/></svg>`,
+  // 小鞋
+  shoe:`<svg viewBox="0 0 46 34" class="glyph"><path d="M6 12 q10 -8 22 -4 q10 3 12 10 q1 5 -6 5 h-24 q-5 0 -5 -5 Z" fill="#2a2f33" stroke="#cfd8dc" stroke-width="1.2"/>
+      <path d="M8 14 q8 4 16 4" stroke="#cfd8dc" fill="none" stroke-width="1"/></svg>`,
+  // 血迹
+  blood:`<svg viewBox="0 0 46 40" class="glyph"><path d="M14 8 q10 -6 16 4 q6 8 -4 14 q-4 8 -10 2 q-8 6 -8 -8 q0 -8 6 -12Z" fill="#6d1f1c" stroke="#b8453c" stroke-width="1"/>
+      <circle cx="34" cy="30" r="3" fill="#6d1f1c"/><circle cx="10" cy="32" r="2" fill="#6d1f1c"/></svg>`,
+  // 门槛
+  beam:`<svg viewBox="0 0 120 24" class="glyph"><rect x="2" y="2" width="116" height="20" fill="#7d2b26" stroke="#2c0f0d"/>
+      <path d="M2 8 h116 M2 16 h116" stroke="#4e1a17" stroke-width="1"/></svg>`,
+  // 庙门
+  temple:`<svg viewBox="0 0 150 130" class="glyph">
+      <path d="M8 44 L75 8 L142 44 Z" fill="#3b2b22" stroke="#c8a86b" stroke-width="1.5"/>
+      <rect x="20" y="44" width="110" height="78" fill="#2b2018" stroke="#c8a86b" stroke-width="1.5"/>
+      <rect x="52" y="66" width="46" height="56" fill="#100c09" stroke="#8e2b2b" stroke-width="2"/>
+      <rect x="30" y="58" width="12" height="18" fill="#6b3a34" stroke="#c8a86b"/>
+      <rect x="108" y="58" width="12" height="18" fill="#6b3a34" stroke="#c8a86b"/>
+      <rect x="62" y="76" width="26" height="6" fill="#c8a86b" opacity=".7"/></svg>`,
+  // 人物剪影（祥林嫂）
+  woman:`<svg viewBox="0 0 90 130" class="glyph">
+      <g fill="#0d1418" stroke="#c3ced2" stroke-width="1.2">
+      <ellipse cx="45" cy="26" rx="10" ry="12"/>
+      <path d="M45 38 q-18 6 -21 32 q-2 22 4 34 l12 2 q4 -14 5 -30 l4 30 l12 -2 q6 -12 4 -34 q-3 -26 -20 -32Z"/>
+      <rect x="62" y="94" width="22" height="14" rx="2"/>
+      <path d="M64 94 q4 -8 9 -8 q5 0 9 8"/>
+      <line x1="26" y1="10" x2="18" y2="126" stroke-width="2.4"/>
+      </g></svg>`,
+  // 门神/牌位
+  tablet:`<svg viewBox="0 0 40 60" class="glyph"><path d="M8 56 V12 q12 -6 24 0 v44 Z" fill="#3a2a20" stroke="#c8a86b" stroke-width="1.2"/>
+      <g fill="#c8a86b"><rect x="17" y="16" width="6" height="2"/><rect x="14" y="24" width="12" height="2"/>
+      <rect x="17" y="32" width="6" height="2"/><rect x="14" y="40" width="12" height="2"/></g></svg>`
+};
+
+/* ---------------- 5. 场景节点系统 ----------------
+   每个场景：{id, chapter, title, sub, fx[], text[], choices[], game, onEnter}
+   text 元素支持字符串或 {q:'...'}（引用句）
+   ============================================================ */
+const SCENES = {
+
+/* ============ 序章 ============ */
+prologue_arrive:{
+  chapter:'序章 · 雪夜归鲁镇', title:'一、鲁镇的年底', sub:'旧历的年底毕竟最像年底',
+  fx:['snow','cracker'],
+  text:[
+    '旧历的年底毕竟最像年底。村镇上不必说，就在天空中也显出将到新年的气象来。灰白色的沉重的晚云中间时时发出闪光，接着一声钝响，是送灶的爆竹；近处燃放的可就更强烈了，震耳的大音还没有息，空气里已经散满了幽微的火药香。',
+    '我是这一年的年底才回到鲁镇的。虽说故乡，然而已没有家，所以只得暂寓在鲁四老爷的宅子里。他是我的本家，比我长一辈，是一个讲理学的老监生。他比先前并没有什么大改变，单是老了些，但也还未留胡子，一见面是寒暄，寒暄之后说我"胖了"，说我"胖了"之后即大骂其新党。',
+    '但我知道，这并非借题在骂我：因为他所骂的还是康有为。无论如何，我明天决计要走了。',
+    '雪花落在积得厚厚的雪褥上面，听去似乎瑟瑟有声，使人更加感得沉寂。堂屋里，四叔的嗓门正从屏风后头压过来——'
+  ],
+  choices:[
+    {label:'绕进书房，避开这热闹', to:'prologue_study'},
+    {label:'先拉住短工：家里出了什么事？', to:'prologue_news'},
+    {label:'站在廊下看雪，什么也不问', to:'prologue_snow', act:()=>markSilent('m1')}
+  ]
+},
+prologue_snow:{
+  chapter:'序章 · 雪夜归鲁镇', title:'廊下', sub:'雪落在雪上',
+  fx:['snow-heavy'],
+  text:[
+    '我站在廊下。雪片有梅花那么大，满天飞舞，夹着烟霭和忙碌的气色，将鲁镇乱成一团糟。',
+    '远处有人在扫地，扫出一条窄窄的路。雪很快又落满，像是从来没有人走过。',
+    '——后来我才知道，那条路她走过。夜里出去，再没有回来。'
+  ],
+  choices:[{label:'进书房去', to:'prologue_study'}]
+},
+prologue_news:{
+  chapter:'序章 · 雪夜归鲁镇', title:'短工的回答', sub:'怎么死的？——还不是穷死的？',
+  fx:['snow'],
+  text:[
+    '我拉住一个短工。他先是抬起头，看了我一眼，那眼神里没有悲哀，也没有惊慌，只有一种被年关榨干了的疲惫。',
+    {q:'"祥林嫂？老了。"'},
+    {q:'"死了？"我的心突然紧缩，几乎跳起来，脸上大约也变了色。'},
+    {q:'"什么时候？——昨天夜里，或者就是今天罢。——我说不清。"'},
+    {q:'"怎么死的？"——"还不是穷死的？"'},
+    '他淡然的回答，仍然没有抬头向我看，出去了。'
+  ],
+  choices:[
+    {label:'追问：她是谁？', to:'prologue_study'},
+    {label:'不再问，走进书房', to:'prologue_study', act:()=>markSilent('m1')}
+  ]
+},
+prologue_study:{
+  chapter:'序章 · 雪夜归鲁镇', title:'二、书房', sub:'不早不迟，偏偏要在这时候',
+  fx:['snow','candle','cracker'],
+  onEnter:()=>{ Audio_.whisper(); },
+  text:[
+    '书房里点着一对红烛。四叔在里间踱步，声音隔着一层板壁传过来，先是一声冷笑，随后是那句——',
+    {q:'"不早不迟，偏偏要在这时候，——这就可见是一个谬种！"'},
+    '我先前所见所感的鲁镇，是一个死气沉沉的鲁镇；这一句骂，倒使这死气有了一点活气：因为她死了，才有人需要骂一句。',
+    '然而我究竟不知道她是谁。她在我记忆里只有一个名字的残片——祥林嫂。这三个字是她丈夫的名字加上一个"嫂"，她自己叫什么，没有人记得。',
+    '烛火一跳。屋子里有几样旧物，我去看看它们。'
+  ],
+  game:{ type:'study', next:'prologue_who' }
+},
+prologue_who:{
+  chapter:'序章 · 雪夜归鲁镇', title:'她是谁', sub:'一个没有名字的人',
+  fx:['snow-heavy'],
+  onEnter:()=>{ addFrag(1); },
+  text:[
+    '我把这些碎片拼在一起：一个女人，死了，在祝福的前夜；一个女人，被骂作谬种；一个女人，连名字都不曾有过。',
+    {q:'"她么，是祥林的媳妇。祥林死了，她婆婆要她回去，后来就卖到贺家墺去了。——这些事，镇上谁不知道。"'},
+    '我于是决心要弄清楚这一件事：她怎么活过来的，又是怎么死掉的。',
+    '然而事情并不像我想的那样有一条线索。她的故事是散的，散在雪地里，散在各人的舌头上，散在我自己不敢细看的记忆中。',
+    '——那是从前一年的冬初开始的。'
+  ],
+  choices:[{label:'回到那一年冬初', to:'act1_first'}]
+},
+
+/* ============ 第一幕 ============ */
+act1_first:{
+  chapter:'第一幕 · 第一次来鲁镇', title:'一、冬初', sub:'她不是鲁镇人',
+  fx:['snow','candle'],
+  onEnter:()=>{ addFrag(1); },
+  text:[
+    '她不是鲁镇人。有一年的冬初，四叔家里要换女工，做中人的卫老婆子带她进来了。',
+    '头上扎着白头绳，乌裙，蓝夹袄，月白背心，年纪大约二十六七，脸色青黄，但两颊却还是红的。卫老婆子叫她祥林嫂，说是自己母家的邻舍，死了当家人，所以出来做工了。',
+    '四叔皱了皱眉，四婶已经知道了他的意思，是在讨厌她是一个寡妇。但是她模样还周正，手脚都壮大，又只是顺着眼，不开一句口，很像一个安分耐劳的人，便不管四叔的皱眉，将她留下了。',
+    '试工期内，她整天的做，似乎闲着就无聊，又有力，简直抵得过一个男子，所以第三天就定局，每月工钱五百文。'
+  ],
+  choices:[{label:'年底了，煮福礼的时候到了', to:'act1_fuli'}]
+},
+act1_fuli:{
+  chapter:'第一幕 · 第一次来鲁镇', title:'二、福礼', sub:'祥林嫂，你放着罢！我来摆。',
+  fx:['snow','cracker','candle'],
+  text:[
+    '年底，扫尘，洗地，杀鸡，宰鹅，彻夜的煮福礼，全是一人担当，竟没有添短工。然而她很满足，口角边渐渐的有了笑影，脸上也白胖了。',
+    '这是鲁镇年终的大典，致敬尽礼，迎接福神，拜求来年一年中的好运气。杀鸡，宰鹅，买猪肉，用心细细的洗，女人的臂膊都在水里浸得通红，有的还带着绞丝银镯子。',
+    '煮熟之后，横七竖八的插些筷子在这类东西上，可就称为"福礼"了，五更天陈列起来，并且点上香烛，恭请福神们来享用；拜的却只限于男人。',
+    '她想去插一双筷子。'
+  ],
+  game:{ type:'fuli', next:'act1_taken' }
+},
+act1_taken:{
+  chapter:'第一幕 · 第一次来鲁镇', title:'三、被绑走', sub:'这有什么依不依',
+  fx:['snow-heavy'],
+  onEnter:()=>{ addFrag(1); },
+  text:[
+    '新年才过，她婆婆来了，说是要回去。卫老婆子居中说合，讲定把她嫁进深山，换八十千。',
+    {q:'"这有什么依不依。——闹是谁也总要闹一闹的；只要用绳子一捆，塞在花轿里，抬到男家，捺上花冠，拜堂，关上房门，就完事了。"'},
+    '她曾在河岸上反抗过。据说她一路只是嚎，骂，喉咙早哑了，还在骂；抬到男家，捺上花冠，拜堂，关上房门——后来就再没有声音。',
+    {q:'"她有小叔子，也得娶老婆。不嫁了她，哪有这一注钱来做聘礼？"'},
+    '我站在廊下，看着花轿拐出巷口。我懂的道理很多：人的解放、礼教的吃人、宗法的罪。然而我站着，什么也没有做。雪落下来，把轿子的印子盖平了。'
+  ],
+  choices:[
+    {label:'（追出去）', to:'act1_chase'},
+    {label:'（站着不动）', to:'act2_hejiaao', act:()=>markSilent('m3a')}
+  ]
+},
+act1_chase:{
+  chapter:'第一幕 · 第一次来鲁镇', title:'追', sub:'雪盖平了印子',
+  fx:['snow-heavy'],
+  text:[
+    '我追出巷口。雪很大，风把爆竹的纸屑卷到半空，红的，像一群瞎眼的蝴蝶。',
+    '轿子已经看不见了。地上只剩下两行脚印，一行是抬轿的，一行是跟着走的。',
+    '我在雪里站了很久。我知道我追不上——不是腿追不上，是我没有理由追。一个读书人，凭什么去拦一桩"本家的事"，凭什么去拦一位"婆婆"？我凭的不过是一点说不清的难堪。',
+    '那点难堪，后来变成了一辈子的"说不清"。'
+  ],
+  choices:[{label:'去问卫老婆子：后来呢？', to:'act2_hejiaao'}]
+},
+
+/* ============ 第二幕 ============ */
+act2_hejiaao:{
+  chapter:'第二幕 · 贺家墺与阿毛', title:'一、交了好运', sub:'她真是交了好运了',
+  fx:['snow','candle'],
+  onEnter:()=>{ addFrag(1); },
+  text:[
+    '卫老婆子再来的时候，是满脸笑的。她说，祥林嫂真是交了好运了。',
+    {q:'"她婆婆来抓她回去的时候，是早已许给了贺家墺的贺老六了，所以回家之后不几天，也就装在花轿里抬去了。"'},
+    '"上头又没有婆婆；男人所有的是力气，会做活；房子是自家的。——唉唉，她真是交了好运气。"',
+    '我问：后来呢？卫老婆子的笑淡了淡："后来么？后来——她男人是坚实人，谁知道年纪青青，就会断送在伤寒上？本来已经好了的，吃了一碗冷饭，复发了。幸亏有儿子；她又能做，打柴摘茶养蚕都来得，本来还可以守着，谁知道那孩子又会给狼衔去的呢？"',
+    '她说完，喝了一口茶，又补上一句："现在她只剩了一个光身了。大伯来收屋，又赶她。她真是走投无路了，只好来求老主人。"'
+  ],
+  choices:[{label:'去雪地里找一找那些东西', to:'act2_snow'}]
+},
+act2_snow:{
+  chapter:'第二幕 · 贺家墺与阿毛', title:'二、雪地寻物', sub:'春天快完了，村上倒反来了狼',
+  fx:['snow-heavy'],
+  text:[
+    '贺家墺在山坳里。那年的雪化了又下，下到春天还没有停。',
+    '我要找的东西不多：一只小鞋，一只小篮，一点血。它们在雪下面。',
+    '（点击雪地，把三样东西找出来）'
+  ],
+  game:{ type:'snowfind', next:'act2_amao' }
+},
+act2_amao:{
+  chapter:'第二幕 · 贺家墺与阿毛', title:'三、阿毛', sub:'我叫，阿毛！',
+  fx:['snow-heavy'],
+  onEnter:()=>{ addFrag(1); Audio_.whisper(); },
+  text:[
+    '春天快完了，村上倒反来了狼。',
+    {q:'"我一清早起来就开了门，拿小篮盛了一篮豆，叫我们的阿毛坐在门槛上剥豆去。他是很听话的，我的话句句听；他出去了。"'},
+    {q:'"我就在屋后劈柴，淘米，米下了锅，要蒸豆。我叫，阿毛！没有应。出去一看，只见豆撒得一地，没有我们的阿毛了。他是不到别家去玩的；各处去一问，果然没有。"'},
+    {q:'"我急了，央人去寻去。直到下半天，几个人寻到山坳里，看见刺柴上挂着一只他的小鞋。"'},
+    {q:'"大家都说，完了，怕是遭了狼了。再进去；果然，他躺在草窠里，肚里的五脏已经都给吃空了，可怜他手里还紧紧的捏着那只小篮呢。……"'},
+    '她于是淌下眼泪来，声音也呜咽了。'
+  ],
+  choices:[{label:'她又回到鲁镇了', to:'act2_tell1'}]
+},
+act2_tell1:{
+  chapter:'第二幕 · 贺家墺与阿毛', title:'四、讲（一）', sub:'这故事倒颇有效',
+  fx:['snow'],
+  onEnter:()=>{ S.heard++; },
+  text:[
+    '她又回到鲁镇，在四叔家做了女工。她开口了，说的永远是同一段。',
+    '"我真傻，真的，"她说，"我单知道雪天是野兽在深山里没有食吃，会到村里来；我不知道春天也会有。"',
+    '这故事倒颇有效。男人听到这里，往往敛起笑容，没趣的走了开去；女人们却不独宽恕了她似的，脸上立刻改换了鄙薄的神气，还要陪出许多眼泪来。有些老女人没有在街头听到她的话，便特意寻来，要听她这一段悲惨的故事。',
+    '直到她说到呜咽，她们也就一齐流下那停在眼角上的眼泪，叹息一番，满足的去了，一面还纷纷的评论着。'
+  ],
+  choices:[
+    {label:'听她讲完', to:'act2_tell2', act:()=>{ S.patience=Math.max(0,S.patience-1); }},
+    {label:'默默走开', to:'act2_tell2', act:()=>{ markSilent('m2'); S.patience=Math.max(0,S.patience-1); }},
+    {label:'劝她：别再说了', to:'act2_tell2', act:()=>{ S.patience=Math.max(0,S.patience-2); }}
+  ]
+},
+act2_tell2:{
+  chapter:'第二幕 · 贺家墺与阿毛', title:'四、讲（二）', sub:'后来全镇的人们几乎都能背诵她的话',
+  fx:['snow'],
+  onEnter:()=>{ S.heard++; },
+  text:[
+    '她反复地说，一字不改。像一张磨坏了的唱片，针落在同一道槽里。',
+    '后来全镇的人们几乎都能背诵她的话，一听到就烦厌得头痛。',
+    {q:'"我真傻，真的……"'},
+    {q:'"是的，你是单知道雪天野兽在深山里没有食吃，才会到村里来的。"他们立即打断她的话，走开去了。'},
+    '她张着口怔怔的站着，直着眼睛看他们，接着也就走了，似乎自己也觉得没趣。'
+  ],
+  choices:[
+    {label:'听她讲完', to:'act2_tell3', act:()=>{ S.patience=Math.max(0,S.patience-1); }},
+    {label:'默默走开', to:'act2_tell3', act:()=>{ markSilent('m2'); S.patience=Math.max(0,S.patience-1); }},
+    {label:'替她把话说完（证明你听过了）', to:'act2_tell3', act:()=>{ S.patience=Math.max(0,S.patience-2); }}
+  ]
+},
+act2_tell3:{
+  chapter:'第二幕 · 贺家墺与阿毛', title:'四、讲（三）', sub:'她的悲哀经大家咀嚼赏鉴了许多天，早已成为渣滓',
+  fx:['snow-heavy'],
+  onEnter:()=>{ S.heard++; },
+  text:[
+    '她的悲哀经大家咀嚼赏鉴了许多天，早已成为渣滓，只值得烦厌和唾弃；但从人们的笑影上，也仿佛觉得这又冷又尖，她自己再也没有开口的必要了。',
+    '她单是一瞥他们，并不回答一句话。',
+    '我还记得那时有人在背后笑："她那时倒不如早点死了干净。"——说这话的人，后来也照常祝福，照常放爆竹，照常活得很好。',
+    '于是，她开始想办法。她要自己去买一样东西，一件可以赎罪的东西。'
+  ],
+  choices:[{label:'土地庙', to:'act3_return'}]
+},
+
+/* ============ 第三幕 ============ */
+act3_return:{
+  chapter:'第三幕 · 捐门槛', title:'一、再来', sub:'四婶起初还踌蹰',
+  fx:['snow','candle'],
+  onEnter:()=>{ addFrag(1); },
+  text:[
+    '她仍然头上扎着白头绳，乌裙，蓝夹袄，月白背心，脸色青黄，只是两颊上已经消失了血色，顺着眼，眼角上带些泪痕，眼光也没有先前那样精神了。',
+    '四婶起初还踌蹰，但后来到底还是留下了——因为实在没有一个女工肯做这等的苦活。',
+    '然而这一回，她的境遇却改变得非常大。上工之后的两三天，主人们就觉得她手脚已没有先前一样灵活，记性也坏得多，死尸似的脸上又整日没有笑影。',
+    '四婶的口气上，已颇有些不满了。而最要紧的，是祭祀的时候，她不再被允许沾手。'
+  ],
+  choices:[{label:'柳妈来了', to:'act3_liuma'}]
+},
+act3_liuma:{
+  chapter:'第三幕 · 捐门槛', title:'二、柳妈', sub:'阎罗大王只好把你锯开来',
+  fx:['snow','candle'],
+  onEnter:()=>{ addFrag(1); Audio_.whisper(); },
+  text:[
+    '柳妈是个吃素、不杀生的善女人。她把手里的佛珠拨得平平稳稳，先问："你额角上的伤疤，怎么来的？"',
+    {q:'"我问你：你那时怎么后来竟依了呢？"——"你到土地庙里去捐一条门槛，当作你的替身，给千人踏，万人跨，赎了这一世的罪名，免得死了去受苦。"'},
+    {q:'"你将来到阴司去，那两个死鬼的男人还要争，你给了谁好呢？阎罗大王只好把你锯开来，分给他们。"'},
+    '她脸上就显出恐怖的神色来。这是在山村里所未曾知道的。',
+    '第二天早上起来的时候，两眼上便都围着大黑圈。'
+  ],
+  choices:[
+    {label:'告诉她：这是迷信', to:'act3_money', act:()=>{ S.log.push('rational'); }},
+    {label:'什么也不说', to:'act3_money', act:()=>{ markSilent('m3'); }},
+    {label:'陪她攒钱', to:'act3_money'}
+  ]
+},
+act3_money:{
+  chapter:'第三幕 · 捐门槛', title:'三、十二元鹰洋', sub:'她整日紧闭了嘴唇，默默地跑街，扫地，洗菜，淘米',
+  fx:['snow'],
+  text:[
+    '她大约从他们的笑容和声调上，也知道是在嘲笑她，所以总是瞪着眼睛，不说一句话，后来连头也不回了。',
+    '她整日紧闭了嘴唇，头上带着大家以为耻辱的记号的那伤痕，默默的跑街，扫地，洗菜，淘米。快够一年，她才从四婶手里支取了历来积存的工钱，换算了十二元鹰洋。',
+    '（点击"再干一天的活"，替她把钱攒够 —— 需要 8 次）'
+  ],
+  game:{ type:'money', next:'act3_temple' }
+},
+act3_temple:{
+  chapter:'第三幕 · 捐门槛', title:'四、土地庙', sub:'给千人踏，万人跨',
+  fx:['snow-heavy','candle'],
+  text:[
+    '请假到镇的西头去,在一座土地庙里,她求神许愿。庙祝起初执意不允许，直到她急得流泪，才勉强答应了。',
+    '价目是大钱十二千。',
+    '（把门槛拖到庙门口的虚线框里）'
+  ],
+  game:{ type:'temple', next:'act3_carve' }
+},
+act3_carve:{
+  chapter:'第三幕 · 捐门槛', title:'五、刻字', sub:'捐 / 门 / 槛 / 赎',
+  fx:['snow'],
+  onEnter:()=>{ Audio_.bell(); },
+  text:[
+    '人捐了，门槛也抬来了。庙祝说，要刻上字，神明才认得清是谁赎的罪。',
+    '她不识字。她只看着那块暗红的木头发呆，好像看着自己被劈开、刨平、钉在那儿的一生。',
+    '（点击门槛，替她刻字 —— 需要 4 次）'
+  ],
+  game:{ type:'carve', next:'act3_blessing' }
+},
+act3_blessing:{
+  chapter:'第三幕 · 捐门槛', title:'六、冬至的祭祖时节', sub:'你放着罢，祥林嫂！',
+  fx:['cracker','candle','snow'],
+  onEnter:()=>{ addFrag(1); },
+  text:[
+    '捐了门槛之后，她便回来，神气很舒畅，眼光也分外有神，高兴似的对四婶说，自己已经在土地庙捐了门槛了。',
+    '冬至的祭祖时节，她做得更出力，看四婶装好祭品，和阿牛将桌子抬到堂屋中央，她便坦然的去拿酒杯和筷子。',
+    {q:'"你放着罢，祥林嫂！"四婶慌忙大声说。'},
+    '她像是受了炮烙似的缩手，脸色同时变作灰黑，也不再去取烛台，只是失神的站着。直到四叔上香的时候，教她走开，她才走开。',
+    '这一回她的变化非常大，第二天，不但眼睛窈陷下去，连精神也更不济了。而且很胆怯，不独怕暗夜，怕黑影，即使看见人，虽是自己的主人，也总惴惴的，有如在白天出穴游行的小鼠；否则呆坐着，直是一个木偶人。'
+  ],
+  choices:[
+    {label:'替她说话', to:'act3_speak'},
+    {label:'（什么也说不出）', to:'act3_speak', act:()=>markSilent('m3b')}
+  ]
+},
+act3_speak:{
+  chapter:'第三幕 · 捐门槛', title:'七、没有一个人认为自己在作恶', sub:'各人有各人的道理',
+  fx:['snow','candle'],
+  onEnter:()=>{ addFrag(1); },
+  text:[
+    '我说：她已经捐了门槛了。四婶看我一眼，像是看一个不懂事的孩子。',
+    {q:'四婶："捐了门槛又怎样？祖宗的福礼，是不许再嫁的女人碰的。这不是我定的规矩。"'},
+    {q:'鲁四老爷："不早不迟，偏偏要在这时候。可见其人之不祥，非人力可挽。我骂她谬种，是替她可惜。"'},
+    {q:'柳妈："我是好意。我不说，她死后要被锯开来的。我吃斋念佛，图的什么？就图个心安。"'},
+    {q:'卫老婆子："我不过做个中人。我不牵线，她婆婆就没钱娶儿媳妇；她婆婆没钱，她就要饿死。我对谁不起？"'},
+    '他们都说得有道理。每一句都像样，每一句都在理上。他们谁也没有动刀，谁也没有动手；他们只是各人守着各人的本分。',
+    '我忽然明白，杀死她的不是一个恶人，而是一整套体面。'
+  ],
+  choices:[
+    {label:'争下去（无用）', to:'act4_river'},
+    {label:'说不清。', to:'act4_river', act:()=>markSilent('m3c')}
+  ]
+},
+
+/* ============ 第四幕 ============ */
+act4_river:{
+  chapter:'第四幕 · 灵魂之问', title:'一、河边', sub:'她分明已经纯乎是一个乞丐了',
+  fx:['snow-heavy','candle'],
+  onEnter:()=>{ addFrag(1); Audio_.whisper(); },
+  text:[
+    '我给那些因为在近旁而极响的爆竹声惊醒，看见豆一般大的黄色的灯火光，接着又听得毕毕剥剥的鞭炮，是四叔家正在"祝福"了。',
+    '我在蒙胧中，又隐约听到远处的爆竹声联绵不断，似乎合成一天音响的浓云，夹着团团飞舞的雪花，拥抱了全市镇。',
+    '而在此之前，在河边上，我见过她最后一次。',
+    '五年前的花白的头发，即今已经全白，全不像四十上下的人；脸上瘦削不堪，黄中带黑，而且消尽了先前悲哀的神色，仿佛是木刻似的；只有那眼珠间或一轮，还可以表示她是一个活物。她一手提着竹篮，内中一个破碗，空的；一手拄着一支比她更长的竹竿，下端开了裂：她分明已经纯乎是一个乞丐了。',
+    '她站住了，回过头来，眼睛忽然发光了。'
+  ],
+  choices:[{label:'听她问', to:'act4_question'}]
+},
+act4_question:{
+  chapter:'第四幕 · 灵魂之问', title:'二、问', sub:'一个人死了之后，究竟有没有魂灵的？',
+  fx:['snow-heavy'],
+  onEnter:()=>{ Audio_.whisper(); },
+  text:[
+    '她走近两步，放低了声音，极秘密似的切切的说——',
+    {q:'"一个人死了之后，究竟有没有魂灵的？"'},
+    '我很悚然，一见她的眼盯着我的，背上也就遭了芒刺一般，比在学校里遇到不及豫防的临时考，教师又偏是站在身旁的时候，惶急得多了。',
+    '对于魂灵之有无，我自己是向来毫不介意的；但在此刻，怎样回答她好呢？我在极短期的踌蹰中，想，这里的人照例相信鬼，然而她，却疑惑了，——或者不如说希望：希望其有，又希望其无……。人何必增添末路的人的苦恼，为她起见，不如说有罢。'
+  ],
+  choices:[
+    {label:'"也许有罢。"', to:'act4_a'},
+    {label:'"论理，就该也有。"', to:'act4_b'},
+    {label:'"没有魂灵，也没有地狱。"', to:'act4_c'},
+    {label:'"说不清。"', to:'act4_d', act:()=>markSilent('m4')}
+  ]
+},
+act4_a:{
+  chapter:'第四幕 · 灵魂之问', title:'也许有罢', sub:'那么，也就有地狱了？',
+  fx:['snow-heavy'],
+  onEnter:()=>{ S.soul='a'; },
+  text:[
+    {q:'"也许有罢，——我想。"我于是吞吞吐吐的说。'},
+    {q:'"那么，也就有地狱了？"'},
+    {q:'"啊！地狱？"我很吃惊，只得支梧着，"地狱？——论理，就该也有。——然而也未必，……谁来管这等事……。"'},
+    {q:'"那么，死掉的一家的人，都能见面的？"'},
+    '我即刻胆怯起来了，便想全翻过先前的话来。我不知道何以忽然这样。她却一点也没有觉察，只是眼睛盯着我，等着。',
+    {q:'"那是，……实在，我说不清……。其实，究竟有没有魂灵，我也说不清。"'}
+  ],
+  choices:[{label:'（她走了）', to:'act4_after'}]
+},
+act4_b:{
+  chapter:'第四幕 · 灵魂之问', title:'论理，就该也有', sub:'死掉的一家的人，都能见面的？',
+  fx:['snow-heavy'],
+  onEnter:()=>{ S.soul='b'; },
+  text:[
+    {q:'"论理，就该也有。——然而也未必，……谁来管这等事……。"'},
+    {q:'"那么，死掉的一家的人，都能见面的？"'},
+    '唉唉，见面不见面呢？……那是，……实在，我说不清……。',
+    '她要的不是一个神学结论。她要的是：死了以后，还能不能见着阿毛。她害怕的是：见着了，却已经被锯成两半；或者，见着了贺老六，而那两个男人还要在阴司里争。',
+    '我乘她不再紧接的问，迈开步便走，匆匆的逃回四叔的家中，心里很觉得不安逸。'
+  ],
+  choices:[{label:'（逃回四叔家）', to:'act4_after'}]
+},
+act4_c:{
+  chapter:'第四幕 · 灵魂之问', title:'没有魂灵', sub:'她眼中最后一点光也灭了',
+  fx:['snow-heavy'],
+  onEnter:()=>{ S.soul='c'; },
+  text:[
+    {q:'"没有魂灵，也没有地狱。我是学新学的，这些都是迷信。"我说得很干脆，心里甚至有一点得意。'},
+    '她站在那里，很久没有动。',
+    {q:'"那么，……死掉的一家的人，也都不能见面了？"'},
+    '我说：是的，人死了就什么也没有了。',
+    '她的眼睛于是忽然没有了光，像一盏油尽的灯，并不是熄灭，只是不再有跳动的意思了。她没有哭。她只是很轻很轻地说了一声"哦"。',
+    '——我救了她一个地狱，也夺走了她一个阿毛。'
+  ],
+  choices:[{label:'（看着她走远）', to:'act4_after'}]
+},
+act4_d:{
+  chapter:'第四幕 · 灵魂之问', title:'说不清', sub:'这是我最爱用的一个词',
+  fx:['snow-heavy'],
+  onEnter:()=>{ S.soul='d'; markSilent('m4'); },
+  text:[
+    {q:'"说不清。"'},
+    '这是一句极有用的话。不更事的勇敢的少年，往往敢于给人解决疑问，选定医生，万一结果不佳，大抵反成了怨府，然而一用这"说不清"来作结束，便事事逍遥自在了。',
+    '我在这时，更感到这一句话的必要，即使和讨饭的女人说话，也是万不可省的。',
+    '她沉默了。她没有再问地狱，也没有再问阿毛。她只是很轻很轻地点了点头，似乎早知道我会这样回答。',
+    '——我终于什么也没有说清，而她终于什么也没有得到。'
+  ],
+  choices:[{label:'（她走了）', to:'act4_after'}]
+},
+act4_after:{
+  chapter:'第四幕 · 灵魂之问', title:'三、这一夜', sub:'然而她死了',
+  fx:['snow-heavy','cracker'],
+  text:[
+    '我总觉得不安。过了一夜，也仍然时时记忆起来，仿佛怀着什么不祥的豫感；在阴沉的雪天里，在无聊的书房里，这不安愈加强烈了。',
+    '不如走罢，明天进城去。福兴楼的清燉鱼翅，一元一大盘，价廉物美，现在不知增价了否？往日同游的朋友，虽然已经云散，然而鱼翅是不可不吃的，即使只有我一个……。',
+    '我于是决定进城。我决定忘掉她。',
+    {q:'"怎么死的？——还不是穷死的？"'}  ,
+    '然而先前所见所闻的她的半生事迹的断片，至此也联成一片了。'
+  ],
+  choices:[{label:'祝福', to:'finale_blessing'}]
+},
+
+/* ============ 终章 ============ */
+finale_blessing:{
+  chapter:'终章 · 祝福', title:'一、祝福照常', sub:'年年如此，家家如此',
+  fx:['cracker','candle','snow'],
+  onEnter:()=>{ startCrackers(); },
+  text:[
+    '我给那些因为在近旁而极响的爆竹声惊醒，看见豆一般大的黄色的灯火光，接着又听得毕毕剥剥的鞭炮，是四叔家正在"祝福"了；知道已是五更将近时候。',
+    '鲁镇的祝福，年年如此，家家如此，——只要买得起福礼和爆竹之类的，——今年自然也如此。',
+    '堂屋里，红烛高烧，香烟缭绕，鸡鹅鱼肉横七竖八插着筷子，恭请福神们来享用；拜的却只限于男人。',
+    '短工们忙着，脸上带着年关特有的那种认真。没有人提起昨夜死的那个乞丐。四叔在里间，又骂了一句"谬种"，这一次骂得比昨天更顺口。',
+    '天色愈阴暗了，下午竟下起雪来，雪花大的有梅花那么大，满天飞舞，夹着烟霭和忙碌的气色，将鲁镇乱成一团糟。'
+  ],
+  choices:[{label:'回到书房', to:'finale_study'}]
+},
+finale_study:{
+  chapter:'终章 · 祝福', title:'二、空白纸页', sub:'我独坐在发出黄光的菜油灯下',
+  fx:['snow','candle'],
+  onEnter:()=>{ stopCrackers(); },
+  text:[
+    '我独坐在发出黄光的菜油灯下，想，这百无聊赖的祥林嫂，被人们弃在尘芥堆中的，看得厌倦了的陈旧的玩物，先前还将形骸露在尘芥里，从活得有趣的人们看来，恐怕要怪讶她何以还要存在，现在总算被无常打扫得干干净净了。',
+    '魂灵的有无，我不知道；然而在现世，则无聊生者不生，即使厌见者不见，为人为己，也还都不错。',
+    '桌上摊着一页空白的纸。窗外，雪落得很静。',
+    '我可以做三件事。'
+  ],
+  choices:[
+    {label:'A. 写下她的故事', to:'end_write'},
+    {label:'B. 把纸烧掉', to:'end_burn'},
+    {label:'C. 什么也不做，沉默', to:()=>{ markSilent('m5'); return hiddenReady()?'end_shuoBuQing':'end_silence'; }}
+  ]
+},
+
+/* ============ 结局 ============ */
+end_write:{
+  chapter:'结局', title:'写 下', sub:'她的名字仍只是"祥林嫂"',
+  ending:true,
+  text:[
+    '我提起笔。我写了雪，写了鲁镇，写了祝福，写了四叔的骂，写了四婶的那句"你放着罢"，写了狼，写了门槛。',
+    '我写得很冷静，甚至很漂亮。我把她的死写成一个时代的注脚，把她的一生写成一篇小说。',
+    '然而写到最后一行，我停住了。',
+    '我发现自己始终不知道她叫什么。她只是祥林的媳妇，是贺老六的填房，是阿毛的娘，是一个"谬种"，是一个"穷死的"。她自己的名字，从来没有在这世上被用过一次。',
+    '我把纸页放下。窗外的雪还在落。我写下了她的故事，也写下了我自己的"说不清"。'
+  ]
+},
+end_burn:{
+  chapter:'结局', title:'烧 掉', sub:'雪覆盖一切',
+  ending:true,
+  text:[
+    '我把纸凑到烛火上。火苗舔着纸角，卷起来，黑了，散成一撮灰。',
+    '灰落在桌面上，被窗缝里漏进来的风一吹，什么也不剩。',
+    '这样很好。鲁镇的祝福照常，四叔的门第照常，短工的工钱照常，明年的爆竹照常。',
+    '我于是可以安心地睡去，明天起来，吃清燉鱼翅。',
+    '只是此后，每到下雪的日子，我总疑心窗纸上有什么东西在响——其实什么也没有，不过是雪。'
+  ]
+},
+end_silence:{
+  chapter:'结局', title:'沉 默', sub:'爆竹声压过一切',
+  ending:true,
+  text:[
+    '我什么也没有写。',
+    '爆竹声联绵不断，似乎合成一天音响的浓云，夹着团团飞舞的雪花，拥抱了全市镇。',
+    '我在这繁响的拥抱中，也懒散而且舒适，从白天以至初夜的疑虑，全给祝福的空气一扫而空了，只觉得天地圣众歆享了牲醴和香烟，都醉醺醺的在空中蹒跚，豫备给鲁镇的人们以无限的幸福。',
+    '她死了。世界什么也没有改变。',
+    '——而我还活着，并且将继续这样活下去。'
+  ]
+},
+end_shuoBuQing:{
+  chapter:'隐藏结局', title:'说 不 清', sub:'她叫什么？',
+  ending:true, hidden:true,
+  text:[
+    '我什么也没有说，什么也没有写，什么也没有做。',
+    '雪落在窗纸上，沙沙地响，像是有人在门外走来走去，又像什么也没有。',
+    '我忽然想起，我从来不知道她姓什么，叫什么。'
+  ]
+}
+
+};
+
+/* ---------------- 6. 打字机 ---------------- */
+function typeBox(paragraphs, done){
+  const box = $('textBox');
+  box.innerHTML = '';
+  typing = true;
+  let pi = 0, ci = 0;
+  let cur = null;
+
+  function nextP(){
+    if(pi >= paragraphs.length){ typing=false; box.innerHTML=''; done && done(); return; }
+    const item = paragraphs[pi];
+    const isQuote = (typeof item === 'object');
+    const text = isQuote ? item.q : item;
+    cur = document.createElement('p');
+    if(isQuote){ cur.className = 'quote'; }
+    box.appendChild(cur);
+    const span = document.createElement('span');
+    cur.appendChild(span);
+    const cur0 = document.createElement('span');
+    cur0.className = 'cursor'; cur0.textContent = '　';
+    cur.appendChild(cur0);
+    ci = 0;
+    step();
+  }
+  function step(){
+    const item = paragraphs[pi];
+    const text = (typeof item === 'object') ? item.q : item;
+    const span = cur.firstChild;
+    if(ci < text.length){
+      span.textContent += text[ci];
+      ci++;
+      box.scrollTop = box.scrollHeight;
+      typeTimer = setTimeout(step, 16);
+    }else{
+      cur.removeChild(cur.lastChild);
+      pi++;
+      typeTimer = setTimeout(nextP, 240);
+    }
+  }
+  nextP();
+}
+function skipTyping(){
+  if(!typing) return;
+  clearTimeout(typeTimer); typing=false;
+  const box=$('textBox');
+  const sc = SCENES[S.scene]; if(!sc) return;
+  box.innerHTML='';
+  (sc.text||[]).forEach(item=>{
+    const p=document.createElement('p');
+    if(typeof item==='object'){ p.className='quote'; p.textContent=item.q; }
+    else p.textContent=item;
+    box.appendChild(p);
+  });
+  afterText(sc);
+}
+
+/* ---------------- 7. 场景渲染 ---------------- */
+function goto(id){
+  const sc = SCENES[id];
+  if(!sc){ console.warn('缺少场景', id); return; }
+  S.scene = id; S.seen[id]=true; save();
+  stopCrackers();
+
+  // 环境效果
+  setSnow(sc.fx && sc.fx.indexOf('snow-heavy')>=0 ? 'heavy' : (sc.fx && sc.fx.indexOf('snow')>=0 ? 'normal' : 'calm'));
+  if(sc.fx && sc.fx.indexOf('cracker')>=0) startCrackers();
+  if(sc.fx && sc.fx.indexOf('candle')>=0) Audio_.bell();
+
+  // 顶部
+  $('chapText').textContent = sc.chapter || '';
+  $('fragText').textContent = '碎片 '+S.frag+'/9';
+
+  sc.onEnter && sc.onEnter();
+
+  $('sceneTitle').textContent = sc.title || '';
+  $('sceneSub').textContent = sc.sub || '';
+  $('stage').innerHTML = '';
+  $('choices').innerHTML = '';
+  renderStatus(sc);
+
+  // 结局
+  if(sc.ending){ return renderEnding(sc); }
+
+  $('start').style.display='none';
+  $('game').style.display='block';
+  $('ending').style.display='none';
+
+  typeBox(sc.text||[], ()=>afterText(sc));
+}
+function afterText(sc){
+  if(sc.game){
+    const doneKey = S.scene;
+    if(S.mg[doneKey]){ showContinue(sc.game.next); }
+    else renderGame(sc.game, ()=>{ S.mg[doneKey]=true; save(); showContinue(sc.game.next); });
+  }else{
+    showChoices(sc.choices||[]);
+  }
+}
+function showContinue(to){
+  const c=$('choices'); c.innerHTML='';
+  const b=document.createElement('button');
+  b.className='choice'; b.textContent='（继续）';
+  b.onclick=()=>goto(to);
+  c.appendChild(b);
+}
+function showChoices(list){
+  const c=$('choices'); c.innerHTML='';
+  list.forEach(ch=>{
+    const b=document.createElement('button');
+    b.className='choice';
+    b.textContent=ch.label;
+    b.onclick=()=>{ ch.act && ch.act(); const to = (typeof ch.to==='function') ? ch.to() : ch.to; save(); goto(to); };
+    c.appendChild(b);
+  });
+}
+/* 状态条：耐心值 + 祭祀资格（恒 false） */
+function renderStatus(sc){
+  const st=$('status'); st.innerHTML='';
+  const showPatience = (S.scene.indexOf('act2_tell')===0) || S.scene==='act2_amao';
+  if(showPatience){
+    const d=document.createElement('div'); d.className='bar';
+    const pct=Math.round(S.patience/5*100);
+    d.innerHTML='<span>众人耐心</span><span class="track"><span class="fill'+(S.patience<=2?' low':'')+'" style="width:'+pct+'%"></span></span><span>'+S.patience+'/5</span>';
+    st.appendChild(d);
+  }
+  if(S.scene.indexOf('act1_fuli')===0 || S.scene.indexOf('act3')===0){
+    const j=judgePurity();
+    const d=document.createElement('div'); d.className='bar';
+    d.innerHTML='<span>祭祀资格</span><span class="verdict">'+j.verdict+'</span>';
+    st.appendChild(d);
+  }
+}
+
+/* ---------------- 8. 小游戏 ---------------- */
+function renderGame(g, onDone){
+  const stage=$('stage'); stage.innerHTML='';
+  const tip=document.createElement('div'); tip.className='stageTip'; stage.appendChild(tip);
+  const area=document.createElement('div'); area.className='stageArea'; stage.appendChild(area);
+  const msg=document.createElement('div'); stage.appendChild(msg);
+  GAMES[g.type](stage, tip, area, msg, onDone);
+}
+
+const GAMES = {
+
+  /* --- 书房：点击四件旧物，触发模糊回忆 --- */
+  study(stage, tip, area, msg, onDone){
+    tip.textContent = '（点击书房里的旧物 —— 至少查看两件）';
+    area.style.height='260px';
+    area.innerHTML = '<div class="ground" style="height:0"></div>';
+    const items = [
+      {k:'fu',     x:8,  y:16, w:64, h:64, svg:SVG.fu,     tag:'朱红大"福"字',
+       mem:'香案上方那个朱红的"福"字，年年新贴，年年一样。鲁镇人相信，只要字贴得端正，福神就会来。——她死的那一夜，字刚贴上，浆糊还没干。'},
+      {k:'candle', x:56, y:60, w:52, h:74, svg:SVG.candle,  tag:'一对红烛',
+       mem:'红烛的泪积成一小堆。烛火一跳，照见四叔的脸：不怒，不悲，只是不耐烦。他嫌她死得不是时候，坏了年下的规矩。'},
+      {k:'steps',  x:60, y:6,  w:100,h:44, svg:SVG.steps,   tag:'雪地脚印',
+       mem:'窗外雪地上一行脚印，从角门出去，一直通到河边，又折回来——不，没有折回来。只有去的那一行。'},
+      {k:'basket', x:16, y:58, w:72, h:60, svg:SVG.basket,  tag:'旧竹篮',
+       mem:'一只破空的竹篮，一只比她更破空的碗。竹篮还是去年那只，碗却早裂了口。她提着它，在鲁镇走了三年。'}
+    ];
+    let found=0;
+    items.forEach(it=>{
+      const el=document.createElement('div');
+      el.className='obj';
+      el.style.left=it.x+'px'; el.style.top=it.y+'px';
+      el.style.width=it.w+'px'; el.style.height=it.h+'px';
+      el.innerHTML=it.svg+'<span class="tag">'+it.tag+'</span>';
+      el.onclick=()=>{
+        if(el.classList.contains('done')) return;
+        el.classList.add('done'); found++;
+        addFrag(1); save();
+        const m=document.createElement('div'); m.className='mem'; m.textContent=it.mem;
+        stage.insertBefore(m, msg);
+        Audio_.whisper();
+        if(found>=2){ tip.textContent='碎片已足够。'; setTimeout(onDone, 400); }
+      };
+      area.appendChild(el);
+    });
+  },
+
+  /* --- 福礼：摆供品；试图让祥林嫂加入 → 反复被阻止 --- */
+  fuli(stage, tip, area, msg, onDone){
+    tip.textContent='（先把福礼摆好；也可以试着让她来摆）';
+    const goods=[{n:'鸡',g:'🐔'},{n:'鹅',g:'🦢'},{n:'鱼',g:'🐟'},{n:'肉',g:'🍖'},{n:'酒',g:'🍶'},{n:'饭',g:'🍚'}];
+    const bar=document.createElement('div'); bar.className='fuliBar'; stage.insertBefore(bar, msg);
+    const tbl=document.createElement('div'); tbl.id='table';
+    tbl.innerHTML='<div class="top"></div><div class="leg l"></div><div class="leg r"></div>';
+    area.appendChild(tbl);
+    let placed=0, blocked=0;
+    goods.forEach((gd,i)=>{
+      const b=document.createElement('button');
+      b.textContent=gd.n;
+      b.onclick=()=>{
+        b.classList.add('used'); placed++;
+        const p=document.createElement('div'); p.className='placed';
+        p.innerHTML='<span class="g">'+gd.g+'</span>';
+        p.style.left=(8+((placed-1)%5)*15)+'%';
+        tbl.appendChild(p);
+        Audio_.cracker();
+        if(placed>=6 || (placed>=3 && blocked>=1)) finish();
+      };
+      bar.appendChild(b);
+    });
+    const sb=document.createElement('button');
+    sb.className='she'; sb.textContent='让祥林嫂来摆';
+    sb.onclick=()=>{
+      blocked++;
+      const lines=[
+        '“祥林嫂，你放着罢！我来摆。”——四婶',
+        '“祥林嫂，你放着罢！我来摆。”——四婶，又慌忙大声说',
+        '“你放着罢，祥林嫂！”——四婶慌忙大声说'
+      ];
+      const d=document.createElement('div'); d.className='blocked';
+      d.textContent=lines[Math.min(blocked-1,2)];
+      msg.innerHTML=''; msg.appendChild(d);
+      Audio_.whisper();
+      if(placed>=3 && blocked>=1) finish();
+    };
+    bar.appendChild(sb);
+
+    function finish(){
+      bar.querySelectorAll('button').forEach(b=>b.classList.add('used'));
+      const j=judgePurity('她曾试图参与祭祀');
+      msg.innerHTML='<div class="mem">她把手收了回去，站在灶边，看别人把筷子插上。祭祀资格判定：<span style="color:#b8453c">'+j.verdict+'</span>（系统判定结果：'+(j.ok?'洁净':'不洁净')+'）</div>';
+      setTimeout(onDone, 900);
+    }
+  },
+
+  /* --- 雪地寻物：小鞋 / 小篮 / 血迹 --- */
+  snowfind(stage, tip, area, msg, onDone){
+    tip.textContent='（点击雪地，找三样东西）';
+    area.innerHTML='<div class="ground"></div>';
+    const spots=[
+      {k:'shoe',  x:'16%', y:'34%', s:60, svg:SVG.shoe,  tag:'小鞋',
+       mem:'刺柴上挂着一只他的小鞋。鞋帮上还沾着泥，鞋口朝下，空空的。'},
+      {k:'blood', x:'62%', y:'56%', s:56, svg:SVG.blood, tag:'一点血',
+       mem:'草窠里有一小片黑。雪盖了半边，另外半边冻住了，是褐色的。——那是阿毛的。'},
+      {k:'basket',x:'38%', y:'70%', s:58, svg:SVG.basket,tag:'小篮',
+       mem:'他躺在草窠里，肚里的五脏已经都给吃空了，手里还紧紧的捏着那只小篮呢。'}
+    ];
+    let found=0;
+    spots.forEach(sp=>{
+      const h=document.createElement('div');
+      h.className='hint';
+      h.style.left=sp.x; h.style.top=sp.y;
+      h.style.width=sp.s+'px'; h.style.height=sp.s+'px';
+      h.style.marginLeft=(-sp.s/2)+'px'; h.style.marginTop=(-sp.s/2)+'px';
+      h.onclick=()=>{
+        h.remove(); found++; addFrag(1); save();
+        const o=document.createElement('div');
+        o.className='obj done';
+        o.style.left=sp.x; o.style.top=sp.y;
+        o.style.width=sp.s+'px'; o.style.height=sp.s+'px';
+        o.style.marginLeft=(-sp.s/2)+'px'; o.style.marginTop=(-sp.s/2)+'px';
+        o.innerHTML=sp.svg+'<span class="tag" style="bottom:-14px">'+sp.tag+'</span>';
+        area.appendChild(o);
+        const m=document.createElement('div'); m.className='mem'; m.textContent=sp.mem;
+        stage.insertBefore(m, msg);
+        Audio_.whisper();
+        if(found>=3){
+          tip.textContent='三样都在了。';
+          const t=document.createElement('div'); t.className='mem';
+          t.innerHTML='春天，狼叼走了阿毛。她说的每一个字都是真的，只是没有人再愿意听。';
+          stage.insertBefore(t, msg);
+          setTimeout(onDone, 900);
+        }
+      };
+      area.appendChild(h);
+    });
+  },
+
+  /* --- 攒钱：点击干活 8 次 --- */
+  money(stage, tip, area, msg, onDone){
+    tip.textContent='（她默默的跑街，扫地，洗菜，淘米）';
+    area.innerHTML='<div class="ground" style="height:40px"></div>';
+    const woman=document.createElement('div');
+    woman.className='obj done';
+    woman.style.cssText='left:50%;margin-left:-45px;top:40px;width:90px;height:130px';
+    woman.innerHTML=SVG.woman;
+    area.appendChild(woman);
+    const box=document.createElement('div'); box.className='coinbox';
+    box.innerHTML='<span>历年积存的工钱：</span><b id="mnum" style="color:#c8a86b">0</b><span> / 12 元鹰洋</span>';
+    stage.insertBefore(box, msg);
+    const coins=document.createElement('div'); coins.className='coins';
+    stage.insertBefore(coins, msg);
+    const btn=document.createElement('button'); btn.className='choice';
+    btn.textContent='再干一天的活（+1.5 元）';
+    btn.onclick=()=>{
+      S.money+=1.5;
+      $('mnum').textContent=Math.min(12, S.money.toFixed(0));
+      const c=document.createElement('div'); c.className='coin'; coins.appendChild(c);
+      Audio_.cracker();
+      if(S.money>=12){
+        btn.remove();
+        msg.innerHTML='<div class="mem">快够一年，她才从四婶手里支取了历来积存的工钱，换算了十二元鹰洋。她把这钱用手巾包了又包，藏在贴身的地方。她以为这是买命的钱。</div>';
+        setTimeout(onDone, 900);
+      }
+    };
+    stage.insertBefore(btn, msg);
+  },
+
+  /* --- 拖门槛进庙门 --- */
+  temple(stage, tip, area, msg, onDone){
+    tip.textContent='（按住门槛，把它拖进庙门的虚线框）';
+    area.innerHTML='<div class="ground" style="height:44px"></div>';
+    const t=document.createElement('div'); t.id='temple'; t.innerHTML=SVG.temple; area.appendChild(t);
+    const dz=document.createElement('div'); dz.id='dropzone'; dz.textContent='庙 门 口';
+    area.appendChild(dz);
+    const beam=document.createElement('div'); beam.id='beam'; beam.textContent='门 槛';
+    area.appendChild(beam);
+
+    let dragging=false, ox=0, oy=0;
+    const host=area;
+    beam.addEventListener('pointerdown', e=>{
+      dragging=true; beam.setPointerCapture(e.pointerId); beam.classList.add('dragging');
+      const r=beam.getBoundingClientRect(); ox=e.clientX-r.left; oy=e.clientY-r.top;
+    });
+    beam.addEventListener('pointermove', e=>{
+      if(!dragging) return;
+      const h=host.getBoundingClientRect();
+      let x=e.clientX-h.left-ox, y=e.clientY-h.top-oy;
+      x=Math.max(0,Math.min(h.width-beam.offsetWidth,x));
+      y=Math.max(0,Math.min(h.height-beam.offsetHeight,y));
+      beam.style.left=x+'px'; beam.style.top=y+'px';
+      const b=beam.getBoundingClientRect(), z=dz.getBoundingClientRect();
+      const inZone = b.left+b.width/2>z.left && b.left+b.width/2<z.right && b.top+b.height/2>z.top && b.top+b.height/2<z.bottom;
+      dz.classList.toggle('hot', inZone);
+    });
+    let alt = null;
+    function succeed(){
+      if(beam.classList.contains('locked')) return;
+      beam.classList.add('locked');
+      beam.style.left=''; beam.style.top='';   // 清掉拖拽时的内联坐标，交回 .locked 定位
+      dz.classList.remove('hot'); dz.textContent='已 捐';
+      Audio_.bell();
+      msg.innerHTML='<div class="mem">门槛横在庙门口了。她想：从今往后，千人踏，万人跨，我的罪就算赎了。——她不知道，门槛是木头，人是人；木头替不了人。</div>';
+      if(alt) alt.remove();
+      setTimeout(onDone, 1000);
+    }
+    const up=e=>{
+      if(!dragging) return; dragging=false; beam.classList.remove('dragging');
+      const b=beam.getBoundingClientRect(), z=dz.getBoundingClientRect();
+      if(b.left+b.width/2>z.left && b.left+b.width/2<z.right && b.top+b.height/2>z.top && b.top+b.height/2<z.bottom){
+        succeed();
+      }
+    };
+    beam.addEventListener('pointerup', up);
+    beam.addEventListener('pointercancel', up);
+
+    // 兜底按钮：手机或拖拽失灵时也能推进，避免卡关
+    alt=document.createElement('button');
+    alt.className='mini';
+    alt.style.cssText='display:block;margin:14px auto 0';
+    alt.textContent='（拖不动？点此把门槛抬过去）';
+    alt.onclick=succeed;
+    stage.appendChild(alt);
+  },
+
+  /* --- 刻字：点击门槛 4 次 --- */
+  carve(stage, tip, area, msg, onDone){
+    tip.textContent='（点击门槛，替她刻上字）';
+    area.innerHTML='<div class="ground" style="height:40px"></div>';
+    const wrap=document.createElement('div');
+    wrap.id='carveTarget';
+    wrap.style.cssText='position:absolute;left:50%;top:70px;margin-left:-90px;width:180px;height:34px;cursor:pointer';
+    wrap.innerHTML=SVG.beam;
+    const lab=document.createElement('div');
+    lab.style.cssText='position:absolute;left:50%;top:70px;margin-left:-90px;width:180px;height:34px;display:flex;align-items:center;justify-content:center;gap:10px;font-family:var(--kai);font-size:20px;color:#f0d9b0;letter-spacing:.2em;pointer-events:none';
+    area.appendChild(wrap); area.appendChild(lab);
+    const chars=['捐','门','槛','赎'];
+    let i=0;
+    wrap.onclick=()=>{
+      if(i>=chars.length) return;
+      lab.textContent += chars[i]; i++;
+      Audio_.bell();
+      if(i>=chars.length){
+        wrap.classList.add('done'); wrap.onclick=null;
+        msg.innerHTML='<div class="mem">字刻好了：捐、门、槛、赎。她不认得这四个字，但她相信它们。她如同脱了枷锁，眼里有了光——那光只亮了一天。</div>';
+        setTimeout(onDone, 1000);
+      }
+    };
+  }
+};
+
+/* ---------------- 9. 结局渲染 ---------------- */
+function renderEnding(sc){
+  stopCrackers();
+  $('start').style.display='none';
+  $('game').style.display='none';
+  $('ending').style.display='block';
+  window.scrollTo(0,0);
+
+  // 隐藏结局判定：灵魂之问"说不清" + 终章沉默 + 至少三处沉默
+  const hid = sc.hidden || (hiddenReady() && (S.scene==='end_silence'||S.scene==='end_shuoBuQing'));
+
+  const body=$('endBody'); body.innerHTML='';
+  const endFoot = document.querySelector('#ending .footer');
+  endFoot.classList.remove('snowed');
+  $('ending').classList.remove('onWhite');
+
+  if(hid){
+    $('endTitle').textContent='说 不 清';
+    $('endTag').textContent='隐 藏 结 局';
+    const d=document.createElement('div'); d.className='hiddenEnd';
+    (sc.text||[]).forEach(t=>{
+      const p=document.createElement('p');
+      p.textContent = (typeof t==='object')? t.q : t;
+      d.appendChild(p);
+    });
+    const q=document.createElement('div'); q.className='bigQuestion'; q.textContent='她 叫 什 么 ？';
+    d.appendChild(q);
+    const s=document.createElement('div');
+    s.style.cssText='margin-top:18px;font-size:13px;color:#7d888d;letter-spacing:.2em;text-align:center';
+    s.textContent='（雪落下来，盖住了所有选项）';
+    d.appendChild(s);
+    body.appendChild(d);
+    document.getElementById('veil').classList.add('on');
+    $('ending').classList.add('onWhite');   // 雪幕后改用墨色字，保证可读
+    setTimeout(()=>endFoot.classList.add('snowed'), 900);
+    setSnow('heavy');
+  }else{
+    document.getElementById('veil').classList.remove('on');
+    $('endTitle').textContent = sc.title;
+    $('endTag').textContent = sc.sub||'';
+    (sc.text||[]).forEach(t=>{
+      if(typeof t==='object'){ const q=document.createElement('div'); q.className='q'; q.textContent=t.q; body.appendChild(q); }
+      else { const p=document.createElement('p'); p.textContent=t; body.appendChild(p); }
+    });
+    // 结局附加：灵魂之问的影响
+    const tail=document.createElement('div'); tail.className='q';
+    const map={a:'你最后记住的，是她的恐惧。',b:'你最后记住的，是她的追问。',c:'你最后记住的，是她眼里熄灭的光。',d:'你最后记住的，是一片空白。'};
+    if(S.soul&&map[S.soul]) tail.textContent=map[S.soul];
+    if(tail.textContent) body.appendChild(tail);
+    // 隐藏条件达成的余味
+    if(S.silentCount>=3){
+      const w=document.createElement('div');
+      w.style.cssText='text-align:center;margin-top:26px;font-family:var(--kai);color:#8b969c;font-size:14px;letter-spacing:.3em;opacity:.75';
+      w.textContent='（你始终没有说清。她叫什么？）';
+      body.appendChild(w);
+    }
+    // 烧掉：雪渐渐盖住屏幕，一切仿佛没有发生（文字转墨色以保证可读）
+    if(sc.title.indexOf('烧')>=0){
+      setSnow('heavy');
+      document.getElementById('veil').classList.add('on');
+      $('ending').classList.add('onWhite');
+    }
+  }
+  save();
+}
+
+/* ---------------- 10. 界面按钮 ---------------- */
+function showStart(){
+  stopCrackers();
+  $('start').style.display='flex';
+  $('game').style.display='none';
+  $('ending').style.display='none';
+  document.getElementById('veil').classList.remove('on');
+  $('ending').classList.remove('onWhite');
+  document.querySelector('#ending .footer').classList.remove('snowed');
+  const sv=loadSave();
+  $('btnContinue').style.display = sv ? 'block' : 'none';
+}
+function beginNew(){
+  clearSave();
+  S = freshState();
+  Audio_.startAmbient();
+  save();
+  goto(S.scene);
+}
+function beginContinue(){
+  const sv=loadSave();
+  S = sv || freshState();
+  Audio_.startAmbient();
+  goto(S.scene);
+}
+function backToTitle(){
+  if(confirm('回到标题？当前进度会保留。')) showStart();
+}
+function restart(){
+  if(!confirm('重新开始？当前进度将被清空。')) return;
+  clearSave();
+  clearVeil();
+  S = freshState();
+  goto(S.scene);
+}
+/** 清除雪幕 / 墨色 / 被雪覆盖的选项状态 */
+function clearVeil(){
+  document.getElementById('veil').classList.remove('on');
+  $('ending').classList.remove('onWhite');
+  document.querySelector('#ending .footer').classList.remove('snowed');
+}
+
+$('btnNew').onclick = beginNew;
+$('btnContinue').onclick = beginContinue;
+$('btnRestart').onclick = restart;
+$('btnBack').onclick = backToTitle;
+$('btnBack2').onclick = ()=>{ clearVeil(); showStart(); };
+$('btnAgain').onclick = ()=>{ clearSave(); clearVeil(); S=freshState(); goto('prologue_arrive'); };
+$('btnSkip').onclick = ()=>{ skipTyping(); };
+$('btnMute').onclick = ()=>{
+  Audio_.ensure();
+  const m = Audio_.toggle();
+  $('btnMute').textContent = m ? '♪ 已静音' : '♪ 静音';
+};
+/* 点击正文也可跳过打字 */
+$('textBox').addEventListener('click', ()=>{ if(typing) skipTyping(); });
+
+/* 首次交互启动音频（浏览器策略） */
+document.addEventListener('pointerdown', function once(){
+  Audio_.startAmbient();
+  document.removeEventListener('pointerdown', once);
+});
+
+/* 启动 */
+S = loadSave() || freshState();
+showStart();
+</script>
+</body>
+</html>
