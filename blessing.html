@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>祝福 · 穷举</title>
+<style>
+:root{--paper:#e6ddc8;--ink:#1b1a17;--ink-soft:#4a463d;--ink-faint:#8b8574;--cinnabar:#9c2b22;--sat:1}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:"Songti SC","STSong","Noto Serif CJK SC","Source Han Serif SC",SimSun,serif;
+  overflow:hidden;-webkit-font-smoothing:antialiased;
+  filter:saturate(var(--sat));transition:filter 1.8s ease;
+}
+#ink,#snow{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+#snow{z-index:5}
+#grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.5;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='220' height='220' filter='url(%23n)' opacity='0.35'/></svg>");
+  mix-blend-mode:multiply}
+#vignette{position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 40%,rgba(60,50,35,.3) 100%)}
+
+.screen{position:fixed;inset:0;z-index:10;display:none;flex-direction:column;
+  align-items:center;padding:44px 24px;overflow-y:auto}
+.screen.on{display:flex}
+.screen::-webkit-scrollbar{width:0}
+.box{width:100%;max-width:760px;margin:auto 0}
+
+/* 封面 */
+#cover{justify-content:center;text-align:center;background:var(--paper);z-index:50}
+#cover h1{font-family:"Kaiti SC","STKaiti",KaiTi,serif;font-size:70px;font-weight:400;
+  letter-spacing:.42em;text-indent:.42em;margin-bottom:8px}
+#cover .sub{font-size:12.5px;letter-spacing:.5em;color:var(--ink-faint);
+  text-indent:.5em;margin-bottom:46px}
+#cover .spoil{font-size:17px;line-height:2.15;color:var(--ink);max-width:440px;
+  margin:0 auto 18px;text-align:left}
+#cover .spoil b{color:var(--cinnabar);font-weight:400}
+#cover .q{font-size:16px;line-height:2;color:var(--ink-soft);max-width:440px;
+  margin:0 auto 40px;text-align:left;padding-left:16px;
+  border-left:2px solid rgba(156,43,34,.35)}
+.btn{background:none;border:1px solid rgba(27,26,23,.3);font-family:inherit;font-size:15px;
+  letter-spacing:.4em;text-indent:.4em;color:var(--ink);padding:14px 40px;cursor:pointer;
+  transition:all .35s}
+.btn:hover{background:var(--ink);color:var(--paper);letter-spacing:.55em;text-indent:.55em}
+
+/* 路径列表 */
+#ph{font-size:11.5px;letter-spacing:.34em;color:var(--ink-faint);margin-bottom:6px}
+#pt{font-family:"Kaiti SC","STKaiti",KaiTi,serif;font-size:27px;letter-spacing:.16em;
+  margin-bottom:8px}
+#pst{font-size:14px;color:var(--ink-soft);letter-spacing:.1em;margin-bottom:26px;line-height:1.9}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:24px}
+@media(max-width:640px){.grid{grid-template-columns:1fr}#cover h1{font-size:48px}}
+.card{text-align:left;background:none;border:1px solid rgba(27,26,23,.18);cursor:pointer;
+  font-family:inherit;color:var(--ink);padding:15px 17px;transition:all .28s;position:relative}
+.card:hover:not(.tried){border-color:var(--cinnabar);background:rgba(156,43,34,.06);
+  transform:translateY(-2px)}
+.card .n{font-family:"Kaiti SC","STKaiti",KaiTi,serif;font-size:18px;letter-spacing:.1em;
+  display:block;margin-bottom:6px}
+.card .d{font-size:13px;line-height:1.85;color:var(--ink-soft);display:block}
+.card .c{font-size:11.5px;color:var(--ink-faint);letter-spacing:.14em;display:block;
+  margin-top:8px}
+.card.tried{cursor:default;opacity:.42;border-style:dashed}
+.card.tried .n{text-decoration:line-through;text-decoration-color:rgba(139,133,116,.8)}
+.card.tried .d{display:none}
+.card.tried .c{display:none}
+.card.tried .v{display:block;font-size:12.5px;color:var(--ink-faint);letter-spacing:.1em;
+  margin-top:4px}
+.card .v{display:none}
+.card.hinted{border-style:dashed;background:rgba(156,43,34,.045)}
+.card.hinted .n{color:var(--cinnabar-dim,#6d4136)}
+.card.hinted .h{display:block;font-size:12px;color:var(--cinnabar);letter-spacing:.12em;
+  margin-top:7px;opacity:.8}
+.card .h{display:none}
+#remain{text-align:center;font-size:12.5px;color:var(--ink-faint);letter-spacing:.26em}
+
+/* 剧情 */
+#play{justify-content:flex-start}
+#scene{flex:1;min-height:0;overflow-y:auto;padding:6px 4px 20px;scrollbar-width:thin}
+#scene::-webkit-scrollbar{width:0}
+.p{font-size:19px;line-height:2.05;margin-bottom:15px;opacity:0;transition:opacity .9s}
+.p.show{opacity:1}
+.p.dim{color:var(--ink-soft)}
+.p.quote{font-family:"Kaiti SC","STKaiti",KaiTi,serif;font-size:21px;line-height:1.95;
+  padding-left:20px;border-left:2px solid rgba(156,43,34,.4)}
+.p.coral{font-family:"Kaiti SC","STKaiti",KaiTi,serif;font-size:22px;color:var(--cinnabar);
+  text-align:center;letter-spacing:.06em;margin:8px 0 16px}
+.p.sys{font-size:14px;letter-spacing:.2em;color:var(--ink-faint);text-align:center}
+
+#inter{padding:14px 0 6px}
+.tap{display:block;width:100%;text-align:center;background:none;cursor:pointer;font-family:inherit;
+  border:1px solid rgba(156,43,34,.42);color:var(--cinnabar);padding:15px;font-size:18px;
+  letter-spacing:.24em;transition:all .25s}
+.tap:hover{background:rgba(156,43,34,.08)}
+.tap:active{transform:scale(.985)}
+.bar{height:2px;background:rgba(27,26,23,.12);margin-top:14px;position:relative}
+.bar i{position:absolute;left:0;top:0;height:100%;width:0;background:var(--cinnabar);
+  transition:width .4s ease}
+#tick{text-align:center;font-size:13.5px;color:var(--ink-faint);letter-spacing:.16em;
+  margin-top:14px;min-height:20px;line-height:1.9}
+.pick{display:block;width:100%;text-align:left;background:none;border:none;cursor:pointer;
+  font-family:inherit;font-size:17px;line-height:1.7;color:var(--ink);padding:11px 14px;
+  margin-bottom:5px;border-left:2px solid transparent;transition:all .22s}
+.pick:hover{background:rgba(156,43,34,.07);border-left-color:var(--cinnabar);padding-left:20px}
+.pick .mark{display:inline-block;width:26px;color:var(--ink-faint);font-size:14px}
+.pick .why{display:block;font-size:13px;color:var(--ink-faint);margin-top:4px;padding-left:26px}
+.hold{display:block;width:100%;text-align:center;background:none;cursor:pointer;font-family:inherit;
+  border:1px solid rgba(27,26,23,.3);color:var(--ink-soft);padding:17px;font-size:17px;
+  letter-spacing:.2em;user-select:none;-webkit-user-select:none}
+.hold.act{background:rgba(27,26,23,.07);color:var(--ink)}
+
+/* 终局 */
+#fin{background:rgba(19,18,15,.97);justify-content:center;z-index:60}
+#fin .box{max-width:720px}
+#fin h2{font-family:"Kaiti SC","STKaiti",KaiTi,serif;font-size:29px;font-weight:400;
+  letter-spacing:.34em;color:#cfc6b0;text-align:center;margin-bottom:34px}
+.row{display:flex;align-items:baseline;gap:16px;padding:11px 0;
+  border-bottom:1px solid rgba(207,198,176,.13);opacity:0;transition:opacity .9s}
+.row.show{opacity:1}
+.row .a{font-family:"Kaiti SC","STKaiti",KaiTi,serif;font-size:17px;color:#cfc6b0;
+  min-width:112px;letter-spacing:.08em}
+.row .b{font-size:15px;color:#b8412f;flex:1;letter-spacing:.06em}
+.row .c{font-size:12.5px;color:#7d7666;letter-spacing:.14em;min-width:96px;text-align:right}
+#fsum{margin-top:34px;text-align:center}
+#fsum p{font-size:17px;line-height:2.3;color:#cfc6b0;letter-spacing:.1em;opacity:0;
+  transition:opacity 1.2s}
+#fsum p.show{opacity:1}
+#fsum .k{font-family:"Kaiti SC","STKaiti",KaiTi,serif;font-size:22px;color:#b8412f;
+  letter-spacing:.16em;margin-top:12px}
+#again{margin:42px auto 0;display:block;border-color:rgba(207,198,176,.32);color:#cfc6b0}
+#again:hover{background:#cfc6b0;color:#191815}
+</style>
+</head>
+<body>
+<canvas id="ink"></canvas><div id="grain"></div><div id="vignette"></div><canvas id="snow"></canvas>
+
+<!-- 封面 -->
+<div class="screen on" id="cover">
+  <div class="box">
+    <h1>祝　福</h1>
+    <div class="sub">六 条 路</div>
+    <div class="spoil">
+      她叫祥林嫂。<br>
+      她会在<b>祝福的夜里</b>死在雪地里，五年前花白的头发全白，手里攥着一只空的破碗。
+    </div>
+    <div class="q">
+      这件事，你大概是知道的。<br>
+      那么这一回，我们不猜结局——<br>
+      我们试试，能不能把她捞出来说一句：还有别的路吗？
+    </div>
+    <button class="btn" id="start">走 一 条 路</button>
+  </div>
+</div>
+
+<!-- 路径列表 -->
+<div class="screen" id="paths">
+  <div class="box">
+    <div id="ph">第 一 幕 · 祥 林 嫂</div>
+    <div id="pt">选一条路</div>
+    <div id="pst"></div>
+    <div class="grid" id="grid"></div>
+    <div id="remain"></div>
+  </div>
+</div>
+
+<!-- 剧情 -->
+<div class="screen" id="play">
+  <div class="box" style="display:flex;flex-direction:column;min-height:0;flex:1">
+    <div id="scene"></div>
+    <div id="inter"></div>
+    <div id="tick"></div>
+  </div>
+</div>
+
+<!-- 终局 -->
+<div class="screen" id="fin">
+  <div class="box">
+    <h2>六 条 路</h2>
+    <div id="rows"></div>
+    <div id="fsum"></div>
+    <button class="btn" id="again">第 七 条</button>
+  </div>
+</div>
+
+<script>
+/* ================= 音效：程序化 ================= */
+const Snd=(()=>{
+  let ctx=null,on=true;
+  const init=()=>{if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)()};
+  const nb=d=>{const n=Math.floor(ctx.sampleRate*d),b=ctx.createBuffer(1,n,ctx.sampleRate),x=b.getChannelData(0);
+    for(let i=0;i<n;i++)x[i]=Math.random()*2-1;return b};
+  const env=(nd,t0,a,d,pk)=>{const g=ctx.createGain();g.gain.setValueAtTime(0,t0);
+    g.gain.linearRampToValueAtTime(pk,t0+a);g.gain.exponentialRampToValueAtTime(.0001,t0+a+d);
+    nd.connect(g);g.connect(ctx.destination);return g};
+  return{
+    init,get state(){return on},toggle(){on=!on;if(on)init();return on},
+    tick(){if(!on||!ctx)return;const t=ctx.currentTime,o=ctx.createOscillator();
+      o.type='triangle';o.frequency.setValueAtTime(520,t);
+      o.frequency.exponentialRampToValueAtTime(680,t+.06);
+      env(o,t,.004,.13,.06);o.start(t);o.stop(t+.2)},
+    rise(){if(!on||!ctx)return;const t=ctx.currentTime,o=ctx.createOscillator();
+      o.type='sine';o.frequency.setValueAtTime(620,t);
+      o.frequency.exponentialRampToValueAtTime(940,t+.3);
+      env(o,t,.01,.5,.085);o.start(t);o.stop(t+.6)},
+    knock(){if(!on||!ctx)return;const t=ctx.currentTime,o=ctx.createOscillator();
+      o.type='triangle';o.frequency.setValueAtTime(330,t);
+      o.frequency.exponentialRampToValueAtTime(175,t+.15);
+      env(o,t,.002,.17,.07);o.start(t);o.stop(t+.22)},
+    cracker(d=1){if(!on||!ctx)return;const t=ctx.currentTime;
+      const s=ctx.createBufferSource();s.buffer=nb(.5);
+      const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=1100/d;f.Q.value=.7;
+      s.connect(f);env(f,t,.002,.28/d,.15/d);s.start(t);s.stop(t+.5);
+      const o=ctx.createOscillator();o.type='sine';o.frequency.setValueAtTime(120/d,t);
+      o.frequency.exponentialRampToValueAtTime(40,t+.2);env(o,t,.002,.22,.12/d);o.start(t);o.stop(t+.3)},
+    doom(){if(!on||!ctx)return;const t=ctx.currentTime;
+      const o=ctx.createOscillator();o.type='sine';o.frequency.setValueAtTime(150,t);
+      o.frequency.exponentialRampToValueAtTime(27,t+1.7);env(o,t,.02,1.9,.23);o.start(t);o.stop(t+2.1);
+      const s=ctx.createBufferSource();s.buffer=nb(1.2);const f=ctx.createBiquadFilter();
+      f.type='lowpass';f.frequency.value=270;s.connect(f);env(f,t,.01,1.1,.09);s.start(t);s.stop(t+1.2)},
+    wind(){if(!on||!ctx)return;const t=ctx.currentTime;const s=ctx.createBufferSource();s.buffer=nb(3);
+      const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=400;
+      s.connect(f);env(f,t,.8,2.2,.032);s.start(t);s.stop(t+3)}
+  };
+})();
+
+/* ================= 水墨 & 雪 ================= */
+const ic=document.getElementById('ink'),ix=ic.getContext('2d');
+function drawInk(){
+  const w=ic.width=innerWidth,h=ic.height=innerHeight;ix.clearRect(0,0,w,h);
+  for(let b=0;b<3;b++){
+    const base=h*(.62+b*.11),amp=h*(.05+b*.02),al=.045-b*.012;
+    ix.beginPath();ix.moveTo(-20,base);
+    for(let x=-20;x<=w+20;x+=8){
+      const y=base-Math.sin(x/(180+b*90)+b*2.1)*amp-Math.sin(x/(47+b*23))*amp*.28;
+      ix.lineTo(x,y)}
+    ix.lineTo(w+20,h);ix.lineTo(-20,h);ix.closePath();
+    ix.fillStyle='rgba(40,38,32,'+al+')';ix.fill()}
+  const sp=Math.floor(w*h/90000);
+  for(let i=0;i<sp;i++){
+    const x=Math.random()*w,y=Math.random()*h,r=20+Math.random()*130;
+    const g=ix.createRadialGradient(x,y,0,x,y,r),a=.016+Math.random()*.03;
+    g.addColorStop(0,'rgba(30,28,24,'+a+')');g.addColorStop(.55,'rgba(30,28,24,'+a*.35+')');
+    g.addColorStop(1,'rgba(30,28,24,0)');ix.fillStyle=g;ix.beginPath();ix.arc(x,y,r,0,7);ix.fill()}
+  ix.strokeStyle='rgba(45,42,35,0.05)';
+  for(let i=0;i<26;i++){ix.lineWidth=.5+Math.random()*1.4;ix.beginPath();
+    let x=Math.random()*w,y=Math.random()*h;ix.moveTo(x,y);
+    for(let s=0;s<14;s++){x+=(Math.random()-.5)*46;y+=(Math.random()-.5)*26;ix.lineTo(x,y)}
+    ix.stroke()}
+}
+drawInk();addEventListener('resize',drawInk);
+const sc=document.getElementById('snow'),sx=sc.getContext('2d');let fl=[];
+function initSnow(){sc.width=innerWidth;sc.height=innerHeight;
+  const n=Math.floor(innerWidth*innerHeight/16000);fl=[];
+  for(let i=0;i<n;i++)fl.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,
+    r:Math.random()*2.6+.6,s:Math.random()*.55+.18,dr:Math.random()*.6-.3,ph:Math.random()*6.28})}
+(function loop(){sx.clearRect(0,0,sc.width,sc.height);sx.fillStyle='rgba(255,255,255,.72)';
+  for(const f of fl){f.y+=f.s;f.x+=Math.sin(f.ph+=.006)*.35+f.dr*.2;
+    if(f.y>sc.height+6){f.y=-6;f.x=Math.random()*sc.width}
+    if(f.x<-6)f.x=sc.width+6;if(f.x>sc.width+6)f.x=-6;
+    sx.beginPath();sx.arc(f.x,f.y,f.r,0,7);sx.fill()}
+  requestAnimationFrame(loop)})();
+initSnow();addEventListener('resize',initSnow);
+
+/* ================= 六条路 ================= */
+const PATHS=[
+{
+ id:'threshold', name:'捐 门 槛',
+ d:'去土地庙捐一条门槛，当作你的替身，给千人踏，万人跨。',
+ c:'代价 · 大钱十二元',
+ mirror:'她也试过。',
+ block:'赎罪无效', rule:'神的规则',
+ intro:[
+  {t:'柳妈是善女人，吃素，不杀生的。那天她在檐下洗米，忽然压低了声音：'},
+  {t:'「祥林嫂，你实在不合算。你和你的第二个男人过活不到两年，倒落了一件大罪名。」',c:'quote'},
+  {t:'「你想，你将来到阴司去，那两个死鬼的男人还要争，你给了谁好呢？阎罗大王只好把你锯开来，分给他们。」',c:'quote'},
+  {t:'你脸上就显出恐怖的神色来。这是你从来没有想到过的事。'},
+  {t:'庙祝起初执意不允许，你急得流泪，他才勉强答应。价目是大钱十二元。'},
+  {t:'你一年工钱，一千七百五十文。',c:'dim'}
+ ],
+ inter:{type:'tap',n:12,label:'做 一 年 工',
+  head:'数够十二元。',
+  ticks:['第一年。','第二年。','第三年。','第四年。','第五年。头上有了白头发。',
+        '第六年。','第七年。','第八年。','第九年。','第十年。','第十一年。','第十二年。'],
+  tail:'十二元。你数完了。'},
+ outro:[
+  {t:'门槛抬进庙里，横在当中，给千人踏，万人跨。'},
+  {t:'你回来，神气很舒畅，眼光也分外有神。'},
+  {t:'冬至祭祖。你看见那只鱼翅，想起自己已经干净了，可以赎了这一世的罪名。'},
+  {t:'你的手，坦然地伸过去。'},
+  {t:'四婶慌忙大声说——'},
+  {t:'「祥林嫂，你放着罢，我来拿。」',c:'coral'},
+  {t:'你像是受了炮烙似的缩手，脸色同时变作灰黑。'},
+  {t:'门槛替你受了千人踏。可干净不干净，从来不是门槛说了算的。',c:'dim'}
+ ]
+},
+{
+ id:'work', name:'拼 命 做 工',
+ d:'比勤快的男人还勤快。扫地，洗地，杀鸡，宰鹅，彻夜煮福礼，全是一人担当。',
+ c:'代价 · 力气与命',
+ mirror:'她也试过。',
+ block:'洁净由别人判定', rule:'人的规则',
+ intro:[
+  {t:'你逃出卫家山，走了三十里，到鲁镇荐到鲁四老爷家做工。'},
+  {t:'四婶见你手脚壮大，又只是安分耐劳的人，便留下了你。'},
+  {t:'你要让他们看见：你值这一口饭。'},
+  {t:'堂屋地上积了一层灰。天还没亮。',c:'sys'}
+ ],
+ inter:{type:'tap',n:10,label:'扫 一 下',
+  head:'把地扫干净。',
+  ticks:['天没亮。','天还没亮。','手开始酸。','腰也酸。','鸡叫了。',
+        '有人起来了。','再快一点。','还有一点。','好了。','——好了。'],
+  tail:'地干净了。你的手也是。'},
+ outro:[
+  {t:'到年底，扫尘，洗地，杀鸡，宰鹅，彻夜的煮福礼，全是一人担当，竟没有添短工。'},
+  {t:'「这真是比男人还强。」四婶有一回这样说过。'},
+  {t:'然而祭祖的时候，你刚要去拿酒杯和筷子——'},
+  {t:'「祥林嫂，你放着罢！我来摆。」',c:'coral'},
+  {t:'你讪讪地缩了手，又去取烛台，她又慌忙说：'},
+  {t:'「祥林嫂，你放着罢！我来拿。」',c:'coral'},
+  {t:'你转了几个圆圈，终于没有事情做，只得疑惑地走开。'},
+  {t:'你干活的这双手是干净的。你这个人不是。这两件事，从来不相干。',c:'dim'}
+ ]
+},
+{
+ id:'liuma', name:'求 柳 妈',
+ d:'柳妈是善女人，吃素，不杀生。她懂这些事。去问她。',
+ c:'代价 · 一次开口',
+ mirror:'她也试过。',
+ block:'善意即是刀', rule:'善的规则',
+ intro:[
+  {t:'柳妈是鲁镇上唯一肯跟你说几句话的人。'},
+  {t:'她吃素，不杀生，只肯洗器皿。'},
+  {t:'你在灶下拦住她。'},
+  {t:'你说：柳妈，我该怎么办。'}
+ ],
+ inter:{type:'choice',head:'你说出口的是：',
+  opts:[
+   {t:'「我怕。我怕到了阴司，被锯开来。」',ok:true,r:'柳妈脸上立刻显出诡秘的神气来。'},
+   {t:'「我想见我的阿毛。」',ok:true,r:'柳妈叹了口气，说：那更得干干净净地去了。'},
+   {t:'「我不想再讲了。」',ok:true,r:'柳妈说：不讲好。可罪还在。'}
+  ]},
+ outro:[
+  {t:'柳妈想了想，忽然说：'},
+  {t:'「你到土地庙里去捐一条门槛，当作你的替身，给千人踏，万人跨，赎了这一世的罪名，免得死了去受苦。」',c:'quote'},
+  {t:'她说这话的时候，是真心为你好。她甚至替你算过了价钱。'},
+  {t:'你顺着她的手指，又走回第一条路上去了。'},
+  {t:'——她没有害你。她只是告诉你，这个世道是怎么算账的。而她算得没错。',c:'dim'}
+ ],
+ cross:'threshold'
+},
+{
+ id:'money', name:'攒 钱 自 立',
+ d:'不靠谁。做工，攒钱，租间屋，自己养活自己。',
+ c:'代价 · 全部工钱',
+ mirror:'她连试的机会都没有。',
+ block:'她没有财产权', rule:'钱的规则',
+ intro:[
+  {t:'你不求人。你只是一文一文地攒。'},
+  {t:'一个月五百文。你留下五十文，藏在床脚的破砖下面。'},
+  {t:'只要你攒够了，你就能自己养活自己。',c:'quote'}
+ ],
+ inter:{type:'tap',n:8,label:'做 一 个 月 工',
+  head:'攒钱。',
+  ticks:['五十文。','一百文。','一百五十文。','两百文。','两百五十文。',
+        '三百文。','三百五十文。','四百文。'],
+  tail:'四百文。砖头下面沉甸甸的。'},
+ outro:[
+  {t:'月底，婆婆从卫家山来了。'},
+  {t:'她坐下来，喝了一碗茶，说：这些钱，你小叔子娶媳妇正等着用。'},
+  {t:'你一句话也没说。你把砖头下面的钱全数了出来。'},
+  {t:'后来你才知道：你的工钱，从来不是你的。'},
+  {t:'在贺家坳，大伯来收屋——屋子不是你的，阿毛不是你的，你也不是你的。',c:'dim'},
+  {t:'一个连自己都不属于自己的人，攒钱做什么呢。',c:'dim'}
+ ]
+},
+{
+ id:'flee', name:'逃 出 鲁 镇',
+ d:'天没亮就走。走到没有人的地方去，走到没人认识你的地方去。',
+ c:'代价 · 一双脚',
+ mirror:'她也试过。三十里，走了三十年。',
+ block:'天下都一样', rule:'地的规则',
+ intro:[
+  {t:'你已经逃过一次了。三十里，从卫家山逃到鲁镇。'},
+  {t:'那一次，你在河边淘米的时候，乌篷船里跳出两个男人来，把你捆了回去。'},
+  {t:'这一次你走得早一点。天没亮，雪停了。'},
+  {t:'三个方向。你只能选一个。',c:'sys'}
+ ],
+ inter:{type:'choice',head:'你往哪边走：',
+  opts:[
+   {t:'往东 · 卫家山',ok:true,r:'东边三十里是卫家山，你婆婆家。你已经被卖过一次，八十千。'},
+   {t:'往西 · 贺家坳',ok:true,r:'西边是贺家坳。屋是大伯收的，阿毛是狼吃的。你回去做什么。'},
+   {t:'往北 · 进 城',ok:true,r:'北边是城。城里的规矩，和鲁镇一样，只是更体面些。'}
+  ]},
+ outro:[
+  {t:'你走到天亮，又走到天黑。'},
+  {t:'天底下没有一块地，不属于某个人的规矩。',c:'quote'},
+  {t:'东边有人认得你是谁家的媳妇。西边有人记得你是谁的嫂子。北边没人认识你，可是北边的庙，也要门槛钱。'},
+  {t:'你走了一辈子，走过三十里，走过三百里。'},
+  {t:'你一直走在别人的地面上。',c:'dim'}
+ ]
+},
+{
+ id:'silence', name:'不 再 提 阿 毛',
+ d:'你说得太多了。全镇的人几乎都能背诵你的话。那就不说了。',
+ c:'代价 · 唯一的听众',
+ mirror:'她最后就是这么死的。',
+ block:'沉默即是消失', rule:'言的规则',
+ intro:[
+  {t:'起初，男人听到这里，往往敛起笑容，没趣地走了开去；女人们却不独宽恕了她似的，脸上立刻改换了鄙薄的神气，还要陪出许多眼泪来。'},
+  {t:'后来全镇的人们几乎都能背诵她的话，一听到就烦厌得头痛。'},
+  {t:'「我真傻，真的。」她刚开口——'},
+  {t:'「是的，你是单知道雪天野兽在深山里没有食吃，才会到村里来的。」他们立即打断她，走开了。',c:'dim'},
+  {t:'那就不说。按住。',c:'sys'}
+ ],
+ inter:{type:'hold',ms:2600,label:'按 住 不 说',head:'忍住。一个字也不要说。'},
+ outro:[
+  {t:'你果然不再说了。'},
+  {t:'你不开口，不流泪，见人就笑。你成了一个安分的人。'},
+  {t:'于是连那些陪你掉过眼泪的人，也就散了。'},
+  {t:'没有人再拦你，也没有人再看你。'},
+  {t:'被议论，至少还是被看见。',c:'quote'},
+  {t:'沉默不是解脱。沉默是，你先于你的死，从鲁镇消失了一次。',c:'dim'}
+ ]
+}
+];
+
+/* ================= 引擎 ================= */
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const sceneEl=$('scene'),interEl=$('inter'),tickEl=$('tick');
+let tried=new Set(),via=new Set(),cur=null;
+
+function screen(id){
+  ['cover','paths','play','fin'].forEach(s=>$(s).classList.toggle('on',s===id));
+}
+function setSat(v){document.body.style.setProperty('--sat',v)}
+
+async function typePar(el,text){
+  const parts=text.match(/[^。！？；…]+[。！？；…]*|[^。！！；…]+$/g)||[text];
+  el.innerHTML='';
+  for(const seg of parts){
+    const s=document.createElement('span');s.textContent=seg;s.style.opacity=0;
+    s.style.transition='opacity .55s ease';el.appendChild(s);
+    await sleep(26);s.style.opacity=1;
+    await sleep(seg.length>24?280:160);
+  }
+}
+async function render(list){
+  for(const par of list){
+    const d=document.createElement('div');
+    d.className='p '+(par.c||'');
+    sceneEl.appendChild(d);await sleep(60);d.classList.add('show');
+    await typePar(d,par.t);sceneEl.scrollTop=sceneEl.scrollHeight;
+  }
+}
+
+/* --- 列表页 --- */
+function showPaths(){
+  sceneEl.innerHTML='';interEl.innerHTML='';tickEl.innerHTML='';
+  const known=new Set([...tried,...via]);
+  const left=PATHS.length-known.size;
+  $('pst').textContent = tried.size===0
+    ? '每一条都走得通的样子。每一条都得付点什么。'
+    : '你已经走过 '+tried.size+' 条。它们都在同一处断了。';
+  const g=$('grid');g.innerHTML='';
+  PATHS.forEach(p=>{
+    const b=document.createElement('button');
+    const done=tried.has(p.id), hinted=via.has(p.id);
+    b.className='card'+(done?' tried':'')+(hinted&&!done?' hinted':'');
+    b.innerHTML='<span class="n">'+p.name+'</span>'
+      +'<span class="d">'+p.d+'</span>'
+      +'<span class="c">'+p.c+'</span>'
+      +'<span class="v">堵死于 · '+p.block+'</span>'
+      +'<span class="h">柳妈指的就是这条 · 已知结局，仍可亲走</span>';
+    if(!done) b.onclick=()=>playPath(p);
+    g.appendChild(b);
+  });
+  $('remain').textContent = left>0 ? ('还 剩 '+left+' 条 没 走') : '';
+  if(left===0){ $('pst').textContent='六条都走过了。它们断在同一处，可断法各不相同。'; }
+  screen('paths');
+}
+
+/* --- 走一条路 --- */
+async function playPath(p){
+  cur=p;
+  sceneEl.innerHTML='';interEl.innerHTML='';tickEl.innerHTML='';
+  screen('play');
+  setSat(1.12-tried.size*.14);
+  Snd.wind();
+  await render(p.intro);
+  await sleep(400);
+  await runInter(p.inter);
+  await sleep(500);
+  await render(p.outro);
+  await sleep(600);
+  tried.add(p.id);via.delete(p.id);
+  if(p.cross) via.add(p.cross);   // 求柳妈 → 捐门槛：预告，不代走
+  Snd.doom(); Snd.cracker(2.2);
+  setSat(.08);
+  await sleep(900);
+  const b=document.createElement('button');
+  b.className='tap';b.style.marginTop='18px';
+  b.textContent='—— 回 到 鲁 镇 ——';
+  b.onclick=()=>{ if(new Set([...tried,...via]).size>=PATHS.length) showFinal(); else showPaths(); };
+  interEl.innerHTML='';interEl.appendChild(b);
+}
+
+/* --- 交互 --- */
+async function runInter(it){
+  return new Promise(async res=>{
+    interEl.innerHTML='';tickEl.innerHTML='';
+    const head=document.createElement('div');
+    head.className='p sys';head.style.opacity=1;head.textContent=it.head;
+    tickEl.appendChild(head);
+
+    if(it.type==='tap'){
+      const bar=document.createElement('div');bar.className='bar';
+      const fill=document.createElement('i');bar.appendChild(fill);
+      const btn=document.createElement('button');btn.className='tap';btn.textContent=it.label;
+      const note=document.createElement('div');
+      note.style.cssText='text-align:center;font-size:13.5px;color:var(--ink-faint);letter-spacing:.16em;margin-top:12px;min-height:20px';
+      interEl.appendChild(btn);interEl.appendChild(bar);interEl.appendChild(note);
+      let k=0;
+      btn.onclick=()=>{
+        if(k>=it.n)return;
+        note.textContent=it.ticks[k]||'';
+        k++;fill.style.width=(k/it.n*100)+'%';
+        Snd.tick();
+        if(k>=it.n){
+          btn.disabled=true;btn.style.opacity=.4;note.textContent=it.tail;
+          Snd.rise();if(cur.id==='threshold'||cur.id==='liuma')Snd.knock();
+          setTimeout(res,900);
+        }
+      };
+    }
+    else if(it.type==='choice'){
+      it.opts.forEach(o=>{
+        const b=document.createElement('button');b.className='pick';
+        b.innerHTML='<span class="mark">·</span>'+o.t;
+        b.onclick=()=>{
+          interEl.innerHTML='';
+          const r=document.createElement('div');
+          r.className='p quote';r.style.opacity=1;r.textContent=o.r;
+          interEl.appendChild(r);
+          Snd.knock();
+          setTimeout(res,1500);
+        };
+        interEl.appendChild(b);
+      });
+    }
+    else if(it.type==='hold'){
+      const btn=document.createElement('button');btn.className='hold';btn.textContent=it.label;
+      const bar=document.createElement('div');bar.className='bar';
+      const fill=document.createElement('i');bar.appendChild(fill);
+      interEl.appendChild(btn);interEl.appendChild(bar);
+      let t0=null,raf=null,done=false;
+      const go=ts=>{
+        if(done)return;
+        if(t0===null)t0=ts;
+        const pr=Math.min(1,(ts-t0)/it.ms);
+        fill.style.width=(pr*100)+'%';
+        if(pr>=1){
+          done=true;btn.textContent='……';btn.classList.remove('act');
+          Snd.knock();setTimeout(res,800);return;
+        }
+        raf=requestAnimationFrame(go);
+      };
+      const start=e=>{e.preventDefault();btn.classList.add('act');t0=null;raf=requestAnimationFrame(go)};
+      const stop=()=>{if(!done&&raf){cancelAnimationFrame(raf);t0=null;fill.style.width='0%';}
+        btn.classList.remove('act')};
+      btn.addEventListener('mousedown',start);btn.addEventListener('touchstart',start,{passive:false});
+      btn.addEventListener('mouseup',stop);btn.addEventListener('mouseleave',stop);
+      btn.addEventListener('touchend',stop);
+    }
+  });
+}
+
+/* --- 终局 --- */
+async function showFinal(){
+  screen('fin');
+  setSat(0);
+  const rows=$('rows'),sum=$('fsum');
+  rows.innerHTML='';sum.innerHTML='';
+  Snd.wind();
+  await sleep(700);
+  for(const p of PATHS){
+    const r=document.createElement('div');r.className='row';
+    r.innerHTML='<span class="a">'+p.name+'</span>'
+      +'<span class="b">'+p.block+'</span>'
+      +'<span class="c">'+p.rule+'</span>';
+    rows.appendChild(r);
+    await sleep(70);r.classList.add('show');
+    Snd.knock();
+    await sleep(430);
+  }
+  await sleep(600);
+  Snd.cracker(1.1);
+  await sleep(900);
+  const lines=[
+    '没有一个是坏人。',
+    '柳妈是真心的。四婶也给过她工做。庙祝明码标价。',
+    '没有一条放开过。'
+  ];
+  for(const t of lines){
+    const d=document.createElement('p');d.textContent=t;
+    sum.appendChild(d);await sleep(120);d.classList.add('show');await sleep(900);
+  }
+  await sleep(600);
+  const k=document.createElement('p');
+  k.className='k';k.textContent='你也试过了。她也试过了。';
+  sum.appendChild(k);await sleep(200);k.classList.add('show');
+  Snd.doom();
+  await sleep(1400);
+  Snd.cracker(2.4);
+}
+
+/* --- 第七条 --- */
+$('again').onclick=async()=>{
+  const b=$('again');
+  if(b.dataset.used)return;
+  b.dataset.used='1';
+  b.style.opacity=.25;b.style.pointerEvents='none';
+  const sum=$('fsum');
+  const d=document.createElement('p');
+  d.style.marginTop='30px';
+  d.textContent='1918年以来，每一个读完《祝福》的人，都在这里停过。';
+  sum.appendChild(d);await sleep(150);d.classList.add('show');
+  Snd.wind();
+  await sleep(1800);
+  const e=document.createElement('p');
+  e.style.cssText='margin-top:18px;font-family:"Kaiti SC","STKaiti",KaiTi,serif;font-size:19px;color:#cfc6b0';
+  e.textContent='——那么，剩下的事只有一件：听她说完那三句话。';
+  sum.appendChild(e);await sleep(150);e.classList.add('show');
+};
+
+/* --- 启动 --- */
+$('start').onclick=()=>{Snd.init();Snd.wind();showPaths()};
+$('again').addEventListener('dblclick',()=>{tried.clear();via.clear();
+  delete $('again').dataset.used;$('again').style.opacity='';
+  $('again').style.pointerEvents='';showPaths();});
+addEventListener('keydown',e=>{
+  if(e.code==='Space'||e.code==='Enter'){
+    const b=document.querySelector('.screen.on .tap:not([disabled]),.screen.on .btn');
+    if(b)b.click();
+  }
+});
+</script>
+</body>
+</html>
