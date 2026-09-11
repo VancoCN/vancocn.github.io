@@ -5,21 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>祝福：雪夜问魂</title>
 <style>
-/* ============================================================
-   《祝福：雪夜问魂》· 以字代物版
-   视觉小说 + 轻解谜 ｜ 单文件 ｜ 无外部依赖
-   - 不用任何图片 / SVG / emoji，所有"物"都是汉字
-   - 排版全用 grid / flex 流式，无固定坐标，手机桌面都不会错位
-   ============================================================ */
 
 :root{
-  --ink:#070b0e;            /* 夜 */
-  --ink2:#121b21;           /* 次夜 */
-  --snow:#dfe6e8;           /* 雪白 */
-  --paper:rgba(226,220,206,.075);  /* 宣纸 */
-  --red:#8e2b2b;            /* 暗红 */
+  --ink:#070b0e;
+  --ink2:#121b21;
+  --snow:#dfe6e8;
+  --paper:rgba(226,220,206,.075);
+  --red:#8e2b2b;
   --red2:#b8453c;
-  --gold:#c8a86b;           /* 烛 */
+  --gold:#c8a86b;
   --grey:#8b969c;
   --line:rgba(142,43,43,.5);
   --serif:"Songti SC","STSong","SimSun","Noto Serif CJK SC","Source Han Serif SC","WenQuanYi Micro Hei",serif;
@@ -57,8 +51,8 @@ body::after{
 @keyframes flash{0%{opacity:0}12%{opacity:.7}100%{opacity:0}}
 
 /* ============================================================
-   背景层：纯 CSS 绘制的简化剪影 + 大字水印
-   固定定位、不接收事件、不参与任何排版 —— 不会影响布局
+   背景层
+   固定定位、不接收事件、不参与任何排版
    层次：#bg(0) < 噪点/暗角(1) < 雪(2) < 闪光(3) < 内容(4)
    ============================================================ */
 #bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
@@ -69,7 +63,7 @@ body::after{
 /* 天色 */
 .b-sky{background:radial-gradient(125% 78% at 50% 0%, var(--sky1) 0%, var(--sky2) 72%);}
 
-/* 背景大字水印 —— 「以字代物」的背景版 */
+/* 背景大字水印 */
 .b-glyph{display:flex;align-items:center;justify-content:center;}
 .b-glyph::after{
   content:"";font-family:var(--kai);font-weight:600;line-height:1;
@@ -86,16 +80,14 @@ body::after{
 #bg.temple    .b-glyph::after{content:"廟";color:rgba(200,168,107,.10);opacity:1}
 #bg.river     .b-glyph::after{content:"魂";color:rgba(223,230,232,.055);opacity:1}
 
-/* 远景剪影：马头墙 / 山坳 */
+/* 远景剪影 */
 .b-far{top:auto;height:62%;opacity:0;background:var(--sil);}
 #bg.town .b-far{
   opacity:.9;
   background-color:#0a1014;
-  /* 阶梯状马头墙轮廓 */
   clip-path:polygon(0 100%,0 62%,7% 62%,7% 50%,13% 50%,13% 66%,24% 66%,24% 48%,32% 48%,
     32% 34%,42% 34%,42% 58%,54% 58%,54% 42%,64% 42%,64% 62%,76% 62%,76% 48%,86% 48%,
     86% 64%,100% 64%,100% 100%);
-  /* 窗里的灯火 */
   background-image:
     radial-gradient(circle 8px at 10% 76%, rgba(255,186,92,.42), transparent 72%),
     radial-gradient(circle 6px at 28% 80%, rgba(255,186,92,.3),  transparent 72%),
@@ -126,7 +118,7 @@ body::after{
   background:linear-gradient(180deg, rgba(126,156,166,.2), rgba(126,156,166,.04));}
 #bg.river .b-water{opacity:1}
 
-/* 土地庙：拱门 */
+/* 土地庙 */
 .b-gate{inset:auto;left:50%;bottom:6%;width:min(300px,62vw);height:min(360px,56vh);
   transform:translateX(-50%);opacity:0;
   background:linear-gradient(180deg,#2b2018,#150e09);
@@ -168,7 +160,6 @@ body::after{
 #bg.temple .b-glow{opacity:1;--glow:rgba(200,168,107,.1)}
 #bg.river .b-glow{opacity:1;--glow:rgba(140,180,195,.08)}
 
-/* 完满结局：天要亮了 */
 #bg.dawn{--sky1:#313d46;--sky2:#0f151a}
 #bg.dawn .b-far{opacity:.85;background-color:#0e161b;
   clip-path:polygon(0 100%,0 66%,8% 66%,8% 52%,15% 52%,15% 70%,27% 70%,27% 50%,36% 50%,
@@ -194,7 +185,6 @@ body::after{
   .b-candle i::before,.b-candle i::after,.b-smoke{animation:none}
 }
 
-/* 雪幕（烧纸 / 隐藏结局） */
 .veil{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity 3.4s ease;
   background:linear-gradient(180deg, rgba(226,233,235,.14) 0%, rgba(226,233,235,.6) 46%, rgba(226,233,235,.9) 100%);}
 .veil.on{opacity:1;}
@@ -222,7 +212,6 @@ body::after{
 .mini:hover{background:rgba(142,43,43,.28);color:#fff;border-color:var(--red2);}
 .mini:active{transform:translateY(1px)}
 .frag{color:var(--red2);white-space:nowrap;}
-/* 「念」：完满路线的六个记号。不说破，只报数 */
 .path{display:inline-block;color:#7d888d;letter-spacing:.14em;opacity:.72;white-space:nowrap;
   transition:color .3s,opacity .3s;}
 .path.bump{animation:bump .7s ease-out;}
@@ -230,7 +219,7 @@ body::after{
   28%{transform:scale(1.32);color:var(--gold);opacity:1}
   100%{transform:scale(1)}}
 
-/* ---------- 开始界面（纯字） ---------- */
+/* ---------- 开始界面 ---------- */
 #start{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:22px;text-align:center;padding:20px 0;}
 .titleWrap{display:flex;align-items:stretch;gap:14px;justify-content:center;
@@ -295,7 +284,7 @@ body::after{
 .fill.low{background:linear-gradient(90deg,#8e2b2b,#b8453c);}
 .verdict{color:var(--red2);letter-spacing:.08em;}
 
-/* ---------- 以字代物：字牌网格 ---------- */
+/* ---------- 字牌网格 ---------- */
 #stage{margin-top:16px;border-top:1px dashed rgba(226,220,206,.16);padding-top:14px;}
 .stageTip{font-size:12.5px;color:#8e999e;letter-spacing:.1em;margin-bottom:12px;line-height:1.8;}
 .things{display:grid;grid-template-columns:repeat(auto-fit,minmax(66px,1fr));gap:10px;}
@@ -313,7 +302,6 @@ body::after{
 .thing.found{border-color:var(--gold);background:rgba(200,168,107,.14);}
 .thing.found .g{color:#ffe9b8;text-shadow:0 0 14px rgba(200,168,107,.8);}
 
-/* 雪地：一片「雪」字 */
 .snowfield{display:grid;grid-template-columns:repeat(auto-fit,minmax(38px,1fr));gap:3px;}
 .cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer;
   font-family:var(--kai);font-size:clamp(17px,4.6vw,22px);user-select:none;
@@ -325,7 +313,6 @@ body::after{
   animation:found .5s ease-out;}
 @keyframes found{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
 
-/* 记忆段落 */
 .mem{margin-top:12px;font-family:var(--kai);font-size:14.5px;color:#cbb98f;line-height:2;
   border-left:2px solid var(--gold);padding:8px 0 8px 12px;
   background:linear-gradient(90deg, rgba(200,168,107,.1), transparent 76%);
@@ -337,7 +324,6 @@ body::after{
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .note{margin-top:10px;font-size:12.5px;color:#7d888d;letter-spacing:.1em;}
 
-/* 供桌：一条横线 + 摆上去的字 */
 .offerBar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
 .offerBar button{font-family:var(--serif);cursor:pointer;background:rgba(226,220,206,.06);
   border:1px solid rgba(226,220,206,.2);color:#e3e8ea;padding:7px 13px;font-size:14.5px;
@@ -352,14 +338,12 @@ body::after{
   color:#6f7a80;letter-spacing:.4em;}
 .tableLine{margin-bottom:14px;}
 
-/* 攒钱 */
 .tally{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px;}
 .tally span{width:15px;height:15px;border:1px solid rgba(200,168,107,.55);border-radius:50%;}
 .tally span.on{background:radial-gradient(circle at 34% 30%,#f0e2bd,#9a8a63);border-color:#c8a86b;
   animation:coin .4s ease-out;}
 @keyframes coin{from{transform:scale(0) rotate(-90deg);opacity:0}to{transform:scale(1);opacity:1}}
 
-/* 庙门 / 门槛 */
 .templeRow{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;margin:8px 0;}
 .gate{border:2px dashed rgba(226,220,206,.32);border-radius:2px;padding:16px 22px;text-align:center;
   font-family:var(--kai);font-size:13px;color:#8e999e;letter-spacing:.3em;min-width:130px;transition:.25s;}
@@ -374,13 +358,11 @@ body::after{
   user-select:none;transition:box-shadow .2s;}
 .beam:active{cursor:grabbing;box-shadow:0 10px 26px rgba(0,0,0,.85);}
 .beam.locked{cursor:default;box-shadow:none;opacity:.85;border-color:var(--gold);}
-/* 刻上的字 */
 .engraved{display:flex;gap:10px;justify-content:center;font-family:var(--kai);font-size:26px;
   color:#f0d9b0;letter-spacing:.1em;min-height:38px;margin-top:6px;}
 .engraved b{font-weight:400;animation:carve .45s ease-out;text-shadow:0 0 12px rgba(200,168,107,.7);}
 @keyframes carve{from{opacity:0;transform:scale(1.6) rotate(-8deg)}to{opacity:1;transform:none}}
 
-/* 底部 */
 .footer{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
 
 /* ---------- 结局 ---------- */
@@ -395,7 +377,6 @@ body::after{
   font-size:17.5px;letter-spacing:.12em;margin:1.1em 0;}
 .bigQuestion{font-family:var(--kai);font-size:clamp(22px,5.6vw,34px);letter-spacing:.42em;
   color:#fff;text-align:center;margin:32px 0 8px;animation:breathe 5s ease-in-out infinite;}
-/* 完满结局：替她取名 */
 .nameAsk{text-align:center;font-family:var(--kai);color:var(--gold);font-size:16px;
   letter-spacing:.2em;margin:26px 0 6px;}
 .nameLine{display:flex;align-items:baseline;justify-content:center;gap:.2em;
@@ -410,13 +391,78 @@ body::after{
 .echoQ{margin-top:18px}
 @keyframes breathe{0%,100%{opacity:.6;letter-spacing:.42em}50%{opacity:1;letter-spacing:.5em}}
 .snowed{opacity:0 !important;pointer-events:none !important;transition:opacity 2.4s ease;}
-/* 雪幕升起后，文字转墨色保证可读 */
+
 #ending.onWhite .endTitle{color:#2b1f16 !important;text-shadow:none !important;}
 #ending.onWhite .endTag{color:#7d2b26 !important;}
 #ending.onWhite .endBody{color:#1e2a30 !important;}
 #ending.onWhite .endBody .q{color:#7a4a12 !important;}
 #ending.onWhite .bigQuestion{color:#1a1209 !important;}
 #ending.onWhite .panel{border-color:rgba(120,90,60,.55);}
+
+/* ============================================================
+   第二夜 · 回光（二周目隐藏结局）专用视觉
+   ============================================================ */
+/* 暖：她“活过来”的三天 */
+#bg.relight{--sky1:#4a3b2c;--sky2:#120d09}
+#bg.relight .b-glyph::after{content:"生";color:rgba(255,226,178,.13);opacity:1}
+#bg.relight .b-glow{opacity:1;--glow:rgba(255,196,120,.26)}
+#bg.relight .b-far{opacity:.8;background-color:#141018;
+  clip-path:polygon(0 100%,0 66%,9% 66%,9% 52%,16% 52%,16% 70%,28% 70%,28% 50%,37% 50%,
+    37% 36%,47% 36%,47% 60%,59% 60%,59% 44%,69% 44%,69% 66%,81% 66%,81% 52%,91% 52%,
+    91% 68%,100% 68%,100% 100%);}
+#bg.relight .b-ground{opacity:1}
+#bg.relight .b-near{opacity:1}
+
+/* 黑：画风骤变之后 */
+#bg.gone{--sky1:#0b0c0d;--sky2:#000}
+#bg.gone .b-glyph::after{content:"殁";color:rgba(184,69,60,.13);opacity:1}
+#bg.gone .b-far,#bg.gone .b-ground,#bg.gone .b-near,
+#bg.gone .b-candle,#bg.gone .b-smoke,#bg.gone .b-gate,#bg.gone .b-water{opacity:0}
+
+/* 血色暗角（转折后常驻） */
+body.dread::after{
+  background:radial-gradient(70% 60% at 50% 44%, transparent 26%, rgba(92,10,10,.5) 76%, rgba(0,0,0,.97) 100%);
+}
+body.dread{--line:rgba(184,69,60,.75);}
+
+#flash.blood{background:radial-gradient(72% 62% at 50% 40%, rgba(206,44,32,.6) 0%, rgba(92,8,8,.38) 46%, transparent 76%);}
+#flash.blood.on{animation:flashBlood 1.6s ease-out;}
+@keyframes flashBlood{0%{opacity:0}7%{opacity:1}100%{opacity:0}}
+
+.quake{animation:quake .66s cubic-bezier(.36,.07,.19,.97) both;}
+@keyframes quake{
+  10%,90%{transform:translate3d(-2px,1px,0)}
+  20%,80%{transform:translate3d(5px,-2px,0)}
+  30%,50%,70%{transform:translate3d(-7px,2px,0)}
+  40%,60%{transform:translate3d(7px,-1px,0)}}
+
+.lamp{color:var(--gold);white-space:nowrap;transition:color .3s,text-shadow .3s;}
+.lamp.off{color:#5d666b;}
+.lamp.bump{animation:bump .7s ease-out;}
+.doomWarn{color:var(--red2) !important;opacity:1 !important;letter-spacing:.2em;}
+
+#ending.onBlood .panel{background:rgba(10,2,2,.8);border-color:rgba(184,69,60,.6);
+  box-shadow:inset 0 0 100px rgba(0,0,0,.88), 0 6px 40px rgba(0,0,0,.75);}
+#ending.onBlood .endTitle{color:#e9cac3 !important;text-shadow:0 0 30px rgba(184,69,60,.8);}
+#ending.onBlood .endBody{color:#d9cac8 !important;}
+#ending.onBlood .endBody .q{color:#b8453c !important;}
+#ending.onBlood .panel::before,#ending.onBlood .panel::after{border-color:rgba(184,69,60,.9);}
+.turnP{font-family:var(--kai);color:#e7c8c2;text-indent:0;
+  border-left:2px solid var(--red);padding:4px 0 4px 13px;margin:.95em 0;
+  background:linear-gradient(90deg, rgba(142,43,43,.16), transparent 78%);
+  animation:fadein 1s;}
+.bigTurn{font-family:var(--kai);font-size:clamp(19px,4.8vw,27px);letter-spacing:.3em;
+  color:#e9bbb2;text-align:center;margin:32px 0 6px;line-height:1.95;
+  text-shadow:0 0 24px rgba(184,69,60,.5);animation:breathe 5s ease-in-out infinite;}
+.smallCut{text-align:center;font-size:12.5px;color:#8e6b68;letter-spacing:.22em;margin-top:22px;}
+.warmTip{text-align:center;font-size:12px;color:#7d6a58;letter-spacing:.28em;margin:6px 0 18px;
+  animation:fadein 1.4s;}
+
+.metaNote{margin:0;max-width:480px;font-size:12.5px;line-height:2.1;letter-spacing:.06em;
+  color:#7f8a90;text-align:center;}
+.metaNote b{color:var(--red2);font-weight:400;}
+.metaNote .unlock{color:var(--gold);}
+.endex{font-size:11.5px;color:#5f6a70;letter-spacing:.16em;margin:0;text-align:center;}
 
 @media (max-width:560px){
   body{font-size:15px}
@@ -432,7 +478,6 @@ body::after{
 </head>
 <body>
 
-<!-- 背景层：纯 CSS 剪影，固定不动，不参与排版 -->
 <div id="bg" class="town" aria-hidden="true">
   <div class="b-sky"></div>
   <div class="b-glyph"></div>
@@ -452,7 +497,6 @@ body::after{
 
 <div id="app">
 
-  <!-- ============ 开始界面 ============ -->
   <div id="start">
     <div class="titleWrap">
       <p class="vsub">一个旁观者的自白</p>
@@ -471,15 +515,18 @@ body::after{
       却仍然答不出一个临死女人的问题。<br>
       ——这里没有拯救，只有经历、追问与“说不清”。
     </p>
-    <div class="seal">说不清</div>
+    <div id="metaNote" class="metaNote"></div>
+    <p id="endex" class="endex"></p>
+    <div class="seal" id="sealMain">说不清</div>
   </div>
 
-  <!-- ============ 游戏界面 ============ -->
   <div id="game">
     <div class="topbar">
       <span class="chap" id="chapText">序章</span>
       <span id="fragText" class="frag">碎片 0/9</span>
       <span id="pathText" class="path" title="你还记着几件事">念 0/6</span>
+      <span id="lampText" class="lamp off" title="你为她留下过几线生机" style="display:none">生 机 0/4</span>
+      <span id="doomText" class="path" title="距离祝福还有几夜">距 祝 福 3 夜</span>
       <span class="sp"></span>
       <button class="mini" id="btnMute">声音：开</button>
       <button class="mini" id="btnRestart">重新开始</button>
@@ -500,7 +547,6 @@ body::after{
     </div>
   </div>
 
-  <!-- ============ 结局界面 ============ -->
   <div id="ending">
     <div class="panel">
       <h2 class="endTitle" id="endTitle"></h2>
@@ -520,33 +566,82 @@ body::after{
    《祝福：雪夜问魂》· 以字代物版
    1) 雪 Canvas      2) Web Audio 环境音     3) 场景节点系统
    4) 文字小游戏（字牌 / 雪地寻字 / 摆供 / 攒钱 / 拖槛 / 刻字）
-   5) 变量：耐心值、祭祀资格（恒 false）、记忆碎片、沉默标记
+   5) 变量：耐心值、祭祀资格、记忆碎片、沉默标记
    6) localStorage 存档 + 重新开始
    ========================================================================= */
 
 /* ---------------- 0. 全局状态 ---------------- */
 const SAVE_KEY = 'zhufu_xueye_wenhun_v2';
+const META_KEY = 'zhufu_xueye_wenhun_meta_v1';
 let S = null;
 let typing = false, typeTimer = null, crackerTimer = null;
+
+/* ---- 元进度：跨周目保存。通关次数、是否打出过“名字”、上一个名字、已见结局 ---- */
+let META = { cycles:0, perfect:false, lastName:'', endings:{} };
+function loadMeta(){
+  try{
+    const r = localStorage.getItem(META_KEY);
+    if(r){
+      const m = JSON.parse(r) || {};
+      META = {
+        cycles:  m.cycles  || 0,
+        perfect: !!m.perfect,
+        lastName: m.lastName || '',
+        endings: m.endings || {}
+      };
+    }
+  }catch(e){}
+}
+function saveMeta(){ try{ localStorage.setItem(META_KEY, JSON.stringify(META)); }catch(e){} }
+/* 二周目以上、且曾经（上一夜）写出过她的名字 —— 才解锁“回光”一线生机 */
+function unlocked(){ return META.cycles >= 1 && !!META.perfect; }
+function canReprieve(){ return unlocked(); }
+function finishRun(id){
+  if(S.counted) return;
+  S.counted = true;
+  META.cycles = (META.cycles || 0) + 1;
+  META.endings[id] = true;
+  if(id === 'end_perfect') META.perfect = true;
+  if(S.givenName) META.lastName = S.givenName;
+  S.loop = META.cycles + 1;
+  saveMeta(); save();
+}
 
 function freshState(){
   return {
     scene:'prologue_arrive',
-    frag:0,          // 记忆碎片 0-9
-    patience:5,      // 周围人的耐心 0-5
-    heard:0,         // 听阿毛故事的次数
-    clean:false,     // 祭祀资格 —— 永远 false
+    frag:0,
+    patience:5,
+    heard:0,
+    clean:false,
     money:0,
-    silentMarks:{},  // 关键沉默点 m1..m5
+    silentMarks:{},
     silentCount:0,
-    path:{},         // 完满路线的六个记号 p1..p6
+    path:{},
     pathCount:0,
-    givenName:'',    // 完满结局里你替她取的名字
-    soul:null,       // 灵魂之问分支 a/b/c/d
-    mg:{},           // 小游戏完成记录
+    givenName:'',
+    soul:null,
+    mg:{},
     seen:{},
-    log:[]
+    log:[],
+    /* —— 第二夜新增 —— */
+    lit:0,          // 点亮了几线生机（0~4）
+    hope:false,     // 是否在河边说了那句肯定的谎
+    shoes:false,    // 是否替她添了买小鞋的钱
+    qing:false,     // 是否告诉了她清明
+    noShoes:false,  // 是否劝她别买
+    counted:false,  // 本夜是否已计入周目
+    loop:1          // 第几夜
   };
+}
+/* 兼容旧存档：补齐新字段 */
+function normalize(s){
+  const f = freshState();
+  const o = Object.assign(f, s || {});
+  o.silentMarks = o.silentMarks || {};
+  o.path = o.path || {}; o.mg = o.mg || {}; o.seen = o.seen || {}; o.log = o.log || [];
+  o.pathCount = Object.keys(o.path).length;
+  return o;
 }
 
 /* ---------------- 1. 雪（Canvas） ---------------- */
@@ -590,10 +685,9 @@ window.addEventListener('resize', ()=>{ resizeSnow(); initSnow(); });
 initSnow(); drawSnow();
 
 function setSnow(mode){
-  const want = mode==='heavy' ? 150 : mode==='calm' ? 45 : 90;
-  density = mode==='heavy' ? 2.0 : mode==='calm' ? .6 : 1;
+  const want = mode==='heavy' ? 150 : mode==='calm' ? 45 : mode==='stop' ? 0 : 90;
+  density = mode==='heavy' ? 2.0 : mode==='calm' ? .6 : mode==='stop' ? 0 : 1;
   wind    = mode==='heavy' ? .8  : mode==='calm' ? .15 : .35;
-  // 同步粒子数量
   while(flakes.length < want) flakes.push(newFlake(true));
   while(flakes.length > want) flakes.pop();
 }
@@ -630,7 +724,7 @@ const Audio_ = {
     const og = this.ctx.createGain(); og.gain.value = .026;
     o.connect(og).connect(this.master); o.start();
   },
-  cracker(){                       // 爆竹：带通噪声爆发
+  cracker(){
     if(!this.ctx){ flash(); return; }
     const t = this.ctx.currentTime, n = 1 + Math.floor(Math.random()*3);
     for(let i=0;i<n;i++){
@@ -647,7 +741,7 @@ const Audio_ = {
     }
     if(!this.muted) flash();
   },
-  whisper(){                       // 低语：窄带噪声游走，像有人在耳边说话
+  whisper(){
     if(!this.ctx || this.muted) return;
     const t = this.ctx.currentTime, dur = 1.6;
     const src = this.ctx.createBufferSource(); src.buffer = this.noise; src.loop = true;
@@ -663,7 +757,7 @@ const Audio_ = {
     g.gain.linearRampToValueAtTime(0, t+dur);
     src.start(t); lfo.start(t); src.stop(t+dur+.1); lfo.stop(t+dur+.1);
   },
-  bell(){                          // 庙钟 / 罄
+  bell(){
     if(!this.ctx || this.muted) return;
     const t = this.ctx.currentTime;
     const o1 = this.ctx.createOscillator(), o2 = this.ctx.createOscillator();
@@ -675,6 +769,62 @@ const Audio_ = {
     o1.connect(g); o2.connect(g); g.connect(this.master);
     o1.start(t); o2.start(t); o1.stop(t+2.8); o2.stop(t+2.8);
   },
+  /* —— 第二夜：低鸣 / 心跳 / 骤变 —— */
+  droneOn(){
+    this.ensure(); if(!this.ctx || this.dr || this.muted) return;
+    const o = this.ctx.createOscillator(); o.type='sine'; o.frequency.value = 57;
+    const g = this.ctx.createGain(); g.gain.value = 0;
+    g.gain.linearRampToValueAtTime(.05, this.ctx.currentTime + 3);
+    o.connect(g).connect(this.master); o.start();
+    this.dr = { o, g };
+  },
+  droneOff(){
+    if(!this.dr || !this.ctx) return;
+    const t = this.ctx.currentTime, d = this.dr;
+    try{
+      d.g.gain.cancelScheduledValues(t);
+      d.g.gain.setValueAtTime(d.g.gain.value, t);
+      d.g.gain.linearRampToValueAtTime(0, t + 1.2);
+      d.o.stop(t + 1.4);
+    }catch(e){}
+    this.dr = null;
+  },
+  heartbeat(n){
+    if(!this.ctx || this.muted) return;
+    const t0 = this.ctx.currentTime, times = n || 6;
+    for(let i=0;i<times;i++){
+      const st = t0 + i*0.92;
+      const o = this.ctx.createOscillator(); o.type='sine';
+      o.frequency.setValueAtTime(66, st);
+      o.frequency.exponentialRampToValueAtTime(36, st+.2);
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(.0001, st);
+      g.gain.linearRampToValueAtTime(.17, st+.03);
+      g.gain.exponentialRampToValueAtTime(.0005, st+.52);
+      o.connect(g).connect(this.master); o.start(st); o.stop(st+.6);
+    }
+  },
+  sting(){
+    if(!this.ctx || this.muted) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator(); o.type='sawtooth';
+    o.frequency.setValueAtTime(920, t);
+    o.frequency.exponentialRampToValueAtTime(52, t+1.7);
+    const f = this.ctx.createBiquadFilter(); f.type='lowpass';
+    f.frequency.setValueAtTime(2800, t);
+    f.frequency.exponentialRampToValueAtTime(200, t+1.7);
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(.0001, t);
+    g.gain.linearRampToValueAtTime(.2, t+.02);
+    g.gain.exponentialRampToValueAtTime(.0004, t+2.3);
+    o.connect(f).connect(g).connect(this.master); o.start(t); o.stop(t+2.5);
+    const o2 = this.ctx.createOscillator(); o2.type='sine'; o2.frequency.setValueAtTime(46, t);
+    const g2 = this.ctx.createGain();
+    g2.gain.setValueAtTime(.0001, t);
+    g2.gain.linearRampToValueAtTime(.2, t+.05);
+    g2.gain.exponentialRampToValueAtTime(.0004, t+2.7);
+    o2.connect(g2).connect(this.master); o2.start(t); o2.stop(t+3);
+  },
   toggle(){
     this.muted = !this.muted;
     if(this.master) this.master.gain.value = this.muted ? 0 : .9;
@@ -683,7 +833,28 @@ const Audio_ = {
 };
 function flash(){
   const f = document.getElementById('flash');
-  f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+  f.classList.remove('on','blood'); void f.offsetWidth; f.classList.add('on');
+}
+function bloodFlash(){
+  const f = document.getElementById('flash');
+  f.classList.remove('on','blood'); void f.offsetWidth; f.classList.add('on','blood');
+}
+/* 画风骤变：雪停 · 天黑 · 血色暗角 · 震屏 · 一声 */
+function blackout(){
+  Audio_.droneOff();
+  Audio_.sting();
+  setTimeout(()=>Audio_.heartbeat(7), 1500);
+  bloodFlash();
+  setBgRaw('gone');
+  setSnow('stop');
+  document.body.classList.add('dread');
+  const app = document.getElementById('app');
+  app.classList.remove('quake'); void app.offsetWidth; app.classList.add('quake');
+  setTimeout(()=>app.classList.remove('quake'), 700);
+}
+function setBgRaw(cls){
+  const el = document.getElementById('bg');
+  if(el) el.className = cls;
 }
 function startCrackers(){ stopCrackers(); crackerTimer = setInterval(()=>{ if(Math.random()<.6) Audio_.cracker(); }, 2600); }
 function stopCrackers(){ if(crackerTimer){ clearInterval(crackerTimer); crackerTimer = null; } }
@@ -695,17 +866,14 @@ function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(
 function loadSave(){ try{ const r = localStorage.getItem(SAVE_KEY); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
 function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
 
-/** 祭祀资格判定 —— 原著核心：无论她如何努力，结果恒为 false */
 function judgePurity(){
   const reasons = ['再嫁之妇，不洁。','克夫克子，不祥。','败坏风俗，不净。','虽捐门槛，千人踏万人跨，仍不足以赎。'];
   return { ok:false, verdict:reasons[Math.min(S.log.length, reasons.length-1)] };
 }
 function addFrag(n){ S.frag = Math.min(9, S.frag + (n||1)); }
 function markSilent(k){ if(!S.silentMarks[k]){ S.silentMarks[k] = true; S.silentCount++; } }
-/** 隐藏结局条件：灵魂之问"说不清" + 终章沉默 + 至少三处沉默 */
 function hiddenReady(){ return !!S.silentMarks.m4 && !!S.silentMarks.m5 && S.silentCount >= 3; }
 
-/* 完满路线：六个记号，缺一个都到不了；走错一步，已有的记号也会掉下来 */
 function syncPath(){ S.pathCount = Object.keys(S.path).length; }
 function markPath(k){
   if(S.path[k]) return;
@@ -714,7 +882,6 @@ function markPath(k){
   if(el){ el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
   save();
 }
-/** 撤销一个记号——比如听了一半走开了 */
 function dropPath(k){
   if(!S.path[k]) return;
   delete S.path[k]; syncPath();
@@ -724,9 +891,43 @@ function dropPath(k){
 }
 function perfectReady(){ return S.pathCount >= 6; }
 
+/* ---------------- 4a-2. 生机 / 更漏（第二夜） ---------------- */
+function lightUp(){
+  S.lit = Math.min(4, (S.lit || 0) + 1);
+  save();
+  const el = $('lampText');
+  if(el){ el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+  updateTop();
+}
+function updateTop(){
+  const lamp = $('lampText'), doom = $('doomText');
+  if(lamp){
+    lamp.style.display = unlocked() ? '' : 'none';
+    lamp.textContent = '生 机 ' + (S.lit||0) + '/4';
+    lamp.className = 'lamp' + ((S.lit||0) > 0 ? '' : ' off');
+  }
+  if(doom){
+    const n = DOOM[S.scene];
+    if(n === undefined) return;
+    S.doom = n;
+    doom.textContent = n > 0 ? '距 祝 福 ' + n + ' 夜' : '今 夜 · 祝 福';
+    doom.className = 'path' + (n > 0 ? '' : ' doomWarn');
+  }
+}
+/* 距祝福还有几夜（越走越紧） */
+const DOOM = {
+  prologue_arrive:3, prologue_snow:3, prologue_news:3, prologue_know:3, prologue_study:3, prologue_who:3,
+  act1_first:3, act1_fuli:3, act1_taken:3, act1_chase:3,
+  act2_hejiaao:2, act2_snow:2, act2_amao:2, act2_tell1:2, act2_tell2:2, act2_tell3:2,
+  act3_return:2, act3_liuma:2, act3_money:2, act3_temple:2, act3_carve:2, act3_blessing:1, act3_speak:1,
+  act4_river:1, act4_question:1, act4_a:1, act4_b:1, act4_c:1, act4_c2:1, act4_d:1, act4_hope:1, act4_after:1,
+  act5_relight:1, act5_shoes:1, act5_eve:1,
+  finale_turn:0, finale_blessing:0, finale_study:0
+};
+
 /* ---------------- 4. 场景节点系统 ----------------
    节点字段：chapter / title / sub / fx[] / text[] / choices[] / game / onEnter
-   text 元素为字符串；{q:'...'} 表示原著引文（楷体突出）
+   text 元素为字符串；{q:'...'} 表示原著引文
    ============================================================ */
 const SCENES = {
 
@@ -767,10 +968,32 @@ text:[
 {q:'“怎么死的？”——“还不是穷死的？”'},
 '他淡然的回答，仍然没有抬头向我看，出去了。'
 ],
-choices:[
-{label:'追问：她是谁？', to:'prologue_study', act:()=>markPath('p1')},
-{label:'不再问，走进书房', to:'prologue_study', act:()=>markSilent('m1')}
-]},
+choices:()=>{
+  const arr = [
+    {label:'追问：她是谁？', to:'prologue_study', act:()=>markPath('p1')},
+    {label:'不再问，走进书房', to:'prologue_study', act:()=>markSilent('m1')}
+  ];
+  if(unlocked()) arr.unshift({label:'（你已经知道她今夜会死。）', to:'prologue_know'});
+  return arr;
+}},
+
+/* 第二夜限定：带着记忆回来的人 */
+prologue_know:{
+chapter:'序章 · 雪夜归鲁镇', title:'预 知', sub:'第二夜的人，记得第一夜的事',
+fx:['snow-heavy'],
+onEnter:()=>{ Audio_.whisper(); },
+text:[
+'我站在雪里，忽然想起一件不该想起的事：这一夜，我不是第一次过。',
+'上一夜，我一路走到最后，在纸的第一行替她取过名字。我以为写下了名字，就算留下了一个人。',
+'可她还是死在祝福的前夜。名字留在纸上，人没有留下。',
+'——我知道她今夜会死。我知道我拦不住。我知道连那三个字也拦不住。',
+'可我还是走进了这条巷子。',
+{q:'“祥林嫂？老了。”'},
+{q:'“怎么死的？——还不是穷死的？”'},
+'人明知道要输，还要再来一局，这叫什么？我不知道。我只知道我站在这里，雪落在肩上，短工已经走远了。',
+'这一次，我心里冒出一个念头：也许，也许有一句话，是可以救命的。'
+],
+choices:[{label:'进书房去', to:'prologue_study'}]},
 
 prologue_study:{
 chapter:'序章 · 雪夜归鲁镇', title:'二、书房', sub:'不早不迟，偏偏要在这时候',
@@ -834,7 +1057,7 @@ text:[
 '我站在廊下，看着花轿拐出巷口。我懂的道理很多：人的解放、礼教的吃人、宗法的罪。然而我站着，什么也没有做。雪落下来，把轿子的印子盖平了。'
 ],
 choices:[
-{label:'（追出去）', to:'act1_chase', act:()=>markPath('p2')},
+{label:'（追出去）', to:'act1_chase', act:()=>{ markPath('p2'); lightUp(); }},
 {label:'（站着不动）', to:'act2_hejiaao', act:()=>markSilent('m3a')}
 ]},
 
@@ -898,7 +1121,7 @@ text:[
 '直到她说到呜咽，她们也就一齐流下那停在眼角上的眼泪，叹息一番，满足的去了，一面还纷纷的评论着。'
 ],
 choices:[
-{label:'听她讲完', to:'act2_tell2', act:()=>{ markPath('p3'); S.patience=Math.max(0,S.patience-1); }},
+{label:'听她讲完', to:'act2_tell2', act:()=>{ markPath('p3'); S.patience=Math.max(0,S.patience-1); lightUp(); }},
 {label:'默默走开', to:'act2_tell2', act:()=>{ markSilent('m2'); S.patience=Math.max(0,S.patience-1); }},
 {label:'劝她：别再说了', to:'act2_tell2', act:()=>{ S.patience=Math.max(0,S.patience-2); }}
 ]},
@@ -960,9 +1183,9 @@ text:[
 '第二天早上起来的时候，两眼上便都围着大黑圈。'
 ],
 choices:[
-{label:'告诉她：这是迷信', to:'act3_money', act:()=>{ markPath('p4'); S.log.push('rational'); }},
+{label:'告诉她：这是迷信', to:'act3_money', act:()=>{ markPath('p4'); S.log.push('rational'); lightUp(); }},
 {label:'什么也不说', to:'act3_money', act:()=>{ markSilent('m3'); }},
-{label:'陪她攒钱', to:'act3_money'}
+{label:'陪她攒钱', to:'act3_money', act:()=>lightUp()}
 ]},
 
 act3_money:{
@@ -1008,7 +1231,7 @@ text:[
 '这一回她的变化非常大，第二天，不但眼睛窈陷下去，连精神也更不济了。而且很胆怯，不独怕暗夜，怕黑影，即使看见人，虽是自己的主人，也总惴惴的，有如在白天出穴游行的小鼠；否则呆坐着，直是一个木偶人。'
 ],
 choices:[
-{label:'替她说话', to:'act3_speak', act:()=>markPath('p5')},
+{label:'替她说话', to:'act3_speak', act:()=>{ markPath('p5'); lightUp(); }},
 {label:'（什么也说不出）', to:'act3_speak', act:()=>markSilent('m3b')}
 ]},
 
@@ -1054,12 +1277,41 @@ text:[
 '我很悚然，一见她的眼盯着我的，背上也就遭了芒刺一般，比在学校里遇到不及豫防的临时考，教师又偏是站在身旁的时候，惶急得多了。',
 '对于魂灵之有无，我自己是向来毫不介意的；但在此刻，怎样回答她好呢？我在极短期的踌蹰中，想，这里的人照例相信鬼，然而她，却疑惑了，——或者不如说希望：希望其有，又希望其无……。人何必增添末路的人的苦恼，为她起见，不如说有罢。'
 ],
-choices:[
-{label:'“也许有罢。”', to:'act4_a'},
-{label:'“论理，就该也有。”', to:'act4_b'},
-{label:'“没有魂灵，也没有地狱。”', to:'act4_c'},
-{label:'“说不清。”', to:'act4_d'}
-]},
+choices:()=>{
+  const arr = [
+    {label:'“也许有罢。”', to:'act4_a'},
+    {label:'“论理，就该也有。”', to:'act4_b'},
+    {label:'“没有魂灵，也没有地狱。”', to:'act4_c'},
+    {label:'“说不清。”', to:'act4_d'}
+  ];
+  if(canReprieve()) arr.push({label:'“有的。”——你说了一句你自己也不信的话', to:'act4_hope',
+    act:()=>{ S.hope = true; save(); }});
+  return arr;
+}},
+
+/* ============ 第二夜分支：一线生机 ============ */
+act4_hope:{
+chapter:'第四幕 · 灵魂之问', title:'有 的', sub:'你说了此生第一句有把握的话',
+fx:['snow-heavy'],
+onEnter:()=>{ S.hope = true; Audio_.bell(); },
+text:[
+'她走近两步，放低了声音，极秘密似的切切的说——',
+{q:'“一个人死了之后，究竟有没有魂灵的？”'},
+'这一次我没有躲。我看着她那双眼睛：那里面已经很久没有东西了，只剩下一星不肯灭的火。',
+{q:'“有的。”我说。“人死了是有魂灵的。你捐了门槛，赎了罪，到了那边，一家人是要见面的。”'},
+'我说得很慢，很稳，像一个背了很久的答案。其实我一个字也不信。',
+'可她信了。',
+'她的眼睛忽然亮了一下。那点亮很轻，像雪地上落了一星火星——可它真的亮了。她张了张嘴，又闭上，很久才说出来：',
+{q:'“那就好。那我就不怕了。”'},
+'她向我道了谢。这是三年来她第一次向人道谢——不，是三年来第一次有人值得她谢。',
+'她把那只破碗往篮里收了收，拄着比她更长的竹竿，转身走进雪里。她走得很慢，脚步却比来时轻。',
+'我站在河边，一直看到看不见她为止。',
+'——我终于说清了一次。我救了她。我当时真的这么想。'
+],
+choices:()=>{
+  const n = S.lit || 0;
+  return [{label: n >= 3 ? '（接下来的三天，她像是活过来了）' : '（第二天，她还在。）', to:'act5_relight'}];
+}},
 
 act4_a:{
 chapter:'第四幕 · 灵魂之问', title:'也许有罢', sub:'那么，也就有地狱了？',
@@ -1145,6 +1397,104 @@ text:[
 ],
 choices:[{label:'祝福', to:'finale_blessing'}]},
 
+/* ============ 第五幕（第二夜限定）· 回光 ============ */
+act5_relight:{
+chapter:'第五幕 · 回光', title:'一、她 好 了', sub:'她居然好了',
+fx:['snow'],
+onEnter:()=>{ Audio_.droneOn(); },
+text:()=>{
+  const a = [
+  '第二天，她没有死。',
+  '不但没有死，天一亮她就到河边洗菜。有人看见她把袖子挽得很高，手冻得通红，嘴里还哼着一段不成调的什么。',
+  {q:'“她说，她要活到清明，去给阿毛添一铲土。”'},
+  '镇上的人先是疑心，随后有些扫兴，最后换成一种新的、同样结实的议论：“可见还是得信点什么。捐了门槛，到底是有用的。”',
+  '四婶听了这话，脸色也好看些。祭祀时仍旧不让她沾手，语气却松了一寸——一寸，就够一个人多活三天。'
+  ];
+  if((S.lit || 0) >= 3){
+    a.push(
+      '她甚至来找我。她站在门外，不肯进来，只把一方手巾捧在胸前，说：先生，那日的话，我记着了。',
+      '我说：记着就好。',
+      '她笑了一下。这三年里我第一次见她笑——那笑很浅，像雪面上被风刮开的一道纹，一转眼又平了。',
+      '我心里涌起一种巨大的、几乎是可耻的轻松：原来救一个人这样容易。只要一句话。');
+  }else{
+    a.push(
+      '她没有来找我。她只是活着，像一件被人重新摆回原处的器物。',
+      '我远远看过她两回。她手脚比先前利索，话却比先前更少。');
+  }
+  a.push(
+    '我甚至在心里打起了草稿：等过了年，我要把这件事写下来。写一个人在雪夜里问了一个问题，另一个人答了一句，于是她活了下来。',
+    '——我那时还不知道，我把这稿子的开头写反了。');
+  return a;
+},
+choices:[{label:'（腊月二十八，她来问我一件事）', to:'act5_shoes'}]},
+
+act5_shoes:{
+chapter:'第五幕 · 回光', title:'二、一双小鞋', sub:'先生，清明是几时？',
+fx:['snow'],
+text:[
+'腊月二十八。她等在角门外头，鼻尖冻得发红，手里捏着几张毛票。',
+{q:'“先生，我想买一双小鞋。”'},
+'我说，买鞋做什么。',
+'她说：我见过人家给下边的孩子烧鞋。我活着没给他做过几双；到了那边，总不能让他光着脚。',
+'她的手在抖。那几张毛票被攥得又潮又软，不知在贴身的地方焐了多少日子。'
+],
+choices:[
+{label:'（替她添上剩下的钱）', to:'act5_eve', act:()=>{ S.shoes = true; save(); }},
+{label:'（告诉她：清明在四月初五前后）', to:'act5_eve', act:()=>{ S.qing = true; save(); }},
+{label:'（劝她：别在这些没用的东西上花钱）', to:'act5_eve', act:()=>{ S.noShoes = true; save(); }}
+]},
+
+act5_eve:{
+chapter:'第五幕 · 回光', title:'三、除 夕 前 一 夜', sub:'她说明年还要来',
+fx:['snow','cracker'],
+onEnter:()=>{ startCrackers(); },
+text:()=>{
+  const a = [];
+  if(S.shoes){
+    a.push('我把手伸进衣袋，摸出两张角票，硬塞进她手里。她不肯要，往后退了两步，最后低着头说：先生，我记着你的好。');
+  }else if(S.qing){
+    a.push('我告诉她：清明在四月初五前后。她把这几个字念了两遍，像是怕忘了。',
+           '她说：那我记着了。——她说“记着”的时候，眼睛亮得有点吓人。');
+  }else{
+    a.push('我劝她别在这些没用的东西上花钱。她“哦”了一声，把毛票重新包好，塞回怀里。',
+           '她没有反驳我。她向来很会“哦”。');
+  }
+  a.push(
+  '除夕前一夜，四婶竟破例让她在灶间帮忙。她捧着碗碟进进出出，脚步很轻，像是怕惊动什么。',
+  '有人在灶下说：“祥林嫂这回倒好了。”',
+  {q:'“我要活到明年。”她说。'},
+  '那天夜里，鲁镇落了新年里最大的一场雪。爆竹从傍晚响到五更，红纸屑在雪地上铺了厚厚一层，像一地没能烧完的喜事。',
+  '我很累，也很安稳。我想：人原来是可以被一句话救回来的。',
+  '我吹了灯。',
+  '——灯灭之后，她出了门。这件事，我是三天以后才知道的。');
+  return a;
+},
+choices:[{label:'（天亮了）', to:'finale_turn'}]},
+
+/* ============ 终 章（第二夜） ============ */
+finale_turn:{
+chapter:'终章 · 回光返照', title:'但她还是死了', sub:'画风一变',
+fx:['snow-heavy'],
+onEnter:()=>{ stopCrackers(); Audio_.droneOn(); setTimeout(()=>Audio_.heartbeat(5), 2600); },
+text:()=>{
+  const a = [
+  '正月初三的清早，有人在河沿上发现了她。',
+  '她坐在那里，背靠着河沿的老柳树，那支比她更长的竹竿还拄在手里。身上盖着一层薄雪，雪上没有脚印——雪停之后，再没有人走过这条路。',
+  '她的脸瘦得只剩一把骨头，黄中带黑，消尽了先前悲哀的神色，仿佛是木刻似的。',
+  '可是，她的嘴角是向上弯的。',
+  '她不是饿死的。验看的人说，她怀里还有半块饼，和几张叠得整整齐齐的纸钱。',
+  '她的竹篮里，放着一双新的小鞋。'
+  ];
+  if(S.shoes) a.push('——那双小鞋，是用我给的两张角票买的。鞋底纳得很密，是新的。');
+  else if(S.noShoes) a.push('——我劝过她别买。她还是买了。这三年里，她只在这一件事上没有听我的。');
+  else a.push('——那双小鞋，是她用焐了不知多少日子的毛票买的。');
+  a.push(
+  '她收拾得很干净：头发梳过，白头绳换了新的，竹竿也削过一截。她像是去走亲戚，走到一半，在河沿上坐下来，想歇一歇。',
+  '——她歇下了。这一次，她没有再起来。');
+  return a;
+},
+choices:[{label:'（蹲下去，看她的脸）', to:'end_reprieve', act:()=>{ blackout(); }}]},
+
 /* ============ 终章 ============ */
 finale_blessing:{
 chapter:'终章 · 祝福', title:'一、祝福照常', sub:'年年如此，家家如此',
@@ -1176,14 +1526,12 @@ choices:()=>{
     {label:'C. 什么也不做，沉默',
      to:()=>{ markSilent('m5'); return hiddenReady() ? 'end_shuoBuQing' : 'end_silence'; }}
   ];
-  // D 只在六件事全做到时才出现；缺一步，它就根本不在纸上
   if(perfectReady()) arr.push({label:'D. 在第一行，写下她的名字', to:'end_perfect'});
   return arr;
 }},
 
 /* ============ 结局 ============ */
 
-/* 完满结局：六步不差一步才走得到 */
 end_perfect:{
 chapter:'结局', title:'名 字', sub:'完满结局 · 只有一条路能走到这里',
 ending:true, perfect:true,
@@ -1236,7 +1584,39 @@ text:[
 '我什么也没有说，什么也没有写，什么也没有做。',
 '雪落在窗纸上，沙沙地响，像是有人在门外走来走去，又像什么也没有。',
 '我忽然想起，我从来不知道她姓什么，叫什么。'
-]}
+]},
+
+/* ============ 第二夜隐藏结局 · 回光 ============ */
+end_reprieve:{
+chapter:'第二夜结局', title:'回 光', sub:'但你确实给过她一线生机',
+ending:true, reprieve:true,
+text:[
+'我忽然明白除夕那一夜发生了什么。',
+'她来过我的窗下。我睡得很沉，睡得心安理得。',
+'她大概只是想隔着一层窗纸说一声：先生，你说的是真的，那我就不怕了。',
+'——她不是去死的。她是去见阿毛的。',
+'是我告诉她：人死了，一家人是要见面的。',
+'是我告诉她：捐了门槛，赎了罪，到了那边，就不必再怕谁把她锯开来分给谁。',
+'是我把她心里最后那一点点“怕”拿走了。而人活着，撑到最后的，恰恰就是那一点点怕。'
+],
+after:[
+'我 终 于 说 清 了 一 次。',
+'我这一生唯一说清的一句话，把她送到了河里。'
+],
+tail:()=>{
+  const a = [];
+  if(META.lastName){
+    a.push('上一夜，我在纸的第一行替她取过名字——「' + META.lastName + '」。');
+    a.push('我把这三个字，念给河沿上那个已经听不见的人听。她没有应。');
+    a.push('原来一个名字，第一次当着本人叫出口，是在她死了三天之后。');
+  }else{
+    a.push('我甚至不知道她叫什么。');
+    a.push('我给了她一个去处，却始终没有给她一个名字。');
+  }
+  a.push('雪停了。鲁镇的祝福还剩最后一天：爆竹照常，四叔照常骂，短工照常忙碌，世界一点也没有改变。');
+  a.push('而我已经在想：明年这个时候，我大概还会回来。人明知道要输，还要再来一局，这叫什么？');
+  return a;
+}}
 
 };
 
@@ -1256,14 +1636,18 @@ const BG_MAP = {
   act4_a:'river', act4_b:'river', act4_c:'river', act4_c2:'river',
   act4_d:'river', act4_after:'river',
   finale_blessing:'bless', finale_study:'study',
+  act4_hope:'river',
+  act5_relight:'relight', act5_shoes:'relight', act5_eve:'bless',
+  finale_turn:'river',
   end_write:'study', end_burn:'snowfield', end_silence:'bless',
-  end_shuoBuQing:'blank', end_perfect:'dawn'
+  end_shuoBuQing:'blank', end_perfect:'dawn',
+  end_reprieve:'gone'
 };
 function setBg(sceneId){
   const el = $('bg');
   if(!el) return;
   const b = BG_MAP[sceneId] || 'town';
-  if(el.className !== b) el.className = b;   // 换 class，CSS 负责 1s 渐变
+  if(el.className !== b) el.className = b;
 }
 
 /* ---------------- 5. 打字机 ---------------- */
@@ -1308,7 +1692,7 @@ function skipTyping(){
   clearTimeout(typeTimer); typing = false;
   const sc = SCENES[S.scene]; if(!sc) return;
   const box = $('textBox'); box.innerHTML = '';
-  (sc.text||[]).forEach(it=>{
+  sceneText(sc).forEach(it=>{
     const p = document.createElement('p');
     if(typeof it === 'object'){ p.className = 'quote'; p.textContent = it.q; }
     else p.textContent = it;
@@ -1324,10 +1708,11 @@ function goto(id){
   S.scene = id; S.seen[id] = true; save();
   stopCrackers();
 
-  // 氛围
   const fx = sc.fx || [];
   setBg(id);
-  setSnow(fx.indexOf('snow-heavy') >= 0 ? 'heavy' : (fx.indexOf('snow') >= 0 ? 'normal' : 'calm'));
+  setSnow(fx.indexOf('snow-heavy') >= 0 ? 'heavy'
+        : (fx.indexOf('snow') >= 0 ? 'normal'
+        : (sc.reprieve ? 'stop' : 'calm')));
   if(fx.indexOf('cracker') >= 0) startCrackers();
 
   $('chapText').textContent = sc.chapter || '';
@@ -1341,13 +1726,17 @@ function goto(id){
   $('stage').innerHTML = '';
   $('choices').innerHTML = '';
   renderStatus();
+  updateTop();
 
-  if(sc.ending) return renderEnding(sc);
+  if(sc.ending){ finishRun(id); return renderEnding(sc); }
 
   $('start').style.display = 'none';
   $('game').style.display = 'block';
   $('ending').style.display = 'none';
-  typeBox(sc.text || [], ()=>afterText(sc));
+  typeBox(sceneText(sc), ()=>afterText(sc));
+}
+function sceneText(sc){
+  return (typeof sc.text === 'function') ? sc.text() : (sc.text || []);
 }
 function afterText(sc){
   if(sc.game){
@@ -1367,7 +1756,7 @@ function showContinue(to){
 }
 function showChoices(list){
   const c = $('choices'); c.innerHTML = '';
-  if(typeof list === 'function') list = list();   // 终章按条件生成选项
+  if(typeof list === 'function') list = list();
   (list || []).forEach(ch=>{
     const b = document.createElement('button');
     b.className = 'choice'; b.textContent = ch.label;
@@ -1379,7 +1768,6 @@ function showChoices(list){
     c.appendChild(b);
   });
 }
-/* 状态条：耐心值 + 祭祀资格（恒 false） */
 function renderStatus(){
   const st = $('status'); st.innerHTML = '';
   if(S.scene.indexOf('act2_tell') === 0 || S.scene === 'act2_amao'){
@@ -1395,19 +1783,25 @@ function renderStatus(){
     d.innerHTML = '<span>祭祀资格</span><span class="verdict">' + j.verdict + '</span>';
     st.appendChild(d);
   }
+  if(S.scene === 'finale_study' && unlocked() && !S.hope){
+    const d = document.createElement('div');
+    d.style.cssText = 'width:100%;font-family:var(--kai);color:#b8453c;font-size:13px;' +
+      'letter-spacing:.14em;line-height:1.9;opacity:.9';
+    d.textContent = '（河边上那个问题，你已经答过了。）';
+    st.appendChild(d);
+  }
 }
 
-/* ---------------- 7. 小游戏（全部以字代物） ---------------- */
+/* ---------------- 7. 小游戏 ---------------- */
 function renderGame(g, onDone){
   const stage = $('stage');
   stage.innerHTML = '';
   const tip = document.createElement('div'); tip.className = 'stageTip'; stage.appendChild(tip);
   const msg = document.createElement('div'); stage.appendChild(msg);
   const fn = GAMES[g.type];
-  if(!fn){ onDone(); return; }     // 未知小游戏：直接放行，绝不卡关
+  if(!fn){ onDone(); return; }
   fn(stage, tip, msg, onDone);
 }
-/** 生成一枚字牌：g=大字，n=小注 */
 function tile(g, n, extraClass){
   const el = document.createElement('div');
   el.className = 'thing' + (extraClass ? ' ' + extraClass : '');
@@ -1417,9 +1811,10 @@ function tile(g, n, extraClass){
 
 const GAMES = {
 
-  /* --- 书房：四件旧物，每件就是一枚字牌 --- */
   study(stage, tip, msg, onDone){
-    tip.textContent = '（书房里还剩几样旧东西 —— 至少看两样）';
+    tip.textContent = unlocked()
+      ? '（书房里还剩几样旧东西 —— 至少看两样。案上，多了一盏灯。）'
+      : '（书房里还剩几样旧东西 —— 至少看两样）';
     const grid = document.createElement('div'); grid.className = 'things'; stage.appendChild(grid);
     const items = [
       {g:'福', n:'朱红大“福”字',
@@ -1431,7 +1826,12 @@ const GAMES = {
       {g:'篮', n:'旧竹篮',
        mem:'一只破空的竹篮，一只比她更破空的碗。竹篮还是去年那只，碗却早裂了口。她提着它，在鲁镇走了三年。'}
     ];
-    let found = 0;
+    if(unlocked()){
+      items.push({g:'灯', n:'一盏旧灯',
+        mem:'书案上那盏灯。上一夜，我就是在它下面替她取名字的。灯芯烧短了一截，油还满着——它比我耐烦。' +
+            '听说人在河边问路的时候，只要有人肯说一句肯定的话，她就能多走三里雪路。'});
+    }
+    let found = 0, done = false;
     items.forEach(it=>{
       const el = tile(it.g, it.n);
       grid.appendChild(el);
@@ -1441,7 +1841,8 @@ const GAMES = {
         const m = document.createElement('div'); m.className = 'mem'; m.textContent = it.mem;
         stage.insertBefore(m, msg);
         Audio_.whisper();
-        if(found >= 2){
+        if(found >= 2 && !done){
+          done = true;
           tip.textContent = '碎片够了。烛火又跳了一下。';
           setTimeout(onDone, 500);
         }
@@ -1449,7 +1850,6 @@ const GAMES = {
     });
   },
 
-  /* --- 福礼：把供品一字字摆上供桌；让她来摆则被拦 --- */
   fuli(stage, tip, msg, onDone){
     tip.textContent = '（先把福礼摆上供桌；也可以试着让她来摆）';
     const goods = ['鸡','鹅','鱼','肉','酒','饭'];
@@ -1460,12 +1860,12 @@ const GAMES = {
 
     let placed = 0, blocked = 0, fin = false;
     function finish(){
-      if(fin) return;              // 防止重复触发导致连跳两次
+      if(fin) return;
       fin = true;
       bar.querySelectorAll('button').forEach(b=>b.classList.add('used'));
       const j = judgePurity();
       msg.innerHTML = '<div class="mem">她把手收了回去，站在灶边，看别人把筷子插上。' +
-        '祭祀资格判定：<span style="color:#b8453c">' + j.verdict + '</span>（系统判定：' + (j.ok ? '洁净' : '不洁净') + '）</div>';
+        '祭祀资格判定：<span style="color:#b8453c">' + j.verdict + '</span></div>';
       setTimeout(onDone, 1100);
     }
     goods.forEach(gd=>{
@@ -1494,7 +1894,6 @@ const GAMES = {
     bar.appendChild(sb);
   },
 
-  /* --- 雪地：一整片「雪」字，三样东西藏在字里 --- */
   snowfield(stage, tip, msg, onDone){
     tip.textContent = '（这一片都是“雪”。点开看看雪底下是什么。）';
     const field = document.createElement('div'); field.className = 'snowfield'; stage.appendChild(field);
@@ -1506,7 +1905,6 @@ const GAMES = {
       {g:'血', n:'一点血', mem:'草窠里有一小片黑。雪盖了半边，另外半边冻住了，是褐色的。——那是阿毛的。'},
       {g:'篮', n:'小篮',  mem:'他躺在草窠里，肚里的五脏已经都给吃空了，手里还紧紧的捏着那只小篮呢。'}
     ];
-    // 三个目标随机撒进 24 格
     const pos = [];
     while(pos.length < 3){
       const p = Math.floor(Math.random() * TOTAL);
@@ -1514,7 +1912,7 @@ const GAMES = {
     }
     const blanks = ['雪下只有雪。','手指冻得发麻，什么也没有。','雪片落进袖口，凉。',
       '扒开一层，底下还是一层。','一只冻僵的蚂蚱，别的没有。'];
-    let swept = 0, found = 0, bi = 0;
+    let swept = 0, found = 0, bi = 0, done = false;
 
     for(let i=0;i<TOTAL;i++){
       const idx = pos.indexOf(i);
@@ -1534,7 +1932,8 @@ const GAMES = {
           cell.classList.add('swept'); swept++;
           note.textContent = blanks[bi++ % blanks.length] + '（已扫开 ' + swept + '/' + (TOTAL-3) + '）';
         }
-        if(found >= 3){
+        if(found >= 3 && !done){
+          done = true;
           field.querySelectorAll('.cell:not(.real)').forEach(c=>c.classList.add('swept'));
           note.textContent = '三样都在了。';
           const t = document.createElement('div'); t.className = 'mem';
@@ -1548,7 +1947,6 @@ const GAMES = {
     note.textContent = '雪很深。三样东西埋在里面。';
   },
 
-  /* --- 攒钱：六回工钱，凑十二元鹰洋 --- */
   money(stage, tip, msg, onDone){
     tip.textContent = '（她默默的跑街，扫地，洗菜，淘米）';
     const box = document.createElement('div');
@@ -1578,7 +1976,6 @@ const GAMES = {
     stage.appendChild(btn);
   },
 
-  /* --- 土地庙：把「槛」拖到庙门口 --- */
   temple(stage, tip, msg, onDone){
     tip.textContent = '（按住这块“槛”，拖到庙门口去）';
     const row = document.createElement('div'); row.className = 'templeRow'; stage.appendChild(row);
@@ -1598,7 +1995,6 @@ const GAMES = {
         '——她不知道，门槛是木头，人是人；木头替不了人。</div>';
       setTimeout(onDone, 1200);
     }
-    // 拖拽
     let dragging = false;
     beam.addEventListener('pointerdown', e=>{
       dragging = true;
@@ -1620,7 +2016,6 @@ const GAMES = {
     beam.addEventListener('pointerup', up);
     beam.addEventListener('pointercancel', up);
 
-    // 兜底：拖不动就点，绝不卡关
     const alt = document.createElement('button');
     alt.className = 'mini'; alt.style.cssText = 'display:block;margin:14px auto 0';
     alt.textContent = '（拖不动？点此把门槛抬过去）';
@@ -1628,7 +2023,6 @@ const GAMES = {
     stage.appendChild(alt);
   },
 
-  /* --- 刻字：在门槛上一下一下刻出四个字 --- */
   carve(stage, tip, msg, onDone){
     tip.textContent = '（一下一下地刻）';
     const row = document.createElement('div'); row.className = 'templeRow'; stage.appendChild(row);
@@ -1667,7 +2061,8 @@ function renderEnding(sc){
   const foot = $('endFoot'); foot.classList.remove('snowed');
   $('ending').classList.remove('onWhite');
 
-  /* ---- 完满结局：天要亮了，你替她取一个名字 ---- */
+  if(sc.reprieve){ renderReprieve(sc); return; }
+
   if(sc.perfect){
     $('endTitle').textContent = sc.title;
     $('endTag').textContent = sc.sub;
@@ -1685,6 +2080,15 @@ function renderEnding(sc){
     const echo = document.createElement('div'); echo.className = 'q echoQ';
     body.appendChild(ask); body.appendChild(line); body.appendChild(echo);
 
+    if(unlocked()){
+      const h = document.createElement('div');
+      h.style.cssText = 'text-align:center;margin-top:26px;font-size:12.5px;color:#8a7a5c;' +
+        'letter-spacing:.16em;line-height:2.1;white-space:pre-line';
+      h.textContent = '（你已经写下过她的名字了。）\n（可你试过在河边上，答得肯定一点么？）';
+      body.appendChild(h);
+    }
+
+
     const input = line.querySelector('#nameInput');
     const say = n => {
       echo.textContent = n
@@ -1695,6 +2099,7 @@ function renderEnding(sc){
     say(S.givenName || '');
     input.addEventListener('input', ()=>{
       S.givenName = input.value.trim();
+      if(S.givenName){ META.lastName = S.givenName; saveMeta(); }
       say(S.givenName);
       save();
     });
@@ -1717,14 +2122,14 @@ function renderEnding(sc){
     s.textContent = '（雪落下来，盖住了所有选项）';
     body.appendChild(q); body.appendChild(s);
     $('veil').classList.add('on');
-    $('ending').classList.add('onWhite');     // 雪幕升起后转墨色，保证可读
+    $('ending').classList.add('onWhite');
     setTimeout(()=>foot.classList.add('snowed'), 900);
     setSnow('heavy');
   }else{
     $('veil').classList.remove('on');
     $('endTitle').textContent = sc.title;
     $('endTag').textContent = sc.sub || '';
-    (sc.text||[]).forEach(t=>{
+    sceneText(sc).forEach(t=>{
       if(typeof t === 'object'){
         const q = document.createElement('div'); q.className = 'q'; q.textContent = t.q; body.appendChild(q);
       }else{
@@ -1743,37 +2148,145 @@ function renderEnding(sc){
       w.textContent = '（你始终没有说清。她叫什么？）';
       body.appendChild(w);
     }
-    // 烧掉：雪渐渐盖住一切
     if(sc.title.indexOf('烧') >= 0){
       $('veil').classList.add('on');
       $('ending').classList.add('onWhite');
       setSnow('heavy');
     }
+    if(!unlocked()){
+      const hint = document.createElement('div');
+      hint.style.cssText = 'text-align:center;margin-top:26px;font-size:12px;color:#6f7a80;' +
+        'letter-spacing:.18em;opacity:.85;line-height:2';
+      hint.textContent = META.cycles >= 1
+        ? '（有一个结局，要等你先在纸上写下她的名字。）'
+        : '（有些门，要走过整整一夜，才会在下一夜打开。）';
+      body.appendChild(hint);
+    }
   }
+  save();
+}
+
+/* ---------------- 8b. 第二夜结局：回光（分阶段揭示 + 骤变） ---------------- */
+let reprieveTimer = null;
+function renderReprieve(sc){
+  stopCrackers();
+  $('start').style.display = 'none';
+  $('game').style.display = 'none';
+  $('ending').style.display = 'block';
+  window.scrollTo(0, 0);
+
+  setBgRaw('gone');
+  setSnow('stop');
+  document.body.classList.add('dread');
+  $('ending').classList.add('onBlood');
+  $('veil').classList.remove('on');
+
+  const body = $('endBody'); body.innerHTML = '';
+  const foot = $('endFoot'); foot.classList.add('snowed');
+  $('endTitle').textContent = '';
+  $('endTag').textContent = '';
+
+  const tip = document.createElement('div');
+  tip.className = 'warmTip'; tip.textContent = '雪　停　了';
+  body.appendChild(tip);
+  const box = document.createElement('div'); body.appendChild(box);
+
+  const seq = [];
+  sceneText(sc).forEach(t=>seq.push({cls:'turnP', t:t}));
+  (sc.after || []).forEach(t=>seq.push({cls:'bigTurn', t:t}));
+  const tail = (typeof sc.tail === 'function') ? sc.tail() : (sc.tail || []);
+  tail.forEach(t=>seq.push({cls:'turnP', t:t}));
+
+  let i = 0;
+  function step(){
+    clearTimeout(reprieveTimer);
+    if(i >= seq.length){
+      $('endTitle').textContent = sc.title;
+      $('endTag').textContent = '第 ' + META.cycles + ' 夜 · 但她还是死了';
+      const w = document.createElement('div'); w.className = 'smallCut';
+      w.textContent = '（她说：那就好。那我就不怕了。）';
+      body.appendChild(w);
+      foot.classList.remove('snowed');
+      $('endBody').onclick = null;
+      Audio_.heartbeat(3);
+      save();
+      try{ window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'}); }catch(e){}
+      return;
+    }
+    const it = seq[i++];
+    const p = document.createElement('div');
+    p.className = it.cls;
+    p.textContent = (typeof it.t === 'object') ? it.t.q : it.t;
+    box.appendChild(p);
+    try{ window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'}); }catch(e){}
+    reprieveTimer = setTimeout(step, it.cls === 'bigTurn' ? 2500 : 1700);
+  }
+  $('endBody').onclick = ()=>{ if(typing) return; clearTimeout(reprieveTimer); step(); };
+  reprieveTimer = setTimeout(step, 1200);
   save();
 }
 
 /* ---------------- 9. 界面按钮 ---------------- */
 function clearVeil(){
+  clearTimeout(reprieveTimer);
+  const eb = $('endBody'); if(eb) eb.onclick = null;
   $('veil').classList.remove('on');
   $('ending').classList.remove('onWhite');
+  $('ending').classList.remove('onBlood');
   $('endFoot').classList.remove('snowed');
+  document.body.classList.remove('dread');
+  Audio_.droneOff();
   setBg('town');
+  setSnow('normal');
+}
+const END_NAMES = {
+  end_write:'写 下', end_burn:'烧 掉', end_silence:'沉 默',
+  end_shuoBuQing:'说 不 清', end_perfect:'名 字', end_reprieve:'回 光'
+};
+function paintStartMeta(){
+  const n = META.cycles + 1;
+  const got = Object.keys(META.endings || {});
+  const note = $('metaNote'), ex = $('endex');
+  if(note){
+    let s = '';
+    if(unlocked()){
+      s = '<b>第 ' + n + ' 夜。</b>你已经写下过她的名字。<br>' +
+          '这一夜，河边上她还会问同一个问题。<br>这一次，你可以答得<span class="unlock">肯定一点</span>。';
+    }else if(META.perfect){
+      s = '<b>第 ' + n + ' 夜。</b>你写下过她的名字——但还没有过完新的一夜。<br>' +
+          '再走一遍。这一次，试着<span class="unlock">救她</span>。';
+    }else if(META.cycles >= 1){
+      s = '<b>第 ' + n + ' 夜。</b>你还没有写下过她的名字。<br>' +
+          '有些门，要先在纸上开一次，才会在雪地里开。';
+    }else{
+      s = '第一夜。';
+    }
+    if(S && S.loop > META.cycles + 1 && S.scene && S.scene !== 'prologue_arrive') s = '<b>第 ' + S.loop + ' 夜</b>（未完）。';
+    note.innerHTML = s;
+  }
+  if(ex){
+    ex.textContent = got.length
+      ? '已见结局 ' + got.length + '/6　·　' + got.map(k=>END_NAMES[k] || k).join('　')
+      : '';
+  }
+  const seal = $('sealMain');
+  if(seal) seal.textContent = unlocked() ? '说 清 了' : '说不清';
 }
 function showStart(){
   stopCrackers();
   clearVeil();
+  paintStartMeta();
   $('start').style.display = 'flex';
   $('game').style.display = 'none';
   $('ending').style.display = 'none';
   $('btnContinue').style.display = loadSave() ? 'block' : 'none';
 }
-function beginNew(){ clearSave(); S = freshState(); Audio_.startAmbient(); save(); goto(S.scene); }
-function beginContinue(){ S = loadSave() || freshState(); Audio_.startAmbient(); goto(S.scene); }
+function beginNew(){ clearSave(); S = freshState(); S.loop = META.cycles + 1; Audio_.startAmbient(); save(); goto(S.scene); }
+function beginContinue(){ S = normalize(loadSave()); Audio_.startAmbient(); goto(S.scene); }
 function backToTitle(){ if(confirm('回到标题？当前进度会保留。')) showStart(); }
 function restart(){
   if(!confirm('重新开始？当前进度将被清空。')) return;
-  clearSave(); clearVeil(); S = freshState(); goto(S.scene);
+  clearSave(); clearVeil(); S = freshState(); S.loop = META.cycles + 1; goto(S.scene);
 }
 
 $('btnNew').onclick = beginNew;
@@ -1781,23 +2294,22 @@ $('btnContinue').onclick = beginContinue;
 $('btnRestart').onclick = restart;
 $('btnBack').onclick = backToTitle;
 $('btnBack2').onclick = ()=>{ clearVeil(); showStart(); };
-$('btnAgain').onclick = ()=>{ clearSave(); clearVeil(); S = freshState(); goto('prologue_arrive'); };
+$('btnAgain').onclick = ()=>{ clearSave(); clearVeil(); S = freshState(); S.loop = META.cycles + 1; goto('prologue_arrive'); };
 $('btnSkip').onclick = skipTyping;
 $('btnMute').onclick = ()=>{
   Audio_.ensure();
   $('btnMute').textContent = Audio_.toggle() ? '声音：关' : '声音：开';
 };
-/* 点正文也能跳过打字 */
 $('textBox').addEventListener('click', ()=>{ if(typing) skipTyping(); });
 
-/* 首次交互后启动音频（浏览器自动播放策略） */
 document.addEventListener('pointerdown', function once(){
   Audio_.startAmbient();
   document.removeEventListener('pointerdown', once);
 });
 
-/* 启动 */
-S = loadSave() || freshState();
+loadMeta();
+S = normalize(loadSave());
+S.loop = S.loop || (META.cycles + 1);
 showStart();
 </script>
 </body>
