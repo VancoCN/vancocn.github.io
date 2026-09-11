@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>祝福：雪夜问魂</title>
+<title>&#x795d;&#x798f;&#xff1a;&#x96ea;&#x591c;&#x95ee;&#x9b42;</title>
 <style>
+
 
 :root{
   --ink:#070b0e;
@@ -28,10 +29,10 @@ body{
   font-family:var(--serif);
   font-size:16px;line-height:1.95;
   letter-spacing:.02em;
-  overflow-x:hidden;
+  overflow-x:h1;
   -webkit-text-size-adjust:100%;
 }
-/* 木刻刻痕噪点 */
+
 body::before{
   content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.3;
   background-image:
@@ -39,7 +40,7 @@ body::before{
     repeating-linear-gradient(90deg, rgba(0,0,0,.14) 0 1px, transparent 1px 4px);
   mix-blend-mode:overlay;
 }
-/* 暗角 */
+
 body::after{
   content:"";position:fixed;inset:0;pointer-events:none;z-index:1;
   background:radial-gradient(82% 72% at 50% 42%, transparent 42%, rgba(0,0,0,.7) 100%);
@@ -50,20 +51,16 @@ body::after{
 #flash.on{animation:flash .5s ease-out;}
 @keyframes flash{0%{opacity:0}12%{opacity:.7}100%{opacity:0}}
 
-/* ============================================================
-   背景层
-   固定定位、不接收事件、不参与任何排版
-   层次：#bg(0) < 噪点/暗角(1) < 雪(2) < 闪光(3) < 内容(4)
-   ============================================================ */
-#bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:h1;
   --sky1:#1c272e; --sky2:#050809; --sil:#080d11;
   background:var(--sky2);}
 #bg > div{position:absolute;inset:0;transition:opacity 1s ease, background 1s ease;}
 
-/* 天色 */
+
 .b-sky{background:radial-gradient(125% 78% at 50% 0%, var(--sky1) 0%, var(--sky2) 72%);}
 
-/* 背景大字水印 */
+
 .b-glyph{display:flex;align-items:center;justify-content:center;}
 .b-glyph::after{
   content:"";font-family:var(--kai);font-weight:600;line-height:1;
@@ -73,14 +70,14 @@ body::after{
   transition:opacity 1s ease, color 1s ease;
   opacity:0;
 }
-#bg.town      .b-glyph::after{content:"福";color:rgba(184,69,60,.10);opacity:1}
-#bg.study     .b-glyph::after{content:"福";color:rgba(184,69,60,.12);opacity:1}
-#bg.bless     .b-glyph::after{content:"福";color:rgba(184,69,60,.14);opacity:1}
-#bg.snowfield .b-glyph::after{content:"雪";color:rgba(223,230,232,.075);opacity:1}
-#bg.temple    .b-glyph::after{content:"廟";color:rgba(200,168,107,.10);opacity:1}
-#bg.river     .b-glyph::after{content:"魂";color:rgba(223,230,232,.055);opacity:1}
+#bg.town      .b-glyph::after{content:"\798f ";color:rgba(184,69,60,.10);opacity:1}
+#bg.study     .b-glyph::after{content:"\798f ";color:rgba(184,69,60,.12);opacity:1}
+#bg.bless     .b-glyph::after{content:"\798f ";color:rgba(184,69,60,.14);opacity:1}
+#bg.snowfield .b-glyph::after{content:"\96ea ";color:rgba(223,230,232,.075);opacity:1}
+#bg.temple    .b-glyph::after{content:"\5edf ";color:rgba(200,168,107,.10);opacity:1}
+#bg.river     .b-glyph::after{content:"\9b42 ";color:rgba(223,230,232,.055);opacity:1}
 
-/* 远景剪影 */
+
 .b-far{top:auto;height:62%;opacity:0;background:var(--sil);}
 #bg.town .b-far{
   opacity:.9;
@@ -101,24 +98,24 @@ body::after{
 }
 #bg.river .b-far{opacity:.75;background-color:#090e12;
   clip-path:polygon(0 100%,0 66%,18% 58%,34% 64%,52% 56%,70% 64%,86% 58%,100% 64%,100% 100%);}
-/* 近景暗影 */
+
 .b-near{top:auto;height:24%;opacity:0;
   background:linear-gradient(180deg,#050809,#010304);
   clip-path:polygon(0 42%,10% 22%,22% 38%,36% 16%,50% 34%,64% 20%,78% 36%,90% 22%,100% 42%,100% 100%,0 100%);}
 #bg.town .b-near,#bg.snowfield .b-near,#bg.river .b-near{opacity:1}
 
-/* 雪地 */
+
 .b-ground{top:auto;height:36%;opacity:0;
   background:linear-gradient(180deg, rgba(203,216,221,.17), rgba(203,216,221,.05) 62%, transparent);
   clip-path:polygon(0 24%,12% 14%,26% 24%,40% 10%,56% 22%,70% 12%,86% 24%,100% 16%,100% 100%,0 100%);}
 #bg.snowfield .b-ground,#bg.town .b-ground,#bg.river .b-ground{opacity:1}
 
-/* 河面 */
+
 .b-water{inset:auto;top:64%;height:11%;opacity:0;filter:blur(4px);
   background:linear-gradient(180deg, rgba(126,156,166,.2), rgba(126,156,166,.04));}
 #bg.river .b-water{opacity:1}
 
-/* 土地庙 */
+
 .b-gate{inset:auto;left:50%;bottom:6%;width:min(300px,62vw);height:min(360px,56vh);
   transform:translateX(-50%);opacity:0;
   background:linear-gradient(180deg,#2b2018,#150e09);
@@ -127,7 +124,7 @@ body::after{
   box-shadow:inset 0 0 60px rgba(0,0,0,.8);}
 #bg.temple .b-gate{opacity:.7}
 
-/* 红烛 */
+
 .b-candle{inset:auto;bottom:0;height:32%;opacity:0;
   display:flex;align-items:flex-end;justify-content:center;gap:min(24vw,190px);}
 .b-candle i{position:relative;display:block;width:min(26px,5vw);height:72%;
@@ -144,7 +141,7 @@ body::after{
 @keyframes flick{0%,100%{transform:scale(1);opacity:.95}
   25%{transform:scale(1.08,.94);opacity:1}50%{transform:scale(.94,1.08)}75%{transform:scale(1.05,.97)}}
 
-/* 香烟 */
+
 .b-smoke{inset:auto;bottom:6%;height:56%;opacity:0;filter:blur(7px);
   background:linear-gradient(100deg, transparent 40%, rgba(226,226,220,.06) 49%, transparent 58%);
   animation:smoke 15s linear infinite;}
@@ -152,7 +149,7 @@ body::after{
 @keyframes smoke{0%{transform:translateY(16%) skewX(-9deg)}50%{transform:translateY(0) skewX(4deg)}
   100%{transform:translateY(-16%) skewX(9deg)}}
 
-/* 地面暖光 / 冷光 */
+
 .b-glow{--glow:transparent;opacity:0;
   background:radial-gradient(54% 34% at 50% 90%, var(--glow), transparent 72%);}
 #bg.bless .b-glow{opacity:1;--glow:rgba(255,170,80,.15)}
@@ -172,9 +169,9 @@ body::after{
 #bg.dawn .b-ground{opacity:1}
 #bg.dawn .b-near{opacity:1}
 #bg.dawn .b-glow{opacity:1;--glow:rgba(255,196,120,.2)}
-#bg.dawn .b-glyph::after{content:"旦";color:rgba(255,238,210,.11);opacity:1}
+#bg.dawn .b-glyph::after{content:"\65e6 ";color:rgba(255,238,210,.11);opacity:1}
 
-/* 各场景天色微调 */
+
 #bg.study{--sky1:#1f2530;--sky2:#070a0d}
 #bg.bless{--sky1:#2a1f22;--sky2:#0a0708}
 #bg.temple{--sky1:#221c17;--sky2:#080605}
@@ -193,7 +190,7 @@ body::after{
   padding:16px 14px calc(48px + env(safe-area-inset-bottom));
   min-height:100dvh;display:flex;flex-direction:column;}
 
-/* ---------- 顶栏 ---------- */
+
 .topbar{
   display:flex;align-items:center;gap:8px;flex-wrap:wrap;
   padding:8px 12px;margin-bottom:12px;
@@ -219,7 +216,7 @@ body::after{
   28%{transform:scale(1.32);color:var(--gold);opacity:1}
   100%{transform:scale(1)}}
 
-/* ---------- 开始界面 ---------- */
+
 #start{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:22px;text-align:center;padding:20px 0;}
 .titleWrap{display:flex;align-items:stretch;gap:14px;justify-content:center;
@@ -244,7 +241,7 @@ body::after{
   color:var(--red2);font-family:var(--kai);font-size:14px;letter-spacing:.2em;
   writing-mode:vertical-rl;border-radius:2px;transform:rotate(-3deg);opacity:.9;}
 
-/* ---------- 主面板 ---------- */
+
 #game{display:none;}
 .panel{background:rgba(12,17,21,.62);border:1px solid var(--line);border-radius:2px;
   backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
@@ -265,26 +262,26 @@ body::after{
   animation:blink .8s steps(1) infinite;color:transparent;}
 @keyframes blink{50%{opacity:0}}
 
-/* ---------- 选项 ---------- */
+
 #choices{display:flex;flex-direction:column;gap:9px;margin-top:18px;}
 .choice{font-family:var(--serif);text-align:left;cursor:pointer;width:100%;
   background:rgba(226,220,206,.055);border:1px solid rgba(226,220,206,.18);
   color:#dfe6e8;padding:12px 14px 12px 32px;font-size:15.5px;line-height:1.75;
   border-radius:2px;transition:.2s;position:relative;min-height:46px;}
-.choice::before{content:"○";position:absolute;left:12px;top:12px;color:var(--red2);font-size:12.5px;}
+.choice::before{content:"\25cb ";position:absolute;left:12px;top:12px;color:var(--red2);font-size:12.5px;}
 .choice:hover{background:rgba(142,43,43,.22);border-color:var(--red);}
 .choice:active{transform:translateY(1px)}
 
-/* ---------- 状态条 ---------- */
+
 .status{display:flex;gap:12px 18px;flex-wrap:wrap;margin-top:14px;font-size:12.5px;color:#8e999e;
   border-top:1px dashed rgba(226,220,206,.14);padding-top:10px;}
 .bar{display:flex;align-items:center;gap:8px;}
-.track{width:92px;height:5px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden;flex:none;}
+.track{width:92px;height:5px;background:rgba(255,255,255,.12);border-radius:3px;overflow:h1;flex:none;}
 .fill{display:block;height:100%;background:linear-gradient(90deg,#6d7f88,#c8d2d6);transition:width .5s;}
 .fill.low{background:linear-gradient(90deg,#8e2b2b,#b8453c);}
 .verdict{color:var(--red2);letter-spacing:.08em;}
 
-/* ---------- 字牌网格 ---------- */
+
 #stage{margin-top:16px;border-top:1px dashed rgba(226,220,206,.16);padding-top:14px;}
 .stageTip{font-size:12.5px;color:#8e999e;letter-spacing:.1em;margin-bottom:12px;line-height:1.8;}
 .things{display:grid;grid-template-columns:repeat(auto-fit,minmax(66px,1fr));gap:10px;}
@@ -334,7 +331,7 @@ body::after{
 .table{position:relative;border-top:1px solid rgba(200,168,107,.45);margin-top:34px;padding-top:10px;
   text-align:center;font-family:var(--kai);font-size:22px;color:#e8dcc4;letter-spacing:.5em;
   min-height:34px;word-break:break-all;}
-.table::after{content:"供　桌";position:absolute;left:0;right:0;bottom:-22px;font-size:11px;
+.table::after{content:"\4f9b \3000 \684c ";position:absolute;left:0;right:0;bottom:-22px;font-size:11px;
   color:#6f7a80;letter-spacing:.4em;}
 .tableLine{margin-bottom:14px;}
 
@@ -365,7 +362,7 @@ body::after{
 
 .footer{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
 
-/* ---------- 结局 ---------- */
+
 #ending{display:none;}
 .endTitle{margin:0 0 4px;font-size:clamp(24px,6vw,36px);letter-spacing:.3em;color:#f0e4cf;
   font-weight:600;text-align:center;word-break:break-word;}
@@ -392,38 +389,68 @@ body::after{
 @keyframes breathe{0%,100%{opacity:.6;letter-spacing:.42em}50%{opacity:1;letter-spacing:.5em}}
 .snowed{opacity:0 !important;pointer-events:none !important;transition:opacity 2.4s ease;}
 
-#ending.onWhite .endTitle{color:#2b1f16 !important;text-shadow:none !important;}
-#ending.onWhite .endTag{color:#7d2b26 !important;}
-#ending.onWhite .endBody{color:#1e2a30 !important;}
-#ending.onWhite .endBody .q{color:#7a4a12 !important;}
-#ending.onWhite .bigQuestion{color:#1a1209 !important;}
-#ending.onWhite .panel{border-color:rgba(120,90,60,.55);}
+#ending.o1 .endTitle{color:#2b1f16 !important;text-shadow:none !important;}
+#ending.o1 .endTag{color:#7d2b26 !important;}
+#ending.o1 .endBody{color:#1e2a30 !important;}
+#ending.o1 .endBody .q{color:#7a4a12 !important;}
+#ending.o1 .bigQuestion{color:#1a1209 !important;}
+#ending.o1 .panel{border-color:rgba(120,90,60,.55);}
 
-/* ============================================================
-   第二夜 · 回光（二周目隐藏结局）专用视觉
-   ============================================================ */
-/* 暖：她“活过来”的三天 */
-#bg.relight{--sky1:#4a3b2c;--sky2:#120d09}
-#bg.relight .b-glyph::after{content:"生";color:rgba(255,226,178,.13);opacity:1}
-#bg.relight .b-glow{opacity:1;--glow:rgba(255,196,120,.26)}
-#bg.relight .b-far{opacity:.8;background-color:#141018;
+
+
+#bg.l0{--sky1:#4a3b2c;--sky2:#120d09}
+#bg.l0 .b-glyph::after{content:"\751f ";color:rgba(255,226,178,.13);opacity:1}
+#bg.l0 .b-glow{opacity:1;--glow:rgba(255,196,120,.26)}
+#bg.l0 .b-far{opacity:.8;background-color:#141018;
   clip-path:polygon(0 100%,0 66%,9% 66%,9% 52%,16% 52%,16% 70%,28% 70%,28% 50%,37% 50%,
     37% 36%,47% 36%,47% 60%,59% 60%,59% 44%,69% 44%,69% 66%,81% 66%,81% 52%,91% 52%,
     91% 68%,100% 68%,100% 100%);}
-#bg.relight .b-ground{opacity:1}
-#bg.relight .b-near{opacity:1}
+#bg.l0 .b-ground{opacity:1}
+#bg.l0 .b-near{opacity:1}
 
-/* 黑：画风骤变之后 */
-#bg.gone{--sky1:#0b0c0d;--sky2:#000}
-#bg.gone .b-glyph::after{content:"殁";color:rgba(184,69,60,.13);opacity:1}
-#bg.gone .b-far,#bg.gone .b-ground,#bg.gone .b-near,
-#bg.gone .b-candle,#bg.gone .b-smoke,#bg.gone .b-gate,#bg.gone .b-water{opacity:0}
 
-/* 血色暗角（转折后常驻） */
-body.dread::after{
+#bg.g2{--sky1:#0b0c0d;--sky2:#000}
+#bg.g2 .b-glyph::after{content:"\6b81 ";color:rgba(184,69,60,.13);opacity:1}
+#bg.g2 .b-far,#bg.g2 .b-ground,#bg.g2 .b-near,
+#bg.g2 .b-candle,#bg.g2 .b-smoke,#bg.g2 .b-gate,#bg.g2 .b-water{opacity:0}
+
+
+body.d0::after{
   background:radial-gradient(70% 60% at 50% 44%, transparent 26%, rgba(92,10,10,.5) 76%, rgba(0,0,0,.97) 100%);
 }
-body.dread{--line:rgba(184,69,60,.75);}
+body.d0{--line:rgba(184,69,60,.75);}
+
+#bg.a0{--sky1:#1d1513;--sky2:#070404}
+#bg.a0 .b-glyph::after{content:"\7070 ";color:rgba(206,180,160,.07);opacity:1}
+#bg.a0 .b-far{opacity:.55;background-color:#0d0a09;
+  clip-path:polygon(0 100%,0 66%,9% 66%,9% 52%,16% 52%,16% 70%,28% 70%,28% 50%,37% 50%,
+    37% 36%,47% 36%,47% 60%,59% 60%,59% 44%,69% 44%,69% 66%,81% 66%,81% 52%,91% 52%,
+    91% 68%,100% 68%,100% 100%);}
+#bg.a0 .b-ground{opacity:.55}
+#bg.a0 .b-near{opacity:1}
+#bg.a0 .b-glow{opacity:1;--glow:rgba(184,69,60,.12)}
+
+body.h0 .vtitle{color:#e6c9c3;
+  text-shadow:0 0 26px rgba(184,69,60,.55), 2px 2px 0 #000;}
+body.h0 .titleWrap{border-color:rgba(184,69,60,.7)}
+body.h0 .vsub{color:#93746f}
+body.h0 .btn{border-color:var(--red2);
+  background:linear-gradient(180deg, rgba(184,69,60,.36), rgba(142,43,43,.1));}
+body.h0 .btn:hover{background:linear-gradient(180deg, rgba(184,69,60,.55), rgba(142,43,43,.22));
+  box-shadow:0 0 22px rgba(184,69,60,.5);}
+body.h0 .seal{border-color:var(--red2);color:#c9564c;
+  animation:breathe 6s ease-in-out infinite;}
+body.h0 .startnote{color:#8a7b78}
+body.h0 .panel{background:rgba(20,11,11,.68);border-color:rgba(184,69,60,.5);
+  box-shadow:inset 0 0 70px rgba(60,8,8,.5), 0 6px 30px rgba(0,0,0,.5);}
+body.h0 .topbar{border-color:rgba(184,69,60,.45);color:#a99692;
+  box-shadow:inset 0 0 40px rgba(50,6,6,.45);}
+body.h0 .panel::before,body.h0 .panel::after{border-color:rgba(184,69,60,.9);}
+body.h0 .startbtns::after{
+  content:"\ff08 \6709 \4e00 \5c40 \ff0c \53ef \4ee5 \7528 \706b \70e7 \5e72 \51c0 \3002 \ff09 ";
+  display:block;text-align:center;font-size:11.5px;color:#8a6a66;
+  letter-spacing:.2em;margin-top:2px;opacity:.85;}
+body.h0 .metaNote b{color:#c9564c}
 
 #flash.blood{background:radial-gradient(72% 62% at 50% 40%, rgba(206,44,32,.6) 0%, rgba(92,8,8,.38) 46%, transparent 76%);}
 #flash.blood.on{animation:flashBlood 1.6s ease-out;}
@@ -441,12 +468,12 @@ body.dread{--line:rgba(184,69,60,.75);}
 .lamp.bump{animation:bump .7s ease-out;}
 .doomWarn{color:var(--red2) !important;opacity:1 !important;letter-spacing:.2em;}
 
-#ending.onBlood .panel{background:rgba(10,2,2,.8);border-color:rgba(184,69,60,.6);
+#ending.o0 .panel{background:rgba(10,2,2,.8);border-color:rgba(184,69,60,.6);
   box-shadow:inset 0 0 100px rgba(0,0,0,.88), 0 6px 40px rgba(0,0,0,.75);}
-#ending.onBlood .endTitle{color:#e9cac3 !important;text-shadow:0 0 30px rgba(184,69,60,.8);}
-#ending.onBlood .endBody{color:#d9cac8 !important;}
-#ending.onBlood .endBody .q{color:#b8453c !important;}
-#ending.onBlood .panel::before,#ending.onBlood .panel::after{border-color:rgba(184,69,60,.9);}
+#ending.o0 .endTitle{color:#e9cac3 !important;text-shadow:0 0 30px rgba(184,69,60,.8);}
+#ending.o0 .endBody{color:#d9cac8 !important;}
+#ending.o0 .endBody .q{color:#b8453c !important;}
+#ending.o0 .panel::before,#ending.o0 .panel::after{border-color:rgba(184,69,60,.9);}
 .turnP{font-family:var(--kai);color:#e7c8c2;text-indent:0;
   border-left:2px solid var(--red);padding:4px 0 4px 13px;margin:.95em 0;
   background:linear-gradient(90deg, rgba(142,43,43,.16), transparent 78%);
@@ -478,7 +505,7 @@ body.dread{--line:rgba(184,69,60,.75);}
 </head>
 <body>
 
-<div id="bg" class="town" aria-hidden="true">
+<div id="bg" class="town" aria-h1="true">
   <div class="b-sky"></div>
   <div class="b-glyph"></div>
   <div class="b-far"></div>
@@ -499,37 +526,37 @@ body.dread{--line:rgba(184,69,60,.75);}
 
   <div id="start">
     <div class="titleWrap">
-      <p class="vsub">一个旁观者的自白</p>
-      <h1 class="vtitle">祝福：雪夜问魂</h1>
-      <p class="vsub">她只问了你一个问题 而你 可以回答很多次</p>
+      <p class="vsub">&#x4e00;&#x4e2a;&#x65c1;&#x89c2;&#x8005;&#x7684;&#x81ea;&#x767d;</p>
+      <h1 class="vtitle">&#x795d;&#x798f;&#xff1a;&#x96ea;&#x591c;&#x95ee;&#x9b42;</h1>
+      <p class="vsub">&#x53c8;&#x540d;&#xb7;&#x95e8;&#x69db;</p>
     </div>
 
     <div class="startbtns">
-      <button class="btn" id="btnNew">新 的 一 夜</button>
-      <button class="btn ghost" id="btnContinue" style="display:none">继 续 未 完</button>
+      <button class="btn" id="btnNew">&#x65b0; &#x7684; &#x4e00; &#x591c;</button>
+      <button class="btn ghost" id="btnContinue" style="display:none">&#x7ee7; &#x7eed; &#x672a; &#x5b8c;</button>
     </div>
 
     <p class="startnote">
-      你是“我”，一个回鲁镇过年的新派知识分子。<br>
-      你读新书，知道“鬼神者，宗教家之妄说也”，<br>
-      却仍然答不出一个临死女人的问题。<br>
-      ——这里没有拯救，只有经历、追问与“说不清”。
+      &#x4f60;&#x662f;&#x201c;&#x6211;&#x201d;&#xff0c;&#x4e00;&#x4e2a;&#x56de;&#x9c81;&#x9547;&#x8fc7;&#x5e74;&#x7684;&#x65b0;&#x6d3e;&#x77e5;&#x8bc6;&#x5206;&#x5b50;&#x3002;<br>
+      &#x4f60;&#x8bfb;&#x65b0;&#x4e66;&#xff0c;&#x77e5;&#x9053;&#x201c;&#x9b3c;&#x795e;&#x8005;&#xff0c;&#x5b97;&#x6559;&#x5bb6;&#x4e4b;&#x5984;&#x8bf4;&#x4e5f;&#x201d;&#xff0c;<br>
+      &#x5374;&#x4ecd;&#x7136;&#x7b54;&#x4e0d;&#x51fa;&#x4e00;&#x4e2a;&#x4e34;&#x6b7b;&#x5973;&#x4eba;&#x7684;&#x95ee;&#x9898;&#x3002;<br>
+      &#x2014;&#x2014;&#x8fd9;&#x91cc;&#x6ca1;&#x6709;&#x62ef;&#x6551;&#xff0c;&#x53ea;&#x6709;&#x7ecf;&#x5386;&#x3001;&#x8ffd;&#x95ee;&#x4e0e;&#x201c;&#x8bf4;&#x4e0d;&#x6e05;&#x201d;&#x3002;
     </p>
     <div id="metaNote" class="metaNote"></div>
     <p id="endex" class="endex"></p>
-    <div class="seal" id="sealMain">说不清</div>
+    <div class="seal" id="sealMain">&#x8bf4;&#x4e0d;&#x6e05;</div>
   </div>
 
   <div id="game">
     <div class="topbar">
-      <span class="chap" id="chapText">序章</span>
-      <span id="fragText" class="frag">碎片 0/9</span>
-      <span id="pathText" class="path" title="你还记着几件事">念 0/6</span>
-      <span id="lampText" class="lamp off" title="你为她留下过几线生机" style="display:none">生 机 0/4</span>
-      <span id="doomText" class="path" title="距离祝福还有几夜">距 祝 福 3 夜</span>
+      <span class="chap" id="chapText">&#x5e8f;&#x7ae0;</span>
+      <span id="fragText" class="frag">&#x788e;&#x7247; 0/9</span>
+      <span id="pathText" class="path" title="&#x4f60;&#x8fd8;&#x8bb0;&#x7740;&#x51e0;&#x4ef6;&#x4e8b;">&#x5ff5; 0/6</span>
+      <span id="lampText" class="lamp off" title="&#x4f60;&#x4e3a;&#x5979;&#x7559;&#x4e0b;&#x8fc7;&#x51e0;&#x7ebf;&#x751f;&#x673a;" style="display:none">&#x751f; &#x673a; 0/4</span>
+      <span id="doomText" class="path" title="&#x8ddd;&#x79bb;&#x795d;&#x798f;&#x8fd8;&#x6709;&#x51e0;&#x591c;">&#x8ddd; &#x795d; &#x798f; 3 &#x591c;</span>
       <span class="sp"></span>
-      <button class="mini" id="btnMute">声音：开</button>
-      <button class="mini" id="btnRestart">重新开始</button>
+      <button class="mini" id="btnMute">&#x58f0;&#x97f3;&#xff1a;&#x5f00;</button>
+      <button class="mini" id="btnRestart">&#x91cd;&#x65b0;&#x5f00;&#x59cb;</button>
     </div>
 
     <div class="panel">
@@ -542,8 +569,8 @@ body.dread{--line:rgba(184,69,60,.75);}
     </div>
 
     <div class="footer">
-      <button class="mini" id="btnSkip">跳过打字</button>
-      <button class="mini" id="btnBack">返回标题</button>
+      <button class="mini" id="btnSkip">&#x8df3;&#x8fc7;&#x6253;&#x5b57;</button>
+      <button class="mini" id="btnBack">&#x8fd4;&#x56de;&#x6807;&#x9898;</button>
     </div>
   </div>
 
@@ -553,1764 +580,347 @@ body.dread{--line:rgba(184,69,60,.75);}
       <div class="endTag" id="endTag"></div>
       <div class="endBody" id="endBody"></div>
       <div class="footer" id="endFoot" style="margin-top:30px">
-        <button class="btn" id="btnAgain" style="width:auto;padding:11px 30px">再 来 一 夜</button>
-        <button class="btn ghost" id="btnBack2" style="width:auto;padding:11px 26px">回 到 标 题</button>
+        <button class="btn" id="btnAgain" style="width:auto;padding:11px 30px">&#x518d; &#x6765; &#x4e00; &#x591c;</button>
+        <button class="btn ghost" id="btnBack2" style="width:auto;padding:11px 26px">&#x56de; &#x5230; &#x6807; &#x9898;</button>
       </div>
     </div>
   </div>
 
 </div>
 
-<script>
-/* =========================================================================
-   《祝福：雪夜问魂》· 以字代物版
-   1) 雪 Canvas      2) Web Audio 环境音     3) 场景节点系统
-   4) 文字小游戏（字牌 / 雪地寻字 / 摆供 / 攒钱 / 拖槛 / 刻字）
-   5) 变量：耐心值、祭祀资格、记忆碎片、沉默标记
-   6) localStorage 存档 + 重新开始
-   ========================================================================= */
-
-/* ---------------- 0. 全局状态 ---------------- */
-const SAVE_KEY = 'zhufu_xueye_wenhun_v2';
-const META_KEY = 'zhufu_xueye_wenhun_meta_v1';
-let S = null;
-let typing = false, typeTimer = null, crackerTimer = null;
-
-/* ---- 元进度：跨周目保存。通关次数、是否打出过“名字”、上一个名字、已见结局 ---- */
-let META = { cycles:0, perfect:false, lastName:'', endings:{} };
-function loadMeta(){
-  try{
-    const r = localStorage.getItem(META_KEY);
-    if(r){
-      const m = JSON.parse(r) || {};
-      META = {
-        cycles:  m.cycles  || 0,
-        perfect: !!m.perfect,
-        lastName: m.lastName || '',
-        endings: m.endings || {}
-      };
-    }
-  }catch(e){}
-}
-function saveMeta(){ try{ localStorage.setItem(META_KEY, JSON.stringify(META)); }catch(e){} }
-/* 二周目以上、且曾经（上一夜）写出过她的名字 —— 才解锁“回光”一线生机 */
-function unlocked(){ return META.cycles >= 1 && !!META.perfect; }
-function canReprieve(){ return unlocked(); }
-function finishRun(id){
-  if(S.counted) return;
-  S.counted = true;
-  META.cycles = (META.cycles || 0) + 1;
-  META.endings[id] = true;
-  if(id === 'end_perfect') META.perfect = true;
-  if(S.givenName) META.lastName = S.givenName;
-  S.loop = META.cycles + 1;
-  saveMeta(); save();
-}
-
-function freshState(){
-  return {
-    scene:'prologue_arrive',
-    frag:0,
-    patience:5,
-    heard:0,
-    clean:false,
-    money:0,
-    silentMarks:{},
-    silentCount:0,
-    path:{},
-    pathCount:0,
-    givenName:'',
-    soul:null,
-    mg:{},
-    seen:{},
-    log:[],
-    /* —— 第二夜新增 —— */
-    lit:0,          // 点亮了几线生机（0~4）
-    hope:false,     // 是否在河边说了那句肯定的谎
-    shoes:false,    // 是否替她添了买小鞋的钱
-    qing:false,     // 是否告诉了她清明
-    noShoes:false,  // 是否劝她别买
-    counted:false,  // 本夜是否已计入周目
-    loop:1          // 第几夜
-  };
-}
-/* 兼容旧存档：补齐新字段 */
-function normalize(s){
-  const f = freshState();
-  const o = Object.assign(f, s || {});
-  o.silentMarks = o.silentMarks || {};
-  o.path = o.path || {}; o.mg = o.mg || {}; o.seen = o.seen || {}; o.log = o.log || [];
-  o.pathCount = Object.keys(o.path).length;
-  return o;
-}
-
-/* ---------------- 1. 雪（Canvas） ---------------- */
-const cv = document.getElementById('snow');
-const cx = cv.getContext('2d');
-let flakes = [], W = 0, H = 0, wind = .35, density = 1;
-
-function resizeSnow(){
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  W = window.innerWidth; H = window.innerHeight;
-  cv.width = W * dpr; cv.height = H * dpr;
-  cv.style.width = W + 'px'; cv.style.height = H + 'px';
-  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-function newFlake(init){
-  return { x:Math.random()*W, y:init?Math.random()*H:-10,
-    r:Math.random()*1.8+.5, sp:Math.random()*.85+.35,
-    sw:Math.random()*1.5+.4, ph:Math.random()*Math.PI*2, a:Math.random()*.5+.22 };
-}
-function initSnow(){
-  resizeSnow();
-  flakes = [];
-  const n = Math.max(40, Math.round(W*H/9000*density));
-  for(let i=0;i<n;i++) flakes.push(newFlake(true));
-}
-function drawSnow(){
-  cx.clearRect(0,0,W,H);
-  cx.fillStyle = '#fff';
-  for(const f of flakes){
-    f.ph += .012;
-    f.y += f.sp * density;
-    f.x += Math.sin(f.ph)*f.sw*.35 + wind;
-    if(f.y > H+6 || f.x > W+8 || f.x < -8) Object.assign(f, newFlake(false), {x:Math.random()*W});
-    cx.globalAlpha = f.a;
-    cx.beginPath(); cx.arc(f.x, f.y, f.r, 0, Math.PI*2); cx.fill();
-  }
-  cx.globalAlpha = 1;
-  requestAnimationFrame(drawSnow);
-}
-window.addEventListener('resize', ()=>{ resizeSnow(); initSnow(); });
-initSnow(); drawSnow();
-
-function setSnow(mode){
-  const want = mode==='heavy' ? 150 : mode==='calm' ? 45 : mode==='stop' ? 0 : 90;
-  density = mode==='heavy' ? 2.0 : mode==='calm' ? .6 : mode==='stop' ? 0 : 1;
-  wind    = mode==='heavy' ? .8  : mode==='calm' ? .15 : .35;
-  while(flakes.length < want) flakes.push(newFlake(true));
-  while(flakes.length > want) flakes.pop();
-}
-
-/* ---------------- 2. Web Audio 环境音 ---------------- */
-const Audio_ = {
-  ctx:null, master:null, noise:null, muted:false, started:false,
-  ensure(){
-    if(this.ctx) return;
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if(!AC) return;
-    this.ctx = new AC();
-    this.master = this.ctx.createGain();
-    this.master.gain.value = this.muted ? 0 : .9;
-    this.master.connect(this.ctx.destination);
-    const len = this.ctx.sampleRate * 3;
-    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
-    const d = buf.getChannelData(0); let last = 0;
-    for(let i=0;i<len;i++){ const w=Math.random()*2-1; last=(last+.02*w)/1.02; d[i]=last*3.2; }
-    this.noise = buf;
-  },
-  startAmbient(){
-    this.ensure(); if(!this.ctx || this.started) return;
-    this.started = true;
-    if(this.ctx.state === 'suspended') this.ctx.resume();
-    const src = this.ctx.createBufferSource(); src.buffer = this.noise; src.loop = true;
-    const lp = this.ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value = 420;
-    const g = this.ctx.createGain(); g.gain.value = .05;
-    const lfo = this.ctx.createOscillator(); lfo.frequency.value = .07;
-    const lg = this.ctx.createGain(); lg.gain.value = .028;
-    lfo.connect(lg).connect(g.gain);
-    src.connect(lp).connect(g).connect(this.master); src.start(); lfo.start();
-    const o = this.ctx.createOscillator(); o.type='sine'; o.frequency.value = 54;
-    const og = this.ctx.createGain(); og.gain.value = .026;
-    o.connect(og).connect(this.master); o.start();
-  },
-  cracker(){
-    if(!this.ctx){ flash(); return; }
-    const t = this.ctx.currentTime, n = 1 + Math.floor(Math.random()*3);
-    for(let i=0;i<n;i++){
-      const st = t + i*(.06+Math.random()*.12);
-      const src = this.ctx.createBufferSource(); src.buffer = this.noise; src.loop = true;
-      const bp = this.ctx.createBiquadFilter(); bp.type='bandpass';
-      bp.frequency.value = 900 + Math.random()*1400; bp.Q.value = 1.1;
-      const g = this.ctx.createGain();
-      g.gain.setValueAtTime(.0001, st);
-      g.gain.linearRampToValueAtTime(this.muted?0:.32, st+.006);
-      g.gain.exponentialRampToValueAtTime(.0008, st+.16+Math.random()*.12);
-      src.connect(bp).connect(g).connect(this.master);
-      src.start(st); src.stop(st+.45);
-    }
-    if(!this.muted) flash();
-  },
-  whisper(){
-    if(!this.ctx || this.muted) return;
-    const t = this.ctx.currentTime, dur = 1.6;
-    const src = this.ctx.createBufferSource(); src.buffer = this.noise; src.loop = true;
-    const bp = this.ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value = 700; bp.Q.value = 6;
-    const g = this.ctx.createGain(); g.gain.value = 0;
-    const lfo = this.ctx.createOscillator(); lfo.frequency.value = 3.1;
-    const lg = this.ctx.createGain(); lg.gain.value = .055;
-    lfo.connect(lg).connect(g.gain);
-    bp.frequency.setValueAtTime(520, t);
-    bp.frequency.linearRampToValueAtTime(980, t+dur);
-    src.connect(bp).connect(g).connect(this.master);
-    g.gain.linearRampToValueAtTime(.05, t+.4);
-    g.gain.linearRampToValueAtTime(0, t+dur);
-    src.start(t); lfo.start(t); src.stop(t+dur+.1); lfo.stop(t+dur+.1);
-  },
-  bell(){
-    if(!this.ctx || this.muted) return;
-    const t = this.ctx.currentTime;
-    const o1 = this.ctx.createOscillator(), o2 = this.ctx.createOscillator();
-    o1.type = o2.type = 'sine'; o1.frequency.value = 196; o2.frequency.value = 294;
-    const g = this.ctx.createGain();
-    g.gain.setValueAtTime(.0001, t);
-    g.gain.linearRampToValueAtTime(.13, t+.01);
-    g.gain.exponentialRampToValueAtTime(.0005, t+2.6);
-    o1.connect(g); o2.connect(g); g.connect(this.master);
-    o1.start(t); o2.start(t); o1.stop(t+2.8); o2.stop(t+2.8);
-  },
-  /* —— 第二夜：低鸣 / 心跳 / 骤变 —— */
-  droneOn(){
-    this.ensure(); if(!this.ctx || this.dr || this.muted) return;
-    const o = this.ctx.createOscillator(); o.type='sine'; o.frequency.value = 57;
-    const g = this.ctx.createGain(); g.gain.value = 0;
-    g.gain.linearRampToValueAtTime(.05, this.ctx.currentTime + 3);
-    o.connect(g).connect(this.master); o.start();
-    this.dr = { o, g };
-  },
-  droneOff(){
-    if(!this.dr || !this.ctx) return;
-    const t = this.ctx.currentTime, d = this.dr;
-    try{
-      d.g.gain.cancelScheduledValues(t);
-      d.g.gain.setValueAtTime(d.g.gain.value, t);
-      d.g.gain.linearRampToValueAtTime(0, t + 1.2);
-      d.o.stop(t + 1.4);
-    }catch(e){}
-    this.dr = null;
-  },
-  heartbeat(n){
-    if(!this.ctx || this.muted) return;
-    const t0 = this.ctx.currentTime, times = n || 6;
-    for(let i=0;i<times;i++){
-      const st = t0 + i*0.92;
-      const o = this.ctx.createOscillator(); o.type='sine';
-      o.frequency.setValueAtTime(66, st);
-      o.frequency.exponentialRampToValueAtTime(36, st+.2);
-      const g = this.ctx.createGain();
-      g.gain.setValueAtTime(.0001, st);
-      g.gain.linearRampToValueAtTime(.17, st+.03);
-      g.gain.exponentialRampToValueAtTime(.0005, st+.52);
-      o.connect(g).connect(this.master); o.start(st); o.stop(st+.6);
-    }
-  },
-  sting(){
-    if(!this.ctx || this.muted) return;
-    const t = this.ctx.currentTime;
-    const o = this.ctx.createOscillator(); o.type='sawtooth';
-    o.frequency.setValueAtTime(920, t);
-    o.frequency.exponentialRampToValueAtTime(52, t+1.7);
-    const f = this.ctx.createBiquadFilter(); f.type='lowpass';
-    f.frequency.setValueAtTime(2800, t);
-    f.frequency.exponentialRampToValueAtTime(200, t+1.7);
-    const g = this.ctx.createGain();
-    g.gain.setValueAtTime(.0001, t);
-    g.gain.linearRampToValueAtTime(.2, t+.02);
-    g.gain.exponentialRampToValueAtTime(.0004, t+2.3);
-    o.connect(f).connect(g).connect(this.master); o.start(t); o.stop(t+2.5);
-    const o2 = this.ctx.createOscillator(); o2.type='sine'; o2.frequency.setValueAtTime(46, t);
-    const g2 = this.ctx.createGain();
-    g2.gain.setValueAtTime(.0001, t);
-    g2.gain.linearRampToValueAtTime(.2, t+.05);
-    g2.gain.exponentialRampToValueAtTime(.0004, t+2.7);
-    o2.connect(g2).connect(this.master); o2.start(t); o2.stop(t+3);
-  },
-  toggle(){
-    this.muted = !this.muted;
-    if(this.master) this.master.gain.value = this.muted ? 0 : .9;
-    return this.muted;
-  }
-};
-function flash(){
-  const f = document.getElementById('flash');
-  f.classList.remove('on','blood'); void f.offsetWidth; f.classList.add('on');
-}
-function bloodFlash(){
-  const f = document.getElementById('flash');
-  f.classList.remove('on','blood'); void f.offsetWidth; f.classList.add('on','blood');
-}
-/* 画风骤变：雪停 · 天黑 · 血色暗角 · 震屏 · 一声 */
-function blackout(){
-  Audio_.droneOff();
-  Audio_.sting();
-  setTimeout(()=>Audio_.heartbeat(7), 1500);
-  bloodFlash();
-  setBgRaw('gone');
-  setSnow('stop');
-  document.body.classList.add('dread');
-  const app = document.getElementById('app');
-  app.classList.remove('quake'); void app.offsetWidth; app.classList.add('quake');
-  setTimeout(()=>app.classList.remove('quake'), 700);
-}
-function setBgRaw(cls){
-  const el = document.getElementById('bg');
-  if(el) el.className = cls;
-}
-function startCrackers(){ stopCrackers(); crackerTimer = setInterval(()=>{ if(Math.random()<.6) Audio_.cracker(); }, 2600); }
-function stopCrackers(){ if(crackerTimer){ clearInterval(crackerTimer); crackerTimer = null; } }
-
-/* ---------------- 3. 工具 ---------------- */
-const $ = s => document.getElementById(s);
-const $$ = s => Array.from(document.querySelectorAll(s));
-function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
-function loadSave(){ try{ const r = localStorage.getItem(SAVE_KEY); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
-function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
-
-function judgePurity(){
-  const reasons = ['再嫁之妇，不洁。','克夫克子，不祥。','败坏风俗，不净。','虽捐门槛，千人踏万人跨，仍不足以赎。'];
-  return { ok:false, verdict:reasons[Math.min(S.log.length, reasons.length-1)] };
-}
-function addFrag(n){ S.frag = Math.min(9, S.frag + (n||1)); }
-function markSilent(k){ if(!S.silentMarks[k]){ S.silentMarks[k] = true; S.silentCount++; } }
-function hiddenReady(){ return !!S.silentMarks.m4 && !!S.silentMarks.m5 && S.silentCount >= 3; }
-
-function syncPath(){ S.pathCount = Object.keys(S.path).length; }
-function markPath(k){
-  if(S.path[k]) return;
-  S.path[k] = true; syncPath();
-  const el = $('pathText');
-  if(el){ el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
-  save();
-}
-function dropPath(k){
-  if(!S.path[k]) return;
-  delete S.path[k]; syncPath();
-  const el = $('pathText');
-  if(el){ el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
-  save();
-}
-function perfectReady(){ return S.pathCount >= 6; }
-
-/* ---------------- 4a-2. 生机 / 更漏（第二夜） ---------------- */
-function lightUp(){
-  S.lit = Math.min(4, (S.lit || 0) + 1);
-  save();
-  const el = $('lampText');
-  if(el){ el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
-  updateTop();
-}
-function updateTop(){
-  const lamp = $('lampText'), doom = $('doomText');
-  if(lamp){
-    lamp.style.display = unlocked() ? '' : 'none';
-    lamp.textContent = '生 机 ' + (S.lit||0) + '/4';
-    lamp.className = 'lamp' + ((S.lit||0) > 0 ? '' : ' off');
-  }
-  if(doom){
-    const n = DOOM[S.scene];
-    if(n === undefined) return;
-    S.doom = n;
-    doom.textContent = n > 0 ? '距 祝 福 ' + n + ' 夜' : '今 夜 · 祝 福';
-    doom.className = 'path' + (n > 0 ? '' : ' doomWarn');
-  }
-}
-/* 距祝福还有几夜（越走越紧） */
-const DOOM = {
-  prologue_arrive:3, prologue_snow:3, prologue_news:3, prologue_know:3, prologue_study:3, prologue_who:3,
-  act1_first:3, act1_fuli:3, act1_taken:3, act1_chase:3,
-  act2_hejiaao:2, act2_snow:2, act2_amao:2, act2_tell1:2, act2_tell2:2, act2_tell3:2,
-  act3_return:2, act3_liuma:2, act3_money:2, act3_temple:2, act3_carve:2, act3_blessing:1, act3_speak:1,
-  act4_river:1, act4_question:1, act4_a:1, act4_b:1, act4_c:1, act4_c2:1, act4_d:1, act4_hope:1, act4_after:1,
-  act5_relight:1, act5_shoes:1, act5_eve:1,
-  finale_turn:0, finale_blessing:0, finale_study:0
-};
-
-/* ---------------- 4. 场景节点系统 ----------------
-   节点字段：chapter / title / sub / fx[] / text[] / choices[] / game / onEnter
-   text 元素为字符串；{q:'...'} 表示原著引文
-   ============================================================ */
-const SCENES = {
-
-/* ============ 序章 ============ */
-prologue_arrive:{
-chapter:'序章 · 雪夜归鲁镇', title:'一、鲁镇的年底', sub:'旧历的年底毕竟最像年底',
-fx:['snow','cracker'],
-text:[
-'旧历的年底毕竟最像年底。村镇上不必说，就在天空中也显出将到新年的气象来。灰白色的沉重的晚云中间时时发出闪光，接着一声钝响，是送灶的爆竹；近处燃放的可就更强烈了，震耳的大音还没有息，空气里已经散满了幽微的火药香。',
-'我是这一年的年底才回到鲁镇的。虽说故乡，然而已没有家，所以只得暂寓在鲁四老爷的宅子里。他是我的本家，比我长一辈，是一个讲理学的老监生。他比先前并没有什么大改变，单是老了些，但也还未留胡子，一见面是寒暄，寒暄之后说我“胖了”，说我“胖了”之后即大骂其新党。',
-'但我知道，这并非借题在骂我：因为他所骂的还是康有为。无论如何，我明天决计要走了。',
-'雪花落在积得厚厚的雪褥上面，听去似乎瑟瑟有声，使人更加感得沉寂。堂屋里，四叔的嗓门正从屏风后头压过来——'
-],
-choices:[
-{label:'绕进书房，避开这热闹', to:'prologue_study'},
-{label:'先拉住短工：家里出了什么事？', to:'prologue_news'},
-{label:'站在廊下看雪，什么也不问', to:'prologue_snow', act:()=>markSilent('m1')}
-]},
-
-prologue_snow:{
-chapter:'序章 · 雪夜归鲁镇', title:'廊下', sub:'雪落在雪上',
-fx:['snow-heavy'],
-text:[
-'我站在廊下。雪片有梅花那么大，满天飞舞，夹着烟霭和忙碌的气色，将鲁镇乱成一团糟。',
-'远处有人在扫地，扫出一条窄窄的路。雪很快又落满，像是从来没有人走过。',
-'——后来我才知道，那条路她走过。夜里出去，再没有回来。'
-],
-choices:[{label:'进书房去', to:'prologue_study'}]},
-
-prologue_news:{
-chapter:'序章 · 雪夜归鲁镇', title:'短工的回答', sub:'怎么死的？——还不是穷死的？',
-fx:['snow'],
-text:[
-'我拉住一个短工。他先是抬起头，看了我一眼，那眼神里没有悲哀，也没有惊慌，只有一种被年关榨干了的疲惫。',
-{q:'“祥林嫂？老了。”'},
-{q:'“死了？”我的心突然紧缩，几乎跳起来，脸上大约也变了色。'},
-{q:'“什么时候？——昨天夜里，或者就是今天罢。——我说不清。”'},
-{q:'“怎么死的？”——“还不是穷死的？”'},
-'他淡然的回答，仍然没有抬头向我看，出去了。'
-],
-choices:()=>{
-  const arr = [
-    {label:'追问：她是谁？', to:'prologue_study', act:()=>markPath('p1')},
-    {label:'不再问，走进书房', to:'prologue_study', act:()=>markSilent('m1')}
-  ];
-  if(unlocked()) arr.unshift({label:'（你已经知道她今夜会死。）', to:'prologue_know'});
-  return arr;
-}},
-
-/* 第二夜限定：带着记忆回来的人 */
-prologue_know:{
-chapter:'序章 · 雪夜归鲁镇', title:'预 知', sub:'第二夜的人，记得第一夜的事',
-fx:['snow-heavy'],
-onEnter:()=>{ Audio_.whisper(); },
-text:[
-'我站在雪里，忽然想起一件不该想起的事：这一夜，我不是第一次过。',
-'上一夜，我一路走到最后，在纸的第一行替她取过名字。我以为写下了名字，就算留下了一个人。',
-'可她还是死在祝福的前夜。名字留在纸上，人没有留下。',
-'——我知道她今夜会死。我知道我拦不住。我知道连那三个字也拦不住。',
-'可我还是走进了这条巷子。',
-{q:'“祥林嫂？老了。”'},
-{q:'“怎么死的？——还不是穷死的？”'},
-'人明知道要输，还要再来一局，这叫什么？我不知道。我只知道我站在这里，雪落在肩上，短工已经走远了。',
-'这一次，我心里冒出一个念头：也许，也许有一句话，是可以救命的。'
-],
-choices:[{label:'进书房去', to:'prologue_study'}]},
-
-prologue_study:{
-chapter:'序章 · 雪夜归鲁镇', title:'二、书房', sub:'不早不迟，偏偏要在这时候',
-fx:['snow','cracker'],
-onEnter:()=>{ Audio_.whisper(); },
-text:[
-'书房里点着一对红烛。四叔在里间踱步，声音隔着一层板壁传过来，先是一声冷笑，随后是那句——',
-{q:'“不早不迟，偏偏要在这时候，——这就可见是一个谬种！”'},
-'我先前所见所感的鲁镇，是一个死气沉沉的鲁镇；这一句骂，倒使这死气有了一点活气：因为她死了，才有人需要骂一句。',
-'然而我究竟不知道她是谁。她在我记忆里只有一个名字的残片——祥林嫂。这三个字是她丈夫的名字加上一个“嫂”，她自己叫什么，没有人记得。',
-'烛火一跳。屋子里有几样旧物，我去看看它们。'
-],
-game:{type:'study', next:'prologue_who'}},
-
-prologue_who:{
-chapter:'序章 · 雪夜归鲁镇', title:'她是谁', sub:'一个没有名字的人',
-fx:['snow-heavy'],
-onEnter:()=>{ addFrag(1); },
-text:[
-'我把这些碎片拼在一起：一个女人，死了，在祝福的前夜；一个女人，被骂作谬种；一个女人，连名字都不曾有过。',
-{q:'“她么，是祥林的媳妇。祥林死了，她婆婆要她回去，后来就卖到贺家墺去了。——这些事，镇上谁不知道。”'},
-'我于是决心要弄清楚这一件事：她怎么活过来的，又是怎么死掉的。',
-'然而事情并不像我想的那样有一条线索。她的故事是散的，散在雪地里，散在各人的舌头上，散在我自己不敢细看的记忆中。',
-'——那是从前一年的冬初开始的。'
-],
-choices:[{label:'回到那一年冬初', to:'act1_first'}]},
-
-/* ============ 第一幕 ============ */
-act1_first:{
-chapter:'第一幕 · 第一次来鲁镇', title:'一、冬初', sub:'她不是鲁镇人',
-fx:['snow'],
-onEnter:()=>{ addFrag(1); },
-text:[
-'她不是鲁镇人。有一年的冬初，四叔家里要换女工，做中人的卫老婆子带她进来了。',
-'头上扎着白头绳，乌裙，蓝夹袄，月白背心，年纪大约二十六七，脸色青黄，但两颊却还是红的。卫老婆子叫她祥林嫂，说是自己母家的邻舍，死了当家人，所以出来做工了。',
-'四叔皱了皱眉，四婶已经知道了他的意思，是在讨厌她是一个寡妇。但是她模样还周正，手脚都壮大，又只是顺着眼，不开一句口，很像一个安分耐劳的人，便不管四叔的皱眉，将她留下了。',
-'试工期内，她整天的做，似乎闲着就无聊，又有力，简直抵得过一个男子，所以第三天就定局，每月工钱五百文。'
-],
-choices:[{label:'年底了，煮福礼的时候到了', to:'act1_fuli'}]},
-
-act1_fuli:{
-chapter:'第一幕 · 第一次来鲁镇', title:'二、福礼', sub:'祥林嫂，你放着罢！我来摆。',
-fx:['snow','cracker'],
-text:[
-'年底，扫尘，洗地，杀鸡，宰鹅，彻夜的煮福礼，全是一人担当，竟没有添短工。然而她很满足，口角边渐渐的有了笑影，脸上也白胖了。',
-'这是鲁镇年终的大典，致敬尽礼，迎接福神，拜求来年一年中的好运气。杀鸡，宰鹅，买猪肉，用心细细的洗，女人的臂膊都在水里浸得通红，有的还带着绞丝银镯子。',
-'煮熟之后，横七竖八的插些筷子在这类东西上，可就称为“福礼”了，五更天陈列起来，并且点上香烛，恭请福神们来享用；拜的却只限于男人。',
-'她想去插一双筷子。'
-],
-game:{type:'fuli', next:'act1_taken'}},
-
-act1_taken:{
-chapter:'第一幕 · 第一次来鲁镇', title:'三、被绑走', sub:'这有什么依不依',
-fx:['snow-heavy'],
-onEnter:()=>{ addFrag(1); },
-text:[
-'新年才过，她婆婆来了，说是要回去。卫老婆子居中说合，讲定把她嫁进深山，换八十千。',
-{q:'“这有什么依不依。——闹是谁也总要闹一闹的；只要用绳子一捆，塞在花轿里，抬到男家，捺上花冠，拜堂，关上房门，就完事了。”'},
-'她曾在河岸上反抗过。据说她一路只是嚎，骂，喉咙早哑了，还在骂；抬到男家，捺上花冠，拜堂，关上房门——后来就再没有声音。',
-{q:'“她有小叔子，也得娶老婆。不嫁了她，哪有这一注钱来做聘礼？”'},
-'我站在廊下，看着花轿拐出巷口。我懂的道理很多：人的解放、礼教的吃人、宗法的罪。然而我站着，什么也没有做。雪落下来，把轿子的印子盖平了。'
-],
-choices:[
-{label:'（追出去）', to:'act1_chase', act:()=>{ markPath('p2'); lightUp(); }},
-{label:'（站着不动）', to:'act2_hejiaao', act:()=>markSilent('m3a')}
-]},
-
-act1_chase:{
-chapter:'第一幕 · 第一次来鲁镇', title:'追', sub:'雪盖平了印子',
-fx:['snow-heavy'],
-text:[
-'我追出巷口。雪很大，风把爆竹的纸屑卷到半空，红的，像一群瞎眼的蝴蝶。',
-'轿子已经看不见了。地上只剩下两行脚印，一行是抬轿的，一行是跟着走的。',
-'我在雪里站了很久。我知道我追不上——不是腿追不上，是我没有理由追。一个读书人，凭什么去拦一桩“本家的事”，凭什么去拦一位“婆婆”？我凭的不过是一点说不清的难堪。',
-'那点难堪，后来变成了一辈子的“说不清”。'
-],
-choices:[{label:'去问卫老婆子：后来呢？', to:'act2_hejiaao'}]},
-
-/* ============ 第二幕 ============ */
-act2_hejiaao:{
-chapter:'第二幕 · 贺家墺与阿毛', title:'一、交了好运', sub:'她真是交了好运了',
-fx:['snow'],
-onEnter:()=>{ addFrag(1); },
-text:[
-'卫老婆子再来的时候，是满脸笑的。她说，祥林嫂真是交了好运了。',
-{q:'“她婆婆来抓她回去的时候，是早已许给了贺家墺的贺老六了，所以回家之后不几天，也就装在花轿里抬去了。”'},
-'“上头又没有婆婆；男人所有的是力气，会做活；房子是自家的。——唉唉，她真是交了好运气。”',
-'我问：后来呢？卫老婆子的笑淡了淡：“后来么？后来——她男人是坚实人，谁知道年纪青青，就会断送在伤寒上？本来已经好了的，吃了一碗冷饭，复发了。幸亏有儿子；她又能做，打柴摘茶养蚕都来得，本来还可以守着，谁知道那孩子又会给狼衔去的呢？”',
-'她说完，喝了一口茶，又补上一句：“现在她只剩了一个光身了。大伯来收屋，又赶她。她真是走投无路了，只好来求老主人。”'
-],
-choices:[{label:'去雪地里找一找那些东西', to:'act2_snow'}]},
-
-act2_snow:{
-chapter:'第二幕 · 贺家墺与阿毛', title:'二、雪地寻物', sub:'春天快完了，村上倒反来了狼',
-fx:['snow-heavy'],
-text:[
-'贺家墺在山坳里。那年的雪化了又下，下到春天还没有停。',
-'我要找的东西不多：一只小鞋，一只小篮，一点血。它们在雪下面。',
-'（这一片都是雪。点开看看雪底下是什么。）'
-],
-game:{type:'snowfield', next:'act2_amao'}},
-
-act2_amao:{
-chapter:'第二幕 · 贺家墺与阿毛', title:'三、阿毛', sub:'我叫，阿毛！',
-fx:['snow-heavy'],
-onEnter:()=>{ addFrag(1); Audio_.whisper(); },
-text:[
-'春天快完了，村上倒反来了狼。',
-{q:'“我一清早起来就开了门，拿小篮盛了一篮豆，叫我们的阿毛坐在门槛上剥豆去。他是很听话的，我的话句句听；他出去了。”'},
-{q:'“我就在屋后劈柴，淘米，米下了锅，要蒸豆。我叫，阿毛！没有应。出去一看，只见豆撒得一地，没有我们的阿毛了。他是不到别家去玩的；各处去一问，果然没有。”'},
-{q:'“我急了，央人去寻去。直到下半天，几个人寻到山坳里，看见刺柴上挂着一只他的小鞋。”'},
-{q:'“大家都说，完了，怕是遭了狼了。再进去；果然，他躺在草窠里，肚里的五脏已经都给吃空了，可怜他手里还紧紧的捏着那只小篮呢。……”'},
-'她于是淌下眼泪来，声音也呜咽了。'
-],
-choices:[{label:'她又回到鲁镇了', to:'act2_tell1'}]},
-
-act2_tell1:{
-chapter:'第二幕 · 贺家墺与阿毛', title:'四、讲（一）', sub:'这故事倒颇有效',
-fx:['snow'],
-onEnter:()=>{ S.heard++; },
-text:[
-'她又回到鲁镇，在四叔家做了女工。她开口了，说的永远是同一段。',
-{q:'“我真傻，真的，”她说，“我单知道雪天是野兽在深山里没有食吃，会到村里来；我不知道春天也会有。”'},
-'这故事倒颇有效。男人听到这里，往往敛起笑容，没趣的走了开去；女人们却不独宽恕了她似的，脸上立刻改换了鄙薄的神气，还要陪出许多眼泪来。有些老女人没有在街头听到她的话，便特意寻来，要听她这一段悲惨的故事。',
-'直到她说到呜咽，她们也就一齐流下那停在眼角上的眼泪，叹息一番，满足的去了，一面还纷纷的评论着。'
-],
-choices:[
-{label:'听她讲完', to:'act2_tell2', act:()=>{ markPath('p3'); S.patience=Math.max(0,S.patience-1); lightUp(); }},
-{label:'默默走开', to:'act2_tell2', act:()=>{ markSilent('m2'); S.patience=Math.max(0,S.patience-1); }},
-{label:'劝她：别再说了', to:'act2_tell2', act:()=>{ S.patience=Math.max(0,S.patience-2); }}
-]},
-
-act2_tell2:{
-chapter:'第二幕 · 贺家墺与阿毛', title:'四、讲（二）', sub:'后来全镇的人们几乎都能背诵她的话',
-fx:['snow'],
-onEnter:()=>{ S.heard++; },
-text:[
-'她反复地说，一字不改。像一张磨坏了的唱片，针落在同一道槽里。',
-'后来全镇的人们几乎都能背诵她的话，一听到就烦厌得头痛。',
-{q:'“我真傻，真的……”'},
-{q:'“是的，你是单知道雪天野兽在深山里没有食吃，才会到村里来的。”他们立即打断她的话，走开去了。'},
-'她张着口怔怔的站着，直着眼睛看他们，接着也就走了，似乎自己也觉得没趣。'
-],
-choices:[
-{label:'听她讲完', to:'act2_tell3', act:()=>{ S.patience=Math.max(0,S.patience-1); }},
-{label:'默默走开', to:'act2_tell3', act:()=>{ dropPath('p3'); markSilent('m2'); S.patience=Math.max(0,S.patience-1); }},
-{label:'替她把话说完（证明你听过了）', to:'act2_tell3', act:()=>{ dropPath('p3'); S.patience=Math.max(0,S.patience-2); }}
-]},
-
-act2_tell3:{
-chapter:'第二幕 · 贺家墺与阿毛', title:'四、讲（三）', sub:'她的悲哀经大家咀嚼赏鉴了许多天，早已成为渣滓',
-fx:['snow-heavy'],
-onEnter:()=>{ S.heard++; },
-text:[
-'她的悲哀经大家咀嚼赏鉴了许多天，早已成为渣滓，只值得烦厌和唾弃；但从人们的笑影上，也仿佛觉得这又冷又尖，她自己再也没有开口的必要了。',
-'她单是一瞥他们，并不回答一句话。',
-'我还记得那时有人在背后笑：“她那时倒不如早点死了干净。”——说这话的人，后来也照常祝福，照常放爆竹，照常活得很好。',
-'于是，她开始想办法。她要自己去买一样东西，一件可以赎罪的东西。'
-],
-choices:[
-{label:'（她不再说了。你仍然站着。）', to:'act3_return'},
-{label:'（随众人走开）', to:'act3_return', act:()=>{ dropPath('p3'); markSilent('m2'); S.patience=Math.max(0,S.patience-1); }}
-]},
-
-/* ============ 第三幕 ============ */
-act3_return:{
-chapter:'第三幕 · 捐门槛', title:'一、再来', sub:'四婶起初还踌蹰',
-fx:['snow'],
-onEnter:()=>{ addFrag(1); },
-text:[
-'她仍然头上扎着白头绳，乌裙，蓝夹袄，月白背心，脸色青黄，只是两颊上已经消失了血色，顺着眼，眼角上带些泪痕，眼光也没有先前那样精神了。',
-'四婶起初还踌蹰，但后来到底还是留下了——因为实在没有一个女工肯做这等的苦活。',
-'然而这一回，她的境遇却改变得非常大。上工之后的两三天，主人们就觉得她手脚已没有先前一样灵活，记性也坏得多，死尸似的脸上又整日没有笑影。',
-'四婶的口气上，已颇有些不满了。而最要紧的，是祭祀的时候，她不再被允许沾手。'
-],
-choices:[{label:'柳妈来了', to:'act3_liuma'}]},
-
-act3_liuma:{
-chapter:'第三幕 · 捐门槛', title:'二、柳妈', sub:'阎罗大王只好把你锯开来',
-fx:['snow'],
-onEnter:()=>{ addFrag(1); Audio_.whisper(); },
-text:[
-'柳妈是个吃素、不杀生的善女人。她把手里的佛珠拨得平平稳稳，先问：“你额角上的伤疤，怎么来的？”',
-{q:'“我问你：你那时怎么后来竟依了呢？”——“你到土地庙里去捐一条门槛，当作你的替身，给千人踏，万人跨，赎了这一世的罪名，免得死了去受苦。”'},
-{q:'“你将来到阴司去，那两个死鬼的男人还要争，你给了谁好呢？阎罗大王只好把你锯开来，分给他们。”'},
-'她脸上就显出恐怖的神色来。这是在山村里所未曾知道的。',
-'第二天早上起来的时候，两眼上便都围着大黑圈。'
-],
-choices:[
-{label:'告诉她：这是迷信', to:'act3_money', act:()=>{ markPath('p4'); S.log.push('rational'); lightUp(); }},
-{label:'什么也不说', to:'act3_money', act:()=>{ markSilent('m3'); }},
-{label:'陪她攒钱', to:'act3_money', act:()=>lightUp()}
-]},
-
-act3_money:{
-chapter:'第三幕 · 捐门槛', title:'三、十二元鹰洋', sub:'她整日紧闭了嘴唇，默默地跑街，扫地，洗菜，淘米',
-fx:['snow'],
-text:[
-'她大约从他们的笑容和声调上，也知道是在嘲笑她，所以总是瞪着眼睛，不说一句话，后来连头也不回了。',
-'她整日紧闭了嘴唇，头上带着大家以为耻辱的记号的那伤痕，默默的跑街，扫地，洗菜，淘米。快够一年，她才从四婶手里支取了历来积存的工钱，换算了十二元鹰洋。',
-'（替她把钱攒够 —— 需要六回）'
-],
-game:{type:'money', next:'act3_temple'}},
-
-act3_temple:{
-chapter:'第三幕 · 捐门槛', title:'四、土地庙', sub:'给千人踏，万人跨',
-fx:['snow-heavy'],
-text:[
-'请假到镇的西头去，在一座土地庙里，她求神许愿。庙祝起初执意不允许，直到她急得流泪，才勉强答应了。',
-'价目是大钱十二千。',
-'（把这块“槛”拖到庙门口去。）'
-],
-game:{type:'temple', next:'act3_carve'}},
-
-act3_carve:{
-chapter:'第三幕 · 捐门槛', title:'五、刻字', sub:'捐 / 门 / 槛 / 赎',
-fx:['snow'],
-onEnter:()=>{ Audio_.bell(); },
-text:[
-'人捐了，门槛也抬来了。庙祝说，要刻上字，神明才认得清是谁赎的罪。',
-'她不识字。她只看着那块暗红的木头发呆，好像看着自己被劈开、刨平、钉在那儿的一生。',
-'（替她刻字 —— 一下一下地刻。）'
-],
-game:{type:'carve', next:'act3_blessing'}},
-
-act3_blessing:{
-chapter:'第三幕 · 捐门槛', title:'六、冬至的祭祖时节', sub:'你放着罢，祥林嫂！',
-fx:['cracker','snow'],
-onEnter:()=>{ addFrag(1); },
-text:[
-'捐了门槛之后，她便回来，神气很舒畅，眼光也分外有神，高兴似的对四婶说，自己已经在土地庙捐了门槛了。',
-'冬至的祭祖时节，她做得更出力，看四婶装好祭品，和阿牛将桌子抬到堂屋中央，她便坦然的去拿酒杯和筷子。',
-{q:'“你放着罢，祥林嫂！”四婶慌忙大声说。'},
-'她像是受了炮烙似的缩手，脸色同时变作灰黑，也不再去取烛台，只是失神的站着。直到四叔上香的时候，教她走开，她才走开。',
-'这一回她的变化非常大，第二天，不但眼睛窈陷下去，连精神也更不济了。而且很胆怯，不独怕暗夜，怕黑影，即使看见人，虽是自己的主人，也总惴惴的，有如在白天出穴游行的小鼠；否则呆坐着，直是一个木偶人。'
-],
-choices:[
-{label:'替她说话', to:'act3_speak', act:()=>{ markPath('p5'); lightUp(); }},
-{label:'（什么也说不出）', to:'act3_speak', act:()=>markSilent('m3b')}
-]},
-
-act3_speak:{
-chapter:'第三幕 · 捐门槛', title:'七、没有一个人认为自己在作恶', sub:'各人有各人的道理',
-fx:['snow'],
-onEnter:()=>{ addFrag(1); },
-text:[
-'我说：她已经捐了门槛了。四婶看我一眼，像是看一个不懂事的孩子。',
-{q:'四婶：“捐了门槛又怎样？祖宗的福礼，是不许再嫁的女人碰的。这不是我定的规矩。”'},
-{q:'鲁四老爷：“不早不迟，偏偏要在这时候。可见其人之不祥，非人力可挽。我骂她谬种，是替她可惜。”'},
-{q:'柳妈：“我是好意。我不说，她死后要被锯开来的。我吃斋念佛，图的什么？就图个心安。”'},
-{q:'卫老婆子：“我不过做个中人。我不牵线，她婆婆就没钱娶儿媳妇；她婆婆没钱，她就要饿死。我对谁不起？”'},
-'他们都说得有道理。每一句都像样，每一句都在理上。他们谁也没有动刀，谁也没有动手；他们只是各人守着各人的本分。',
-'我忽然明白，杀死她的不是一个恶人，而是一整套体面。'
-],
-choices:[
-{label:'争下去（无用）', to:'act4_river'},
-{label:'说不清。', to:'act4_river', act:()=>markSilent('m3c')}
-]},
-
-/* ============ 第四幕 ============ */
-act4_river:{
-chapter:'第四幕 · 灵魂之问', title:'一、河边', sub:'她分明已经纯乎是一个乞丐了',
-fx:['snow-heavy'],
-onEnter:()=>{ addFrag(1); Audio_.whisper(); },
-text:[
-'我给那些因为在近旁而极响的爆竹声惊醒，看见豆一般大的黄色的灯火光，接着又听得毕毕剥剥的鞭炮，是四叔家正在“祝福”了。',
-'我在蒙胧中，又隐约听到远处的爆竹声联绵不断，似乎合成一天音响的浓云，夹着团团飞舞的雪花，拥抱了全市镇。',
-'而在此之前，在河边上，我见过她最后一次。',
-'五年前的花白的头发，即今已经全白，全不像四十上下的人；脸上瘦削不堪，黄中带黑，而且消尽了先前悲哀的神色，仿佛是木刻似的；只有那眼珠间或一轮，还可以表示她是一个活物。她一手提着竹篮，内中一个破碗，空的；一手拄着一支比她更长的竹竿，下端开了裂：她分明已经纯乎是一个乞丐了。',
-'她站住了，回过头来，眼睛忽然发光了。'
-],
-choices:[{label:'听她问', to:'act4_question'}]},
-
-act4_question:{
-chapter:'第四幕 · 灵魂之问', title:'二、问', sub:'一个人死了之后，究竟有没有魂灵的？',
-fx:['snow-heavy'],
-onEnter:()=>{ Audio_.whisper(); },
-text:[
-'她走近两步，放低了声音，极秘密似的切切的说——',
-{q:'“一个人死了之后，究竟有没有魂灵的？”'},
-'我很悚然，一见她的眼盯着我的，背上也就遭了芒刺一般，比在学校里遇到不及豫防的临时考，教师又偏是站在身旁的时候，惶急得多了。',
-'对于魂灵之有无，我自己是向来毫不介意的；但在此刻，怎样回答她好呢？我在极短期的踌蹰中，想，这里的人照例相信鬼，然而她，却疑惑了，——或者不如说希望：希望其有，又希望其无……。人何必增添末路的人的苦恼，为她起见，不如说有罢。'
-],
-choices:()=>{
-  const arr = [
-    {label:'“也许有罢。”', to:'act4_a'},
-    {label:'“论理，就该也有。”', to:'act4_b'},
-    {label:'“没有魂灵，也没有地狱。”', to:'act4_c'},
-    {label:'“说不清。”', to:'act4_d'}
-  ];
-  if(canReprieve()) arr.push({label:'“有的。”——你说了一句你自己也不信的话', to:'act4_hope',
-    act:()=>{ S.hope = true; save(); }});
-  return arr;
-}},
-
-/* ============ 第二夜分支：一线生机 ============ */
-act4_hope:{
-chapter:'第四幕 · 灵魂之问', title:'有 的', sub:'你说了此生第一句有把握的话',
-fx:['snow-heavy'],
-onEnter:()=>{ S.hope = true; Audio_.bell(); },
-text:[
-'她走近两步，放低了声音，极秘密似的切切的说——',
-{q:'“一个人死了之后，究竟有没有魂灵的？”'},
-'这一次我没有躲。我看着她那双眼睛：那里面已经很久没有东西了，只剩下一星不肯灭的火。',
-{q:'“有的。”我说。“人死了是有魂灵的。你捐了门槛，赎了罪，到了那边，一家人是要见面的。”'},
-'我说得很慢，很稳，像一个背了很久的答案。其实我一个字也不信。',
-'可她信了。',
-'她的眼睛忽然亮了一下。那点亮很轻，像雪地上落了一星火星——可它真的亮了。她张了张嘴，又闭上，很久才说出来：',
-{q:'“那就好。那我就不怕了。”'},
-'她向我道了谢。这是三年来她第一次向人道谢——不，是三年来第一次有人值得她谢。',
-'她把那只破碗往篮里收了收，拄着比她更长的竹竿，转身走进雪里。她走得很慢，脚步却比来时轻。',
-'我站在河边，一直看到看不见她为止。',
-'——我终于说清了一次。我救了她。我当时真的这么想。'
-],
-choices:()=>{
-  const n = S.lit || 0;
-  return [{label: n >= 3 ? '（接下来的三天，她像是活过来了）' : '（第二天，她还在。）', to:'act5_relight'}];
-}},
-
-act4_a:{
-chapter:'第四幕 · 灵魂之问', title:'也许有罢', sub:'那么，也就有地狱了？',
-fx:['snow-heavy'],
-onEnter:()=>{ S.soul='a'; },
-text:[
-{q:'“也许有罢，——我想。”我于是吞吞吐吐的说。'},
-{q:'“那么，也就有地狱了？”'},
-{q:'“啊！地狱？”我很吃惊，只得支梧着，“地狱？——论理，就该也有。——然而也未必，……谁来管这等事……。”'},
-{q:'“那么，死掉的一家的人，都能见面的？”'},
-'我即刻胆怯起来了，便想全翻过先前的话来。我不知道何以忽然这样。她却一点也没有觉察，只是眼睛盯着我，等着。',
-{q:'“那是，……实在，我说不清……。其实，究竟有没有魂灵，我也说不清。”'}
-],
-choices:[{label:'（她走了）', to:'act4_after'}]},
-
-act4_b:{
-chapter:'第四幕 · 灵魂之问', title:'论理，就该也有', sub:'死掉的一家的人，都能见面的？',
-fx:['snow-heavy'],
-onEnter:()=>{ S.soul='b'; },
-text:[
-{q:'“论理，就该也有。——然而也未必，……谁来管这等事……。”'},
-{q:'“那么，死掉的一家的人，都能见面的？”'},
-'唉唉，见面不见面呢？……那是，……实在，我说不清……。',
-'她要的不是一个神学结论。她要的是：死了以后，还能不能见着阿毛。她害怕的是：见着了，却已经被锯成两半；或者，见着了贺老六，而那两个男人还要在阴司里争。',
-'我乘她不再紧接的问，迈开步便走，匆匆的逃回四叔的家中，心里很觉得不安逸。'
-],
-choices:[{label:'（逃回四叔家）', to:'act4_after'}]},
-
-act4_c:{
-chapter:'第四幕 · 灵魂之问', title:'没有魂灵', sub:'她眼中最后一点光也灭了',
-fx:['snow-heavy'],
-onEnter:()=>{ S.soul='c'; },
-text:[
-{q:'“没有魂灵，也没有地狱。我是学新学的，这些都是迷信。”我说得很干脆，心里甚至有一点得意。'},
-'她站在那里，很久没有动。',
-{q:'“那么，……死掉的一家的人，也都不能见面了？”'},
-'我说：是的，人死了就什么也没有了。',
-'她的眼睛于是忽然没有了光，像一盏油尽的灯，并不是熄灭，只是不再有跳动的意思了。她没有哭。她只是很轻很轻地说了一声“哦”。',
-'——我救了她一个地狱，也夺走了她一个阿毛。'
-],
-choices:[
-{label:'（看着她走远）', to:'act4_after'},
-{label:'（可是你没有走。你把话说完。）', to:'act4_c2', act:()=>markPath('p6')}
-]},
-
-act4_c2:{
-chapter:'第四幕 · 灵魂之问', title:'把话说完', sub:'那我这一世，算什么呢？',
-fx:['snow-heavy'],
-onEnter:()=>{ Audio_.whisper(); },
-text:[
-'我没有走。我在河边站住，把那句话从头说完了。',
-{q:'“没有魂灵，也没有地狱。所以你不必怕阎罗大王把你锯开来分给谁，也不必盼着在阴司里见谁。人死了，就像雪落在雪上，什么痕迹也不留。”'},
-'我说得很慢。我说完，河面上一点声音也没有，只有雪。',
-'她听了很久。久到我以为她已经不打算再问了。',
-{q:'她忽然说：“那我这一世，算什么呢？”'},
-'这一次不是“说不清”。是真的没有答案。我张了张嘴，什么也没有说出来。',
-'她也没有再等。她把那只空的破碗往篮里收了收，拄着比她更长的竹竿，一步一步走进雪里。我一直站到看不见她为止。'
-],
-choices:[{label:'祝福', to:'finale_blessing'}]},
-
-act4_d:{
-chapter:'第四幕 · 灵魂之问', title:'说不清', sub:'这是我最爱用的一个词',
-fx:['snow-heavy'],
-onEnter:()=>{ S.soul='d'; markSilent('m4'); },
-text:[
-{q:'“说不清。”'},
-'这是一句极有用的话。不更事的勇敢的少年，往往敢于给人解决疑问，选定医生，万一结果不佳，大抵反成了怨府，然而一用这“说不清”来作结束，便事事逍遥自在了。',
-'我在这时，更感到这一句话的必要，即使和讨饭的女人说话，也是万不可省的。',
-'她沉默了。她没有再问地狱，也没有再问阿毛。她只是很轻很轻地点了点头，似乎早知道我会这样回答。',
-'——我终于什么也没有说清，而她终于什么也没有得到。'
-],
-choices:[{label:'（她走了）', to:'act4_after'}]},
-
-act4_after:{
-chapter:'第四幕 · 灵魂之问', title:'三、这一夜', sub:'然而她死了',
-fx:['snow-heavy','cracker'],
-text:[
-'我总觉得不安。过了一夜，也仍然时时记忆起来，仿佛怀着什么不祥的豫感；在阴沉的雪天里，在无聊的书房里，这不安愈加强烈了。',
-'不如走罢，明天进城去。福兴楼的清燉鱼翅，一元一大盘，价廉物美，现在不知增价了否？往日同游的朋友，虽然已经云散，然而鱼翅是不可不吃的，即使只有我一个……。',
-'我于是决定进城。我决定忘掉她。',
-{q:'“怎么死的？——还不是穷死的？”'},
-'然而先前所见所闻的她的半生事迹的断片，至此也联成一片了。'
-],
-choices:[{label:'祝福', to:'finale_blessing'}]},
-
-/* ============ 第五幕（第二夜限定）· 回光 ============ */
-act5_relight:{
-chapter:'第五幕 · 回光', title:'一、她 好 了', sub:'她居然好了',
-fx:['snow'],
-onEnter:()=>{ Audio_.droneOn(); },
-text:()=>{
-  const a = [
-  '第二天，她没有死。',
-  '不但没有死，天一亮她就到河边洗菜。有人看见她把袖子挽得很高，手冻得通红，嘴里还哼着一段不成调的什么。',
-  {q:'“她说，她要活到清明，去给阿毛添一铲土。”'},
-  '镇上的人先是疑心，随后有些扫兴，最后换成一种新的、同样结实的议论：“可见还是得信点什么。捐了门槛，到底是有用的。”',
-  '四婶听了这话，脸色也好看些。祭祀时仍旧不让她沾手，语气却松了一寸——一寸，就够一个人多活三天。'
-  ];
-  if((S.lit || 0) >= 3){
-    a.push(
-      '她甚至来找我。她站在门外，不肯进来，只把一方手巾捧在胸前，说：先生，那日的话，我记着了。',
-      '我说：记着就好。',
-      '她笑了一下。这三年里我第一次见她笑——那笑很浅，像雪面上被风刮开的一道纹，一转眼又平了。',
-      '我心里涌起一种巨大的、几乎是可耻的轻松：原来救一个人这样容易。只要一句话。');
-  }else{
-    a.push(
-      '她没有来找我。她只是活着，像一件被人重新摆回原处的器物。',
-      '我远远看过她两回。她手脚比先前利索，话却比先前更少。');
-  }
-  a.push(
-    '我甚至在心里打起了草稿：等过了年，我要把这件事写下来。写一个人在雪夜里问了一个问题，另一个人答了一句，于是她活了下来。',
-    '——我那时还不知道，我把这稿子的开头写反了。');
-  return a;
-},
-choices:[{label:'（腊月二十八，她来问我一件事）', to:'act5_shoes'}]},
-
-act5_shoes:{
-chapter:'第五幕 · 回光', title:'二、一双小鞋', sub:'先生，清明是几时？',
-fx:['snow'],
-text:[
-'腊月二十八。她等在角门外头，鼻尖冻得发红，手里捏着几张毛票。',
-{q:'“先生，我想买一双小鞋。”'},
-'我说，买鞋做什么。',
-'她说：我见过人家给下边的孩子烧鞋。我活着没给他做过几双；到了那边，总不能让他光着脚。',
-'她的手在抖。那几张毛票被攥得又潮又软，不知在贴身的地方焐了多少日子。'
-],
-choices:[
-{label:'（替她添上剩下的钱）', to:'act5_eve', act:()=>{ S.shoes = true; save(); }},
-{label:'（告诉她：清明在四月初五前后）', to:'act5_eve', act:()=>{ S.qing = true; save(); }},
-{label:'（劝她：别在这些没用的东西上花钱）', to:'act5_eve', act:()=>{ S.noShoes = true; save(); }}
-]},
-
-act5_eve:{
-chapter:'第五幕 · 回光', title:'三、除 夕 前 一 夜', sub:'她说明年还要来',
-fx:['snow','cracker'],
-onEnter:()=>{ startCrackers(); },
-text:()=>{
-  const a = [];
-  if(S.shoes){
-    a.push('我把手伸进衣袋，摸出两张角票，硬塞进她手里。她不肯要，往后退了两步，最后低着头说：先生，我记着你的好。');
-  }else if(S.qing){
-    a.push('我告诉她：清明在四月初五前后。她把这几个字念了两遍，像是怕忘了。',
-           '她说：那我记着了。——她说“记着”的时候，眼睛亮得有点吓人。');
-  }else{
-    a.push('我劝她别在这些没用的东西上花钱。她“哦”了一声，把毛票重新包好，塞回怀里。',
-           '她没有反驳我。她向来很会“哦”。');
-  }
-  a.push(
-  '除夕前一夜，四婶竟破例让她在灶间帮忙。她捧着碗碟进进出出，脚步很轻，像是怕惊动什么。',
-  '有人在灶下说：“祥林嫂这回倒好了。”',
-  {q:'“我要活到明年。”她说。'},
-  '那天夜里，鲁镇落了新年里最大的一场雪。爆竹从傍晚响到五更，红纸屑在雪地上铺了厚厚一层，像一地没能烧完的喜事。',
-  '我很累，也很安稳。我想：人原来是可以被一句话救回来的。',
-  '我吹了灯。',
-  '——灯灭之后，她出了门。这件事，我是三天以后才知道的。');
-  return a;
-},
-choices:[{label:'（天亮了）', to:'finale_turn'}]},
-
-/* ============ 终 章（第二夜） ============ */
-finale_turn:{
-chapter:'终章 · 回光返照', title:'但她还是死了', sub:'画风一变',
-fx:['snow-heavy'],
-onEnter:()=>{ stopCrackers(); Audio_.droneOn(); setTimeout(()=>Audio_.heartbeat(5), 2600); },
-text:()=>{
-  const a = [
-  '正月初三的清早，有人在河沿上发现了她。',
-  '她坐在那里，背靠着河沿的老柳树，那支比她更长的竹竿还拄在手里。身上盖着一层薄雪，雪上没有脚印——雪停之后，再没有人走过这条路。',
-  '她的脸瘦得只剩一把骨头，黄中带黑，消尽了先前悲哀的神色，仿佛是木刻似的。',
-  '可是，她的嘴角是向上弯的。',
-  '她不是饿死的。验看的人说，她怀里还有半块饼，和几张叠得整整齐齐的纸钱。',
-  '她的竹篮里，放着一双新的小鞋。'
-  ];
-  if(S.shoes) a.push('——那双小鞋，是用我给的两张角票买的。鞋底纳得很密，是新的。');
-  else if(S.noShoes) a.push('——我劝过她别买。她还是买了。这三年里，她只在这一件事上没有听我的。');
-  else a.push('——那双小鞋，是她用焐了不知多少日子的毛票买的。');
-  a.push(
-  '她收拾得很干净：头发梳过，白头绳换了新的，竹竿也削过一截。她像是去走亲戚，走到一半，在河沿上坐下来，想歇一歇。',
-  '——她歇下了。这一次，她没有再起来。');
-  return a;
-},
-choices:[{label:'（蹲下去，看她的脸）', to:'end_reprieve', act:()=>{ blackout(); }}]},
-
-/* ============ 终章 ============ */
-finale_blessing:{
-chapter:'终章 · 祝福', title:'一、祝福照常', sub:'年年如此，家家如此',
-fx:['cracker','snow'],
-onEnter:()=>{ startCrackers(); },
-text:[
-'我给那些因为在近旁而极响的爆竹声惊醒，看见豆一般大的黄色的灯火光，接着又听得毕毕剥剥的鞭炮，是四叔家正在“祝福”了；知道已是五更将近时候。',
-'鲁镇的祝福，年年如此，家家如此，——只要买得起福礼和爆竹之类的，——今年自然也如此。',
-'堂屋里，红烛高烧，香烟缭绕，鸡鹅鱼肉横七竖八插着筷子，恭请福神们来享用；拜的却只限于男人。',
-'短工们忙着，脸上带着年关特有的那种认真。没有人提起昨夜死的那个乞丐。四叔在里间，又骂了一句“谬种”，这一次骂得比昨天更顺口。',
-'天色愈阴暗了，下午竟下起雪来，雪花大的有梅花那么大，满天飞舞，夹着烟霭和忙碌的气色，将鲁镇乱成一团糟。'
-],
-choices:[{label:'回到书房', to:'finale_study'}]},
-
-finale_study:{
-chapter:'终章 · 祝福', title:'二、空白纸页', sub:'我独坐在发出黄光的菜油灯下',
-fx:['snow'],
-onEnter:()=>{ stopCrackers(); },
-text:[
-'我独坐在发出黄光的菜油灯下，想，这百无聊赖的祥林嫂，被人们弃在尘芥堆中的，看得厌倦了的陈旧的玩物，先前还将形骸露在尘芥里，从活得有趣的人们看来，恐怕要怪讶她何以还要存在，现在总算被无常打扫得干干净净了。',
-'魂灵的有无，我不知道；然而在现世，则无聊生者不生，即使厌见者不见，为人为己，也还都不错。',
-'桌上摊着一页空白的纸。窗外，雪落得很静。',
-'我可以做三件事。'
-],
-choices:()=>{
-  const arr = [
-    {label:'A. 写下她的故事', to:'end_write'},
-    {label:'B. 把纸烧掉', to:'end_burn'},
-    {label:'C. 什么也不做，沉默',
-     to:()=>{ markSilent('m5'); return hiddenReady() ? 'end_shuoBuQing' : 'end_silence'; }}
-  ];
-  if(perfectReady()) arr.push({label:'D. 在第一行，写下她的名字', to:'end_perfect'});
-  return arr;
-}},
-
-/* ============ 结局 ============ */
-
-end_perfect:{
-chapter:'结局', title:'名 字', sub:'完满结局 · 只有一条路能走到这里',
-ending:true, perfect:true,
-text:[
-'我提起笔。这一次，我没有先写雪，也没有先写鲁镇。',
-'我在第一行写下三个字——是我替她取的。我不知道她原来叫什么，卫老婆子想了半天，说记不起来了；镇上也没有一个人记得。她做过祥林的媳妇、贺老六的填房、阿毛的娘，唯独没有做过她自己。',
-'我把那三个字写在纸的最上面，像一个人终于在桌前坐下了。',
-'然后我才写雪，写鲁镇，写祝福，写四叔的骂，写四婶那句“你放着罢”，写狼，写门槛，写河边那个关于魂灵的问题。',
-'我写得并不漂亮。写到最后一行，我仍然是“说不清”的。',
-'她还是死了。鲁镇照常祝福，四叔照常骂，短工照常忙碌，世界一点也没有改变。'
-]},
-
-end_write:{
-chapter:'结局', title:'写 下', sub:'她的名字仍只是“祥林嫂”',
-ending:true,
-text:[
-'我提起笔。我写了雪，写了鲁镇，写了祝福，写了四叔的骂，写了四婶的那句“你放着罢”，写了狼，写了门槛。',
-'我写得很冷静，甚至很漂亮。我把她的死写成一个时代的注脚，把她的一生写成一篇小说。',
-'然而写到最后一行，我停住了。',
-'我发现自己始终不知道她叫什么。她只是祥林的媳妇，是贺老六的填房，是阿毛的娘，是一个“谬种”，是一个“穷死的”。她自己的名字，从来没有在这世上被用过一次。',
-'我把纸页放下。窗外的雪还在落。我写下了她的故事，也写下了我自己的“说不清”。'
-]},
-
-end_burn:{
-chapter:'结局', title:'烧 掉', sub:'雪覆盖一切',
-ending:true,
-text:[
-'我把纸凑到烛火上。火苗舔着纸角，卷起来，黑了，散成一撮灰。',
-'灰落在桌面上，被窗缝里漏进来的风一吹，什么也不剩。',
-'这样很好。鲁镇的祝福照常，四叔的门第照常，短工的工钱照常，明年的爆竹照常。',
-'我于是可以安心地睡去，明天起来，吃清燉鱼翅。',
-'只是此后，每到下雪的日子，我总疑心窗纸上有什么东西在响——其实什么也没有，不过是雪。'
-]},
-
-end_silence:{
-chapter:'结局', title:'沉 默', sub:'爆竹声压过一切',
-ending:true,
-text:[
-'我什么也没有写。',
-'爆竹声联绵不断，似乎合成一天音响的浓云，夹着团团飞舞的雪花，拥抱了全市镇。',
-'我在这繁响的拥抱中，也懒散而且舒适，从白天以至初夜的疑虑，全给祝福的空气一扫而空了，只觉得天地圣众歆享了牲醴和香烟，都醉醺醺的在空中蹒跚，豫备给鲁镇的人们以无限的幸福。',
-'她死了。世界什么也没有改变。',
-'——而我还活着，并且将继续这样活下去。'
-]},
-
-end_shuoBuQing:{
-chapter:'隐藏结局', title:'说 不 清', sub:'她叫什么？',
-ending:true, hidden:true,
-text:[
-'我什么也没有说，什么也没有写，什么也没有做。',
-'雪落在窗纸上，沙沙地响，像是有人在门外走来走去，又像什么也没有。',
-'我忽然想起，我从来不知道她姓什么，叫什么。'
-]},
-
-/* ============ 第二夜隐藏结局 · 回光 ============ */
-end_reprieve:{
-chapter:'第二夜结局', title:'回 光', sub:'但你确实给过她一线生机',
-ending:true, reprieve:true,
-text:[
-'我忽然明白除夕那一夜发生了什么。',
-'她来过我的窗下。我睡得很沉，睡得心安理得。',
-'她大概只是想隔着一层窗纸说一声：先生，你说的是真的，那我就不怕了。',
-'——她不是去死的。她是去见阿毛的。',
-'是我告诉她：人死了，一家人是要见面的。',
-'是我告诉她：捐了门槛，赎了罪，到了那边，就不必再怕谁把她锯开来分给谁。',
-'是我把她心里最后那一点点“怕”拿走了。而人活着，撑到最后的，恰恰就是那一点点怕。'
-],
-after:[
-'我 终 于 说 清 了 一 次。',
-'我这一生唯一说清的一句话，把她送到了河里。'
-],
-tail:()=>{
-  const a = [];
-  if(META.lastName){
-    a.push('上一夜，我在纸的第一行替她取过名字——「' + META.lastName + '」。');
-    a.push('我把这三个字，念给河沿上那个已经听不见的人听。她没有应。');
-    a.push('原来一个名字，第一次当着本人叫出口，是在她死了三天之后。');
-  }else{
-    a.push('我甚至不知道她叫什么。');
-    a.push('我给了她一个去处，却始终没有给她一个名字。');
-  }
-  a.push('雪停了。鲁镇的祝福还剩最后一天：爆竹照常，四叔照常骂，短工照常忙碌，世界一点也没有改变。');
-  a.push('而我已经在想：明年这个时候，我大概还会回来。人明知道要输，还要再来一局，这叫什么？');
-  return a;
-}}
-
-};
-
-/* ---------------- 4b. 场景 → 背景剪影 ----------------
-   只给 #bg 换一个 class，画面由 CSS 渐变过渡，不影响任何排版
-   ---------------------------------------------------- */
-const BG_MAP = {
-  prologue_arrive:'town', prologue_snow:'snowfield', prologue_news:'town',
-  prologue_study:'study', prologue_who:'study',
-  act1_first:'town', act1_fuli:'bless', act1_taken:'snowfield', act1_chase:'snowfield',
-  act2_hejiaao:'snowfield', act2_snow:'snowfield', act2_amao:'snowfield',
-  act2_tell1:'town', act2_tell2:'town', act2_tell3:'town',
-  act3_return:'town', act3_liuma:'town', act3_money:'town',
-  act3_temple:'temple', act3_carve:'temple',
-  act3_blessing:'bless', act3_speak:'bless',
-  act4_river:'river', act4_question:'river',
-  act4_a:'river', act4_b:'river', act4_c:'river', act4_c2:'river',
-  act4_d:'river', act4_after:'river',
-  finale_blessing:'bless', finale_study:'study',
-  act4_hope:'river',
-  act5_relight:'relight', act5_shoes:'relight', act5_eve:'bless',
-  finale_turn:'river',
-  end_write:'study', end_burn:'snowfield', end_silence:'bless',
-  end_shuoBuQing:'blank', end_perfect:'dawn',
-  end_reprieve:'gone'
-};
-function setBg(sceneId){
-  const el = $('bg');
-  if(!el) return;
-  const b = BG_MAP[sceneId] || 'town';
-  if(el.className !== b) el.className = b;
-}
-
-/* ---------------- 5. 打字机 ---------------- */
-function typeBox(paras, done){
-  const box = $('textBox');
-  box.innerHTML = '';
-  typing = true;
-  let pi = 0, ci = 0, cur = null;
-
-  function nextP(){
-    if(pi >= paras.length){
-      typing = false;
-      cur && cur.lastChild && cur.lastChild.remove();
-      done && done();
-      return;
-    }
-    const item = paras[pi];
-    cur = document.createElement('p');
-    if(typeof item === 'object') cur.className = 'quote';
-    const span = document.createElement('span');
-    const caret = document.createElement('span');
-    caret.className = 'cursor'; caret.textContent = '　';
-    cur.appendChild(span); cur.appendChild(caret);
-    box.appendChild(cur);
-    ci = 0; step();
-
-    function step(){
-      const text = (typeof item === 'object') ? item.q : item;
-      if(ci < text.length){
-        span.textContent += text[ci++];
-        typeTimer = setTimeout(step, 15);
-      }else{
-        pi++;
-        typeTimer = setTimeout(nextP, 230);
-      }
-    }
-  }
-  nextP();
-}
-function skipTyping(){
-  if(!typing) return;
-  clearTimeout(typeTimer); typing = false;
-  const sc = SCENES[S.scene]; if(!sc) return;
-  const box = $('textBox'); box.innerHTML = '';
-  sceneText(sc).forEach(it=>{
-    const p = document.createElement('p');
-    if(typeof it === 'object'){ p.className = 'quote'; p.textContent = it.q; }
-    else p.textContent = it;
-    box.appendChild(p);
-  });
-  afterText(sc);
-}
-
-/* ---------------- 6. 场景调度 ---------------- */
-function goto(id){
-  const sc = SCENES[id];
-  if(!sc){ console.warn('缺少场景', id); return; }
-  S.scene = id; S.seen[id] = true; save();
-  stopCrackers();
-
-  const fx = sc.fx || [];
-  setBg(id);
-  setSnow(fx.indexOf('snow-heavy') >= 0 ? 'heavy'
-        : (fx.indexOf('snow') >= 0 ? 'normal'
-        : (sc.reprieve ? 'stop' : 'calm')));
-  if(fx.indexOf('cracker') >= 0) startCrackers();
-
-  $('chapText').textContent = sc.chapter || '';
-  $('fragText').textContent = '碎片 ' + S.frag + '/9';
-  $('pathText').textContent = '念 ' + S.pathCount + '/6';
-
-  sc.onEnter && sc.onEnter();
-
-  $('sceneTitle').textContent = sc.title || '';
-  $('sceneSub').textContent = sc.sub || '';
-  $('stage').innerHTML = '';
-  $('choices').innerHTML = '';
-  renderStatus();
-  updateTop();
-
-  if(sc.ending){ finishRun(id); return renderEnding(sc); }
-
-  $('start').style.display = 'none';
-  $('game').style.display = 'block';
-  $('ending').style.display = 'none';
-  typeBox(sceneText(sc), ()=>afterText(sc));
-}
-function sceneText(sc){
-  return (typeof sc.text === 'function') ? sc.text() : (sc.text || []);
-}
-function afterText(sc){
-  if(sc.game){
-    const key = S.scene;
-    if(S.mg[key]) return showContinue(sc.game.next);
-    renderGame(sc.game, ()=>{ S.mg[key] = true; save(); showContinue(sc.game.next); });
-  }else{
-    showChoices(sc.choices || []);
-  }
-}
-function showContinue(to){
-  const c = $('choices'); c.innerHTML = '';
-  const b = document.createElement('button');
-  b.className = 'choice'; b.textContent = '（继续）';
-  b.onclick = ()=>goto(to);
-  c.appendChild(b);
-}
-function showChoices(list){
-  const c = $('choices'); c.innerHTML = '';
-  if(typeof list === 'function') list = list();
-  (list || []).forEach(ch=>{
-    const b = document.createElement('button');
-    b.className = 'choice'; b.textContent = ch.label;
-    b.onclick = ()=>{
-      ch.act && ch.act();
-      const to = (typeof ch.to === 'function') ? ch.to() : ch.to;
-      save(); goto(to);
-    };
-    c.appendChild(b);
-  });
-}
-function renderStatus(){
-  const st = $('status'); st.innerHTML = '';
-  if(S.scene.indexOf('act2_tell') === 0 || S.scene === 'act2_amao'){
-    const d = document.createElement('div'); d.className = 'bar';
-    const pct = Math.round(S.patience / 5 * 100);
-    d.innerHTML = '<span>众人耐心</span><span class="track"><span class="fill' +
-      (S.patience <= 2 ? ' low' : '') + '" style="width:' + pct + '%"></span></span><span>' + S.patience + '/5</span>';
-    st.appendChild(d);
-  }
-  if(S.scene.indexOf('act1_fuli') === 0 || S.scene.indexOf('act3') === 0){
-    const j = judgePurity();
-    const d = document.createElement('div'); d.className = 'bar';
-    d.innerHTML = '<span>祭祀资格</span><span class="verdict">' + j.verdict + '</span>';
-    st.appendChild(d);
-  }
-  if(S.scene === 'finale_study' && unlocked() && !S.hope){
-    const d = document.createElement('div');
-    d.style.cssText = 'width:100%;font-family:var(--kai);color:#b8453c;font-size:13px;' +
-      'letter-spacing:.14em;line-height:1.9;opacity:.9';
-    d.textContent = '（河边上那个问题，你已经答过了。）';
-    st.appendChild(d);
-  }
-}
-
-/* ---------------- 7. 小游戏 ---------------- */
-function renderGame(g, onDone){
-  const stage = $('stage');
-  stage.innerHTML = '';
-  const tip = document.createElement('div'); tip.className = 'stageTip'; stage.appendChild(tip);
-  const msg = document.createElement('div'); stage.appendChild(msg);
-  const fn = GAMES[g.type];
-  if(!fn){ onDone(); return; }
-  fn(stage, tip, msg, onDone);
-}
-function tile(g, n, extraClass){
-  const el = document.createElement('div');
-  el.className = 'thing' + (extraClass ? ' ' + extraClass : '');
-  el.innerHTML = '<span class="g">' + g + '</span><span class="n">' + n + '</span>';
-  return el;
-}
-
-const GAMES = {
-
-  study(stage, tip, msg, onDone){
-    tip.textContent = unlocked()
-      ? '（书房里还剩几样旧东西 —— 至少看两样。案上，多了一盏灯。）'
-      : '（书房里还剩几样旧东西 —— 至少看两样）';
-    const grid = document.createElement('div'); grid.className = 'things'; stage.appendChild(grid);
-    const items = [
-      {g:'福', n:'朱红大“福”字',
-       mem:'香案上方那个朱红的“福”字，年年新贴，年年一样。鲁镇人相信，只要字贴得端正，福神就会来。——她死的那一夜，字刚贴上，浆糊还没干。'},
-      {g:'烛', n:'一对红烛',
-       mem:'红烛的泪积成一小堆。烛火一跳，照见四叔的脸：不怒，不悲，只是不耐烦。他嫌她死得不是时候，坏了年下的规矩。'},
-      {g:'迹', n:'雪地脚印',
-       mem:'窗外雪地上一行脚印，从角门出去，一直通到河边，又折回来——不，没有折回来。只有去的那一行。'},
-      {g:'篮', n:'旧竹篮',
-       mem:'一只破空的竹篮，一只比她更破空的碗。竹篮还是去年那只，碗却早裂了口。她提着它，在鲁镇走了三年。'}
-    ];
-    if(unlocked()){
-      items.push({g:'灯', n:'一盏旧灯',
-        mem:'书案上那盏灯。上一夜，我就是在它下面替她取名字的。灯芯烧短了一截，油还满着——它比我耐烦。' +
-            '听说人在河边问路的时候，只要有人肯说一句肯定的话，她就能多走三里雪路。'});
-    }
-    let found = 0, done = false;
-    items.forEach(it=>{
-      const el = tile(it.g, it.n);
-      grid.appendChild(el);
-      el.onclick = ()=>{
-        if(el.classList.contains('done')) return;
-        el.classList.add('done'); found++; addFrag(1); save();
-        const m = document.createElement('div'); m.className = 'mem'; m.textContent = it.mem;
-        stage.insertBefore(m, msg);
-        Audio_.whisper();
-        if(found >= 2 && !done){
-          done = true;
-          tip.textContent = '碎片够了。烛火又跳了一下。';
-          setTimeout(onDone, 500);
-        }
-      };
-    });
-  },
-
-  fuli(stage, tip, msg, onDone){
-    tip.textContent = '（先把福礼摆上供桌；也可以试着让她来摆）';
-    const goods = ['鸡','鹅','鱼','肉','酒','饭'];
-    const bar = document.createElement('div'); bar.className = 'offerBar'; stage.appendChild(bar);
-    const wrap = document.createElement('div'); stage.appendChild(wrap);
-    const line = document.createElement('div'); line.className = 'table tableLine'; line.textContent = '　';
-    wrap.appendChild(line);
-
-    let placed = 0, blocked = 0, fin = false;
-    function finish(){
-      if(fin) return;
-      fin = true;
-      bar.querySelectorAll('button').forEach(b=>b.classList.add('used'));
-      const j = judgePurity();
-      msg.innerHTML = '<div class="mem">她把手收了回去，站在灶边，看别人把筷子插上。' +
-        '祭祀资格判定：<span style="color:#b8453c">' + j.verdict + '</span></div>';
-      setTimeout(onDone, 1100);
-    }
-    goods.forEach(gd=>{
-      const b = document.createElement('button'); b.textContent = gd;
-      b.onclick = ()=>{
-        b.classList.add('used'); placed++;
-        line.textContent = goods.slice(0, placed).join('　');
-        Audio_.cracker();
-        if(placed >= 6 || (placed >= 3 && blocked >= 1)) finish();
-      };
-      bar.appendChild(b);
-    });
-    const sb = document.createElement('button');
-    sb.className = 'she'; sb.textContent = '让祥林嫂来摆';
-    sb.onclick = ()=>{
-      blocked++;
-      const lines = [
-        '“祥林嫂，你放着罢！我来摆。”——四婶',
-        '“祥林嫂，你放着罢！我来摆。”——四婶，又慌忙大声说',
-        '“你放着罢，祥林嫂！”——四婶慌忙大声说'
-      ];
-      msg.innerHTML = '<div class="blocked">' + lines[Math.min(blocked-1, 2)] + '</div>';
-      Audio_.whisper();
-      if(placed >= 3 && blocked >= 1) finish();
-    };
-    bar.appendChild(sb);
-  },
-
-  snowfield(stage, tip, msg, onDone){
-    tip.textContent = '（这一片都是“雪”。点开看看雪底下是什么。）';
-    const field = document.createElement('div'); field.className = 'snowfield'; stage.appendChild(field);
-    const note = document.createElement('div'); note.className = 'note'; stage.appendChild(note);
-
-    const TOTAL = 24;
-    const targets = [
-      {g:'履', n:'小鞋',  mem:'刺柴上挂着一只他的小鞋。鞋帮上还沾着泥，鞋口朝下，空空的。'},
-      {g:'血', n:'一点血', mem:'草窠里有一小片黑。雪盖了半边，另外半边冻住了，是褐色的。——那是阿毛的。'},
-      {g:'篮', n:'小篮',  mem:'他躺在草窠里，肚里的五脏已经都给吃空了，手里还紧紧的捏着那只小篮呢。'}
-    ];
-    const pos = [];
-    while(pos.length < 3){
-      const p = Math.floor(Math.random() * TOTAL);
-      if(pos.indexOf(p) < 0) pos.push(p);
-    }
-    const blanks = ['雪下只有雪。','手指冻得发麻，什么也没有。','雪片落进袖口，凉。',
-      '扒开一层，底下还是一层。','一只冻僵的蚂蚱，别的没有。'];
-    let swept = 0, found = 0, bi = 0, done = false;
-
-    for(let i=0;i<TOTAL;i++){
-      const idx = pos.indexOf(i);
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.textContent = '雪';
-      cell.onclick = ()=>{
-        if(idx >= 0){
-          const t = targets[idx];
-          cell.classList.add('real'); cell.textContent = t.g; cell.title = t.n;
-          found++; addFrag(1); save();
-          const m = document.createElement('div'); m.className = 'mem';
-          m.innerHTML = '<b style="color:#ffe9b8">' + t.g + '　' + t.n + '</b><br>' + t.mem;
-          stage.insertBefore(m, msg);
-          Audio_.whisper();
-        }else{
-          cell.classList.add('swept'); swept++;
-          note.textContent = blanks[bi++ % blanks.length] + '（已扫开 ' + swept + '/' + (TOTAL-3) + '）';
-        }
-        if(found >= 3 && !done){
-          done = true;
-          field.querySelectorAll('.cell:not(.real)').forEach(c=>c.classList.add('swept'));
-          note.textContent = '三样都在了。';
-          const t = document.createElement('div'); t.className = 'mem';
-          t.textContent = '春天，狼叼走了阿毛。她说的每一个字都是真的，只是没有人再愿意听。';
-          stage.insertBefore(t, msg);
-          setTimeout(onDone, 1200);
-        }
-      };
-      field.appendChild(cell);
-    }
-    note.textContent = '雪很深。三样东西埋在里面。';
-  },
-
-  money(stage, tip, msg, onDone){
-    tip.textContent = '（她默默的跑街，扫地，洗菜，淘米）';
-    const box = document.createElement('div');
-    box.style.cssText = 'font-size:13.5px;color:#c8d2d6';
-    box.innerHTML = '历年积存的工钱　<b id="mnum" style="color:#c8a86b">0</b> / 12 元鹰洋';
-    stage.appendChild(box);
-    const tally = document.createElement('div'); tally.className = 'tally'; stage.appendChild(tally);
-    for(let i=0;i<6;i++){ const s = document.createElement('span'); tally.appendChild(s); }
-
-    const btn = document.createElement('button');
-    btn.className = 'choice'; btn.style.marginTop = '12px';
-    btn.textContent = '再干一阵活（+2 元）';
-    btn.onclick = ()=>{
-      if(S.money >= 12) return;
-      S.money += 2;
-      $('mnum').textContent = Math.min(12, S.money);
-      const seg = tally.children[Math.floor((S.money-1)/2)];
-      if(seg) seg.classList.add('on');
-      Audio_.cracker();
-      if(S.money >= 12){
-        btn.remove();
-        msg.innerHTML = '<div class="mem">快够一年，她才从四婶手里支取了历来积存的工钱，换算了十二元鹰洋。' +
-          '她把这钱用手巾包了又包，藏在贴身的地方。她以为这是买命的钱。</div>';
-        setTimeout(onDone, 1200);
-      }
-    };
-    stage.appendChild(btn);
-  },
-
-  temple(stage, tip, msg, onDone){
-    tip.textContent = '（按住这块“槛”，拖到庙门口去）';
-    const row = document.createElement('div'); row.className = 'templeRow'; stage.appendChild(row);
-    const gate = document.createElement('div'); gate.className = 'gate';
-    gate.innerHTML = '<span class="big">庙</span>庙　门　口';
-    const beam = document.createElement('div'); beam.className = 'beam'; beam.textContent = '槛';
-    row.appendChild(gate); row.appendChild(beam);
-
-    function succeed(){
-      if(beam.classList.contains('locked')) return;
-      beam.classList.add('locked');
-      gate.classList.remove('hot'); gate.classList.add('done');
-      gate.innerHTML = '<span class="big">门</span>已　捐';
-      if(alt) alt.remove();
-      Audio_.bell();
-      msg.innerHTML = '<div class="mem">门槛横在庙门口了。她想：从今往后，千人踏，万人跨，我的罪就算赎了。' +
-        '——她不知道，门槛是木头，人是人；木头替不了人。</div>';
-      setTimeout(onDone, 1200);
-    }
-    let dragging = false;
-    beam.addEventListener('pointerdown', e=>{
-      dragging = true;
-      try{ beam.setPointerCapture(e.pointerId); }catch(err){}
-    });
-    beam.addEventListener('pointermove', e=>{
-      if(!dragging) return;
-      const r = gate.getBoundingClientRect();
-      const hot = e.clientX > r.left && e.clientX < r.right && e.clientY > r.top && e.clientY < r.bottom;
-      gate.classList.toggle('hot', hot);
-    });
-    const up = e=>{
-      if(!dragging) return;
-      dragging = false;
-      const r = gate.getBoundingClientRect();
-      if(e.clientX > r.left && e.clientX < r.right && e.clientY > r.top && e.clientY < r.bottom) succeed();
-      else gate.classList.remove('hot');
-    };
-    beam.addEventListener('pointerup', up);
-    beam.addEventListener('pointercancel', up);
-
-    const alt = document.createElement('button');
-    alt.className = 'mini'; alt.style.cssText = 'display:block;margin:14px auto 0';
-    alt.textContent = '（拖不动？点此把门槛抬过去）';
-    alt.onclick = succeed;
-    stage.appendChild(alt);
-  },
-
-  carve(stage, tip, msg, onDone){
-    tip.textContent = '（一下一下地刻）';
-    const row = document.createElement('div'); row.className = 'templeRow'; stage.appendChild(row);
-    const eng = document.createElement('div'); eng.className = 'engraved'; stage.appendChild(eng);
-    const beam = tile('槛', '门　槛', '');
-    beam.style.minWidth = '110px'; beam.style.cursor = 'pointer';
-    row.appendChild(beam);
-
-    const chars = ['捐','门','槛','赎'];
-    let i = 0;
-    beam.onclick = ()=>{
-      if(i >= chars.length) return;
-      const b = document.createElement('b'); b.textContent = chars[i++];
-      eng.appendChild(b);
-      Audio_.bell();
-      if(i >= chars.length){
-        beam.classList.add('done'); beam.onclick = null;
-        msg.innerHTML = '<div class="mem">字刻好了：捐、门、槛、赎。她不认得这四个字，但她相信它们。' +
-          '她如同脱了枷锁，眼里有了光——那光只亮了一天。</div>';
-        setTimeout(onDone, 1200);
-      }
-    };
-  }
-};
-
-/* ---------------- 8. 结局 ---------------- */
-function renderEnding(sc){
-  stopCrackers();
-  $('start').style.display = 'none';
-  $('game').style.display = 'none';
-  $('ending').style.display = 'block';
-  window.scrollTo(0, 0);
-
-  const hid = !!sc.hidden || (hiddenReady() && (S.scene === 'end_silence' || S.scene === 'end_shuoBuQing'));
-  const body = $('endBody'); body.innerHTML = '';
-  const foot = $('endFoot'); foot.classList.remove('snowed');
-  $('ending').classList.remove('onWhite');
-
-  if(sc.reprieve){ renderReprieve(sc); return; }
-
-  if(sc.perfect){
-    $('endTitle').textContent = sc.title;
-    $('endTag').textContent = sc.sub;
-    $('veil').classList.remove('on');
-    (sc.text||[]).forEach(t=>{
-      const p = document.createElement('p');
-      p.textContent = (typeof t === 'object') ? t.q : t;
-      body.appendChild(p);
-    });
-    const ask = document.createElement('div'); ask.className = 'nameAsk';
-    ask.textContent = '我在第一行写下——';
-    const line = document.createElement('div'); line.className = 'nameLine';
-    line.innerHTML = '<span>她　叫</span><input id="nameInput" maxlength="8" placeholder="　　" ' +
-      'autocomplete="off" spellcheck="false" aria-label="替她取一个名字">';
-    const echo = document.createElement('div'); echo.className = 'q echoQ';
-    body.appendChild(ask); body.appendChild(line); body.appendChild(echo);
-
-    if(unlocked()){
-      const h = document.createElement('div');
-      h.style.cssText = 'text-align:center;margin-top:26px;font-size:12.5px;color:#8a7a5c;' +
-        'letter-spacing:.16em;line-height:2.1;white-space:pre-line';
-      h.textContent = '（你已经写下过她的名字了。）\n（可你试过在河边上，答得肯定一点么？）';
-      body.appendChild(h);
-    }
-
-
-    const input = line.querySelector('#nameInput');
-    const say = n => {
-      echo.textContent = n
-        ? '而我在纸上，叫了她一声：' + n + '。'
-        : '而我在纸上，迟迟没有落下这一声。';
-    };
-    input.value = S.givenName || '';
-    say(S.givenName || '');
-    input.addEventListener('input', ()=>{
-      S.givenName = input.value.trim();
-      if(S.givenName){ META.lastName = S.givenName; saveMeta(); }
-      say(S.givenName);
-      save();
-    });
-    setTimeout(()=>{ try{ input.focus(); }catch(e){} }, 600);
-    save();
-    return;
-  }
-
-  if(hid){
-    $('endTitle').textContent = '说 不 清';
-    $('endTag').textContent = '隐 藏 结 局';
-    (sc.text||[]).forEach(t=>{
-      const p = document.createElement('p');
-      p.textContent = (typeof t === 'object') ? t.q : t;
-      body.appendChild(p);
-    });
-    const q = document.createElement('div'); q.className = 'bigQuestion'; q.textContent = '她 叫 什 么 ？';
-    const s = document.createElement('div');
-    s.style.cssText = 'text-align:center;font-size:12.5px;color:#7d888d;letter-spacing:.2em;margin-top:14px';
-    s.textContent = '（雪落下来，盖住了所有选项）';
-    body.appendChild(q); body.appendChild(s);
-    $('veil').classList.add('on');
-    $('ending').classList.add('onWhite');
-    setTimeout(()=>foot.classList.add('snowed'), 900);
-    setSnow('heavy');
-  }else{
-    $('veil').classList.remove('on');
-    $('endTitle').textContent = sc.title;
-    $('endTag').textContent = sc.sub || '';
-    sceneText(sc).forEach(t=>{
-      if(typeof t === 'object'){
-        const q = document.createElement('div'); q.className = 'q'; q.textContent = t.q; body.appendChild(q);
-      }else{
-        const p = document.createElement('p'); p.textContent = t; body.appendChild(p);
-      }
-    });
-    const map = {a:'你最后记住的，是她的恐惧。',b:'你最后记住的，是她的追问。',
-                 c:'你最后记住的，是她眼里熄灭的光。',d:'你最后记住的，是一片空白。'};
-    if(S.soul && map[S.soul]){
-      const tail = document.createElement('div'); tail.className = 'q'; tail.textContent = map[S.soul];
-      body.appendChild(tail);
-    }
-    if(S.silentCount >= 3){
-      const w = document.createElement('div');
-      w.style.cssText = 'text-align:center;margin-top:24px;font-family:var(--kai);color:#8b969c;font-size:13.5px;letter-spacing:.28em;opacity:.75';
-      w.textContent = '（你始终没有说清。她叫什么？）';
-      body.appendChild(w);
-    }
-    if(sc.title.indexOf('烧') >= 0){
-      $('veil').classList.add('on');
-      $('ending').classList.add('onWhite');
-      setSnow('heavy');
-    }
-    if(!unlocked()){
-      const hint = document.createElement('div');
-      hint.style.cssText = 'text-align:center;margin-top:26px;font-size:12px;color:#6f7a80;' +
-        'letter-spacing:.18em;opacity:.85;line-height:2';
-      hint.textContent = META.cycles >= 1
-        ? '（有一个结局，要等你先在纸上写下她的名字。）'
-        : '（有些门，要走过整整一夜，才会在下一夜打开。）';
-      body.appendChild(hint);
-    }
-  }
-  save();
-}
-
-/* ---------------- 8b. 第二夜结局：回光（分阶段揭示 + 骤变） ---------------- */
-let reprieveTimer = null;
-function renderReprieve(sc){
-  stopCrackers();
-  $('start').style.display = 'none';
-  $('game').style.display = 'none';
-  $('ending').style.display = 'block';
-  window.scrollTo(0, 0);
-
-  setBgRaw('gone');
-  setSnow('stop');
-  document.body.classList.add('dread');
-  $('ending').classList.add('onBlood');
-  $('veil').classList.remove('on');
-
-  const body = $('endBody'); body.innerHTML = '';
-  const foot = $('endFoot'); foot.classList.add('snowed');
-  $('endTitle').textContent = '';
-  $('endTag').textContent = '';
-
-  const tip = document.createElement('div');
-  tip.className = 'warmTip'; tip.textContent = '雪　停　了';
-  body.appendChild(tip);
-  const box = document.createElement('div'); body.appendChild(box);
-
-  const seq = [];
-  sceneText(sc).forEach(t=>seq.push({cls:'turnP', t:t}));
-  (sc.after || []).forEach(t=>seq.push({cls:'bigTurn', t:t}));
-  const tail = (typeof sc.tail === 'function') ? sc.tail() : (sc.tail || []);
-  tail.forEach(t=>seq.push({cls:'turnP', t:t}));
-
-  let i = 0;
-  function step(){
-    clearTimeout(reprieveTimer);
-    if(i >= seq.length){
-      $('endTitle').textContent = sc.title;
-      $('endTag').textContent = '第 ' + META.cycles + ' 夜 · 但她还是死了';
-      const w = document.createElement('div'); w.className = 'smallCut';
-      w.textContent = '（她说：那就好。那我就不怕了。）';
-      body.appendChild(w);
-      foot.classList.remove('snowed');
-      $('endBody').onclick = null;
-      Audio_.heartbeat(3);
-      save();
-      try{ window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'}); }catch(e){}
-      return;
-    }
-    const it = seq[i++];
-    const p = document.createElement('div');
-    p.className = it.cls;
-    p.textContent = (typeof it.t === 'object') ? it.t.q : it.t;
-    box.appendChild(p);
-    try{ window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'}); }catch(e){}
-    reprieveTimer = setTimeout(step, it.cls === 'bigTurn' ? 2500 : 1700);
-  }
-  $('endBody').onclick = ()=>{ if(typing) return; clearTimeout(reprieveTimer); step(); };
-  reprieveTimer = setTimeout(step, 1200);
-  save();
-}
-
-/* ---------------- 9. 界面按钮 ---------------- */
-function clearVeil(){
-  clearTimeout(reprieveTimer);
-  const eb = $('endBody'); if(eb) eb.onclick = null;
-  $('veil').classList.remove('on');
-  $('ending').classList.remove('onWhite');
-  $('ending').classList.remove('onBlood');
-  $('endFoot').classList.remove('snowed');
-  document.body.classList.remove('dread');
-  Audio_.droneOff();
-  setBg('town');
-  setSnow('normal');
-}
-const END_NAMES = {
-  end_write:'写 下', end_burn:'烧 掉', end_silence:'沉 默',
-  end_shuoBuQing:'说 不 清', end_perfect:'名 字', end_reprieve:'回 光'
-};
-function paintStartMeta(){
-  const n = META.cycles + 1;
-  const got = Object.keys(META.endings || {});
-  const note = $('metaNote'), ex = $('endex');
-  if(note){
-    let s = '';
-    if(unlocked()){
-      s = '<b>第 ' + n + ' 夜。</b>你已经写下过她的名字。<br>' +
-          '这一夜，河边上她还会问同一个问题。<br>这一次，你可以答得<span class="unlock">肯定一点</span>。';
-    }else if(META.perfect){
-      s = '<b>第 ' + n + ' 夜。</b>你写下过她的名字——但还没有过完新的一夜。<br>' +
-          '再走一遍。这一次，试着<span class="unlock">救她</span>。';
-    }else if(META.cycles >= 1){
-      s = '<b>第 ' + n + ' 夜。</b>你还没有写下过她的名字。<br>' +
-          '有些门，要先在纸上开一次，才会在雪地里开。';
-    }else{
-      s = '第一夜。';
-    }
-    if(S && S.loop > META.cycles + 1 && S.scene && S.scene !== 'prologue_arrive') s = '<b>第 ' + S.loop + ' 夜</b>（未完）。';
-    note.innerHTML = s;
-  }
-  if(ex){
-    ex.textContent = got.length
-      ? '已见结局 ' + got.length + '/6　·　' + got.map(k=>END_NAMES[k] || k).join('　')
-      : '';
-  }
-  const seal = $('sealMain');
-  if(seal) seal.textContent = unlocked() ? '说 清 了' : '说不清';
-}
-function showStart(){
-  stopCrackers();
-  clearVeil();
-  paintStartMeta();
-  $('start').style.display = 'flex';
-  $('game').style.display = 'none';
-  $('ending').style.display = 'none';
-  $('btnContinue').style.display = loadSave() ? 'block' : 'none';
-}
-function beginNew(){ clearSave(); S = freshState(); S.loop = META.cycles + 1; Audio_.startAmbient(); save(); goto(S.scene); }
-function beginContinue(){ S = normalize(loadSave()); Audio_.startAmbient(); goto(S.scene); }
-function backToTitle(){ if(confirm('回到标题？当前进度会保留。')) showStart(); }
-function restart(){
-  if(!confirm('重新开始？当前进度将被清空。')) return;
-  clearSave(); clearVeil(); S = freshState(); S.loop = META.cycles + 1; goto(S.scene);
-}
-
-$('btnNew').onclick = beginNew;
-$('btnContinue').onclick = beginContinue;
-$('btnRestart').onclick = restart;
-$('btnBack').onclick = backToTitle;
-$('btnBack2').onclick = ()=>{ clearVeil(); showStart(); };
-$('btnAgain').onclick = ()=>{ clearSave(); clearVeil(); S = freshState(); S.loop = META.cycles + 1; goto('prologue_arrive'); };
-$('btnSkip').onclick = skipTyping;
-$('btnMute').onclick = ()=>{
-  Audio_.ensure();
-  $('btnMute').textContent = Audio_.toggle() ? '声音：关' : '声音：开';
-};
-$('textBox').addEventListener('click', ()=>{ if(typing) skipTyping(); });
-
-document.addEventListener('pointerdown', function once(){
-  Audio_.startAmbient();
-  document.removeEventListener('pointerdown', once);
-});
-
-loadMeta();
-S = normalize(loadSave());
-S.loop = S.loop || (META.cycles + 1);
-showStart();
-</script>
+<script>function e(e){var t,i=atob(e),s="";for(t=0;t<i.length;t++)s+=String.fromCharCode(i.charCodeAt(t)^31*t+17&255);return decodeURIComponent(escape(s))}const t="x7f2a91",i="b3c08de";let s=null,n=!1,a=null,c=null,o={cycles:0,f0:!1,lastName:"",
+endings:{},r0:!1},l=!1;function L(){try{const e=localStorage.getItem(i);if(e){const t=JSON.parse(e)||{};o={cycles:t.cycles||0,f0:!!t.f0,lastName:t.lastName||"",endings:t.endings||{},r0:!!t.r0}}}catch(e){}}function r(){if(!l)try{
+localStorage.setItem(i,JSON.stringify(o))}catch(e){}}function f(){try{localStorage.removeItem(t),localStorage.removeItem(i)}catch(e){}o={cycles:0,f0:!1,lastName:"",endings:{},r0:!1},s=m(),l=!0}function h(){return o.cycles>=1&&!!o.f0}
+function w(){return h()}function d(e){s.counted||(s.counted=!0,o.cycles=(o.cycles||0)+1,o.endings[e]=!0,"ez1"===e&&(o.f0=!0),"ez2"===e&&(o.r0=!0),s.givenName&&(o.lastName=s.givenName),s.loop=o.cycles+1,r(),P())}function m(){return{
+scene:"prologue_arrive",frag:0,patience:5,heard:0,clean:!1,money:0,silentMarks:{},silentCount:0,path:{},pathCount:0,givenName:"",soul:null,mg:{},seen:{},log:[],lit:0,hope:!1,shoes:!1,qing:!1,noShoes:!1,counted:!1,loop:1}}function u(e){
+const t=m(),i=Object.assign(t,e||{});return i.silentMarks=i.silentMarks||{},i.path=i.path||{},i.mg=i.mg||{},i.seen=i.seen||{},i.log=i.log||[],i.pathCount=Object.keys(i.path).length,i}
+const B=document.getElementById("snow"),p=B.getContext("2d");let z=[],V=0,j=0,H=.35,Y=1;function x(){const e=Math.min(window.devicePixelRatio||1,2);V=window.innerWidth,j=window.innerHeight,B.width=V*e,B.height=j*e,B.style.width=V+"px",
+B.style.height=j+"px",p.setTransform(e,0,0,e,0,0)}function b(e){return{x:Math.random()*V,y:e?Math.random()*j:-10,r:1.8*Math.random()+.5,sp:.85*Math.random()+.35,sw:1.5*Math.random()+.4,ph:Math.random()*Math.PI*2,a:.5*Math.random()+.22}}
+function v(){x(),z=[];const e=Math.max(40,Math.round(V*j/9e3*Y));for(let t=0;t<e;t++)z.push(b(!0))}function T(){p.clearRect(0,0,V,j),p.fillStyle="#fff";for(const e of z)e.ph+=.012,e.y+=e.sp*Y,e.x+=Math.sin(e.ph)*e.sw*.35+H,
+(e.y>j+6||e.x>V+8||e.x<-8)&&Object.assign(e,b(!1),{x:Math.random()*V}),p.globalAlpha=e.a,p.beginPath(),p.arc(e.x,e.y,e.r,0,2*Math.PI),p.fill();p.globalAlpha=1,requestAnimationFrame(T)}function g(e){
+const t="heavy"===e?150:"calm"===e?45:"stop"===e?0:90;for(Y="heavy"===e?2:"calm"===e?.6:"stop"===e?0:1,H="heavy"===e?.8:"calm"===e?.15:.35;z.length<t;)z.push(b(!0));for(;z.length>t;)z.pop()}window.addEventListener("resize",()=>{x(),v()}),
+v(),T();const C={ctx:null,master:null,noise:null,muted:!1,started:!1,ensure(){if(this.ctx)return;const e=window.AudioContext||window.webkitAudioContext;if(!e)return;this.ctx=new e,this.master=this.ctx.createGain(),
+this.master.gain.value=this.muted?0:.9,this.master.connect(this.ctx.destination);const t=3*this.ctx.sampleRate,i=this.ctx.createBuffer(1,t,this.ctx.sampleRate),s=i.getChannelData(0);let n=0
+;for(let e=0;e<t;e++)n=(n+.02*(2*Math.random()-1))/1.02,s[e]=3.2*n;this.noise=i},startAmbient(){if(this.ensure(),!this.ctx||this.started)return;this.started=!0,"suspended"===this.ctx.state&&this.ctx.resume()
+;const e=this.ctx.createBufferSource();e.buffer=this.noise,e.loop=!0;const t=this.ctx.createBiquadFilter();t.type="lowpass",t.frequency.value=420;const i=this.ctx.createGain();i.gain.value=.05;const s=this.ctx.createOscillator()
+;s.frequency.value=.07;const n=this.ctx.createGain();n.gain.value=.028,s.connect(n).connect(i.gain),e.connect(t).connect(i).connect(this.master),e.start(),s.start();const a=this.ctx.createOscillator();a.type="sine",a.frequency.value=54
+;const c=this.ctx.createGain();c.gain.value=.026,a.connect(c).connect(this.master),a.start()},cracker(){if(!this.ctx)return void E();const e=this.ctx.currentTime,t=1+Math.floor(3*Math.random());for(let i=0;i<t;i++){
+const t=e+i*(.06+.12*Math.random()),s=this.ctx.createBufferSource();s.buffer=this.noise,s.loop=!0;const n=this.ctx.createBiquadFilter();n.type="bandpass",n.frequency.value=900+1400*Math.random(),n.Q.value=1.1;const a=this.ctx.createGain()
+;a.gain.setValueAtTime(1e-4,t),a.gain.linearRampToValueAtTime(this.muted?0:.32,t+.006),a.gain.exponentialRampToValueAtTime(8e-4,t+.16+.12*Math.random()),s.connect(n).connect(a).connect(this.master),s.start(t),s.stop(t+.45)}this.muted||E()},
+whisper(){if(!this.ctx||this.muted)return;const e=this.ctx.currentTime,t=1.6,i=this.ctx.createBufferSource();i.buffer=this.noise,i.loop=!0;const s=this.ctx.createBiquadFilter();s.type="bandpass",s.frequency.value=700,s.Q.value=6
+;const n=this.ctx.createGain();n.gain.value=0;const a=this.ctx.createOscillator();a.frequency.value=3.1;const c=this.ctx.createGain();c.gain.value=.055,a.connect(c).connect(n.gain),s.frequency.setValueAtTime(520,e),
+s.frequency.linearRampToValueAtTime(980,e+t),i.connect(s).connect(n).connect(this.master),n.gain.linearRampToValueAtTime(.05,e+.4),n.gain.linearRampToValueAtTime(0,e+t),i.start(e),a.start(e),i.stop(e+t+.1),a.stop(e+t+.1)},bell(){
+if(!this.ctx||this.muted)return;const e=this.ctx.currentTime,t=this.ctx.createOscillator(),i=this.ctx.createOscillator();t.type=i.type="sine",t.frequency.value=196,i.frequency.value=294;const s=this.ctx.createGain()
+;s.gain.setValueAtTime(1e-4,e),s.gain.linearRampToValueAtTime(.13,e+.01),s.gain.exponentialRampToValueAtTime(5e-4,e+2.6),t.connect(s),i.connect(s),s.connect(this.master),t.start(e),i.start(e),t.stop(e+2.8),i.stop(e+2.8)},droneOn(){
+if(this.ensure(),!this.ctx||this.dr||this.muted)return;const e=this.ctx.createOscillator();e.type="sine",e.frequency.value=57;const t=this.ctx.createGain();t.gain.value=0,t.gain.linearRampToValueAtTime(.05,this.ctx.currentTime+3),
+e.connect(t).connect(this.master),e.start(),this.dr={o:e,g:t}},droneOff(){if(!this.dr||!this.ctx)return;const e=this.ctx.currentTime,t=this.dr;try{t.g.gain.cancelScheduledValues(e),t.g.gain.setValueAtTime(t.g.gain.value,e),
+t.g.gain.linearRampToValueAtTime(0,e+1.2),t.o.stop(e+1.4)}catch(e){}this.dr=null},heartbeat(e){if(!this.ctx||this.muted)return;const t=this.ctx.currentTime,i=e||6;for(let e=0;e<i;e++){const i=t+.92*e,s=this.ctx.createOscillator()
+;s.type="sine",s.frequency.setValueAtTime(66,i),s.frequency.exponentialRampToValueAtTime(36,i+.2);const n=this.ctx.createGain();n.gain.setValueAtTime(1e-4,i),n.gain.linearRampToValueAtTime(.17,i+.03),
+n.gain.exponentialRampToValueAtTime(5e-4,i+.52),s.connect(n).connect(this.master),s.start(i),s.stop(i+.6)}},sting(){if(!this.ctx||this.muted)return;const e=this.ctx.currentTime,t=this.ctx.createOscillator();t.type="sawtooth",
+t.frequency.setValueAtTime(920,e),t.frequency.exponentialRampToValueAtTime(52,e+1.7);const i=this.ctx.createBiquadFilter();i.type="lowpass",i.frequency.setValueAtTime(2800,e),i.frequency.exponentialRampToValueAtTime(200,e+1.7)
+;const s=this.ctx.createGain();s.gain.setValueAtTime(1e-4,e),s.gain.linearRampToValueAtTime(.2,e+.02),s.gain.exponentialRampToValueAtTime(4e-4,e+2.3),t.connect(i).connect(s).connect(this.master),t.start(e),t.stop(e+2.5)
+;const n=this.ctx.createOscillator();n.type="sine",n.frequency.setValueAtTime(46,e);const a=this.ctx.createGain();a.gain.setValueAtTime(1e-4,e),a.gain.linearRampToValueAtTime(.2,e+.05),a.gain.exponentialRampToValueAtTime(4e-4,e+2.7),
+n.connect(a).connect(this.master),n.start(e),n.stop(e+3)},toggle(){return this.muted=!this.muted,this.master&&(this.master.gain.value=this.muted?0:.9),this.muted}};function E(){const e=document.getElementById("flash")
+;e.classList.remove("on","blood"),e.offsetWidth,e.classList.add("on")}function I(){const e=document.getElementById("flash");e.classList.remove("on","blood"),e.offsetWidth,e.classList.add("on","blood")}function y(){C.droneOff(),C.sting(),
+setTimeout(()=>C.heartbeat(7),1500),I(),Z("g2"),g("stop"),document.body.classList.add("d0");const e=document.getElementById("app");e.classList.remove("quake"),e.offsetWidth,e.classList.add("quake"),
+setTimeout(()=>e.classList.remove("quake"),700)}function Z(e){const t=document.getElementById("bg");t&&(t.className=e)}function O(){J(),c=setInterval(()=>{Math.random()<.6&&C.cracker()},2600)}function J(){c&&(clearInterval(c),c=null)}
+const D=e=>document.getElementById(e),A=e=>Array.from(document.querySelectorAll(e));function P(){if(!l)try{localStorage.setItem(t,JSON.stringify(s))}catch(e){}}function W(){try{const e=localStorage.getItem(t);return e?JSON.parse(e):null
+}catch(e){return null}}function K(){try{localStorage.removeItem(t)}catch(e){}}function X(){
+const t=[e("9LbCiyYtL1OCzeHhahhPBrmt2er8fztY"),e("9LXEiykHLm+Czer2ahhPBrmt2PvYfztY"),e("+YTqixAjIkmHzPjxahhPBrmt2tn9fztY"),e("+anyiAA8In2hzuD9ahhPB4yj2+THdANVHaCwss8uW2VZ/5PCiTcmLlGFz/DWYBhnCbWR3d3+")];return{ok:!1,
+verdict:t[Math.min(s.log.length,t.length-1)]}}function S(e){s.frag=Math.min(9,s.frag+(e||1))}function q(e){s.silentMarks[e]||(s.silentMarks[e]=!0,s.silentCount++)}function N(){return!!s.silentMarks.m4&&!!s.silentMarks.m5&&s.silentCount>=3}
+function F(){s.pathCount=Object.keys(s.path).length}function M(e){if(s.path[e])return;s.path[e]=!0,F();const t=D("pathText");t&&(t.classList.remove("bump"),t.offsetWidth,t.classList.add("bump")),P()}function R(e){if(!s.path[e])return
+;delete s.path[e],F();const t=D("pathText");t&&(t.classList.remove("bump"),t.offsetWidth,t.classList.add("bump")),P()}function U(){return s.pathCount>=6}function G(){s.lit=Math.min(4,(s.lit||0)+1),P();const e=D("lampText")
+;e&&(e.classList.remove("bump"),e.offsetWidth,e.classList.add("bump")),k()}function k(){const t=D("lampText"),i=D("doomText");if(t&&(t.style.display=h()?"":"none",t.textContent=e("9qTQTmswcco=")+(s.lit||0)+"/4",
+t.className="lamp"+((s.lit||0)>0?"":" off")),i){const t=Q[s.scene];if(void 0===t)return;s.doom=t,i.textContent=t>0?e("+YfSTmoJVsrujshG")+t+e("MdXr8g=="):e("9YvFTmgIV8rLn2eBIDnjBaev"),i.className="path"+(t>0?"":" doomWarn")}}const Q={
+prologue_arrive:3,prologue_snow:3,prologue_news:3,pz1:3,prologue_study:3,prologue_who:3,act1_first:3,act1_fuli:3,act1_taken:3,act1_chase:3,act2_hejiaao:2,act2_snow:2,act2_amao:2,act2_tell1:2,act2_tell2:2,act2_tell3:2,act3_return:2,
+act3_liuma:2,act3_money:2,act3_temple:2,act3_carve:2,act3_blessing:1,act3_speak:1,act4_river:1,act4_question:1,act4_a:1,act4_b:1,act4_c:1,act4_c2:1,act4_d:1,az1:1,act4_after:1,az2:1,az3:1,az4:1,az5:0,finale_blessing:0,finale_study:0},_={
+prologue_arrive:{chapter:e("9IrAiSYM6yi+CK79L0FnfuSdrbfPHVJPfg=="),title:e("9YjPjQ0tIliIwdLhYj5HB7iU2uTo"),sub:e("96foiwMqLHCNzf7SYB5WBK612PXieidaHJu4s8wgVmhk"),fx:["snow","cracker"],
+text:[e("96foiwMqLHCNzf7SYB5WBK612PXieidaHJu4s8wgVmhk86/MixE6I3yPw/7vYBtPBL+a1vLIdAZVHaeHsOg7V3VZ6If3iDMHLVGYwN3aZiV7BU+Y2NTLfC9oEq+Bs+kWV2B75pztjRcMK2eEwsXTZTh9N3ev28H+fwpeH5K5tOgVVlZ06ZbajjEFLnGxwtTUZzcJO3KN3t3DcSB8EJG6vc0cSUBI67bKjTAnI0a0ytD8ZQwzMkCX3MHXfjZUE5KEtuoLSUVq7IHwhzs9LVuSx+XkmBk+Om+k3sLzczp7FqKAtvQ6SHBR7arAgzwjK1+OyNzYlh0PPGCd3fPRfCtgGq6oqdwsSldj76noiTkoJEu7xo/KlBs3P06q0O36ciZxF6uOqtcKTnNU7Znogh4nJWCr97PylT0jOniV"),e("97jeiBUDI1WQzP/mYB13BZuk2ufJeQFPH5G6s+4KVlpB+Z3PhBksLXOMxMbnbDp/Ca+r2Mj5fwN4F6u6svAlWlF86pn/ijkLL3SOw+vSbB5NBnae2efefzZyEqiisukQVH9867HkgjgoLXydzcTiZSl3OGSZ2fX/fBVHH5K4sPITVHR467TkjAE5IHyBwt/OZA4JMUGQ3fXtfj9HHIGMtskQR3Bl45fGjxAIIl2Ex/rLaDEMOmyd3/TecCxRHJOztuseSVlz6KrLjDwwI0uXx8TomhcwOUKs3+rWcCldF6mxtNYGSGhM7L3xggk9K1+OxM3KmAUTM3qY3O3wcQ5IHa28q9MLSHJ14ZffgBkOJHeYyLz/mDErNUWU0+71fBRTGI2NqPUjTmV77r3CijgvJ06S+aTZmCIxPGiZ3vrAdTpAEo+ype8dTnNu5abYiz8uKU9L+LXNmRolMHSA0e71cDFNC7emqfsETEVU44HjiigjJVpI+6rrnxwiNHaX"),e("9Y3JiAU9LHWswcb1ahhPCr652ufLdSZEHJiov9cMVk5Z+YXMiwQ6JVWSwt3FYBt4BbuJ2NT8chBbH42yvcsLVElf6pT6ihcjLVC9xcXmZTVhCFGk2Pr5fgRNGKq5svsDV0hh64nljgwaIEmnzeLiahRwO0Sb39v4"),e("+KvlhgcdI3q0zdvOYgNsB7+32tDneTVAHoKzv+4+W3ZU9JfEhBEJJVWEwtbJYS15Bbyj2uTyfCtGH4aps+gaV3JA4JLBiDYVLVK9wN7QZihhBnuB2OLsfAtRErm3t/MQVHBt65zHgg0lJ1uKwN/4Zy5UOGSZ2czpcC9/ELiXt8kfVX5h5I/FjxkmIkKxwc3paR84OGC52drtejdC")],
+choices:[{label:e("9ovahjI3L1Ovzs/ZahhPC4Cf2uL9dARDHpuav+It"),to:"prologue_study"},{label:e("9LXHiAYlL1eGz9jLYBNmDb262vDLdTxWHJ+Nss8SV2lx9JbGiTYgJVWX"),to:"prologue_news"},{label:e("9pvWixEELlGDzP/tYjhIC5qK0OLxeABaHaG/sswLV2p8+bjg"),
+to:"prologue_snow",act:()=>q("m1")}]},prologue_snow:{chapter:e("9IrAiSYM6yi+CK79L0FnfuSdrbfPHVJPfg=="),title:e("9IvFijUn"),sub:e("+Kvlhh0RLnahwdzMYRxJ"),fx:["snow-heavy"],
+text:[e("97jeiSY1LnahzfzsYRxIAYGi1sXXezJdH4S+sNcRW1hA+a3tiTUjL02vyPrpYhhjBKS21/7iczJHF6u6sNAqVUxw6K3ShRcHLHqLw/r9ZABNB2Wa2+zvcjBqGKq5scMUWGJu57jLjzMYLm+WwfzjZzpiOE2C39v4"),e("+Y/TiykoLXaAzP3cYDhrBIiL2sLNcwdWH5Gcs/IuV2px9rLviiYvLUOMwNzhbBRtAoCd18bWfgRRHaidsPsbWkFN6ZXsgzcmLGuIwN3LZxlPBmK72+7afCVRE6yPvMYiWW9o7a3O"),e("87DbjA04LnqHztrDYyxSBIit2MHYdTpJFqS7v/c3VU9Q+JjhiCkSIly4z/niZyNABKSD19rwfj1jHZmNusgfV1d96ZzsihcjLHOZwNjBYCJD")],
+choices:[{label:e("+Y/UijQKLWK2zcnd"),to:"prologue_study"}]},prologue_news:{chapter:e("9IrAiSYM6yi+CK79L0FnfuSdrbfPHVJPfg=="),title:e("9q/iizoJLHCNzdz4YglX"),sub:e("97DBijQkLUeyz93iahhcAIG03d7pdARCHaC6sO07VHtG9oL1ihYvJVWX"),fx:["snow"],
+text:[e("97jeiAYlL1eGzP/mYRxpBZ6N2unYfztYHaOhs/AcVUpe9qXihTkcL028yPrpYz9JBbqZ2NXtfwJZH4uKusgfW1NT6LLxiy40IG+LwPfFZT5IBn2s2M/7dQVUE6+qssEzV0xm6K7GjQ8lJ1uKwMvJZD1JO0ad2/z3cRp8E6yAtvciVmlG6JX5jjMuIHyBw9XQZyMUPX2e"),{
+q:e("87DTiSgJLXSezezkahhcCoGh2+T7fztYG5iq")},{q:e("87DTiCAXL1CPx/v5ZyReBImx2MT5eQRZHrK2sfEiVGZW95PngjAnL26ow//rbBRxCbWo2MDZdAZVEJOOscwZV3VX6JTriDI1LGefwv/iaytzA3+c")},{
+q:e("87DTijYsL1OBztDQYCRaDb2/3d7pfjtOH4Cfs9E9VnZt+ajCgjAnLGGez8bgYRNzB5iw2ub2fh5wH6qUtvQRUFFk7a7ZigM7IUezwv3pZRpEA3+c39zm")},{q:e("87DTiA0iL1OBzurdYj5HDb2/3d7gfjtOG5ijtPUIW21p9JfDixQELUC/weveYzlGDryA3N3h")
+},e("9YvZiDoNLG6/z93iYD9dBay00OLxeABXHpyBsMc1VU549qXiiCgfL3mZwc70Yz9JDryT29rGfjRiHK2wtvQR")],choices:()=>{const t=[{label:e("+Y/yhxoCJFaTzeLfYzxsCrGh0OLi"),to:"prologue_study",act:()=>M("p1")},{label:e("9YjCiwshIn2nx/vqbRFzCr672+fbejNl"),
+to:"prologue_study",act:()=>q("m1")}];return h()&&t.unshift({label:e("/ozHijAMLl27z/zpYjtmC4Cz2vvEeABQHLyrsskOVX9K86/MgjAi"),to:"pz1"}),t}},pz1:{chapter:e("9IrAiSYM6yi+CK79L0FnfuSdrbfPHVJPfg=="),title:e("+JLLTmozbg=="),
+sub:e("9pzjijcgLk6Vz93iYR55Db2s1/DNeQVNHrSbss0UVnZt97XKiTYg"),fx:["snow-heavy"],onEnter:()=>{C.whisper()},
+text:[e("97jeiSY1LnahwdzMbCNPDb2s2uHAez9sH5uEvsAjV2px9JT4iTQmIkatwcXWbBZ1Bpqb2uf3dAZDEKivscwTV3Vs4JLBigM7LVCKwN3LZA5tBEee2/DacgZfFJa3"),e("9YjFijUsLk6Vx/vqYyxSBrmg1+nSdA5qHJCHsOkUVkJ//5PCiBADLVOwwNzhYw9uBbif1vzwfSFmHbKPsPsFWm536r7AiSY9KmiFwM31ZxlkBEek2NrifgFTE6yzseMfVH144ZHAjjoYL0mRwtH6ZhlLO0Sb2OP6fQB9Eq+OsPIT"),e("9L/giygVI1WRzt/JYwl4B52I2Pvgex1VHoKzs/wZVnZt86/MiBwmL0SfwNP8YT9qBrqn2uX2dAZVHK2Ms8YyVE156LvUiDMhKmiF"),e("87DbjA04LWKYz9jDbCVQB6SZ2+X3eR9GHaStsNgvUFJz9qffihMOI2ibwc70YihkBbiS2uDzeDpbHp+nsus2W1Bj55HThQkJLVCOwv3OZg9WBEaB29fdfgFVE6u6t/MQ"),e("9L/giAU9I1WRzt/JbRFzCr672+T7dARDH4WWs8IjVn9h86/M"),{
+q:e("87DTiSgJLXSezezkahhcCoGh2+T7fztYG5iq")},{q:e("87DTiA0iL1OBzurdYj5HDb2/3d7pfjtOEaevss0ZVUpe94b5iyEQLXOMyPr6ZiNf")
+},e("9Yr1iBUiLHWswcb1bQJCCr+z0OLxdARCEb62s/MZVU9U9JfOiD0rJVWEz/n8YSxpBbuf2uT0dAZGHp+nscweVU5V5q/ejwsoL2CWw8rOZD1kCX6N29TqfRJBEoqdvMwLWFdj4ZHAghEDIHe7wNjLaiNpO0aX0+f2fid6E6KRtsUjV3Rh5Zn7gjY0I1yDx8Pg"),e("+Y/WijUsLUaox/vqYyxSB76j1tnxeT1IHJ+Nss0UV2pb9ZD7iCgfJVWSw//6bA16DryT2uTjcxRhHou/scwTV15V54HQgzcmL3Cow8rLZxlkBmqP2M3GfSNcFJa3")],
+choices:[{label:e("+Y/UijQKLWK2zcnd"),to:"prologue_study"}]},prologue_study:{chapter:e("9IrAiSYM6yi+CK79L0FnfuSdrbfPHVJPfg=="),title:e("9YrDjQ0tL1Ovzs/Z"),sub:e("9YjCiBoFL1KEwPj5ahhPB4Cv2t/ydB1bHISfvsoNVUVH9a/X"),fx:["snow","cracker"],
+onEnter:()=>{C.whisper()},text:[e("9YnpiAUTIm2Fz8XfYjlDBrmg2vHEewF4HpustfUWVklq9aDaiBADI26EztHRbBtzB6260eHwfhlpEYiFvO4HVUxw65bNiTooL3W4w+blZx5hCECZ28HedQVUEpO9sus9VWhv6478jgweL0uXyvjvaztPOm6T2sPVcDp0E5qRsfIFUk96"),{
+q:e("87DTijUhLX2gzP/rbRtcDb2s2t/yeTpVEb62s+k8W21o9rj4iAwyJVWExcbxZiNWCb+G2+3NfjV2ELC3s+w8Vmlw65bnhDsGLk+KyfnlYSJc")
+},e("97jeiwgkLmOEzs7mbQNCBIig2drieyFeEKq2v+ATXG599rfhiTQrLlGiweveYhNWB7KW2O/1fCBdEaW3vOEUXW1r55HUiDMqLGeiz+/mbB5NBX+M2eHEcgZBEbuOssMGV0xm6pfKjzIpL2W/w/DYZBFUMEKH2cDafQBtE7CNtd8qVHVo4pDHjAAlIXqMwPnYaDw/Nlud0vD7fA9WEJuWsfES"),e("9rT5hg0gLWKYz+7QYg9cBrmt2MHYdTpJHL2OsO07W2Jw86/MiCkSL3Wgwc70bA1yBL+Z19rwfjVzHou/scwTVmla6r7AiSY9LnKDwOvvZCtGAn+K39zvfRx9EYiisdgQUlBt5pLVjzIgLF+swOn0ZDlvOluk2OPyfBx8EY+wtuIcVWJ56KbrjjEiI16FwPvIYyAjO1ae2drkdwtaELGKuvY6Snlc6aThjTMnIlyMzP7tZi0fO2CS3uPCfxhlEa2lsvAN"),e("9rPUiQwHL1KJwPDVZiRBB7Cr2vPtdTxWH4S+s/I0VXJG9rjpigUCJVWEwc70YS15BpyU2cH3fhRaHKyatvQR")],
+game:{type:"study",next:"prologue_who"}},prologue_who:{chapter:e("9IrAiSYM6yi+CK79L0FnfuSdrbfPHVJPfg=="),title:e("9JX2iBUDI1qI"),sub:e("9YjPijUGLVioztvvYDROB6y32MT5eAFg"),fx:["snow-heavy"],onEnter:()=>{S(1)},
+text:[e("97jeiAcmI1WQzP39YgZNBYin2dXBeSdyHaC3vsAjXG5r9JfOiTQBL0y7w/zfax9OB62k2uf6dAZVHYuestEOVXd/6LTJiQInLEybyfn/ZxpBBEe02PnIfgNiGKq5vNE5WHpt6pDQgzoFL0CLyvj4ZhlAO0a32f7JfQJtGam4u80PVV9j6IHcgwoVI16IwtjcZzw2NkKb2Nr7"),{
+q:e("87DTiygVL1OBx/vqYzxsBaSF2cDqeyFeHLKEs9MTUFJz94rrixI8LESzw/zjax9OBKWm2/T6fhNfELG3sNEqV0pu6qD2gzcmLHiJwNjBZhJwBXKI2NTLcg1iEriDsdEoVF5U6pfKiAorKmeSx8T3ah5ZO0SG2OHxdgRbH4Czt8obWH9v6ZTGjRYNLmeWx8PgYyAi")
+},e("97jeijciLXKmzcHVYBtACqeh2uL5egNfH72tvsoNV2px9JT4iTYgJVWSwuPcYiNMBbmX2OnHcwVeHoqTsu4XXW186qHFihMFL2iJwvzsZQ96BnGX2sb/eTla"),e("9rT5hg0gL1CCzsTjYB11Brmt2t3yejNLH5uEse8QWlBS9o/5ixAiLlGIwdvEYxl9BrS93d3+fh9gH42ys+EWVmt76bbiih4JLnKDyfnoZTdiBWO21MfRfyVoHpG5u88eV0VM67HkjhotLF28wt7nailMOlqp2OPwdgRbEICXtu45Vkd/5avhjz4ZI16IwtbAZhs5OWGX3MD9cBlmEKu1tsk9TE5v"),e("87DbjA04Imiqzt/JYR9NB4it2+b9eQJuHoKzs/M4Vlps9ZPOiCsgLXOMxMbn")],
+choices:[{label:e("9KvRiwUcImiqzP/mYB13B4eM2tbg"),to:"act1_first"}]},act1_first:{chapter:e("9pzjijUsLlOcCIXRpUNvTuWYv7jRPV1HXPGF15wBNA=="),title:e("9YjPjQ0tLmylzc/7"),sub:e("9JX2ijUhLXKmwfXnbDFEBrua"),fx:["snow"],onEnter:()=>{S(1)},
+text:[e("9JX2ijUhLXKmwfXnbDFEBrua3N7/eidTHaC3s8wgVEh19aniiAQ2JVWEwt3+YSxWBK6p19rwcxxYHpqUsNEgV2ZV4JLBiQowLVCqwv/eZDhFBXK11dz6fxBeErulscs0VHVW5pLXjRcMLF2AxsTh"),e("9JT7ijUmLWOHz9rmYj1+B6WU2OXOcwdWHaG7vtYNXG59+LzTiCgSIkuMyPrpYj9KBpmi1t7wfgVaF6u6sM0nVWta6orqizEMLVKLw8jlZidsBEed0uD3cj1gH5+Hve4AWGtr4ZHAjzcvLF+izObpZyx0N0GF2sPVfgJ1EY+wsPITVUJF5azKjyAuIkuVwczJZAUGOVi53cTufRxUGqi/ut4kSVZC5KzgjD8WIEqJxuzXZwU6NH6g0tH1eApZEr6JtcoJS3B/7oT/jD0cKliPxMjgmyUYOXyg38XSczROFqWUtNUITkxp"),e("9KvUiwI4LHC4zP3gYj5yBZ2p0OLxeSBBHLGBs8ImVGl+97DrhA04LlOOw/3zYzlGB4SQ2N3hdAZVHo+ZsOg7Wn9Y6qDBiS4TL3Cowv3kZxprBVC/2Pr8eTlaE6uzsus9VHVW6IXtjSoeIFiewNXLZAxjMEKR2tLxcTxNH5aJttE/VWtJ4pDHjwYgImmvwtvNaAEFOWCc3MbFdwtaEay+t80QS3Zt6aTvjAcEKVmIxvzpZRwxOUSb3uHSchhcEZu0ufAfS0df7LDNjD0cKliPxv/fmyYwO1W73MPsczpAFIi1t/U/SlBi5ZXEgjYjIUa7xtXGmiU3P0Cf29f0"),e("+Z/aizoJLXaWzcHjahhPB6SZ2cvJeR9zHoKzs/QOXG599JPyiTUlI366wNvlYRNzB5e/1tz2dAZVHZi+s+gaV1tr4JLBiyUqLnOzwM/RZhxWCECZ2eT7fgFyEIKCsd4CXmxj6KTMjzEML0uqwfzqZwVpOk6s2fXgfAlXGam4td0eVlNm6JvugxsZI1yRw9rcZzY4PX2e")],
+choices:[{label:e("9In7izc5L1CPx/vqYiFtBaev2PrBeyFeH4+Bs/UNVlpB9JXI"),to:"act1_fuli"}]},act1_fuli:{chapter:e("9pzjijUsLlOcCIXRpUNvTuWYv7jRPV1HXPGF15wBNA=="),title:e("9YrDjQ0tLEyGz+Pa"),
+sub:e("9pXqiBM7LkGLx/vqYRljBJWe2MP9ewZ4FqS2sP0FVU9U9r7Ijgwp"),fx:["snow","cracker"],
+text:[e("9In7izc5JFaFzs7NYBRbDb2s2erqeSdqFqS7sOgUWmpQ/5PCiCIbI1CNyPrpYR55BKSD2cf4fD93H7G5stAvXW186qvlihMFLVCHwv/eZSlEBUKN0uD3fRJHEaSUsu8bV2dU6bLhjj0MK2eEwsDVaiFMOluk2eXyfwN2HqOHvM4dVUBN5YvZgjcRIV6VwvvyZjo7OGGV3+D/fxtHEKmCvc0cR0pV6JPAjTE4IXy5y8H3ZCU4PnyZ"),e("+Y/WiBUDIliIwdLhYB13Bbqo2MT5eR99HJ2PuckYW1VF9rriiDwWLU20yPrpbBxMB4662fvzfB9HF6u6s/8PVGBy6bPoiTIeLVCHw/zQZxpsB2Wa2PnGcgZIEaaht/MQV01v55XthDYlLUm2zP3mbR1MO0et29fQcTpeGam4tOY5VXBt6pfNjTIuIHyBwvf1bhwzO1iv3+DDfy1SHZOxuvcaRk1Q6bfijzgTL2KIxffZZSEpNHyB3ePaeApZEo+7tuoLRnJ07pLvjxomIl+dxvn9lg0LNW613PXndTVW"),e("9rXhiQszL1OCzdfoahhPBKmK2+b+exBMHJ2cse8QVV1j9JXViiEcL0SYwtrNbBxbBrGk2uXgcx9mHK+8usgfV15f6p78iywaLVC9xMX4ZAROB1ui39zmfgNeGKq5sMkGV0tb64nlghMhLW+RzfHUZDxlMEKR2eLMfQBDEZeNt8obWWl36q/QhTUkIWeozOzVZgYwOViC3+HVfipzEa6YteU4QHJ26qDWjhIjI2iwxs3LaQYuOUaV3c3PcwxvF5Ow"),e("9JX2iA4fLmSyzsj0YRxDB46s2PPKeRZKGpi1")],
+game:{type:"fuli",next:"act1_taken"}},act1_taken:{chapter:e("9pzjijUsLlOcCIXRpUNvTuWYv7jRPV1HXPGF15wBNA=="),title:e("9YjGjQ0tI0iiz/z3bRFz"),sub:e("+Y/WiBElL1GJzP7uYRpeBrmt2+Dg"),fx:["snow-heavy"],onEnter:()=>{S(1)},
+text:[e("96b/izQYLWOEwPjhahhPB6SZ2vf7eRJcH4WSss8SXG59+ID6ixQEIk+Jwt37YS15AoCd29DXczpYHb6wsNkDV2B165bghCQeLHiPyfnoawxzBVGE29bxfxxhEr20vMwJV2de65z9hDYlLmqkwMHIZyxBOnOe39v4"),{
+q:e("87DThjI1LXaAzPzmYR1LBr+92+bweAVHGpi1tPUAUVJl+bj3ixQEIlmJw//6YiN5Caae18rFfwJZEYCPsu4XXW1r6qHnhC0rLnyvwf7XZg9RBEee29H9dQVUErerse86WVpe5pDzgg0lJ1uKw87PZylwOGqq2fXMdgRbEJiOt8obWEVf6KrrhTUkIW2ZwePgbhwzO3iv3+Lzfj9pHIObvc0cSn5c6YXGjTIsIl+CwMLjYh8j")
+},e("9JX2iBYSLnahzvXVYBZ7Brmq2tHwejFNEaewtfUWVV9f+ID6iCkSLlGIz/HKYSxoB5iw28fydAZVEb20usgfV0d56rzUihwDLHuWwv/ibB5NCECG2MDTcxNaGKqusvk+VFhf6bn7jiQfJ1uKw8nZZhlKN3Ss2d3adgRbEJ6ottITX3Ni6Kn4jjEiIW66zdTKYyArPH2I3sr3fipzEKSCt/cdSXxM6rfDjCsXL3q3wMLj"),{
+q:e("87DTiygVLXaAzffpYCtXB6yw0OLxeAJFHKags90iW1Jw9YbIjgwpLlGFwu3kYBlEBKWm0eHwfilzHou/vcsKVmlw6Z3lhRkbL3Wiw8T+ayNZB1ui0uDkeDlF")
+},e("97jeiSY1LnahzfzsYRxIDb2s2ML2eyZaEZKGvsgrVVlh9aj0iDscL2arxMbnYitTB4ed2cf4cjtKH4ewsMobV3Vq4JLXiDEQLnKDzuLHZTZ/A3+f2vjHfCxBEIyxseMRVWpV7a3NjiQ+LlSTwt7nZRxqPH6f29/McThbEJ2ltNkIV1Ju4pDHjjIoI1+NwPr9ZxIeOGGV3tvjezdUHI+ZuuEtS3Zm6rbvhjQrIG+Oy//eZTIuOmaf39TIchtFE4iktMk8Sndq6KrL")],
+choices:[{label:e("/ozHhjIRLm2zzcndahhK"),to:"act1_chase",act:()=>{M("p2"),G()}},{label:e("/ozHiSY1LHeJzP/rYC5rDb2p"),to:"act2_hejiaao",act:()=>q("m3a")}]},act1_chase:{chapter:e("9pzjijUsLlOcCIXRpUNvTuWYv7jRPV1HXPGF15wBNA=="),
+title:e("+Y/y"),sub:e("+KvliRY6LlO6zP3gYClzB6yw"),fx:["snow-heavy"],
+text:[e("97jehjIRLm2zzfDRYCtgAYGi1sXXeQVSHLyQuckYWnF/9qXEigQtLUKxwNzhYxl6BLGO29DLfjJpHZq8st0pXW186JTvixEuJlSLw8brZxpBB0G62sL1fSVkEIyxvO4mWU1Z7a3O"),e("+Y3wiyA8Ll27z/zpYjhIBrmt1/n8eAFcGpi1s+kkV2p79aDkiAUCLlGDw/7BbAJOCYSF29DMdAZVHK+2vdUfVElf6aThhDYVLnKDyfnoZxpBCF6S28TUcg5HEIu1vMYiVkpr7a3O"),e("97jeixEEInGjwcDqYg9aBrum2uD1eAJfGpi1sP0FVE1U+a7diwQ6Ila1w/7oYBtIA4CL3N3ofwJUHo+ZvfEsWm5N65bAiDMgJlSLwN3LZSpQBk2/28DyfSleEIKEvMwvUlBt6pXMjzIDIEi9wf3FZht6MEKR2dzXfQNXEqy8tvwqVkRI6ZTLjCgBJWaZwt/OZA4JOWeY3+DyejdLGqi/t/Y9S3Vt6JLCjAYcIG6ix/rhZCIzP3yH3/D+ch9TFpOvvswQSEV97q3kjx0iIVyOyv7nmQYSOEOa3trOfhpgF6q8ttcLSlZv47P2giYPJ2OA"),e("+LLsiQ8VInC3zefMahhPB5Gu2cPYeTRCH5Cnss8SV2px+JHGiCE7LXOMxcb5bAx2BbiS2OX5eTpEG5e0")],
+choices:[{label:e("9L70hxoCLmeiwMfnYA1FB6yw0OLneStUH4WSs+Q2XG5u"),to:"act2_hejiaao"}]},act2_hejiaao:{chapter:e("9pzjijcgLlOcCIXRpUx3WOSOibvfJl9id/Gv6ZM7KA=="),title:e("9YjPjQ0tL1CtzP3gYAF+Cr6w"),sub:e("9JX2iREzLXKmzP3CYR5FB6Sd1+HteAFc"),
+fx:["snow"],onEnter:()=>{S(1)},text:[e("9L3khg0tLkOPzer2YCJOBJyF2MT5eixsHJiuuckYVUpe9pTvhQgTLUWZwNzhZyNABKWm1vLIdAZVH7KTs+oEV3py6LLSihMFLVKjwv/iZgd8CECO2eb9eTla"),{
+q:e("87DTiygVLkOPze7gYzlmBIuz2vvEeSBEHJaMse8QVUVH9a/XgjAnLHGnwdHMYRRwCa6n2eblfwBfEKOMsNolV3NK6LTJhD8QIWiGw8DJZxhHD0OS29X7fgJ9Eo2rsd0kVWlk673CjzIkLWCmwODKbR1MO0eC2evLcRtSE4mcu/ggWHJR5KvHjAMEImi+wPnkYiA9PH2B")
+},e("87DTijUmLk69zcjuYxZiBJ2p2vf7eRJcFqSsseEjV2hL9qbOixAiLXOMwd7KYSlZB7CL0eHwfwZDHZass8AoXW1r6abyiSY6L3CozsLOZgx3B2Wa3tz5eDlMFZahsecbVERm4ZHAji8QL3uZw9zMZhtkO0Sb2f7HcQdHEKWgsPITUk9z"),e("97jehxoCJFaTzdfoYzlmB5CC0OLieTZxEZi2s9wSVn9h97XKiiA6LF6pw/zjYhRjDryF3N3gfipXHoqTsc0bXW1v6r7DihYPK2iTxMXwZgd4B2up2ebBfCF3Eouvsd0MVWpV4ZHAgzooL3ijzMXwZxh0OES31cbocCVFGam4tsIgVHN067rmgwkpInqtwP/GZA8tOkWW1Obmfit6E4mWt8YiSHVi6Y73jTIhIX+AzP7tZQ89OUad3uH4cBRCEZWFuNUiQXFg7o7EjQg3IV6FwcHimicFOEGV38T+czFrFr+hv9MVSGlS76bAjwUYIWKYzvzTmBQvPWWt3sbufThlF5SLp/QYRUhX77XigzszLF6NxqPymwEeMkaA0tnacAh3FL6nqfAMRHZl4JfHghsGK2CT9rz+mTYTPFWH09r8dw5LF7S3quc3Qmh84qj+gxkmJHFd8YHDmRok"),e("9JX2hiIYLkSFx/vqYDJeBrum2+b9eTR5EZSBuckYVl15+I7riTQhLlGIwsnAax9YA4CD2dPMfiZxHbKPsPs5V1hZ65TLiDMqLVCtw8DtaxhqBEWY3tz5fx1/E6qasu43V0RZ65zHhDYlLWiOzfHVZwR5PH6f2f7DfiRIEI2bu8chVkV767vrgj4HI1yDy//uZC8VO1ih3cfcfgZUHZSytskrS3RX76vIiwg6")],
+choices:[{label:e("9L70hxYGLna5wcDqYy19Brmg2dfDdTl5HaKsss0IW3dO"),to:"act2_snow"}]},act2_snow:{chapter:e("9pzjijcgLlOcCIXRpUx3WOSOibvfJl9id/Gv6ZM7KA=="),title:e("9YrDjQ0tInGjzdvWYAt4BYiJ"),
+sub:e("96jqiykFLlWizenqYR5FDb2s2cPseANQHJils/oZVU9U9JXIigcX"),fx:["snow-heavy"],
+text:[e("+YT1iyMaLkizzdvOYBVyB5yT1tnxfztYEJqUs8wgVEh1+bTkiAA9LlOOwsntYBtJDryT2uX3fjJpHo+TsNA6Wm5o6ZzsihcjLGmbxcXm"),e("97jehistLWO3z93iYRxfCqSf2+bweR9AFqStss0UVl1b9Z/BhBIgJVWEw/7lYSxoBLCQ2fLSdAZVHK+2svYqWnBw7K7PiSUpLVOrw9nMajlrBEeV1MHZeTla"),e("/ozHhjI1L1KJz87hbCd+BJmP1sXXfztYHpqOs8kUVE5697PFhBcBL1Odw/7uYjttBbuf2uT0eDpbF6u/")],
+game:{type:"snowfield",next:"act2_amao"}},act2_amao:{chapter:e("9pzjijcgLlOcCIXRpUx3WOSOibvfJl9id/Gv6ZM7KA=="),title:e("9YjGjQ0tInK2zuj9"),sub:e("97jeiwIHJFaFwd/ZYwtYDb2h"),fx:["snow-heavy"],onEnter:()=>{S(1),C.whisper()},
+text:[e("96jqiykFLlWizenqYR5FDb2s2cPseANQHJils/oZVU9U9JXIigcXKWmK"),{
+q:e("87DTiAU9L1KJzv/jYzNqCrSX2cPYeQtrHKS3ss8SWkVZ/5PCiwcUL1mHwOnLYzhZBbqZ2uX8fBV3EKawusgfV15b6abciDAGLnKDz93bZQ1aBWKO2MDTcy5wEbGusMsYVFlK5pzKjgQSK2eEwf/1ZDlvOkCV2cvWcRdKEY+wvM4dVkd/6rbPgiY1ImmgwczHZDATMUGH3+HvfTBsEJqItssWTE5v7qvX")},{
+q:e("87DTiAU9Llq4zdvOYBVIB5Gu2tT1eiRuFqS7sMIMVGNC/5PCij0YLlGDw/zjbTdHDryT1vv9cyhhEKawtvQRVFlh6qHmgzcmIHC4wOr/bB5ABk2/28DyfwNMFJa3sfQoVF5U6pXMjBYiJ1uKwMvJagZBN0+b2snofAZAEq20tu4hX3Ni657qjBUhIW6UwPjOZjo7N2Wj3fXifA1QFpSxtsoGSVZC6JPHjAAXI22vxuzXZREFOnKy3cP8eApOEYO2tNQLS0NX75LJgRAIKliPxN/8mBoLOkm738T+dTVWEZKs")
+},{q:e("87DTiAU9LWqszP3gahhPB6WO2+THeTVhHLeMs/svUFJz97T6iAQbLlGDwsvvYQdrDryT29rcfwJzHK2MsNsoV1lA6p/8iRYZIG+LyfnoZD5KCFif2NTBfCZsE66/sv8QVk1v6pXMjgUDLFyQwt7nZxFPNmCW39v4ezhK")},{
+q:e("87DTiykLLkS/wcTbbQt3Db2s2vDxeAFcFqS7sPUBVUpe+a7jiTYtLWK0w/zjZyNABIaS1uLnfjRiF6uts+oPVVVG4JLBiDA8IVK9w9nMay9IB1W+1Nv3dQVUH5SvvfQeVkpr6pfYgw4mLVC0wv/sayJ9OEWE2cv5fhFtEq+yvM4dVUBB66zXjjI+IW+OzcTuaR8nOUm73O7efy1SE5m8tewQRkxO6aTgjDgoIUqqxtPDYx88P3y92NnedTZI")
+},e("9JX2ijciLXKmzvDqYRxIBZ2c2e3XeiZ/FqS7s9YkWk1C9JbRiB03L3u1w/zjZyNA")],choices:[{label:e("9JX2iwIkLnGXzc/WbBZCC5Sn2+T7"),to:"act2_tell1"}]},act2_tell1:{chapter:e("9pzjijcgLlOcCIXRpUx3WOSOibvfJl9id/Gv6ZM7KA=="),
+title:e("9KvUjQ0tI0S7x/vuYRxDDb2p"),sub:e("+Y/WiBgpL1CCzcf0bAZEBJ2p2cv1"),fx:["snow"],onEnter:()=>{s.heard++},
+text:[e("9JX2iwIkLnGXzc/WbBZCC5Sn0OLxeSdyHIOss/oAVnxH9a7UiTYtL0y7wvHAZyNABKWm2+H8fjV6HK2wusgfWn5E6LTJijsSIVebwN3LZjJNBEee2/LOeTla"),{
+q:e("87DTiAU9LHaWzcXdahhPBZ2/2MT5cwdWG5iqs9AtW31F/5PCjww3LGGZwsvwYzxnCIGM18bWfh5wHo+ZvPMdV1RN6rLlijwbLFm2z8LoZRBgBmOX1P/kfylbGKq5sM8IVFhf6LDdgg0lLnqjyvj4ZClRO0aQ28TfcDlEEI2RttY4VHZx6ZDRjBUhJGaHxsP/")
+},e("+Y/WiBgpL1CCzcf0bAZEBJ2p2cv1fztYHoyAss8uVkJd9af+hTMyI26EyPrpYR1CBL6f2Mjncw9uH7unsNoqXW186ZzshD0JLnKDzvDUZxhHBUOe2NLAdQVDErOGsMkoVWtD66D4jzIkL2yqwOreZCBVO0Sb2f7DfQRrEY+wvM4dWEtW6ZTBjSIjIm6+wtfbZy0dOkea0t7gcCFSEo63tdQOSX5545fGgTc/LkOFytvLZRgENVKj3/3icCppEqCYt+0qTU1u7bbAjD09LWSCx+TTmyQHOkm738T+cyl8G7Omtcs6SFxH76H4giMcI3mGye/CkSEwP0Sm397PczBcF76LqfMoQ3dm4Y7GgxUIJke4yIDHmSQ7PFet0dTHcjB6FoqrqPgJT3Bi66fE"),e("9qv7iwUcLk+wwOjSYCxzB5C82szAcwdWHL2Oss44V2tu9Z//iTQrI1SYwfPkYBtJCIK829zgfiZxH4uKvdMBVml66LTJixcWL1utyfnoZi14Bn6x2eT7fSxyGKq5ssgzWWZc6bfIjgQSLF2AyvjvZhlANmO/1OTifgJgEa+DtOgVWGBq5YLxjRQoJGaH")],
+choices:[{label:e("9KDjiygVI0S7zenq"),to:"act2_tell2",act:()=>{M("p3"),s.patience=Math.max(0,s.patience-1),G()}},{label:e("+IvXhzY0I1+5zfvm"),to:"act2_tell2",act:()=>{q("m2"),s.patience=Math.max(0,s.patience-1)}},{
+label:e("9LrSiygVJFaTzc/NYCJOCq6U2+T7"),to:"act2_tell2",act:()=>{s.patience=Math.max(0,s.patience-2)}}]},act2_tell2:{chapter:e("9pzjijcgLlOcCIXRpUx3WOSOibvfJl9id/Gv6ZM7KA=="),title:e("9KvUjQ0tI0S7x/vuYR5PDb2p"),
+sub:e("9KDBiBAJLm+hwdLhYj5HBrua2+XReTx6HaG5v/YpW1FM+KzChSMeL0yxwNzhbAxf"),fx:["snow"],onEnter:()=>{s.heard++},
+text:[e("9JX2iwIhLk6EzdvWbQt3Db2s2+b9eRZNHaC6sOEtUFJz9azBiTQrL1WowOXNYT5NBbqZ2cf4fi5oH56xusgfW0N4577wiRcCLHiLwv3kaiNSBlij1Nv3eTla"),e("9KDBiBAJLm+hwdLhYj5HBrua2+XReTx6HaG5v/YpW1FM+KzChSMeL0yxwNzhbAxfDryT2uX8fip1HZ+GsMQiVVJW6qDBiTU9LEyzwdL/YCJD"),{
+q:e("87DTiAU9LHaWzcXdahhPBZ2/2MT5fjt8G5iRtPUJ")},{
+q:e("87DTiBUDLHCNx/vqYRljBJmP2tPoeyR/EJmkv+4+VnZY+ajAiAkWL3WgwfHUYRJzCIeT2O/dfSZQEbSpsOQQXW186afAiDcwLGC3wNj1aiVNBmK72sb/eTlaFZaosMgEVWtD6YbHjgcaLm6Vw9LOZwR5OGSZ1PTndgRbHqCEts4RVUFV6ZbNiQkq")
+},e("9JX2izEMLHeJzcjFYyRXBIG02MT5exBDHoW3uckYVElF97LOihAXLXSTwNruYBhUBbuz0eHwfTR8H4q2sc0MV2FB55v9iDEsJlSLwvnYZxtPCHi02OvKfgBHH7G8sc0FV2JO5pvviAor")],choices:[{label:e("9KDjiygVI0S7zenq"),to:"act2_tell3",act:()=>{
+s.patience=Math.max(0,s.patience-1)}},{label:e("+IvXhzY0I1+5zfvm"),to:"act2_tell3",act:()=>{R("p3"),q("m2"),s.patience=Math.max(0,s.patience-1)}},{label:e("96vwiygVLWCDwOj7bQt3B6+s0OL1dBRbH4C5ssg0VkJd+JDJiTYtJVWB"),to:"act2_tell3",act:()=>{
+R("p3"),s.patience=Math.max(0,s.patience-2)}}]},act2_tell3:{chapter:e("9pzjijcgLlOcCIXRpUx3WOSOibvfJl9id/Gv6ZM7KA=="),title:e("9KvUjQ0tI0S7x/vuYRxKDb2p"),
+sub:e("9JX2iRcoLWi7zdTmYh9MB6WH2vDLeSlaHIKLvsAbWltF9JXIhSITL02SwuLMax9OB5e22+rOfTJJHK+Ms8wwVGpj"),fx:["snow-heavy"],onEnter:()=>{s.heard++},
+text:[e("9JX2iRcoLWi7zdTmYh9MB6WH2vDLeSlaHIKLvsAbWltF9JXIhSITL02SwuLMax9OB5e22+rOfTJJHK+Ms8wwVGpj4JLBiQQALGi7w/vzZCFnBXGS2M73fy1mEqq2u88JVW1p6pbCjzATLFyqwt7nZQ1ROkOs2OPwdgRbEqyrt8kuVHJ15YvCjzc/L1mcwczqZCYIO3KU3urvdwtaELGKuvY6Snlc6a3HjTE4IFelxd7oZSM+OHO43cP8cglQHLWztcoJTU1u"),e("9JX2iwA5LXKmzP/mYjpmBrq22+XRcwdWHKGBss0ZVklv94LaiTQrL2atz+n4ZyNA"),e("97jehjI0I0S5zfnxbCZgBJaW2cL0eAFgHISfvvYYVkJ/94PfgjAxKGmUwuPcbSFhB5ep293ufwJUHbG0s+M6VVNJ6YP2iDEsLFG1w8LkYCJDAn+D39zveDlMH7mBvMwLWX9y6bfIjzATJ1uKwNTtZDxlO0eC297dfABvEbCptNQeX3Ni6qnsjzEQIXK7w8vkZgsGMUGQ3N/efQ9uE6CIt88HSnBl6Y73iggl"),e("9YrBiBUDJFaFzeLfYBhDB6ar2d3OeTFEH6uitfUWVndI+InPhQsBL165wsjeYBpyBbif2P3LfwJFELKJusgfVmlw65X7iQQFLVOizvDqZB9rB2Wa2eTnchxnFJa3")],
+choices:[{label:e("/ozHiygVL1KEzcHrbQt3Brum3N7/eAZ6HaO6sfEiVHlo97LOjgwpJVWB"),to:"act3_return"},{label:e("/ozHhxcjL1aezP3cbRFzB72g0OL0"),to:"act3_return",act:()=>{R("p3"),q("m2"),s.patience=Math.max(0,s.patience-1)}}]},act3_return:{
+chapter:e("9pzjijUlLlOcCIXRpUJOcui3l7jaBw=="),title:e("9YjPjQ0tLmyEztrD"),sub:e("9KvUiyQaI1++zc/7bRtbCrms1+fN"),fx:["snow"],onEnter:()=>{S(1)},
+text:[e("9JX2ijYhLG6/zePSYRxJBIiu2MP9eyJnHLyDsc4nXG599JbChS8yJVWEz9X4YQd7CaKb0eHwfSZRH46LvfcfV25z4JLBhA8SIWG1z9j2ahlFD0OS2NPRfCF3E66RvdEYVWhl65r+jDEmLlGOwODSZhtGN1+d1NLIdgRbH7SOtO8RV1NS4pDHjRUUL0GXwPvoZBgZOkeH3enTfyBDGqi/te0sSktk6JLVjzoGIHmNxsfpZRYzNH643PnPcARrE7astcoJTU1u"),e("9KvUiyQaI1++zc/7bRtbCrms1+fNcwdWHaWxs+UaVU9U9af+iDY+IlaQwd7KYzZbBbiU2uf6eTpNGpeisO8zVmlK6oDTiRcCL1qmwNntZxpBBEe02PnIfw59H5SasfIIWW926YDFjBAtIGygw/DYYSFC"),e("9rT5hg0gI1WQzP/mYD9dDb2s2vvEeyFeHLq0v/QTVl9F9rv3iAMzL1efztv7YRt6BKS43d3+fwJTHaCTsc0YV0F+6LTJiDMOLVCOw+HNbB5NBEel2ebBfgJ0EqaEvNQbVG5464j1jQMiIGOcwPPRZBNhOWKU2d7yfDFaEq20tdImV05b65jwhTUkL0i1wsPFZRkgO2CT3uTufRNMGqi/tNwrSn5V6Jf2jhIjLmG8x/rrZRA2O2mv3M7dcQR0Eo+7ttweS3Bd6KrL"),e("9KvUiyQaLHCNzcjFYxRXBrmq0OLxeQxoELqwsOkdV2hq9JfDizcKLlOOxMbnbCNOB5yf1vv9fA5+H42yusgfVElf6Ivgiy4qLnKDwNLSZiJYD0OS2PnCfgFVEpC4vNE5VFVu5oP0jTgXLm6NxsTh")],
+choices:[{label:e("96/8iyskLXeszP3g"),to:"act3_liuma"}]},act3_liuma:{chapter:e("9pzjijUlLlOcCIXRpUJOcui3l7jaBw=="),title:e("9YrDjQ0tLXW6zeHu"),sub:e("+KjBiTA7Lk6uz8ntYCtpB6Sd2dT3eAZ6EIyYs8kUVU9U"),fx:["snow"],onEnter:()=>{S(1),C.whisper()},
+text:[e("96/8iyskLXKmzP/MYDRABbWA3N78eANXH4W3seELVEh19bnKiCkYLlOyxMbnYQZ7B4qV2NT3cj1VH42ysckIVV5Q6aXliTU9LFG0w/zXZApyB1et0uD3fzxQHoGbu88IU1Bz6pDsgig0IECUwfzpZTtEO0K5283edgRbEJW6t8sZVlJL6rbPhTU3JWaY"),{
+q:e("87DTiAU9In2nzPrGahhZBryA1tzeeixsH5i5sswcVkJ/9rLriic0LleVw/zjYTJgDryA3N3heTpNGpeit/QPVmxQ6qb9iRc1LHS3w//9aiVNBXGl29HrfgFYEYuUveQ6V3d04ZHAjjc6LFqawfnDZTtEOWWi1OHRdgRbEa6ttv8SVHVU5ZTEhTUkI16CwPnYaRcXMUGQ0+/3fA1QHauqtskQS3Z767HOjjUNI3WJzP7tZRozOEKM3PTDcwxTEZ2JtP8YRkZK6KrLigc7")
+},{q:e("87DTijAMLlqPztrDYCxzC5mU2tHFeTVhFqS7v/c3V2pV9JfkiyEQI0W0wNzhYzd1Bbql1uLkcxxYHK2/usgfVmxQ6JXUiDEsIViGw+DZZjNjD0OB1MT1fQRPErKSs/0ZVF9F64jxjQAjLFqmzNDMZx1AOWO40+f2fDBREa6tt8kHVHRC7qzJiAk1")
+},e("9JX2hgkUL1KDzffXYzx9B4aa2d/tejtMHoKzsdAKW1tD9rLrjgwpIlaRwd7KYT9qBLGu2MDtcj1VHp62s+g5VEpO6LHohQo5LnKDxcXm"),e("9pzjijcgLk6gztDPYRxJCrSX2cPYeyFeH4+Bs/UNXG599JfqihAXLlGCw/jabSB/BJur2cD8fh5+EaynsOgbUVFy")],choices:[{
+label:e("9KHFhiIlLk+wx/v8bRtaBJmP1+HKeAR7"),to:"act3_money",act:()=>{M("p4"),s.log.push("rational"),G()}},{label:e("9YvPijQkL1OWzP/rbQt3"),to:"act3_money",act:()=>{q("m3")}},{label:e("+KnliygVLX6bwdXX"),to:"act3_money",act:()=>G()}]},
+act3_money:{chapter:e("9pzjijUlLlOcCIXRpUJOcui3l7jaBw=="),title:e("9YjGjQ0tLmeIzP3qYCFAC7iQ2er2"),sub:e("9JX2iBgYLX2sz/PBbDNuBrum2sbJeS9dFqS7v84MWmlp9bP+hTs6IkifyPrpYippBJyv0eHwfQ5OEJiqusgfVGZo6J/+"),fx:["snow"],
+text:[e("9JX2iykLLFCvzPzoYR9VBrqM2MT5exdLHLaOs+cYVnFB+J/NiTQhJVWEw//6YzxnCIGM2MXTfiZxHY+EstgCV3RJ4JLBigIqLVOiwMXfZTpuB2G02sH7fSVkEIuuu88eVWhi5oL4jzIpLWijzev+bR1MOm6T2sbfcQdJE7GAt8sOVHdj6LfVjjMuJGaH"),e("9JX2iBgYLX2sz/PBbDNuBrum2sbJeS9dFqS7s9EgV2p79ZfoihErL02vwujTYBhnBbil1t3HcwRoH42yvdojV15H6LTJhQkJLVSjwdLxbB5NCUSG1OfjfSNcH6GkvNIFXmxj6KTnjhYZJ1uKw/D0ai5cMEKR2uzifglkFZW2ts06VWtx6ZTLjzAcKFqJwebbZykyOkaS3sHifR5gE524u/YcSVpC6aTcjTIhI2uCxd/EZzgROFGD3cP8cgFwHYGDvswDSEBO7ITejD0gIGmCxvvsmhs+NUKq3+z8dTVW"),e("/ozHiBYTLk+wzs3sbDZyBJWy2vrivFlabfq3wlV9L1IZtq6r6CFOUXfnm88=")],
+game:{type:"money",next:"act3_temple"}},act3_temple:{chapter:e("9pzjijUlLlOcCIXRpUJOcui3l7jaBw=="),title:e("9KvUjQ0tLnaWzdvWYB5a"),sub:e("9ovWiwAvL1CzwP/pahhPBrmn2+THdAxy"),fx:["snow-heavy"],
+text:[e("+Z/4iwwrLmK5wdLhYj5HCqSf2vrJeTVhFqS7s+k8V2px9ZXpiBA0L3W4wvz8bSRODryT2/jFfQtbH7KovdorVFVP7K7PiTEzLk2azvDTZipcBna529j0fgFVEpO0vN0qXmxj6bb4jgIZLUK/w8TGZx9XOUuc2ujQdgRbEJy5tvkYVXNU6oHfjzM8I1yDx8Pg"),e("9Yv4iRYCLXKmzePBbDZyB4yh2+TxeTZZGpi1"),e("/ozHiAcmI1WQzdrxZyRfBKa73d7gejBMHJCHs88NWkVZ9aDtiAIQKWmKyPrs")],
+game:{type:"temple",next:"act3_carve"}},act3_carve:{chapter:e("9pzjijUlLlOcCIXRpUJOcui3l7jaBw=="),title:e("9YrbjQ0tLmKyzerx"),sub:e("973fTqKMIn2hCGhGYwNYwi4A1+vz"),fx:["snow"],onEnter:()=>{C.bell()},
+text:[e("9Yr1iAA8L1CPx/vqbDNrBKa72+fiejF2H4WSss8SUFJz9ZXXiik2Ika8yPrpbAVDBIik2uX2fhdOF6u6stENVEl+6afAhCUOLFaQwP3hZTpuCE+f1en1fSNcEKuft/MQ"),e("9JX2ijUhI0WPzerxZiRBB6SZ2tHXeydRHoW3v/c3Vk9m9rXZijYJLXOMwdrNYQd2BI+O28z6dAZVHbKLsPccVU176LPNhAwALF+2zufPZihJBUOe3tz6fzFwEq+Gt/MTWEJm67HkgggKLWO5wt7nZhlAOGqC39v4"),e("/ozHiBYTLk+wzc/dYAlUwuOgq7z9CJs+QZjT7v5wC1IVqKSr8TxOQlLrp8SKOCo=")],
+game:{type:"carve",next:"act3_blessing"}},act3_blessing:{chapter:e("9pzjijUlLlOcCIXRpUJOcui3l7jaBw=="),title:e("9LXijQ0tLmylwMDVYj5HBaSN2PvreixsEZK1"),sub:e("9Y3viBkSLHeJz/rEahhPBaSF2cDqeRBYFqS2"),fx:["cracker","snow"],onEnter:()=>{S(1)},
+text:[e("973fijcqIn2hzuD9YR1IB5Gu0OLxeR5jHaaIs+4KVU9U/5PCiik1LFmcwvjtbCtQBpWa0eHwfCZlHZK/sc0MV1l26orbihcjLk2ZyfnoaglZBXqq2eDHfSNcErmMsegJVHlZ5oL4hDYlIGCswPPSZxZyOEWS2cfSfCRIE4mEtsgIVkJ+6ZbNgx4AIUGewPnkYiA9"),e("9LbjhgofLHCNz+LLYgFVBJaW19T/cwdWHL2Os/QOVmxm9rT6iAsRL2OTyPrpYz9JBJuE2/TKcxlcHbKLstE+V0Jx4JLBiRkmIHC4wcz/ZhJHBl6S2PHrfDN0Ep6FsdMQVGFk6pXhji4HJ1uKwOHaZh9/OmO729/MfiJTE5uPtfkuWUp867HkjxskIEuywe7yYiA9"),{
+q:e("87DTijAMLX63z9rmYhlhDb2s2PvYeiVNHLO1uckVUVJs9bTViCUdLGyEwvn8YQdlBKOv1vLIeDpb")
+},e("9JX2iw4jLXKmzcjxYR5FBYOO2N3keAdmHoKzsck9VVt6/5PChQgTImC6wtbpYjR0BI+H2uDgfDtpEaynusgfVmhv65bAiQ0nLGa8w8ryZCFaBXCu0uD3fzZyEY6asdcjVnVx6bfIjCEwL3qGxsThZTp0Onat2cDhfDdDEq2+utQIV1Vq67v9jwkxKFqJwtb7ZAUGNkis3ub5dwtaELGKtPgdR3td6ZfKiggl"),e("+Y/WijUsLnGXzeLfYj5HB4642tLrdSZEHKCPs9EzXG5994PiiTYnL02hyPrpYBtPBb2Z2cHAfCdCH72+vO0kVml76qD2gzcmIVeZwffaZAdfBEaB28fPfgFVEaO7sMkUUlBt5q3AjzI9LVmOzcflZCFvMEKR2OP3fjN7EJWhtegGVWty4pDHjAk9Ll2Uwf7TbhwzO3Cv3+fGfytdHbOytssqQHJh5LL3jxAILmKuxvXQZwU6OUSg3uPCeApZEKqtt/A0SE5Y7an9jx0iKliPxN3pmjg/OWey3sHKcxF9FpWLt8Y6S3RT4ojEgBwhIVONyPz/kSEnPmq/3d/vcCVVF4ygqPMNQ3dm7rPzgB0LJ1qBxIf0mwATP3iu0+zPdzNQ")],
+choices:[{label:e("96vwiygVI0W9wOj7"),to:"act3_speak",act:()=>{M("p5"),G()}},{label:e("/ozHijYsL1OBzP75bQt3Brmt2tnHcwdT"),to:"act3_speak",act:()=>q("m3b")}]},act3_speak:{chapter:e("9pzjijUlLlOcCIXRpUJOcui3l7jaBw=="),
+title:e("9YjMjQ0tLVioztvvYRxDBrmK2+THdBV+HaCNvvI+VmVA9bPmiTE3LGi+"),sub:e("9KDLijcWLXaAzdfiYR55BZuk1t/ueytc"),fx:["snow"],onEnter:()=>{S(1)},
+text:[e("97jehiIYJFaTzeLfYBNxBbqv2dPteAFcEI+fsNIPV2h386/MiBcwL0C+wNruYitTBbif2cHAdAZVHZS5s+w8VU1765bNiDMALVCKwMLmZxhKB2Wa2PHSfxRIFJa3"),{
+q:e("9KvUiyQaJFaTysf6YylTBrum1snVehxBHJe/sPUaVXJG/5PRiik9L0efwNzhYwVNBqSj0eHwfSJ2HK+7vdorV1d96oXMixEuLE20wv/eZABxB2Wa3tz5cgZBE664sus9V1h+64PWjBAtIECCwtvKYSFCPX6A")},{
+q:e("+ILOixY3I2qIz8/RahhZAIG82+bweixzHaC6vsoLXG599a7BiA0kIk+JwtrNbBxbB5ep293leDpbHZiZvdMSV1RG65T3iDIhLVCKweDBbB5NCWKA2ebBfzNDEpmasv8vUlBt6KXdgiArLUK/zfTPZQZNMEKR2sPVfyNoE7CNtv0+Vkxy7qzJiAk1")},{
+q:e("96/8iyskJFaTysf6YyxSBJmP2vvAej9VGpi1sP0FV2p8+ID6gjAnL0yxweveYTNMCaae1v/Xci52Hau2s+k2VUt07K7PigM7LHiEwNPvZh10BEKF0uD3fyJmEIyxsMgSVWln4ZHTjjoYLXy4wfzJZx5DOlCU39v4ezhK")},{
+q:e("9L3khg0tLkOPzer2ahhZAIG82dbseANXEaews/QOV2pb9JfjiTYRKWmKwc70YBtPBomq2efDdAZVHbKPsN0VV3h26p78ijkLIHq2w+3SZiZ+BVWt2Pr8dQVDErOMsdoUVHlp6J/tghgYJ1uKwOHaZxFxN1ic1f7FfxVsFZW2tfoAVWBX5ZzKjjElL1Oyy//9YyAi")
+},e("9YvZijYAImm0wOjSYBpUBJ2p1t/ueytcGpi1sNobV2px9aDrhA8WL2qHwebSax9OB6+Q2uX8fjV8EZSLsOg7VUF265bHjwsoLVORwv7IaxJABEaB2+7afCVREpydsfsSXmxj5p3NjzM2LlWnw9jqZytoOXeW0+fhfQNBEq6Ytv07VldB6LzPjjMSIkiNw97iZDA7Okem3MD9fit6EJy1sfES"),e("97jeizIRLG6/zt/oYj1+Db2s2cP9ehZhHL2Ose8QV2p89rfhiTQrLlGiwcfTYBl4DryT1t3wfSJ2HK+2s+EnV3Rn65PehRYIKmiF")],
+choices:[{label:e("9YrGijUnLmSyx/vuYzNjBZWI0OL0"),to:"act4_river"},{label:e("+Z/7ijUhLVKMy8fk"),to:"act4_river",act:()=>q("m3c")}]},act4_river:{chapter:e("9pzjixY3LlOcCIXRpUNCV+iNvbrEF1JNVw=="),title:e("9YjPjQ0tLVi6wPnf"),
+sub:e("9JX2iwUqLXKHzfDUYh9MBbuP2+fzeiN1HaC3ss0+V2tv9JfeiTYt"),fx:["snow-heavy"],onEnter:()=>{S(1),C.whisper()},
+text:[e("97jeiTY1ImiqzP39YD9jBrma2sLVdARLH4+2vvUYVUxw9bzDihYvLWGOwO3cYQByB4OV19vudAZVH4u9vdMSWmB265bNhAMGLEygwd/gahlFCHas2sb/fTh3EJeesfYbXmxj6KPpjBcpLWiOwNTPZx9XOVGI2vTvfDFyE5yRtOgVWVFD6q7lhTUkIX6qwdj5ZC8rO1Oq3ffafSt+F5SvtdQNSGhi7qvXjTIhJWWG"),e("97jeixEEI3iQwMTBYRxuDb2s2tH1dSFKHqKRs+U4VlpB+JDSiCgvLXOMwM7jYwh7BKOv1tzofAFsHK+7s+I+XW1865LxiDIkLHiPwM30ZxpBBVu31MPIfypVEIyxssYBVWp+4ZHAji4QL3qGwN/BZzpiNl2D1NPkfiJTH46eu/ggX3Ni66fujAMZI1yDwcbKZBg9N2ib2Nr7"),e("+bDDixEELUetzP7tYC1ODb2s2sLVeglpEaaOss0eXG599qffhSsqIlaPwuPcYj9CBJCR2uX8fRZ4G5e0"),e("9YrbizQYLmOEz93ibS5yBZid2MT5eR9uHJemuckYVl9C9JTEiDsZLVKHwsPNYzp/DryT29jUfwJUHZS5sO8IV1xx65bHiDMhLnKDwv/ebB5aCHum2eTxfSF+Ep+/sMsfVHBF4ZHAgjEtLF+rwPzFaxpRMEKR1Nv2fQBDEKO8tsIsVHVo6KnDjwAlIWS3wdDiZjo7OViC09PLdwtaEa+MtswLSVZC6rfijAAcIlm4xNjlbyMlOHOx3MXxfjR2E4+Otv8vR1pY7aLfjD8mLVmtzf3slyElOXS13ePSfhR8FLaLtco3S1RE7pHIgz4PIle5xsn2nR0+Pl+g3O/2cz1YFJ6gqPMNS2BT7ofpiTkoJmSExIfzmSQ7PkGy0PbBcxFFHqyjqcQ2TFBt55vdgTwjJGiL+bXZmwY6PUCX0MHbdR1FFaqXq/c/Q1xX4LzBgygbJktA8YHQnyIyP1y50OjzdgtWB62vo9cQTG1e463ChRovJWhM+ofUnSMXM0+b0svddQhPCrWGr9MXTH924Z7FgQEi"),e("9JX2iSY1L1eGzP3gahhPB5q+1+H6eR9uH4WSuckYVE5N97LViDMWLW2+wsn0YSZLBbqZ3d3+")],
+choices:[{label:e("9KDjiygVIn2n"),to:"act4_question"}]},act4_question:{chapter:e("9pzjixY3LlOcCIXRpUNCV+iNvbrEF1JNVw=="),title:e("9YrDjQ0tIn2n"),sub:e("9YjPijUGL1CzzurdYR5FBrir2s7zcwdWHrGBsd4LVU549p3vixAiI0SKwMfQYzlGDryA"),
+fx:["snow-heavy"],onEnter:()=>{C.whisper()},text:[e("9JX2hjgcI1WYzP/CYwlmDb2s2crDeAZUHaKxs9YkWk1C/5PCixIqLU6QwunjYB9+Bpqb29X7fjJeH42yvdsnUFFk7a7Z"),{q:e("87DTijUsL1KjzP3cYwl4Brum2+f2eStUFqS7sdwiVHlu9rPHiz4KLHWBzuvnYyJ3Bpqb0eHjeTpE")
+},e("97jeizMkLWiTz8PQahhPBrmg1/n8eR5jHoKzsekoVEle97LOiwQ6LXOMyPrpbCBOBbiV2uTjfgpoEZabsc4VWlti6qb3iDMqIWCryfnoZQ1VBWO22PHdfBl5HpG5vfIVVFhf6pXBjgUjIFatzNzRZTtEO0ap2szMcThUGam4tecIVXdm6KPDjwgnIX6qw+j7ZDwXNke33c34fy1SE4OFt/EJQHJh6qj8jwgCI1uTxub7ZCU4PnyZ"),e("9J/2ijciIkeLz8bTYR1IBJ2p2cndcwdWH5CmvvI+VmVA9rfhiBw6LHStwenOYBtPBbuU2NnzfCBdF6utsckVV01Y6YPpiQMRJlSLwMXqZQJ2BWSA2vHvfxxhErOIseIwXmxw6KXdjhYBLnmHwtvOZD1fOGSZ1OP2cQFnEq2ZvM4dVkxd4pDHgjYxLmGJw9nmZRoFOXi73+TyfyxuEauSu90sQHJh66/8gQgrI0C9zP7tZRIKOmqK3NrpcwxTG6++s/AbTE147aLfgAcjIVyOx+filzEJOUOW38TseQlOFqq9tvMVSEld7LXBiDopIWyKxPjTmAEnPn+v3sDWdzR1EJGWrO4PSHFQ7ZXSgzohJkCfxojlmwAQMk630MzxcAloFoqrpuYqTUtV55vKgTwZJ0S594vqlDw7NkSb0u35dhRTGKCaq/ACTXRK5KbH")],
+choices:()=>{const t=[{label:e("87DTijQzI0SxztvvYhlhAYGi3d7g"),to:"act4_a"},{label:e("87DThiMWLHqPx/vqYBRyCq6F2+fieidTGpi1tPUJ"),to:"act4_b"},{label:e("87DTiD8NLXaAwerkYiV2Db2s2+fiegl7H4S+s+kkVFlA86/Mjww2"),to:"act4_c"},{
+label:e("87DThiIYL1KEzv/jZiRBAIG9"),to:"act4_d"}];return w()&&t.push({label:e("87DTiBElLHCNy8fkZyReAIG03d7peAZ6EbeDss8SV2px9aDriTELIm6iwvHUYBpdBbiS2uLdfCBdELir"),to:"az1",act:()=>{s.hope=!0,P()}}),t}},az1:{
+chapter:e("9pzjixY3LlOcCIXRpUNCV+iNvbrEF1JNVw=="),title:e("96zGTmo2Tw=="),sub:e("9Y3vhiIYL1CPzurCYjBcBa2M2+b9eTR/H4S+sP8eVV1Q97XKhSM2"),fx:["snow-heavy"],onEnter:()=>{s.hope=!0,C.bell()},
+text:[e("9JX2hjgcI1WYzP/CYwlmDb2s2crDeAZUHaKxs9YkWk1C/5PCixIqLU6QwunjYB9+Bpqb29X7fjJeH42yvdsnUFFk7a7Z"),{q:e("87DTijUsL1KjzP3cYwl4Brum2+f2eStUFqS7sdwiVHlu9rPHiz4KLHWBzuvnYyJ3Bpqb0eHjeTpE")
+},e("+Y/WijUsLUaozs/3YxZiBJ2p1+TPfztYH5CmsekfVE9x9Yr3hA4IL2aEwNrZYz5ZDryF19/fcj1VEYqUsMMhVWp/6pDFiDIvL1qmwNntZxpdCFqh2eb9dQVUEpmfsfo7VWhk6pXMjRI2LF+LzcbMZSBtOGSZ29rRejhV"),{
+q:e("87DTiBElLHCNy8fkZyReBImx1/HJfztYG5irss8uVX9K9JXIixQELHWBzuvnYyJ3Bpqb3d3+fwd5Hpqmsc4VW0ZY6YnWgzcmIV2Jwv/iZB9rD0OS2NTLfgNeHpSWvM0rXmxj6pXMjiQfLF28w9zMagdBN1mc1cbYfiJTFZW2sfIM")
+},e("97jehiIYLlSezfnuYyFhDb2s2uD1exNpFqS7s/YbV2px9JfkhQ8nLlOOwvjtYBpHBpqb2fDofRtRG5e0sPElV39u6abciDMqLVCtw+jzZxteBEeT2ePaeTla"),e("9L/giygVL1WozP3gZiRB"),e("9JX2iRcoLHa1z9r9YBt+BYWW2+TTeAFcHaC3ss0fUFJz+a3tig4SLlOmwvjtbB55DryT297zciFzHYuGscwZWkFN65TLiDMqL3CYwcTPZTpeAn+K39zvfzZ3Eri2s+8NVkpr6pfijzAvK2eEwOHaZx1gO0Sb2efafCBjGam4tv0ZWVhD6ZTBhTUkIliNwPrnZykyNlKo3t3DfipzGqip"),{
+q:e("87DThw8PLlq4zeLbZiRBC4OD2dbseQtrHaC6sPUBV2h386/Mjww2")
+},e("9JX2ix09LWKYwcb1YR5FCrGC3N7/dARDH4CYss0dVmtF9rLriCkSLUWkw/7lYg9jBJCO2ufGcjtKEKeUt/QHUFFk65bAgzcmL3Cowv3tZht1BmK72vDXfgFYEbqUsu8bVWpV663wjjQ+LUK/zfTBYSFC"),e("9JX2iAcmImiqzcjMYgR3BaO32uD9exR0EJ+7sOEiV2h39rv4gjAnLGKMwNvlYgxWBKWm2MbIci9mH42yst8qVXpP4JLBhDYGIVKszvDUax1aCWS01Nv3eTlaErOMvMYiVG5465PEjQ8LJ1uKzcD5ZAxlOnOp2vTufyVyEIKCu88qU09s"),e("97jeiSY1LnahzvXVbRp6Db2s2+b9eyBuHoS8s/0kVE569JfDhSsqL0yxw/7fYg5gAoCd"),e("87DbjA04LWKYz/zuYR5NCq6U2eb4eAFcHaC3sNk1UFJz9qffixk6LlOOwuPcZyNAB4iO2+DvfS1vH4upsu4XWm5p65fFiggZKmiF")],
+choices:()=>[{label:e((s.lit||0)>=3?"/ozHiAMJL1KCztrDYj5HBrmp2vrUcwdWHL2Os/YbVUpe9pv1hTMsLHStw/zjax9L":"/ozHiSEAL1CFzePPahhPB6SZ1+HleSdyGpi1uckd"),to:"az2"}]},act4_a:{chapter:e("9pzjixY3LlOcCIXRpUNCV+iNvbrEF1JNVw=="),
+title:e("9YnQhiMULXaAz/rE"),sub:e("+LLsijQkJFaFzP75YBRyBJ2p2sLNezBrHaKxuckL"),fx:["snow-heavy"],onEnter:()=>{s.soul="a"},text:[{q:e("87DTijQzI0SxztvvYhlhDb2s3d7pfjtOH5CmsPYnUFJz8q/TiwQ6LlOGwd7KYTNcBJCB283sfipJH42yvdsnUVFy")},{
+q:e("87DThw8PL1OBx/vqYR1cB7GR2cL0eSdqHpOGss8SXG5u8q/T")},{
+q:e("87DTixgmJFaIzdvWYi9yDb2/3d7gejNLHKa/s+UXVVF7/5PCiAMBL1efwdLKYgFlBp2f0eHweTpFHYuGsv8iXW1v7a7Zjgs+IUa9wdXibB5NBU+v1fPefgBHEYq8t/MQU1B77K3YjA4fIGeKwf38ZD1qOkGY0+f2ezhxFJWSu8IQVlJL6oLqgjYxIEuMwPnpYyAZPH262Nr7ejdL")},{
+q:e("87DThw8PL1OBx/vqYwl4BI+p2MT5eANaHLaBse8QV2hL/5PChA8WImq1z+HkbT5gBpqb0eHjeTpE")
+},e("97jeiwAfLmKywMTgYyRsCrSX2cPYeAFcFqS7sssrVVFC9armijMQIlaPwsPtYSpPBpqb1vLhfSd8G5e0s/wCVml96LHohQo5LVWSwv7BZh18B3uo1ePifBlvFJa3sdYrVF1b6pXMjAgQLF6Zw/bCZD1JN1mU2fTldgRbE5qeteo+V1NS6rHQjRIHIHuFwsvzbhwzOVCV3Mf5ezdU"),{
+q:e("87DThw8PLXKmx/vqZyRlAIGG2vDjeSdyFqS7sP0FW31F9JfDizQuKGmuxcbDZyNABIWp2/PidAZVH76Ast8MVE156ZzsihcjIEWFwcTRbB5NBneP2eXkchZsE664sssXUlBt7K3R")}],choices:[{label:e("/ozHiygVI1+5zP3gahhK"),to:"act4_after"}]},act4_b:{
+chapter:e("9pzjixY3LlOcCIXRpUNCV+iNvbrEF1JNVw=="),title:e("+Z71iR0qJFaFzffXbQtmBri/2cL0"),sub:e("9530iAMlLHCNzP/mYAp1BZuk2+THcwdWEJuKvvYpW3Vw+bLsihYvJVWX"),fx:["snow-heavy"],onEnter:()=>{s.soul="b"},text:[{
+q:e("87DThiMWLHqPx/vqYBRyCq6F2+fieidTGpi1tPUAUVJl96v4hQwnLlCXwdrPYRxHDryT3N3aeTp/EKe3s+k2VX9R55HUiyYjLVKMxMXCYSJnA3+c39zm")},{q:e("87DThw8PL1OBx/vqYwl4BI+p2MT5eANaHLaBse8QV2hL/5PChA8WImq1z+HkbT5gBpqb0eHjeTpE")
+},e("9KTGixklJFaFwODnbDlhBrmt1/n8dSZ4HImVuckLUVJX8q/ohA4ILHGnyPrpZiNkA4C52/PifiZxF6u6s/wCWn5E65bAijMvK2ihxMXCYCJD"),e("9JX2histLHCNzP/rYzxsBrmg2+bXex5EHLWRsc4HW3xL86/MiCkSIk+JwNzhYjttDryF2PDHfwBfHKyTsOQdXW1855HVhAgXLVCKzsbZawVAB2Ke1MTEfBZDFJa3sdYrVH5c6K3ZjBAtLn+pyvj5agZBOGOd2OH8dgRbE5iAtsUjV3Rh5Y7ggx0HIW6VwPvGZC01MUGH3dLvcDdTGqi/utYRSFNt6JHMgTwdLmWFxsfMbyMyNXyX09vbcw5xEKuYtuQ4SndW45XRgCEnIHiry9nUmhEFNXyW3eL+dTVW"),e("97jeijQ0Lk+wzP/rYCJOBbWH2dDYeyFeEI+ZuckYW2159ZPOiyEOLle3z/PVax9OBIyZ29H6fCBdEZe1sO8NV0pr6qHZixEuLEaxwv3JbB5NBUCd1Nv3fwdQH7G8sc0FVWhi64PFggoRK2eE")],
+choices:[{label:e("/ozHhw0vLnGXzdz9YCtXB6+W0OL0"),to:"act4_after"}]},act4_c:{chapter:e("9pzjixY3LlOcCIXRpUNCV+iNvbrEF1JNVw=="),title:e("94LuiBElIkeLz8bT"),sub:e("9JX2iREQL1KkztvmYDRNBrmg2NzEeT5THaGosfQ5V2h3"),fx:["snow-heavy"],onEnter:()=>{
+s.soul="c"},text:[{q:e("87DTiD8NLXaAwerkYiV2Db2s2+fiegl7H4S+s+kkVFlA86/MiwQ6LHGnwuvDYjVyBK252cf4dAZVEKivsc4IW1JN6bbihDQdLVemxcXmYSJcBneP1fPPfwdPEqi9scogWVRp4ZHAjjUqIWCKwtD5aiZzOWKU2OP6fjpuE6ujtfYeU09s")
+},e("9JX2iSY1LnahwcXFbCNPDb2s2uD1eAJfH6qWsOkdVlhZ86/M"),{q:e("87DThw8PL1OBx/vqZyRlAIGG2fPGejVTHoKzss0UVnxH97XKiTYRJVWEw//6bSB/BbiS1t7Bcx1YEYqUsc4VXW1v7a7Q")
+},e("97jehiIYJFaTzt/JYj5HDb2s2+THehZhHaKxs8UlV2lx9JbGiTU0LFupwdrsYBlEAoCd"),e("9JX2iRcoLHa1z9r9YR5NBJmP2uHAez9sH6qWsOkdV2h39arHgjAnL2qHw/7lYzhNB7Km2+3BfCBdH5aZusgfV2hG65bAihMFLm6DwcTJbB5NBXC028TUfgFVEpC4su8bWWdc66fkjBAtLmOJw8T+ZhtGPH6f2f7Dfwp2EIm9tuE8U09s6InyjwYCIX6qwf3qaR0EO0OU0+fCfStmHbuHtssWS3Zt6Yj6iwg7I3aiwcL8Yx88"),e("87DbjA04LWKYztL3YR5FB6SZ2+b9eANwHISHsf4lXG599JbRiCgRIly4w/zjYQZ7Bbif2uXWciJmHrittvQR")],
+choices:[{label:e("/ozHiREnLHeJzeLfbRFzCr680OL0"),to:"act4_after"},{label:e("/ozHiwIDLXKmzPrGYxZiBJ2p1+vNfztYHaWXsP8eW31s+ID6iCInKWmKyPrs"),to:"act4_c2",act:()=>M("p6")}]},act4_c2:{chapter:e("9pzjixY3LlOcCIXRpUNCV+iNvbrEF1JNVw=="),
+title:e("97rFhiIxI0W9zenq"),sub:e("+LLsiAU9I1WQzP/mYRxVDb2s2PDqeABaHaG/s+Q2XG5u"),fx:["snow-heavy"],onEnter:()=>{C.whisper()},text:[e("97jeiD8NLXaAwPLWZiRBBImx2sLVeglpEaaOsd4NV29+/5PCiwYhI2urwsnAbAxfBbuR2/nIcxVtHbm6sc4VUVFy"),{
+q:e("87DTiD8NLXaAwerkYiV2Db2s2+fiegl7H4S+s+kkVFlA86/MiwUrLlKtw/vFYBtPBL+a2N3pciJXH6qhsNA0VV976aTHiDYKIHyow/nkZT9kBXeY2uficglZGKq5sMoNVWhi65LJjBEVL3qGwNjLazl0OnGl1dz2cR9WHqW1sPITVHVU64HwjjMuKFqJwfPTZCMwN2a208rEfSt+HI+ZtskaQHJh6JDKjTEvIXKRy/3YZCYhOUSW3czhdDZXFpOv")
+},e("97jehiIYLlSezfnuYyFhAYGi2dbsdBRuHLa7uckYVWBC+bLsiTQhLlGIwMTcYQByCJ+s2uTjfQh4Hou/usgfV15a6bLEhRAAKmiF"),e("9JX2ix0AL1CPzfnuYR1GAYGi2+f4eTNqH5Cmss4xV2pL9Yr3iDsZLVKHw/7oYipRBq6I29vxci13HK2wtvQR"),{
+q:e("9JX2izIRLG6/wOjSahhZAIG81tzeejNLEaeuss0UV2pn/5PCiiI8LlKIw//tYTJgDryA3N3h")
+},e("+Y/WijUsLUaozP/rYzxsAIG81/HJeANXH6CytPUJUFJz9rfhihA0LXOMwfTEYj9LBq2L2Pz0eDpbHp+nsMgzVmt26pLtiRMeJlSLwv7kZxtJBEaB2+7afCVRH7mBsfQoV01K7a3O"),e("9JX2ijQzLVioztvvYCJOBayp3N7/eR5jH5K9v/c3Vl1b94b0ihYvLUm8wOTyYR1CBq+x19rwfS5vHK2ws+AlXW186aXJixYqL0eTw+DdZTl1CWqh2sb/fRJhEL2Ku88eVWhv6IDpjzIpLkqjzfHTah5bNmW31dz2ejhVEJ2lt8oRV1Ra6ofSjwEYIHqOwPvvaQc+O1il3+LDfhp0FpSx")],
+choices:[{label:e("9pXSiSsj"),to:"finale_blessing"}]},act4_d:{chapter:e("9pzjixY3LlOcCIXRpUNCV+iNvbrEF1JNVw=="),title:e("+Z/7ijUhLVKM"),sub:e("+Y/WiBUDLWKYztvmYixyBZWI2MT5eANaHaCdvtoZ"),fx:["snow-heavy"],onEnter:()=>{s.soul="d",q("m4")},
+text:[{q:e("87DThiIYL1KEzv/jZiRBAIG9")
+},e("+Y/WiBUDL1KJzcjDYzpCBJ2p2MrVeyFeEbeqtfUWV2p89rT6iTYgLXOMws3iYjZgBpqb2+3tfgNtF6u6sMoTV29w6bvviDEkLlOewv/eawViBXmt2srqcy52GKq5vfMbVH5166H3jB42J1uKwfzkZhlAOEWO2sXmfQBaEqiHvM4dVWtJ66b+jwYlIW6VwPnkZyAXO0eA1Ob1fzNgHZS/tskQSFpF5JTTiwg7Lkqwx/rsZic7P3yG3MTdcwtJE6iht+0QQXFg75T2jD0tIV6Iy8Htlh8YNHyw3MTfcg9SEJKz"),e("97jeixEEI1WQztDQahhPBJqU2drieTNqEaeuss0UVl1U+IDTihYvL1aNz+Dkax9OBI2s2uDDfihVELmevNE+VUt06ov+iDEQIUezzur5bB5NBEaB28TUfgFfE664sfw9Vkxu6bfIiAor"),e("9JX2iD8lIlGRzP3gZiRBB6SZ2ezceidTHJ66v+I6Vk5B96T/gjAnLlCXwfTEYj9LBIaS18rSciJmHrittvQRV3RJ6qHnihMFLFaPzvjfZhxJCEKl2MDLfTthE6yzs/ErVHRb4ZHAjzYVLF6Iw9PKZT5lNn+O2tPrfQRNHqqttdImVVRw6oHfiQkq"),e("87DbjA04LWKYz/zuYR5NBrqg2+f1eAJFH6qWsOkdW31F9pfLgjAnImmEwuPcYxhKBbqR2ub8fwNRHK6ps8YyVE156pDaiQMaKmiF")],
+choices:[{label:e("/ozHiygVI1+5zP3gahhK"),to:"act4_after"}]},act4_after:{chapter:e("9pzjixY3LlOcCIXRpUNCV+iNvbrEF1JNVw=="),title:e("9YjGjQ0tI1WQzP/mYABf"),sub:e("9rT5hg0gLk+wzurdYR5F"),fx:["snow-heavy","cracker"],
+text:[e("97jeiA0XI02AzfnxYRxOB6+p3N7/dARdHaKxss0UVnZt/5PCiTU0LlKFwMLTYjR0B5ep1vPMfgVfEKKBs+k2XW1865XyiDYxL2iHwdjkZxlBBEaW2eT2fRx9EIyxvMI5V1Rw4ZHXjhYBIX+yw/bqZTtENmW32f/TcD9bGam4tu45VlhO5a3BjRMsI1+jwsvdaCczMUGQ0+XgfA9bELq6tPUYSkRN6ZfwjgsvIl+CwMLj"),e("9YjCiysuI1+5z/rEahhPBJmu2vrUdARBHIe5s/svUFJz94nBiAkfLEy0wNzhYhtHBoeW1+zAfAVcF6u6scwTV1Rz65bNiS8NLnOfyfnoZxl2BUSX2tXSfQdWGKq5s/0iVExH6pXBjBUMLUWYwf/UZhtGOm670+flfAZXEIKRtuIdVndW6rbPjBUjImmOy//uaTkCOXmq3u3LfwxZEa6itOQzQHJh66/8gQgrL1S4xP3kZgcROUSW39bXcw5YEYOxtuoLQXFg7qf6jDoZIGupxN3pmRYsOEOa3eDddDVyEZKXs+8M"),e("97jeijciLXKmzcHVYApZCr672sHzfztYH5Cms/MnVnxr9ZDWiwIiL0yxxMbn"),{
+q:e("87DTiA0iL1OBzurdYj5HDb2/3d7pfjtOEaevss0ZVUpe94b5iyEQLXOMyPr6ZiNf")},e("9rT5hg0gLm+Bzc7rYy1DCqah2df9dSxhHoKzs9AtVEh19aLEihg0LlODz/ncYzlGB5ay2dT7dAZVEJCFs9k3Vmhv56/ZigM6LVCHwczjZxhHA3+c")],choices:[{label:e("9pXSiSsj"),
+to:"finale_blessing"}]},az2:{chapter:e("9pzjijc4LlOcCIXRpUFYfOSltg=="),title:e("9YjPjQ0tLk+wCKLDOIQnWIc="),sub:e("9JX2izwpLG6/zeLbYR5F"),fx:["snow"],onEnter:()=>{C.droneOn()},text:()=>{
+const t=[e("9pzjijcgLk6gx/vqYAF6BLOB2cL0ehZhGpi1"),e("9YjCijAqLVioztvvYwl4Db2s2vrUeANaHaKZs9AtVmJA9af+iz4YIlexwfLybCxeAoCd2MH1fwBjH4u9vdMSV3RJ6aTHhCk8LEWXwMnZZhxWBUGW1PfjdQVUEZ++sfUpVG54563WjDALJ1uKwNzXayZMN0GF2cjGfiVXEq20tdwkVHdj66TbgjkrIHyBwPjiZRk3PX2e"),{
+q:e("87DTiygVI0W9x/vqYAF6Cqeh2erGeTNqH6CysO0aXG599aH1ijcyI3G3wen+YhR5Bbif187OfiZGG5e0t/QO")
+},e("+KXIijUmLHCNzP3cYCFLBJmP2MjseQRZFqS7v+8bVkJ/9rPHiTYwLGCjwsPRax9OB5yf283yfTd7Hp+mscwTVXZ96bj9ixEuKmiGw9XoZQJ2B0SN2PLlfSNcH7ibvN0oXmx17K3QjgUGIECHzfv7ZDlvOkCK2OTbfjpuEq60t8sZU09s66HbjjMuLnGtwuT5bhwzO3Ws3uDsfi95E4i6teU4SFRp76vIiwg6"),e("9KvUiyQaLnqlzP3gbRtaCq690OLxdD9iEZGFsswLVndM97PFiTYwKWmKwOPIYwZCB5ep2ubxfS1+HK+7vdo6V3RJ6ZzzigIhJlSLzurJZRJVBXKq28HFfgNeE661sdwqU1B77K3YjzIpLUi+yvjvZxFxOlqC2OP6fQB9Eq+OttYLVntV6ZTCjy0BJGaH")]
+;return(s.lit||0)>=3?t.push(e("9JX2iRk2I226ztrDYy19BImx3N7/eR5jHrOus+k8WkVZ9YvYgjAnLlGFz8TKbBxZB5260eHwfjVzHp28scwTVEdJ6afGiTwUL2Wgw9nMayF5BXaT0uD3chZsGKqvsfYaVkRw4ZHAgggKLnCjwt7nag5dMEKR2tPrcRZnEYi0t8gXU09s"),e("97jehiIYJFaTwOnWYjlDB7GR2vvAfztY"),e("9JX2iSE9L1CPzP/mYRxIAYGi1+HkeANTHKGDv/IYVVpg94PiiTQrLEWpz+HkYQZ7BqyO3N3oeTpNEZWVstgCV2946ZvIgzcmLGuIz97Oaj9jBEeU1f7QcxpWEp6bsc8SVkpr6pXMggs6L12/yvjvZhlAN0Ox28fGfDdfE6yHt8gXU09s"),e("97jeizIvIm2FzvHqbRF0Brmg2PnweQxyHLyQse8QUFJw9ajuiTUlLHGnwsnKbCN5Bpqb1uDHfSdnF6ussPoMVExV6bvciDMqLVCtwv/eax1YBl+p2PLCfCFLFJa3sfw4WXZu6pXMjgUMIEibxsTh")):t.push(e("9JX2iD8NLXaAztrDYy19BImx3N7/eR5jHJedsO07VWZK97LOgjAnL2qHw/7lYBh0CaK02ufGcj1UHoGGs+UVV0pu6qDSiS8uLnKDw9zMZCtoA3+c"),e("97jehjIwI1WVz9vtbRtEB6SZ2+bZeSBEGpi1s9AtVVt6+KvUiyM/L2yAws/oYStrBrS90eHwcxVEHZqCs9sHV1R46qfAihAeLFiWxcXm")),
+t.push(e("97jeiRk2I226zdvOYBtAC4as2dfudA5tHaKxvvgdVHpO/5PUiiEiIlaPw/zjYRp2DryT2NXtcxxYHp28vcsKVmpG65TGiQ0zLVCMwNjBYCJDBXmH2eT7fgFyE6yPse86WEtF64nQgg0lIXCowf7lZhlAO0a31czUcBpPGam4tv03VHdu6ZThjjMSIEuRwPnkZRg/O3K51Ob1fA1YE4yct9QpSXpW6JHMjTAsIHihwMLj"),e("87DbjA04LWKYwcXFYzN1Cr642+bweyR/EJmkuckYVVpg9qXEhTMyLUG3wuv1YzlGBLyf2/nIfjxAHZi7sc4VUVFy")),
+t},choices:[{label:e("/ozHhggmLXaBzP3qYClCB4SL0OLxeR5jH4WSv+I6VVpg9JfOiTcdLlODyPrs"),to:"az3"}]},az3:{chapter:e("9pzjijc4LlOcCIXRpUFYfOSltg=="),title:e("9YrDjQ0tL1KJzcjqYBRMC5+r"),sub:e("9LXHiRkzJFaFzv/jYzxNBJmP2tndeixsFqSo"),fx:["snow"],
+text:[e("+bXFiBEkL1CFzcrnYCFoAYGi2vvEexZTHISfvtIGWkVZ9YvYiCgfJVWEzvreYRNUBIak2+PrfjVIH62UusgfVFh75qnBigYlLnWHw8LEZh5hBlCF2vnTeTla"),{q:e("87DTiwgkLH6Wx/vqYyxSBIKT2+fNeANaHJe7s8UbWkx686/Mjww2")
+},e("97jehiIYJFaFzP7WbDpIB4C62+X9eAJSGpi1"),e("9JX2hiIYJFaTzs/3bQNCCr6n2+THeRVsHqOuss0fW2xI97XKiCECL0SYwMXCbT1JAoCd2NXtfQ5iH4q2s8YyVWpp65XbiQowIVeAw8LEZi1ND0OF2NTLfgNeHpSWvM0rXmxj6K33jzIkIGS7zerKZhpWOnuU28b6cTxNFZW2"),e("9JX2iRcoLWOCzdvOYy5VAYGi1tzeeTx6HKSXsNoPVHdZ+I3lixgOL1efwsntYh5sBI+X1uDTdAZVHK+7sus2V01Y55r5hDEBLnKDw9nUZTR4B3uO2eb9fx1CEqaksuQ3VH1/7a3O")],
+choices:[{label:e("/ozHiBYTLk+wzvDdYRxJB4iJ2+b2eyFeEIqGuckd"),to:"az4",act:()=>{s.shoes=!0,P()}},{label:e("/ozHixwmI0WAzeLfahhZBLml2cbzeSdyHIOssOkcVlps9JXaiAUmL3mGyPrs"),to:"az4",act:()=>{s.qing=!0,P()}},{
+label:e("/ozHiwcxLk+wx/v8YCxoB52I1+HkeAFBH6qWseE8VEh19JfShSkULlGCz8zUbTFzDryW"),to:"az4",act:()=>{s.noShoes=!0,P()}}]},az4:{chapter:e("9pzjijc4LlOcCIXRpUFYfOSltg=="),title:e("9YjGjQ0tInOtCKLCEIQma4wA2+b9vF5+ZQ=="),
+sub:e("9JX2hiIYLXKHzf7SbRtbCqeh2cPY"),fx:["snow","cracker"],onEnter:()=>{O()},text:()=>{const t=[]
+;return s.shoes?t.push(e("97jeiAcmLWOCzPvebRtYCqCD1/z2cwdWH4mPs/IuV2pV9ZPuhSs5LUygyPrpYwJuBKGB1uLnfh9gHp69vPMfUVFy6ov0iDMnIWqozuPlbB5NBUGe2Mz1czlYE6yzsMs2V31K4ZHAjRYpLXeIwfntZTxAOlqp1PTOdgRNE5C8tOYOX3Ni66TagicYIHuFwP7CZjo7O1ih2Nr7")):s.qing?t.push(e("97jeixwmI0WAzeLfahhZBLml2cbzeSdyHIOssOkcVlps9JXaiAUmL3mGxMbnYQZ7B4qV1uLlfj15HK+csNkEV25F65TLiDMOIGmKyfnoZiFOBmex29zufwZAE6yzt/MQ"),e("9JX2hiIYJFaTwcXFYyxSCq+Q2MP9eAFcGpi1tPUAUVJl9Yr3hSMfKGmUz+jVYz5CA4CC2cf4fS1vHZevusgfVU1M6LPWiDEELFaQwNntZCB4BW+N2ebBeTla")):t.push(e("97jeiwcxLk+wzc/NYDhrCr652+Tmegl7Hoyfse8QV2pt+IrxiTQhImO5ztTUZyNABKWm3N3gfil/Gpersc4VVmlw6o39gzcmL2KNwOr/ZAdpCXiT28rLfzVdErOIu88eVHFx67bSjQopIWCKxsTh"),e("9JX2iD8NLXaAzcjrbA1wBImx3N7/eR5jHIimsOgxVmx59JPUjww3L3quxcb4ZyNA")),
+t.push(e("+Knriyk5LmOEzP/mYABfDb2s2sXmeRJsHrOosdUgV2x6+IHniCkSL3WgwMfTbTR2BLix2+LleDpbHbKPs/k0VUxw6Izaiyk1IVeczvr/ZiV7BXik0uD3cj1CEbuQsc0aWW1U4ZHAjgkmLn+pw8T2ZCJKOnS12OD6fQFfFZW2"),e("96zGijcWLnahz8bQYRxICq6U0OLnfjtGHr2SsOsDVnlz+JDXiBc1L2mawuPYYBlEAoCd3N3h"),{
+q:e("87DTiAU9I0yIzvPdYCxzBJmu2ufJfztYG5iqs9AtW31F86/M")
+},e("+LLsiykFLk6VwcDqahhPC7Oh1sv6dCtnHaKxsOMkVmtF+ajCixArL02vwNzhYBtCBJyl18bWeDpbH5+wst8qVmp+6qzAihIwLHuKw83UZxhVBmSq0uD3fQN6EKyNscIDVExH57bmjhYZLF+MzNfZZhtGOnCH2dXgfQBXE6S2vM4dVUxh6ZTLjxUYIVSkzMDfZiMYO1OQ3MD9fSFKEa64sfES"),e("97jeizMkLF6mx/vqYR1cB7+o2vD0exNpGpi1sP0FVVFC/5PUiTYRL2eXwdvAYjttBI+w2ubZcxhyHK+2sPs2Wn5t6bvciRA0L3Wiwd/gYCJD"),e("97jeix0VL1CPz8bJZiRB"),e("87DbjA04LGumz8bLYR1IB5Gu0OLxeR5jHJ+Nss8SWkVZ86/MhTMyLlK+w/zuax9OB4iO2MXTfwJQHbOfsc82V0F+6afAixQPIGmUwd/gYCJD")),
+t},choices:[{label:e("/ozHiykFL1CnzP3gahhK"),to:"az5"}]},az5:{chapter:e("9ovHiSYM6yi+CKL9G0FGa+mfq7n4Ow=="),title:e("9Y3JiygVI1WRzt/JYwl4Brum"),sub:e("9qT0hy4iL1KJzcj+"),fx:["snow-heavy"],onEnter:()=>{J(),C.droneOn(),
+setTimeout(()=>C.heartbeat(5),2600)},text:()=>{
+const t=[e("953siBEkLmKUzP/vYj5HBLml2cnUcwdWH4S+ss8uVk5Z9p39iz4ULlGCwsn0Yy1yBbqZ2/jFeDpb"),e("9JX2ixA8LnahwcXFbCNPDb2s193xdSZ6HoW3sMcnVWBO97XKhQwqLHa7web0ax9OCIK82MnTfRVNHbKPs+8nW0RP6LTJiyATLkO4zvr8ZSlFBWO229Xwcz5UFJa3vMk5VWhl6bbajBcpLF+GwPXhajdENmW30+f2cCN9Eq2+tcAwVlNn5ajRjwQYJWaRxsP2aDsVO3yA3+PyfSdYGqi/t/cdSXxM6rfDjTIdLlC0y/3maCAnO2G60u7XdDZX"),e("9JX2iRcoI26xz9/AYBpUB46K2tfUeANaH5K9v988VnZF/5PChDcvLlGlwv7DbRhTDryT2Ov0fgpkHK2wsPEbV1h96az/iRgqLnKDweD6aytzD0OS2efEfgRDEY6asu86VFhU6pHwjBAtK2eE"),e("9L/giBUDJFaFzeLfYj5HB5mU1/nveiN1HIimss0eVm5e97XKjgwp"),e("9JX2ijUhLXKmweLZYwl4BZuk3N7/dRFWHoS8se8QV2hL+ID6gjAnL0yxwcblbSROCb+H2MH1fjdTHYqhvNEvXW186rzBiQwKLFSnw8rEZhxWBmqq28nPcwRIHquls+kWVmpX57/9iAor"),e("9JX2iRcoLEGwz+jIbCNPDb2s2crDeyZaHaC3s/oYVURB97XKiDwkI3eDxMbn")]
+;return s.shoes?t.push(e("87DbjA04ImiqzcjqYBRMC5+r0OLxeiN1HoyfsP0FVGlo97XKiTQPL1Woz+H3YwZqBbmv2cf4eDpbEYm9sM4GVWtD6pDaiTUiLEeByfnoZTpuBmmu2sb/eTla")):s.noShoes?t.push(e("87DbjA04LWKYzc37bRtEB6SZ2tbWeAJqGpi1s9AtW21p9rfhiTUbLlOOxMbnbBxbBbiW2+TIcj1VF6u6sNEqV15a6rLlhDQzLVCHwv7SZxhKBEeU2+7afCVREoaZsvsDVkpr7a3O")):t.push(e("87DbjA04ImiqzcjqYBRMC5+r0OLxeiN1HL2OseE8VFZh9JXIiTQmLXatwuL/YRNTB5e62/DsfCBdHritstE7VmhA6LTJjwso")),
+t.push(e("9JX2iBkaLWG3zfnxYBpLB7iS2tn9cwdAHLyDs/oFVXBC+JDJgjAnLXC1wuLRYxhxB4292uf6fSxpH42yusgfVXpJ6IXyiDI1LGGNzvrjZxpBBne03tz5fxxhEpW6sus9VF5U5pj8jzAbLm+cyvjvahRwOnat2OP6fDVdGam4tu45Vn1d6570jjEiInuVwPvpZz0aMUGQ3dnKfhpREayztNwXTE5v"),e("87DbjA04Lk+wzurhYRxIBrum3N7/dARDHaC3sNk1XG599Yr3iz4KLHWBwsDobBZ1B5263d3+")),
+t},choices:[{label:e("/ozHhjQeL1KCzcndahhPBZ2r2vvEeyFeEZyPuckd"),to:"ez2",act:()=>{y()}}]},finale_blessing:{chapter:e("9ovHiSYM6yi+CKDDGENlbQ=="),title:e("9YjPjQ0tLE+Uz+HpYiFkB7mY"),sub:e("9In7izQYLkyLzurCahhPB6+W2vDLeR1YH7WT"),
+fx:["cracker","snow"],onEnter:()=>{O()},
+text:[e("97jeiTY1ImiqzP39YD9jBrma2sLVdARLH4+2vvUYVUxw9bzDihYvLWGOwO3cYQByB4OV19vudAZVH4u9vdMSWmB265bNhAMGLEygwd/gahlFCHas2sb/fTh3EJeesfYbXmxj6KPpjBcpLWiOwNTPZx9XOVGI2vTvfDFyE5yRtOgVWVFD6q7lhTUkIX6qwdj5ZC8rO1Oq3ffafSt+F5SvtdQNSGhi7qvXjTIhKVmfxN3EaR4tOEup3MHXcwxBEoiGtMAJRnJ97b3/jQc/JmSB"),e("+ILOhxgrLHCNz+L7YgJMDb2s2ufJeQJuHL61sNgwXG599YH4iCIdL0+KwevBax9OA4CL3N3ofjVzELG3sc0jV29n55v6iy0lLky7w9foZCpHB1Sn2eXwfQhjEIyxu88eU1B77K3YjzEjLV6yzcPJZSV2O0eC2f34fxVzFZW2"),e("9JDNizwnIm2Fx/vqYh5hBYK71vXlezh9FqS7v9MNVFFu95Pjijc+JVWEzv7EbRpHCLGj1t/1fRJzHK+1st8FV1Rb6aHfixYqLkWww+j0bB5NBn6z1fPMfR9XELOrsMg+V01K6pfnjB4BJ1udw8//ZTtEOnOp2dTQcCFHEq+6tOYmVHVU7qzJ"),e("9q/iizoJL1Glzfj/YjlDDb2s19rFeANQHKCRsegUVmtF9ar9igUSLHWBwNzhbSFhBqeS1vPYfCZGG5e0s8YyVE1565T3igQ6IV2wwN3MZgZdBlKl2sb/czt7E66fsMoMVWh/7a3OjhEyLWiSwNjLayZMNmmp0+f2fDdfH7+2t8gXVHdu6KPuiAk0L1apw+TvYyAiMUGQ0+XgfA9WE7iSu9sSSnB66oTejxAPI0GtxdnVaT4EOHO42dn6"),e("9JTmhgQeLW6Bwd/SYz5UBrum0OLxeANRHJW/sd4LV2p6+Jr5hBcBLHStyPrpbThoCYqu2/nbfCBdHou/s9YWWltB5qzuiDIiLEygyfnoZRlgBVu31P/lcjFGGKq5sdcrVk1v6a7TghYELXWKwPv6ZQNMOGSZ2uvucTFlGam4tsIXWX1v5LnMjjAZIW6VwPviZDsdOU6D2Nr7")],
+choices:[{label:e("9KvRiwUcL1Ovzs/Z"),to:"finale_study"}]},finale_study:{chapter:e("9ovHiSYM6yi+CKDDGENlbQ=="),title:e("9YrDjQ0tLEOzz97bYh57C6CV"),sub:e("97jeiQYALneZzdvOYCtSB4aa1uX5eT5THoKzvvoIVWBI967hiTQg"),fx:["snow"],onEnter:()=>{J()},
+text:[e("97jeiQYALneZzdvOYCtSB4aa1uX5eT5THoKzvvoIVWBI967hiTQgJVWEwcXWax9OCb+G2cTCfS15EJa8vcEFVUt06IvoihU9LEOFyfnoawBqBEWk2efXfwVbEoqdscMKWVpK643KjzIEL32CyvjvZT1LOkCK2dX2fDhxEq+ytOgVWVZm67vsjRMsIGisw8rLbhwzO3iU3tP0cAhOEKS1t8wyRmRV5bf4jBQPI1Wcy8jEaRgyMkCX3uL2cQJuEa2lt+wGRntP7LDNjD0cIV+vxd3rmQMYM0eW39nncDVBG7Swtu8kRWJd74zxgzswIFinyf/Hljs9PleB3cveeghfFZ+AqvIlSktR7obQjicPJXWhxYfmmxUoPHCz0ujicQpgFKmdq+oMTk1p7J3AhgQh"),e("+J3NiQwZLHCNztvvYzNjDb2s2dbseANXHoeSv/QHXG5q96v4hQwnL3WgwMjVYBtUDryT29XlfS15EJa8suAMWlF165bAix81JlSLw8jXZx9+BXGS1fv6cjldE664vNQTXmxj6pX2jzATLF+8wPPSbR1MO0eC1OTicDtqEq25uuYIU09s"),e("95HDijUmLXuDz9rmYRxDC6CV2PfHeyJnHoKzsc8sUFJz94XZiCg9JVWEzt3PbDN/BL6I2+P0cidAG5e0"),e("97jeiwIDL1Gszcb8YRxKBrqW2+T2fztY")],
+choices:()=>{const t=[{label:e("UB5viws1L1KCzeLfYj5HBJSl2+T2"),to:"ez4"},{label:e("Ux5viAcmLFCxz8TBYypK"),to:"ez3"},{label:e("Uh5vijYsL1OBzP75YRxOB4C60OLxeglTEKOv"),to:()=>(q("m5"),N()?"ez6":"ez5")}];return U()&&t.push({
+label:e("VR5vixEELEalzP/mbQVPDb2s2tjkeANRHL2Ose8QVkJ89YLZ"),to:"ez1"}),t}},ez1:{chapter:e("9ovcizws"),title:e("9KDCTmgBXA=="),sub:e("9J7DiDYNLFGazfbmpWZ0wuSvlbjhFV9ief6q950jHDpyrcf73WkjegG3vq/iCA=="),ending:!0,f0:!0,
+text:[e("97jeiAI8I1++z+vyZiRBCr652+b9ehd7FqS7sP0FVWBQ9rPHiAkjL2+Rzt3Pax9OBbmA2O/dfSZQHZK+sPIKW2Nx5rvKjwso"),e("97jeixEELEalzP/mbQVPB4e52+b2eANTHaCds9gDUVJl8q/aixQELGGZwd3aYQZ7BI+J2cf4eDpbHp+nscweVU5V5q/eiS4TLGaYwNjBZi1qBESe2eXzdQVUEpuevPMTVHlp64DcjQkaLF2AwMnpZwVpMEKR1PTOcRZnEq25u8cmVlJL6ZbNhTUzLnOCwPvoZRkgOE+93cbwfA9WEayZtssqR2Bd6ZXdigglI0C9xsP7aCA5Olm+3MfvcCxREbmBtNYITU1t457zgAcnIGGuxdvkmj8WOnOl2tj2fy1rFb2qt/UKSGRz5ZXEghIKI2iux/L+mAE1PnuD0OjxcBFqGpaaqtk8T0to"),e("97jeiAcmImiqzP/vYRxpB6y32tjkeSdyHqKPse8QVU5x9JfEhBEJJVWEwsXqYBtCBbi12ufGfAFRHK24sOg7VHB86qfAiRY6LVCMwv/iYCJD"),e("9rT5ix0iLWKYzs7rYCJaC5qK0OLxeT1DEKq2v+ATXG599anXiik2LU+HyPrpYSVbBJuE29LofCBdEb20usgfV1dp6rXWiSIcIGqkw8rBYSJdBEK+28jFfSRYEKuXtvMPXmxj66vVjAEVJ1uKwML6azZoOVmG0+f2fD5OEKeHu8woWU1N6ZThjwwbI1yLze7gZiEKOWeY0s3XcRVOFpSx"),e("97jeiws1LlSezf7QYRxOBL2i2+TTfztYHJ6us/0kVU5x9b/AiTQrIkiEyPrpYitTBbuS2dnKfSJ2GpeqvdsnVml96ZbIjgs3LnKDxcXm"),e("9JX2hjI0LXKmzurdYR5FAYGi1uz8dS5dHp2Qs80sVHds94nBgjAnL3KTwsnxYyZlBLin1/f+dAZVH4ibsMM2VVRX6pb1iTQzLkqLyfnoZxpXB2qS2eT7fTthE6+qssEzV0xm6Ln1jgUxK2eE")]
+},ez4:{chapter:e("9ovcizws"),title:e("9LbWTmkUQA=="),sub:e("9JX2iRcoLnqEzerxYR9OB46K2cbSfjtGHr2SsOsDVnlz8q/T"),ending:!0,
+text:[e("97jeiAI8I1++z+vyZiRBBImx2tjkeAFcEIOduckYVlRo9JXIhD4qI3yPyPrpYSVbBbqZ2fjhfBxWF6u6sPIKVmt26rXWiQQ+LnKDz+/mbB5NBXmH2eb9fyJDEr+Ds+kWWFJM66LpiQo1LFqmw9DdZTxAOEO/3tvndgRbE5Ott8gXV0RS4pDHjw8xI1yDzdTKZwckPX2e"),e("97jeiws1LlSezfnuYCJ0C5y50OLxey9AEZ+Es8scVW5z9JXgjgwpLGGZwczvYQZ7Bpqb2PDHfjxAHp+mscwTVmla6bn7iDAJLnKDwPbMayZbD0OS29bxfxxhEIyxsMsSVkRw66vVjQI5LF+GwuvkZxFPN1Gp39v4"),e("9rT5hg0gLmyQzc/WYzhDB5Gu2+b9dBpWFqS7sP0FVlNt9JLBiTYtKWmK"),e("97jeiwI9LGS5wMDMYBNyB6ar2OX1eANXHoeSv/QHVndI9aDliTcrLlCAxMbnYQZ7BI+12MXTfB98Homhsu4XV3tD6ojKgzcmL3CozvHeayJABXqz2sb/fxhzEZ6Ku88eV0hA57XzjSUyL32CwOz7bR1MOWay2OP6fQB9FJWou8I9V2hj76zWhTUkIX6qwPviZRgVPH2A3PPOfhptEo63sPENTE5v6Y7zgQ8NI1K1xNjlZQ8zOFGM1eX0cw1bEo6Xt8IuSFFl7rbhgDg/IVyVxvnqlzwWO2+y0efwcg1UFb6Qs+8M"),e("97jeiAcmLFCxwebTYzB9Brmr3N7/exFNHLyhse8QWklb+JDWiBADInm1xMbnYitTBIaG2uX3fwBfHbKPsu4XVER165TGgzcmLVGYw8P9ZxpKBEWY29Tqcj5yEqGEs+kWU1Bz5oL4jzIkLl+Dx8T+YSFC")]
+},ez3:{chapter:e("9ovcizws"),title:e("9rPoTmsiQg=="),sub:e("+KvlhisqLHGfzP/mYCxE"),ending:!0,g0:!0,
+text:[e("97jeiAcmLFCxzcD3YCxzBYK72N/WeANQGpi1sfQ/W1lm+KfaihErLVOwz+H3ax9OBI2o1ujLfSd8F6u6vM8CVmt24JLBih4JL2CXwv3kZTBvB36u3tz5"),e("9rH/hh0RLnahzubqbDlhBrmq0OLxdBlxHrKgsckJWlV99pPBhTMwLHStwNzhbQBMBbif283FdAZVHKy2sc0bVmhv65bAiQIDKmiF"),e("+Y/WiC0bLlSBzeLbZiRBC7Oh1sv6eyFeHr2qsdMbVFdW9Zf2gjAnL3KTwsnxYzlGCJe32fHQfD9+Ha+OusgfVU5d6pnoixEuLF+iz9fVZCdmBUem0uD3fCFWEq+Bs+kWVlhp6Yb1jA8OLV++xsTh"),e("97jeijciLXKmzcjJYR9mB6+p2uH+eSdqHoWWs/svXG599rfAiCgCIly/wdvAax9OBJCc2OX5fD1QEaaKsssWUVFy"),e("9L/liBUDLUetzdfoahhPBK6v2tbNeANREIOdse8QVUVU9YLegjAnLGGZwcbeYzVTBL+c2ffrfABhHK+8s+gaVmpw65fFiDM2IU24w9nMZjFMAn+K39zvfzxuErirsMgSVWln6pTTjTgILnuPyvjvZhlNN0Ga2sPVcCN9FZW2")],
+g1:[e("+Y/WijUsLnGXx/vqYiVoBLOB2cL0eTpGHISfsc8sW3Vj9JfEjgwp"),e("9J7MijUsI12mz8TBbRtEB4+b0OLnezh9H5a+v8cVWkd2/5PCig8MLGeBwOP4YwVNDryT2d7bfTRQHYytsPsHW1NT6qHohSEoJlSLwcbDZSxICWi22/vgfgFSHpSWsegJVWhF64DbhDYlL2Shw8rqZBNzOUyi2OPwcDp0E5q4teQhV1Vq6JzEgxcjKFqJw8DFZy42O1il0/XNejdKHJaQt8EhSmtQ7qvXjx8RIXm4ysXtaR0dOUSb3MHncS5KEKmcsvAN"),e("9rPoiwUcLXaJzdfoahhPCr6+2dbseSdyHrSbss0UW3N99anXiTQgLXOMzsTGYBtLBbi12/DrdAZVHK6psPkkVmt255v6ihYPJlSLz/71ZxhHD0OS28nYfgNeFJa3"),e("97jeijEULm2zzs7tahhPBIKT2dT3dTl5HaC+ss0+Vn9m9qPHiTEkKWmKwsnKbSFhB5iw2dzXeDpb"),e("87DbjA04L1OWzeLbZiRBB5Gt2vPqeid2H4WSsO07VVpg9rTxiCkSL2aewNzhax9ZB5e92uXxfSJ2HbKPsu4XXW186p78iDMnIUeiwdD9ZD9BA3+c"),e("973hhiIYLFCxz8TBYypKBrum0OLxeQtrHJ66sMc1VU549JX0hBArIk+Jwt37Yw5WA4CD2/jFfjVyHKy2sc0bUFFt55HUiDMAIH+pz+f8YCJDBES72Mz1fBZXEp6FsMsZWEtF6bfIjR0MLUqWyvjvZClROnGy2ODffBZeE6q3tu4hWGBa4pDRgiYcI16IwvvnYiA9"),e("9rH/hh0RLnahzubqbDlhBrmq0OLxdBlxHrKgsckJWlV99pPBhTMwLHStwNzhbQBMBbif283FdAZVHKy2sc0bVmhv65bAiQIDKmiFzvr9ZxpBBlO/0uD3fCF3EIqqs+kWVWtv6pTEjzM2LF+LwM3KZhtGPH6f")]
+},ez5:{chapter:e("9ovcizws"),title:e("94LGTmQXUw=="),sub:e("9rjJiSYVLkm5zcntbRtEBrmg2tb6"),ending:!0,
+text:[e("97jeijYsL1OBzP75YxZiBJ2p2tjkfztY"),e("9rjJiSYVLkm5wMbyYh92Brmt2cjQcwdWHaSLsswaVkJ59qfeiTQrL02hztnWYTBPBpqb2OjvfwBIF6u6sNAqVUxw6rXviRAIIEuZzs36ZDhFCWS01dbKdQVUEZ2QsvkjVWpp66jkjjIrIXKBxsTh"),e("97jeixEEI1WQz/7nYDdOBZuk2dXYejFrHaCauckYV2tu9qjcixkIImmEw/7xbCtQCICd0eHwfwFXH46LsNA6VmpV56n+iQM3LEybwd/gZDRQCGaP0uD3fzxwEK2ss9YPVnZg6bfIjCMTLleSwfzjZChrN36R2/LAfQJRGam4tv07WGhn6JLcjy0BInq1wd/BZRwoOFCa3+DSfA1QEp2Bu/ckSlxh5Y3Tjgs4KVmIysHcaRk3NHqh09/CcCxREY+attk1SnVB45PbgDA8KliPyvDLmjo6O0CD0Or2fyBTFIi1tNU0SXdH7pLtgREFLXqSxtrbmyQEPFyW29f0"),e("9JX2iCAXL1CPy8fkYRxVBZSs2+X9eAJSHaGosMc1VU549rv3iAMzKWmK"),e("87DbjA04I2qFzs/3bRtbBLWb2MP9cwdWHKGBss0AVmJ395TpijcGIlaRwebSYhd5BbiU29PHeDpb")]
+},ez6:{chapter:e("+KrfhhojLFGazfbm"),title:e("+Z/7TmkURsrvkMI="),sub:e("9JX2iwIHL1GJzP7uahhc"),ending:!0,h1:!0,
+text:[e("97jeijYsL1OBzP75YxZiBJ2p1/HJcwdWHaO3sswcV2tu9p3vixAiL2+RyPrpYBhCBbmX2uTjfQh4Hou/sPUJUVFy"),e("+Kvlhh0RLnahz+3xYh57Brmq0OLxeglDH6qus+kkVkF8/5PCiA8kLHGnwdrsYBl4BJy318rUfh5PEKKGs+k2WmRA6qD2gzcmLGePw8brZxlBBEaW2eXkfAt5EYq8t/MQ"),e("97jeizIRLG6/zsTVbRF0Db2s2dbseABUH4WSss0ZVE1U+a7diCkSL06bw/3lYBpKDryT29LXfwFZHK6+tvQR")]
+},ez2:{chapter:e("9pzjijcgLk6Vz/z1YBVD"),title:e("9KvRTmgpQg=="),sub:e("9Y3JijAMLEunzen4Yh9aCr6n2vvEeANaHqKIseELVU5L"),ending:!0,r1:!0,
+text:[e("97jeizIRLG6/zt/oYj1+C5iE2vrodTl5HaC3s9EIVl1g97vRiTYtLlKIw//tZyNA"),e("9JX2iBAJI1WOzs/3Yj5HBau32+b2fztYH5Cmseg1Vmxm9ZHGiz4iJVWEwNvEYR1VBL+c2/P1fCpfHamhtvQR"),e("9JX2iykLLUyLzcjMYzxsBIKT1sTpeyZaHaC3s8QWVHhm95X2hSMfLlGIwuXVax9YBIWX2cnjdAZVHKqWvdsnVUt06bbiixc1LnKDyfnoaiBiBneP2OzKfgFVEZagsMkUUlBt"),e("87DbjA04Lk+wzP/rYzxsB4+b2fPGeyFeGpi1s9AtVUpe9aH1hSsqI3G3wen+YzlGAoCd"),e("96jgiAU9LnuDwOjvYAF6Db262+THehZhHaKxuckYV2px9YH4iTYRLHGnz+DkbARDCJ292cf4eDpb"),e("96jgiAU9LnuDwOjvYAF6Db262dPteAFcEI+fsNIPXG59+JrAiTYtLVSiyPrpYStyBbqZ19/fcwRgF6u6sMQiVml96pHIiQ0nL2iSzvXlZShLBVqn1MjUfwVYEYuQsfsUVmt25p3NiAor"),e("96jgiAU9LWCDzeLfYBtAC4as2cL9eStUEJqUss0UVFBI9633jww3LGmdxcb4Yih9CbWv2uf6eDpbEJe6sc4pVGVL6LPNgzcmL3qWw83UZT5BBW+Q2sb/dQVUEZeFsvIiVGBe6LXjgggKLF+GwsbaZSN5OX6I39v4")],
+after:[e("97jeTmoXQ8rtkslGbQt3wueYun6ZJj36HaC3dpM4EjFxkg=="),e("97jehjI1L1KJz9P5YDBsBrmg1/HJegNfHoKzss0UVl1U+IDTgjAnLGOCwuPcbSNDBIiv2uf6fQhqEZC6tvQR")],tail:()=>{const t=[]
+;return o.lastName?(t.push(e("9YjFijUsLk6Vx/vqYyxSB52I2OTFeyFeHrSbss0UW3N99rTxiCkSL2aez/niYTNPBK2I3N3oeTpNG5e6")+o.lastName+e("8rDCjQ0u")),
+t.push(e("97jeiAcmI1WQzP/vYRxpB6y30OLxeQRvHqOusMcnVWBO9JfEhA4ILlGiwvHXYxhNBJCz2uXxcx1YH42ysc4pV0Fc7K7PiS4TL1qmwNntZhhVA3+c")),
+t.push(e("9L7QiBAJL1KJzP/MYDROB6y30OLxexd2HaC3sNk1Vm9i97LOixAHLlOywsnOYSR4BI+80eHwfSJ2HYuesNEqVHxL65TLiDMjLEyuwvzvZjJPA3+c"))):(t.push(e("97jeiRk2I226zP/rYjtmC4Cz2vvEeTRxHaO3sswcUFJz")),
+t.push(e("97jeiTY1L1CPzeLfYRxDBrmK2tDGeR9eFqS7s/ggVnV695TGiz4KLHWBwP38YQZ7Bbif2uXWfipUHbqhtvQR"))),
+t.push(e("+KvliwwwL1CPy8fkbBZCC5Sn2MT5ex5HHr64vsoMVltY9rPOiBwlLlGIwuLMax9YBoiZ2fbFfD9+Ha+OusgfV0pr6qHZiw4NLFC/z+/mbB5NB2Cz2OvefTx/Eq6NscwLVnJj4ZHAjzI/L3KKwfzjZSN5O0eC2unbfyReEIGNtv0JU09s")),
+t.push(e("+bDDiAU9Ll27z/zpYDhrBIKT0OLneiNUHKGDvsoNV2pb9rj4iAwyJVWEwc70YQdlB6ad1uLkfwZDHYyos+k2UVFy65T3ihMkLneiz8T3awRACEGN0uD3cgZAH7C0sfUfV01K6pXMjjspJ1uKzfv6Zy5rO0Wd2OLydgRI")),t}}},$={prologue_arrive:"town",prologue_snow:"snowfield",
+prologue_news:"town",prologue_study:"study",prologue_who:"study",act1_first:"town",act1_fuli:"bless",act1_taken:"snowfield",act1_chase:"snowfield",act2_hejiaao:"snowfield",act2_snow:"snowfield",act2_amao:"snowfield",act2_tell1:"town",
+act2_tell2:"town",act2_tell3:"town",act3_return:"town",act3_liuma:"town",act3_money:"town",act3_temple:"temple",act3_carve:"temple",act3_blessing:"bless",act3_speak:"bless",act4_river:"river",act4_question:"river",act4_a:"river",
+act4_b:"river",act4_c:"river",act4_c2:"river",act4_d:"river",act4_after:"river",finale_blessing:"bless",finale_study:"study",az1:"river",az2:"l0",az3:"l0",az4:"bless",az5:"river",ez4:"study",ez3:"snowfield",ez5:"bless",ez6:"blank",
+ez1:"dawn",ez2:"g2"};function ee(e){const t=D("bg");if(!t)return;const i=$[e]||"town";t.className!==i&&(t.className=i)}function te(t,i){const s=D("textBox");s.innerHTML="",n=!0;let c=0,o=0,l=null;!function L(){if(c>=t.length)return n=!1,
+l&&l.lastChild&&l.lastChild.remove(),void(i&&i());const r=t[c];l=document.createElement("p"),"object"==typeof r&&(l.className="quote");const f=document.createElement("span"),h=document.createElement("span");h.className="cursor",
+h.textContent=e("8rDP"),l.appendChild(f),l.appendChild(h),s.appendChild(l),o=0,function e(){const t="object"==typeof r?r.q:r;o<t.length?(f.textContent+=t[o++],a=setTimeout(e,15)):(c++,a=setTimeout(L,230))}()}()}function ie(){if(!n)return
+;clearTimeout(a),n=!1;const e=_[s.scene];if(!e)return;const t=D("textBox");t.innerHTML="",ne(e).forEach(e=>{const i=document.createElement("p");"object"==typeof e?(i.className="quote",i.textContent=e.q):i.textContent=e,t.appendChild(i)}),
+ae(e)}function se(t){const i=_[t];if(!i)return;s.scene=t,s.seen[t]=!0,P(),J();const n=i.fx||[];if(ee(t),g(n.indexOf("snow-heavy")>=0?"heavy":n.indexOf("snow")>=0?"normal":i.r1?"stop":"calm"),n.indexOf("cracker")>=0&&O(),
+D("chapText").textContent=i.chapter||"",D("fragText").textContent=e("9pLBiQQr6w==")+s.frag+"/9",D("pathText").textContent=e("9I/6Tg==")+s.pathCount+"/6",i.onEnter&&i.onEnter(),D("sceneTitle").textContent=i.title||"",
+D("sceneSub").textContent=i.sub||"",D("stage").innerHTML="",D("choices").innerHTML="",le(),k(),i.ending)return d(t),he(i);D("start").style.display="none",D("game").style.display="block",D("ending").style.display="none",te(ne(i),()=>ae(i))}
+function ne(e){return"function"==typeof e.text?e.text():e.text||[]}function ae(e){if(e.game){const t=s.scene;if(s.mg[t])return ce(e.game.next);Le(e.game,()=>{s.mg[t]=!0,P(),ce(e.game.next)})}else oe(e.choices||[])}function ce(t){
+const i=D("choices");i.innerHTML="";const s=document.createElement("button");s.className="choice",s.textContent=e("/ozHiTYLLFGkx/vv"),s.onclick=()=>se(t),i.appendChild(s)}function oe(e){const t=D("choices");t.innerHTML="",
+"function"==typeof e&&(e=e()),(e||[]).forEach(e=>{const i=document.createElement("button");i.className="choice",i.textContent=e.label,i.onclick=()=>{e.act&&e.act();const t="function"==typeof e.to?e.to():e.to;P(),se(t)},t.appendChild(i)})}
+function le(){const t=D("status");if(t.innerHTML="",0===s.scene.indexOf("act2_tell")||"act2_amao"===s.scene){const i=document.createElement("div");i.className="bar";const n=Math.round(s.patience/5*100)
+;i.innerHTML=e("LUM/D+OSL1aezP3cbSRTB76jA3EO7Nq0xyREJhT6k7GdcVw9UK7fuIhrTGRbuNCygG4/XTEd6Mnk2nFfORg=")+(s.patience<=2?" low":"")+'" style="width:'+n+'%"></span></span><span>'+s.patience+"/5</span>",t.appendChild(i)}
+if(0===s.scene.indexOf("act1_fuli")||0===s.scene.indexOf("act3")){const i=X(),s=document.createElement("div");s.className="bar",s.innerHTML=e("LUM/D+OSLE+kz+LmbRFHBKGcA3EO7Nq0xyREJhT6k7GdcVw9UK7dr5tsTiURpp0=")+i.verdict+"</span>",
+t.appendChild(s)}if("finale_study"===s.scene&&h()&&!s.hope){const i=document.createElement("div");i.style.cssText="width:100%;font-family:var(--kai);color:#b8453c;font-size:13px;letter-spacing:.14em;line-height:1.9;opacity:.9",
+i.textContent=e("/ozHiD8fI1SwzP/sbCZgBrmK1snTdRlCFqS7ssg0VmVD95TBiiE/IlaPw/zjZyNADryW"),t.appendChild(i)}}function Le(e,t){const i=D("stage");i.innerHTML="";const s=document.createElement("div");s.className="stageTip",i.appendChild(s)
+;const n=document.createElement("div");i.appendChild(n);const a=fe[e.type];a?a(i,s,n,t):t()}function re(e,t,i){const s=document.createElement("div");return s.className="thing"+(i?" "+i:""),
+s.innerHTML='<span class="g">'+e+'</span><span class="n">'+t+"</span>",s}const fe={study(t,i,s,n){
+i.textContent=h()?e("/ozHijQKLWK2wcDqbRtbB4iJ2tndehttH4+Qss0IW3dOMM3O+W4rXsngoPWANDIlfYv7hvmaOw06eJXQ9Px3Clsfs6KoyBFOc27jnsWDGC0mYVD9vd6UJjA="):e("/ozHijQKLWK2wcDqbRtbB4iJ2tndehttH4+Qss0IW3dOMM3O+W4rXsngoPWANDIlfYv7hvmaOw02RJ4=")
+;const a=document.createElement("div");a.className="things",t.appendChild(a);const c=[{g:e("9pbA"),n:e("96z+iTcOLk6uysf6YgJMAIG92vPq"),
+mem:e("+JbWiCwkL1KDztHfbCZgBrmK2cLMewF4HoKztPUIVHR+8q/TiCE8JVWEwv/RYRp2B5av1unIdAZVHa6CsM0nVmlw6Y76jwsoIFqGz9DjZxh7B2Sm2ePadQVUEpmfvNUTVH145pn4jjQ+L0ypw+nAbR1MOFiS2/7kfAhmEqmute80U09s76zfiAk8IkO8wu7ZZjo7N3+/3+L5fRNKGqi/t9wHSkZ35J/+jTAtKVmIxffnZyw0NUOD3OvZcg9nF5Ow")
+},{g:e("9rPU"),n:e("9YjPiyIVLFCrz8T9"),
+mem:e("9ortiQ43LHCNzvTMYgNsBImw2+b9eQtVHLixtfUWVFFq967liTQrIl67yPrpYyZlCaee28bnfjVNH42yvfArXW1q65bAigs4JlSLwv3pZSBzD0OS2NPRfCF3E664vPMCVlNJ7a3OjzE/LUyKwOHaZAx7OkCK2OP3fyB4EIKCtvIIX3Ni6LHEjjMuIl+xwPvpZjo7NlqY3MXQezdU")},{g:e("+Y/2"),
+n:e("+KvlixEcI26TzcrW"),mem:e("9prYiyk6InGjzdvWYRxJBrmg1//xdD9AHJWHuckYV2l/+IjchBsDL26ywsjeax9OBbif2cbIcjpDHZ+Gs8YgWm9J4JLBiQQiL2Kfw976ZT9kAn+K39zvfgFVGKq5ssEzV0xm6KfUjhE3LnqjxsThZy5qOWKU2dXBfiJTH5eXt8oRWG5i7qzJ")},{g:e("9p/h"),
+n:e("96foiSYVLEWn"),mem:e("9YjPiwIGLEq9z+7cYj5HBaqZ2PHTcwdWHaC3s/o+VX1l9Yr3ixcfLUm8wO/fYzlGBqKI3d3+fBFgH7iYvcsLVElf6qD2iTIeIGqkw8rObB5NB12J2NHPfC5xH7W3sMkUVF9M7a3Oji8QLmiWwtnjZw9DMEKR2cfScApWH4Czu8chVHVo6ZTCjzAcJGaH")}];h()&&c.push({
+g:e("9rHg"),n:e("9YjPiRYjLX2uz8bJ"),
+mem:e("9YnpiCwkL1KDwcXFYj9MBYCP3N7/eANQHaC3s9EIXG599qffiDwaLHGnwtrNYQ1BBbiU18DefSFmHbKPsPsFV0F96oPaixEuKmiFwcTLayhuB3y52sPWfgNeE661svs4Xmxj6J/1gzUxLlynwtnjYCFUPX6J2fX5fxdDEJ2lu/IBV0xI7qzJ")+e("9KDjhiIYL1CzzdvOYxZwCr+Z1snTdAx1HoKzsOIiVlJo/5PCiAMBIk+JwdrsYBl4CYKw1vLIfwJZHZiTvfY8V39q6LTJhCQ3JlSLw+DdZhJwCHyj2PjhcgxoE668vfQeWEtF5prjiAor")
+});let o=0,l=!1;c.forEach(c=>{const L=re(c.g,c.n);a.appendChild(L),L.onclick=()=>{if(L.classList.contains("done"))return;L.classList.add("done"),o++,S(1),P();const a=document.createElement("div");a.className="mem",a.textContent=c.mem,
+t.insertBefore(a,s),C.whisper(),o>=2&&!l&&(l=!0,i.textContent=e("9pLBiQQrLk6WzP3gZiRBBYK72N/WeTRSEa+Ess8SV2px9JfFjgwp"),setTimeout(n,500))}})},fuli(t,i,s,n){
+i.textContent=e("/ozHiwgkLWCDz+HpYgB/BJCm2+b3eAVBH7m7uckPV2tu9aDhiTcOIkadwNvlbA1rBKWm2MDZfStfF6u/");const a=[e("+Iju"),e("+InK"),e("+IHz"),e("+bLG"),e("+LXd"),e("+JXi")],c=document.createElement("div");c.className="offerBar",
+t.appendChild(c);const o=document.createElement("div");t.appendChild(o);const l=document.createElement("div");l.className="table tableLine",l.textContent=e("8rDP"),o.appendChild(l);let L=0,r=0,f=!1;function h(){if(f)return;f=!0,
+c.querySelectorAll("button").forEach(e=>e.classList.add("used"));const t=X()
+;s.innerHTML=e("LVQmGK3Pp4t6W3pE6MGuwD/FmuebFjE8cJPRwsNwCVQUi7Gr4zdEdmXvjN+AGAslYLb3gOSTJzY+ZJzT3d93CGsWhaSqwTxPZHjhqdeAOygiYH0=")+e("9pXiiSgsI1+NzufaYCxnB6+60OLnoMiqmHYXJQHt37fMMkwhAePZ8MpqH3JQt8Dg3w==")+t.verdict+"</span></div>",
+setTimeout(n,1100)}a.forEach(t=>{const i=document.createElement("button");i.textContent=t,i.onclick=()=>{i.classList.add("used"),L++,l.textContent=a.slice(0,L).join(e("8rDP")),C.cracker(),(L>=6||L>=3&&r>=1)&&h()},c.appendChild(i)})
+;const w=document.createElement("button");w.className="she",w.textContent=e("+Z7miSgJLXSezezkYzlmBJCm"),w.onclick=()=>{r++
+;const t=[e("87DTiSgJLXSezezkahhPBryA2crDeyZaHqWVuckVVVpg9rLrix0tKWmKxcb4ZiNWA4CL28bnfhNv"),e("87DTiSgJLXSezezkahhPBryA2crDeyZaHqWVuckVVVpg9rLrix0tKWmKxcb4ZiNWA4CL28bnfhNvF6u6sPsbVFR86pHUiS8NLEu3zurQ"),e("87DTijAMLX63z9rmYhlhDb2s2PvYeiVNHLO1uckVUVJs8q/ajww/L3KTwu/TYiZOBL+G2/nbfhlpELiC")]
+;s.innerHTML='<div class="blocked">'+t[Math.min(r-1,2)]+"</div>",C.whisper(),L>=3&&r>=1&&h()},c.appendChild(w)},snowfield(t,i,s,n){i.textContent=e("/ozHhjI1L1KJz87hbCd+BJmP3d7hdSBwG5iqtfUWVFBI9ZPOihAgLXWDzt3PYRlXBbiU2MXTfwFZHK6+tvQRXW15")
+;const a=document.createElement("div");a.className="snowfield",t.appendChild(a);const c=document.createElement("div");c.className="note",t.appendChild(c);const o=[{g:e("9IHq"),n:e("9IDAhxMn"),
+mem:e("9Lj1iBIYL1KDzsvkYjlDBrmg2tHXeABMHoKzs8UbWkx686/MhBIgL1Gmw/7vbBxaB7Kh2cD8fQl8F6u6vOoYV15T6bLQiDMhJlSLwezeZAt7B2Wa3tz5")},{g:e("+ZHP"),n:e("9YjPiQ8VI0uJ"),
+mem:e("+b3GiScMIm2FztvvYRxDB7Gv2Nf6dQBLGpi1v+4+VEln9JXIiAEhIlexyPrpYSxkBKSJ29D2cwRgHZGNsckcVmt24JLBihMFIUyXzszWZDhFA3+c39zveDlMHpSWsus9WEhQ6ILXjBAtK2eE")},{g:e("9p/h"),n:e("9IDAiSIC"),
+mem:e("9YvZhjcWLnahwMrvYg5jC4as0OLxdDlAEJ+7se8QV2hl+KvBiDsZLVKHzsXYYxhbBJCc2fTGfwBfF6u6s/0YW1Z855HViz8NLlygwd/gZS9OB2Ke1N7YfzZyEqa6s9w8VEFN7a3O")}],l=[];for(;l.length<3;){const e=Math.floor(24*Math.random());l.indexOf(e)<0&&l.push(e)}
+const L=[e("+KvlijUnLmWjztvvbD9pAYGi"),e("97nEiAErLmyyzfnxYCtSC7ub0OLxeABaHaG/sswLVWBQ9rPHjgwp"),e("+KvliQQrI3q0wPj9bQZVB46D0OLxeTxTGpi1"),e("97ndizEsL1KJzfbkahhPB7u12+b2dARCH4CYss0UVmNz86/M"),e("9YjPiwIGLmyyzcTTYj5HCpui18TMcwdWHJCcse8QVWBQ9rPHjgwp")]
+;let r=0,f=0,h=0,w=!1;for(let i=0;i<24;i++){const d=l.indexOf(i),m=document.createElement("div");m.className="cell",m.textContent=e("+Kvl"),m.onclick=()=>{if(d>=0){const i=o[d];m.classList.add("real"),m.textContent=i.g,m.title=i.n,f++,S(1),
+P();const n=document.createElement("div");n.className="mem",n.innerHTML='<b style="color:#ffe9b8">'+i.g+e("8rDP")+i.n+"</b><br>"+i.mem,t.insertBefore(n,s),C.whisper()}else m.classList.add("swept"),r++,
+c.textContent=L[h++%L.length]+e("/ozHizoeLWOizfvmpQ==")+r+"/21"+e("/ozG");if(f>=3&&!w){w=!0,a.querySelectorAll(".cell:not(.real)").forEach(e=>e.classList.add("swept")),c.textContent=e("9YjGiC0bImm0zdvOYR5FAYGi")
+;const i=document.createElement("div");i.className="mem",i.textContent=e("96jqiykFJFaFz8zaYCt/CrSQ2+T7dSNlH7estfUWVndI+ID6ihYvLEaHw/7lYBtoBK2I197BfSJ2H4upsu4XXW186qHnihMFL1qmwNntZxh7BXmT29jEfD1XEoaZt/MQ"),t.insertBefore(i,s),
+setTimeout(n,1200)}},a.appendChild(m)}c.textContent=e("+KvlizMkLV24y8fkYRxKBKGX2+bhdB5lHIe8s+k8WlV9+bLsjgwp")},money(t,i,n,a){i.textContent=e("/ozHiygVIlGRwfz+Yj5HCrax1//qcwdWH5Gcs+kkXG599pvZhQM3JVWEwfH9YxJxDryW")
+;const c=document.createElement("div");c.style.cssText="font-size:13.5px;color:#c8d2d6",c.innerHTML=e("9L7JizQYLE2mzer+Yj5HB7aF1szMfztaxXoXPxGpkb+fZUJsTf/fs4VtGmQG68+tkzo8XWUdo4y72ikGaVvxjPHfLx9/TG4vSgG+lqPQCA=="),t.appendChild(c)
+;const o=document.createElement("div");o.className="tally",t.appendChild(o);for(let e=0;e<6;e++){const e=document.createElement("span");o.appendChild(e)}const l=document.createElement("button");l.className="choice",l.style.marginTop="12px",
+l.textContent=e("9LbCizQeL1KJwd/TYxB4Db2oFGxdeT5ZFqS+"),l.onclick=()=>{if(s.money>=12)return;s.money+=2,D("mnum").textContent=Math.min(12,s.money);const t=o.children[Math.floor((s.money-1)/2)];t&&t.classList.add("on"),C.cracker(),
+s.money>=12&&(l.remove(),
+n.innerHTML=e("LVQmGK3Pp4t6W3pE6MGuwD/FgPWYOCQ+QZjS78F7D14UtZao5AFPcWftvN2ALRUkaIv2udGaDxU8d4HS7/J2PFcWkouqyyRPZHDgvMGBNAcock7xgdCdFxs/WYHR7vV3PFELtKGp7glAcVfgkc+AAiM=")+e("9JX2iAcmI1WQwdXXYjBrBIir2unDeTdfHaKxs/ocVl50/5PChRskL3Wgz/LRbBlpBpqb28HMfSxgG5e0sNEqVmpV65b3hDQzL3CowvzUZjN8B2Wa1M7KeTlayzlRPQWs"),
+setTimeout(a,1200))},t.appendChild(l)},temple(t,i,s,n){i.textContent=e("/ozHiAElL1eGwPj/YDlUAIG82fnmfjtHFqS7sP4CVlpB9ZXXhBsDL2arwsjeax9L");const a=document.createElement("div");a.className="templeRow",t.appendChild(a)
+;const c=document.createElement("div");c.className="gate",c.innerHTML=e("LUM/D+OMqIZoWzRbp8aqhSMe2uTkoJSpiXlZaJAuKjFxkMbZxW8rSgyHhA==");const o=document.createElement("div");function l(){
+o.classList.contains("locked")||(o.classList.add("locked"),c.classList.remove("hot"),c.classList.add("done"),c.innerHTML=e("LUM/D+OMqIZoWzRbp8aqhSMe1snVoJSpiXlZaJAjATFxkMnD/Q=="),f&&f.remove(),C.bell(),
+s.innerHTML=e("LVQmGK3Pp4t6W3pE6MGuwD/JqPabOyA8UbLSyt1xCUsYh4er4i9PcG/rp8SAIRokYrPwgseYIDQ9Q53T6/R2Il8fs6Ko4QhOc1LvnsqLPy4lWHj6h+aTLRE3S5rT3OJ1K1QIs4ep2ztOZnDukMqHOCcjX3w=")+e("87DbjA04Lk+wzP/rYjtmC4Cz0OLxdSxyH7+ssO07VU5Z9Yv6gjAnLlOywd7KYBl4DryE2MHUfh5tHoyJscweVmt265T3jwso9cdjTzNa"),
+setTimeout(n,1200))}o.className="beam",o.textContent=e("95fU"),a.appendChild(c),a.appendChild(o);let L=!1;o.addEventListener("pointerdown",e=>{L=!0;try{o.setPointerCapture(e.pointerId)}catch(e){}}),o.addEventListener("pointermove",e=>{
+if(!L)return;const t=c.getBoundingClientRect(),i=e.clientX>t.left&&e.clientX<t.right&&e.clientY>t.top&&e.clientY<t.bottom;c.classList.toggle("hot",i)});const r=e=>{if(!L)return;L=!1;const t=c.getBoundingClientRect()
+;e.clientX>t.left&&e.clientX<t.right&&e.clientY>t.top&&e.clientY<t.bottom?l():c.classList.remove("hot")};o.addEventListener("pointerup",r),o.addEventListener("pointercancel",r);const f=document.createElement("button");f.className="mini",
+f.style.cssText="display:block;margin:14px auto 0",f.textContent=e("/ozHiAY6L1KEzc3OahhcBYOZ2fPZejFQEI+fsNIPVVhd+JDJiAIQJVWB"),f.onclick=l,t.appendChild(f)},carve(t,i,s,n){i.textContent=e("/ozHijUsL1KCzP/mYRxIB52Q2tbGcwdT")
+;const a=document.createElement("div");a.className="templeRow",t.appendChild(a);const c=document.createElement("div");c.className="engraved",t.appendChild(c);const o=re(e("95fU"),e("+KfnjQ0sLU2S"),"");o.style.minWidth="110px",
+o.style.cursor="pointer",a.appendChild(o);const l=[e("973f"),e("+Kfn"),e("95fU"),e("+YXB")];let L=0;o.onclick=()=>{if(L>=l.length)return;const t=document.createElement("b");t.textContent=l[L++],c.appendChild(t),C.bell(),
+L>=l.length&&(o.classList.add("done"),
+o.onclick=null,s.innerHTML=e("LVQmGK3Pp4t6W3pE6MGuwD/FksmYFAA/XKXT7PN7D0gXnb+t7Q1CXUHrp8eDIzghYYH3i9OfGzg8Xa7S7fl7HHUVsbml0xJPUnPjnu+BLjUuXHP6gNqePwA/bK7R69J3H1MLtYGv6wg=")+e("9JX2iysuLnqFwMPXYR5FBJ+X1sr8cwdWHoSLv/IYVU549JXIiAkiKGmcxcbxbSFhBIWW29LWfwB3HK2wscwTV3VZ7K7PUKTOoJ45"),
+setTimeout(n,1200))}}};function he(t){J(),D("start").style.display="none",D("game").style.display="none",D("ending").style.display="block",window.scrollTo(0,0);const i=!!t.h1||N()&&("ez5"===s.scene||"ez6"===s.scene),n=D("endBody")
+;n.innerHTML="";const a=D("endFoot");if(a.classList.remove("snowed"),D("ending").classList.remove("o1"),D("btnAgain").textContent=e("9LbCTmsxbsrtkMdGYABf"),t.r1)de(t);else{if(t.f0){D("endTitle").textContent=t.title,
+D("endTag").textContent=t.sub,D("veil").classList.remove("on"),(t.text||[]).forEach(e=>{const t=document.createElement("p");t.textContent="object"==typeof e?e.q:e,n.appendChild(t)});const i=document.createElement("div")
+;i.className="nameAsk",i.textContent=e("97jeixEELEalzP/mbQVPB4e52+b2fjtOG5ij");const a=document.createElement("div");a.className="nameLine",
+a.innerHTML=e("LUM/D+OSLk+wy8fmYCto3i5TTz8Tooezl2hCIlX91+/Tfk4jCMXFupx8BWYI5duuhG54SjVBuYL72GdaNBf22r6ca0s/UalJSWjkpsVGow==")+e("cEU7Ae7DppplTTMDuIashGcCHy0N+de2mnBSNR6pkbSQfFwrT6zKuIBpCioE5sau3CL5peKZPgM8d4HS7fR3CnsVn6OowRyI9w==")
+;const c=document.createElement("div");if(c.className="q echoQ",n.appendChild(i),n.appendChild(a),n.appendChild(c),h()){const t=document.createElement("div")
+;t.style.cssText="text-align:center;margin-top:26px;font-size:12.5px;color:#8a7a5c;letter-spacing:.16em;line-height:2.1;white-space:pre-line",
+t.textContent=e("/ozHijAMLl27z/zpYCJaBrmr1+H6eR5jHoKzs+UZVn9m9JXIjgwpJVWBLanZDEZNTuSinrXTDlJmf/Kq/ZIhATlOtsr15mQWRQ+qsqDaFEpDTxqwp7jDGl5aTvKM3JwuLj9Thw=="),n.appendChild(t)}const l=a.querySelector("#nameInput"),L=t=>{
+c.textContent=t?e("+bDDiAU9Lnahz/3eYRxJDb2s2tHWeAFcHL2Oss0UVnFB/5PU")+t+e("8rDN"):e("+bDDiAU9Lnahz/3eYRxJDb2s1+HidARFH6qWsOkdW0JM9JfFhTMyLlGIwuXVZyNA")};return l.value=s.givenName||"",L(s.givenName||""),l.addEventListener("input",()=>{
+s.givenName=l.value.trim(),s.givenName&&(o.lastName=s.givenName,r()),L(s.givenName),P()}),setTimeout(()=>{try{l.focus()}catch(e){}},600),void P()}if(i){D("endTitle").textContent=e("+Z/7TmkURsrvkMI="),
+D("endTag").textContent=e("+KrfTmU7RMruk9RGYBVD"),(t.text||[]).forEach(e=>{const t=document.createElement("p");t.textContent="object"==typeof e?e.q:e,n.appendChild(t)});const i=document.createElement("div");i.className="bigQuestion",
+i.textContent=e("9JX2TmgjYMrtk8dGYR1Lwu6coA==");const s=document.createElement("div");s.style.cssText="text-align:center;font-size:12.5px;color:#7d888d;letter-spacing:.2em;margin-top:14px",
+s.textContent=e("/ozHhxYGI3q0zP/tYzlmDb2s2MXreAZVHaKxsPwUVU54+a/HhC0SJVWB"),n.appendChild(i),n.appendChild(s),D("veil").classList.add("on"),D("ending").classList.add("o1"),setTimeout(()=>a.classList.add("snowed"),900),g("heavy")}else{
+D("veil").classList.remove("on"),D("endTitle").textContent=t.title,D("endTag").textContent=t.sub||"",ne(t).forEach(e=>{if("object"==typeof e){const t=document.createElement("div");t.className="q",t.textContent=e.q,n.appendChild(t)}else{
+const t=document.createElement("p");t.textContent=e,n.appendChild(t)}});const i={a:e("9Y3viBEsLnqHwOnWYRlMBZuk0OLxeiN1HL2Ose8QVVNh9qzpjgwp"),b:e("9Y3viBEsLnqHwOnWYRlMBZuk0OLxeiN1HL2Ose8QW21M+bjgjgwp"),
+c:e("9Y3viBEsLnqHwOnWYRlMBZuk0OLxeiN1HL2OsekoWlV996nKig0GLXOMwsPsZyNA"),d:e("9Y3viBEsLnqHwOnWYRlMBZuk0OLxeiN1HaC3sfwTVHtL97bzjgwp")};if(s.soul&&i[s.soul]){const e=document.createElement("div");e.className="q",e.textContent=i[s.soul],
+n.appendChild(e)}if(s.silentCount>=3){const t=document.createElement("div");t.style.cssText="text-align:center;margin-top:24px;font-family:var(--kai);color:#8b969c;font-size:13.5px;letter-spacing:.28em;opacity:.75",
+t.textContent=e("/ozHijAMLk2Cz/zuYxZiBJ2p1/HJegNfGpi1s9AtVl1a9JTOiTUjJVWXyPrs"),n.appendChild(t)}if(t.title.indexOf(e("9rPo"))>=0&&(D("veil").classList.add("on"),D("ending").classList.add("o1"),g("heavy")),t.g0&&o.r0){
+(t.g1||[]).forEach(e=>{const t=document.createElement("p");t.textContent=e,n.appendChild(t)});const i=document.createElement("div");return i.className="smallCut",
+i.textContent=e("/ozHiBEALna5wOnWYBlWB7aS2eb4exJgGpi1v8cVWkd29JfDhSIbL1efw/vFYj5nCb+Y3d3+dAZQ"),n.appendChild(i),D("btnAgain").textContent=e("9YvBTmgIf8rslMdGYANI"),D("veil").classList.add("on"),D("ending").classList.add("o1"),g("heavy"),
+void f()}if(!h()){const t=document.createElement("div");t.style.cssText="text-align:center;margin-top:26px;font-size:12px;color:#6f7a80;letter-spacing:.18em;opacity:.85;line-height:2",
+t.textContent=o.cycles>=1?e("/ozHiBElL1KJzP/MYh9QB7Cg0OLxdB1bHrW+ssg0Vld59bPmijYTLlGCwsD8YBtJBKWm2cf4fipUHbqhtvQRXW15"):e("/ozHiBElL1CSwdDOahhPCqeh1+vNdARdH42DsOAgV2px9YvSgjAnLGCFw/r/YT9qBbiU2uX8fh5FHp6lsMgTUVFy4JLE"),n.appendChild(t)}}P()}
+}let we=null;function de(t){J(),D("start").style.display="none",D("game").style.display="none",D("ending").style.display="block",window.scrollTo(0,0),Z("g2"),g("stop"),document.body.classList.add("d0"),D("ending").classList.add("o0"),
+D("veil").classList.remove("on");const i=D("endBody");i.innerHTML="";const s=D("endFoot");s.classList.add("snowed"),D("endTitle").textContent="",D("endTag").textContent="";const a=document.createElement("div");a.className="warmTip",
+a.textContent=e("+KvljQ0sLmuVy8fmYR5F"),i.appendChild(a);const c=document.createElement("div");i.appendChild(c);const l=[];ne(t).forEach(e=>l.push({cls:"turnP",t:e})),(t.after||[]).forEach(e=>l.push({cls:"bigTurn",t:e})),
+("function"==typeof t.tail?t.tail():t.tail||[]).forEach(e=>l.push({cls:"turnP",t:e}));let L=0;function r(){if(clearTimeout(we),L>=l.length){D("endTitle").textContent=t.title,
+D("endTag").textContent=e("9pzjTg==")+o.cycles+e("MdXr8q1ufMrtlcGDIB0rXZnGp/GbMQA+Q54=");const n=document.createElement("div");n.className="smallCut",n.textContent=e("/ozHiygVI0W9x/v8bCZgB7GR2vvAfztYEJqUsP0FVmJA9JfDiww+LlOOxMbnax9L"),
+i.appendChild(n),s.classList.remove("snowed"),D("endBody").onclick=null,C.heartbeat(3),P();try{window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"})}catch(e){}return}const n=l[L++],a=document.createElement("div")
+;a.className=n.cls,a.textContent="object"==typeof n.t?n.t.q:n.t,c.appendChild(a);try{window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"})}catch(e){}we=setTimeout(r,"bigTurn"===n.cls?2500:1700)}D("endBody").onclick=()=>{
+n||(clearTimeout(we),r())},we=setTimeout(r,1200),P()}function me(){clearTimeout(we);const e=D("endBody");e&&(e.onclick=null),D("veil").classList.remove("on"),D("ending").classList.remove("o1"),D("ending").classList.remove("o0"),
+D("endFoot").classList.remove("snowed"),document.body.classList.remove("d0"),C.droneOff(),ee("town"),g("normal")}const ue={ez4:e("9LbWTmkUQA=="),ez3:e("9rPoTmsiQg=="),ez5:e("94LGTmQXUw=="),ez6:e("+Z/7TmkURsrvkMI="),ez1:e("9KDCTmgBXA=="),
+ez2:e("9KvRTmgpQg==")};function Be(){const t=o.cycles+1,i=Object.keys(o.endings||{}),n=D("metaNote"),a=D("endex");if(n){let i=""
+;i=o.r0?e("LVJxiSEA6w==")+t+e("MdXr8m4sSdYmSnmBPxwnWovIgMaaCSI9ZJjT7ul8Fm0SkK1yD/6V")+e("+ZbOijUhI0yIFDQW5MrjgW1BTC1Avs60lXdUPVeqVFFW9qHHiCIo9sZ7VycLukx+fg=="):h()?e("LVJxiSEA6w==")+t+e("MdXr8m4sSdYmSnmCOAQmVbPHhNGYGiI+QZPf6fJxFmsWiqur/QFOZ37rp8RZ5tH8")+e("+Y/WijUsLk6Vx/vqYxZwCr+Z2+b3eR5jEaevsskOWkVf9b/CiTQrLlGiztHLbQFaAoCdAj8OpVJmYfOO1ZI/Ez5Mg8rwzG4lZgy8g6LJF0d/d8NtTT0Vutq0lmVGaVHn37yAbUZuVWIrZwKov6DbAkZCZsIyTysb94Y0dpc="):o.f0?e("LVJxiSEA6w==")+t+e("MdXr8m4sSdYmSnmCOAQmZJjEh9WVIzw/XKHQzPFxI18Uvbis7RhJSn3smsCNOzskU6H5otSUJD08VpvQw8R0KFUUt66oyBdJSWo7RDda")+e("9LbChjgcL1KJwcbrZiRBCr652+b9ehd7FqS7vtoBVE9xLFw+DOKLqYVpVDVYptasjW98VX9CfS9IHbKPaVvgwrCeMc3N7g=="):o.cycles>=1?e("LVJxiSEA6w==")+t+e("MdXr8m4sSdYmSnmCOAQrXZnGjf+bADI/f4HT7v58DFUUtZap9whOWmTtitGGBCH+g3Ih")+e("96zGijc3In2hx/vqbQJCB4So2sLVewFiHaC9s8kUV2px9oPvgjAnLGCFw/r/YT9qCJu128HMcj1VHau2tvQR"):e("9pzjijUsLk6Vy8fk"),
+s&&s.loop>o.cycles+1&&s.scene&&"prologue_arrive"!==s.scene&&(i=e("LVJxiSEA6w==")+s.loop+e("MdXr8rGDqdTmlM+AGQ4mTI3Pg9eeHDk=")),n.innerHTML=i}
+a&&(a.textContent=i.length?e("9If9hiotLFGazfbmpQ==")+i.length+e("Pgas7g1ufAmJqA==")+i.map(e=>ue[e]||e).join(e("8rDP")):"");const c=D("sealMain");c&&(c.textContent=o.r0?e("9rPoTmkWTcruleU="):h()?e("+Z/7TmsUTsrtksE="):e("+Z/7ijUhLVKM")),
+o.r0?(document.body.classList.add("h0"),Z("a0")):document.body.classList.remove("h0")}function pe(){J(),me(),Be(),D("start").style.display="flex",D("game").style.display="none",D("ending").style.display="none",
+D("btnContinue").style.display=W()?"block":"none"}function ze(){l=!1,K(),s=m(),s.loop=o.cycles+1,C.startAmbient(),P(),se(s.scene)}function Ve(){s=u(W()),C.startAmbient(),se(s.scene)}function je(){
+confirm(e("9KvRiwUcLUqOweX+ahhcB7yz2tfwdARBHKKRsskOV21s97rXjgwp"))&&pe()}function He(){confirm(e("+LfCiBscLlaJzeDtahhcB7yz2tfwdARBHKKRs8USW3Ba9pfLiiURKWmK"))&&(K(),me(),s=m(),s.loop=o.cycles+1,l=!1,se(s.scene))}D("btnNew").onclick=ze,
+D("btnContinue").onclick=Ve,D("btnRestart").onclick=He,D("btnBack").onclick=je,D("btnBack2").onclick=()=>{me(),pe()},D("btnAgain").onclick=()=>{l=!1,K(),me(),s=m(),s.loop=o.cycles+1,se("prologue_arrive")},D("btnSkip").onclick=ie,
+D("btnMute").onclick=()=>{C.ensure(),D("btnMute").textContent=C.toggle()?e("9JP/hxIfJFaTzcLV"):e("9JP/hxIfJFaTzfvm")},D("textBox").addEventListener("click",()=>{n&&ie()}),document.addEventListener("pointerdown",function e(){
+C.startAmbient(),document.removeEventListener("pointerdown",e)}),L(),s=u(W()),s.loop=s.loop||o.cycles+1,pe();</script>
 </body>
 </html>
