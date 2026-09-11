@@ -219,11 +219,12 @@
             margin-right: 8px;
         }
 
-        /* ==================== Steam 游戏卡片 ==================== */
+        /* ==================== Steam 游戏卡片（2 × 2） ==================== */
         .steam-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 16px;
+            margin-top: 4px;
         }
 
         .steam-widget {
@@ -561,18 +562,52 @@
         .shot-fallback {
             position: absolute;
             inset: 0;
-            z-index: 1;
+            z-index: 3;
             display: none;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 0.78em;
-            color: rgba(255,255,255,0.35);
+            gap: 12px;
+            font-size: 0.8em;
+            color: rgba(255,255,255,0.45);
             letter-spacing: 1px;
-            padding: 12px;
+            padding: 16px;
             text-align: center;
+            line-height: 1.7;
+            background: rgba(14, 14, 22, 0.9);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
         }
         .shot-frame.failed .shot-fallback { display: flex; }
         .shot-frame.failed::after { display: none; }
+        .shot-frame.failed img { display: none; }
+
+        .shot-fallback b { color: #ffab6b; font-weight: 600; }
+        .shot-fallback code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.9em;
+            color: #9a9ab0;
+            word-break: break-all;
+        }
+
+        .shot-fail-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .shot-fail-actions a,
+        .shot-fail-actions button {
+            display: inline-block;
+            font-family: inherit;
+            font-size: 0.94em;
+            color: #8fc8ff;
+            text-decoration: none;
+            background: rgba(143, 200, 255, 0.08);
+            border: 1px solid rgba(143, 200, 255, 0.35);
+            border-radius: 99px;
+            padding: 5px 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .shot-fail-actions button { color: #8fe3b0; background: rgba(143, 227, 176, 0.08); border-color: rgba(143, 227, 176, 0.35); }
+        .shot-fail-actions a:hover { background: rgba(143, 200, 255, 0.16); border-color: rgba(143, 200, 255, 0.6); color: #fff; }
+        .shot-fail-actions button:hover { background: rgba(143, 227, 176, 0.16); border-color: rgba(143, 227, 176, 0.6); color: #fff; }
 
         .shot-zoom {
             position: absolute;
@@ -658,6 +693,11 @@
             .profile-avatar { width: 130px; }
         }
 
+        /* 窄屏时 Steam 卡片改为单列，避免 2×2 挤成一团 */
+        @media (max-width: 760px) {
+            .steam-grid { grid-template-columns: minmax(0, 1fr); }
+        }
+
         @media (max-width: 600px) {
             body { padding: 16px 18px 40px; }
             .page-title { font-size: 1.8em; }
@@ -711,13 +751,13 @@
         <div class="card-title">主要玩</div>
         <div class="card-desc">
             音游
-            <span class="card-sub">主攻Phigros & Arcaea，但是其他音游基本也都玩过</span>
+            <span class="card-sub">主攻Phigros &amp; Arcaea，但是其他音游基本也都玩过</span>
         </div>
         <div class="card-play-btn">
             <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
         </div>
     </div>
-<div class="tool-card">
+    <div class="tool-card">
         <div class="card-title">主要玩</div>
         <div class="card-desc">
             Minecraft
@@ -727,7 +767,7 @@
             <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
         </div>
     </div>
-<div class="tool-card">
+    <div class="tool-card">
         <div class="card-title">近期在玩</div>
         <div class="card-desc">
             In Falsus / 东方红魔乡 新典 / Deltarune
@@ -737,15 +777,19 @@
             <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
         </div>
     </div>
+</div>
+
+<!-- Steam 卡片：2 × 2 -->
 <div class="steam-grid">
     <div class="steam-widget" data-appid="3971950" data-fallback="https://store.steampowered.com/app/3971950/In_Falsus/" data-name="In Falsus">
         <iframe title="In Falsus · Steam" width="100%" height="190" frameborder="0" loading="lazy"
                 src="https://store.steampowered.com/widget/3971950/"></iframe>
         <div class="steam-fallback">
             <span>Steam 卡片加载失败</span>
-            <a href="https://store.steampowered.com/app/4659620/__the_Embodiment_of_Scarlet_Devil/" target="_blank" rel="noopener">前往商店页</a>
+            <a href="https://store.steampowered.com/app/3971950/In_Falsus/" target="_blank" rel="noopener">前往商店页</a>
         </div>
     </div>
+
     <div class="steam-widget" data-appid="4659620" data-fallback="https://store.steampowered.com/app/4659620/__the_Embodiment_of_Scarlet_Devil/" data-name="东方红魔乡 New Classic">
         <iframe title="东方红魔乡 New Classic · Steam" width="100%" height="190" frameborder="0" loading="lazy"
                 src="https://store.steampowered.com/widget/4659620/"></iframe>
@@ -763,6 +807,7 @@
             <a href="https://store.steampowered.com/app/1671210/DELTARUNE/" target="_blank" rel="noopener">前往商店页</a>
         </div>
     </div>
+
     <div class="steam-widget" data-appid="264710" data-fallback="https://store.steampowered.com/app/264710/Subnautica/" data-name="Subnautica">
         <iframe title="Subnautica · Steam" width="100%" height="190" frameborder="0" loading="lazy"
                 src="https://store.steampowered.com/widget/264710/"></iframe>
@@ -771,7 +816,6 @@
             <a href="https://store.steampowered.com/app/264710/Subnautica/" target="_blank" rel="noopener">前往商店页</a>
         </div>
     </div>
-</div>
 </div>
 
 <div class="sub-title">音游成就</div>
@@ -801,8 +845,15 @@
 
 <div class="shot-card">
     <div class="shot-frame" id="shotFrame" title="点击放大">
-        <img id="shotImg" alt="Arcaea Potential 12.639 成绩截图" loading="lazy" decoding="async">
-        <div class="shot-fallback">图片加载失败，可点击尝试在新标签页打开原图</div>
+        <img id="shotImg" alt="Arcaea Potential 12.639 成绩截图" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+        <div class="shot-fallback">
+            <span>图片加载失败 <b id="shotFailReason"></b></span>
+            <code id="shotFailURL"></code>
+            <div class="shot-fail-actions">
+                <a id="shotOpen" href="#" target="_blank" rel="noopener">在新标签页打开</a>
+                <button type="button" id="shotRetry">重试</button>
+            </div>
+        </div>
         <div class="shot-zoom" role="button" aria-label="放大图片">
             <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
         </div>
@@ -864,28 +915,24 @@
 
 <!-- ==================== JS ==================== -->
 <script>
-    /* ==================== 日期 / 年龄 ==================== */
+    /* ==================== 日期 ==================== */
     const WEEKDAYS = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
-    const BIRTHDAY = { y: 2010, m: 7, d: 13 };
 
     function getDateKey(d) {
         d = d || new Date();
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     }
-    function calcAge() {
-        const n = new Date();
-        let age = n.getFullYear() - BIRTHDAY.y;
-        const before = (n.getMonth() + 1 < BIRTHDAY.m) ||
-                       ((n.getMonth() + 1 === BIRTHDAY.m) && n.getDate() < BIRTHDAY.d);
-        if (before) age--;
-        return Math.max(0, age);
+
+    // 元素可能已被删掉，统一做空值保护，避免整段 JS 中断
+    function setText(id, text) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
     }
+
     (function () {
         const n = new Date();
-        document.getElementById("headerMeta").textContent =
-            `${n.getFullYear()}年${n.getMonth() + 1}月${n.getDate()}日 · ${WEEKDAYS[n.getDay()]}`;
-        document.getElementById("year").textContent = n.getFullYear();
-        document.getElementById("ageValue").textContent = calcAge() + " 岁";
+        setText("headerMeta", `${n.getFullYear()}年${n.getMonth() + 1}月${n.getDate()}日 · ${WEEKDAYS[n.getDay()]}`);
+        setText("year", String(n.getFullYear()));
     })();
 
     /* ==================== 哈希（用于头像选图） ==================== */
@@ -898,67 +945,116 @@
         return h >>> 0;
     }
 
-    /* ==================== 头像 ==================== */
-    const BG_BASE_URL = "https://vancocn.github.io/bg/";
-    const bgImages = [
-        "0-3.jpg", "1-1.jpg", "1-8.jpg", "1-ZR.jpg",
-        "10-5.jpg", "11-2.jpg", "11-8-1.jpg", "12-6-1.jpg",
-        "12-X.jpg", "15-4.jpg", "16-7-1.jpg", "16-8.jpg",
-        "17-6-1.jpg", "18-1.jpg", "2-8.jpg", "20-6.jpg",
-        "21-5-2.jpg", "22-2-1.jpg", "22-5.jpg", "23-2.jpg",
-        "23-8.jpg", "E-1_epilogue.jpg", "F-7-2.jpg", "V-10.jpg"
-    ];
-
+    /* ==================== 头像（当前已注释，代码保留） ==================== */
     const avatarEl = document.getElementById("profileAvatar");
     const avatarImg = document.getElementById("avatarImg");
-    let avatarIndex = -1;
 
-    function showAvatar(index) {
-        if (index < 0 || index >= bgImages.length) return;
-        avatarIndex = index;
-        avatarEl.classList.remove("loaded", "failed");
-        avatarImg.classList.remove("loaded");
-        const loader = new Image();
-        loader.onload = () => {
-            avatarImg.src = loader.src;
-            avatarImg.classList.add("loaded");
-            avatarEl.classList.add("loaded");
-        };
-        loader.onerror = () => avatarEl.classList.add("failed");
-        loader.src = BG_BASE_URL + encodeURIComponent(bgImages[index]);
+    if (avatarEl && avatarImg) {
+        const BG_BASE_URL = "https://vancocn.github.io/bg/";
+        const bgImages = [
+            "0-3.jpg", "1-1.jpg", "1-8.jpg", "1-ZR.jpg",
+            "10-5.jpg", "11-2.jpg", "11-8-1.jpg", "12-6-1.jpg",
+            "12-X.jpg", "15-4.jpg", "16-7-1.jpg", "16-8.jpg",
+            "17-6-1.jpg", "18-1.jpg", "2-8.jpg", "20-6.jpg",
+            "21-5-2.jpg", "22-2-1.jpg", "22-5.jpg", "23-2.jpg",
+            "23-8.jpg", "E-1_epilogue.jpg", "F-7-2.jpg", "V-10.jpg"
+        ];
+        let avatarIndex = -1;
+
+        function showAvatar(index) {
+            if (index < 0 || index >= bgImages.length) return;
+            avatarIndex = index;
+            avatarEl.classList.remove("loaded", "failed");
+            avatarImg.classList.remove("loaded");
+            const loader = new Image();
+            loader.onload = () => {
+                avatarImg.src = loader.src;
+                avatarImg.classList.add("loaded");
+                avatarEl.classList.add("loaded");
+            };
+            loader.onerror = () => avatarEl.classList.add("failed");
+            loader.src = BG_BASE_URL + encodeURIComponent(bgImages[index]);
+        }
+
+        avatarEl.addEventListener("click", () => {
+            if (bgImages.length <= 1) return;
+            let idx;
+            do { idx = Math.floor(Math.random() * bgImages.length); } while (idx === avatarIndex);
+            showAvatar(idx);
+        });
+        showAvatar(hashSeed("vanco-avatar::" + getDateKey()) % bgImages.length);
     }
 
-    avatarEl.addEventListener("click", () => {
-        if (bgImages.length <= 1) return;
-        let idx;
-        do { idx = Math.floor(Math.random() * bgImages.length); } while (idx === avatarIndex);
-        showAvatar(idx);
-    });
-    showAvatar(hashSeed("vanco-avatar::" + getDateKey()) % bgImages.length);
+    /* ==================== 成绩截图（多源依次回退） ====================
+       注意：iili.io 目前对外链返回 HTTP 403（图床 WAF 拒绝），
+       建议把截图放到本地 img/ 目录或自己的 GitHub Pages，
+       然后把本地路径排到数组第一位即可。
+    ==================================================================== */
+    const SHOT_SOURCES = [
+        "https://iili.io/nfnN3ba.jpg",      // 原图床（当前 403，仅作兜底尝试）
+        "img/arcaea-potential.jpg",          // 推荐：本地相对路径
+        "arcaea-potential.jpg"               // 与 html 同目录
+    ];
 
-    /* ==================== 成绩截图 + 灯箱 ==================== */
-    const SHOT_URL = "https://iili.io/nfnN3ba.jpg";
     const shotFrame = document.getElementById("shotFrame");
     const shotImg = document.getElementById("shotImg");
     const lightbox = document.getElementById("lightbox");
     const lightboxImg = document.getElementById("lightboxImg");
+    const shotOpen = document.getElementById("shotOpen");
+    const shotRetry = document.getElementById("shotRetry");
     let shotOK = false;
+    let shotIdx = 0;
+    let currentShotURL = SHOT_SOURCES[0];
 
-    (function loadShot() {
+    function loadShot() {
+        if (!shotFrame || !shotImg) return;
+
+        if (shotIdx >= SHOT_SOURCES.length) {
+            // 所有源都失败
+            shotOK = false;
+            shotFrame.classList.remove("loaded");
+            shotFrame.classList.add("failed");
+            setText("shotFailReason", "（图床返回 403 / 被拦截）");
+            setText("shotFailURL", currentShotURL);
+            if (shotOpen) shotOpen.href = currentShotURL;
+            console.warn("[成绩截图] 所有图片源均加载失败，最后尝试：" + currentShotURL);
+            return;
+        }
+
+        const url = SHOT_SOURCES[shotIdx];
+        currentShotURL = url;
         const loader = new Image();
+        // 部分图床会检查 referrer，显式禁用
+        loader.referrerPolicy = "no-referrer";
         loader.onload = () => {
-            shotImg.src = loader.src;
+            shotOK = true;
+            shotFrame.classList.remove("failed");
+            shotImg.src = url;
             shotImg.classList.add("loaded");
             shotFrame.classList.add("loaded");
-            shotOK = true;
+            if (shotOpen) shotOpen.href = url;
         };
-        loader.onerror = () => { shotFrame.classList.add("failed"); };
-        loader.src = SHOT_URL;
-    })();
+        loader.onerror = () => {
+            console.warn("[成绩截图] 加载失败：" + url + "，尝试下一个源");
+            shotIdx++;
+            loadShot();
+        };
+        loader.src = url;
+    }
+
+    function retryShot() {
+        shotIdx = 0;
+        shotFrame.classList.remove("failed");
+        shotImg.classList.remove("loaded");
+        loadShot();
+    }
 
     function openLightbox() {
-        if (!shotOK) { window.open(SHOT_URL, "_blank", "noopener"); return; }
-        lightboxImg.src = SHOT_URL;
+        if (!shotOK) {
+            window.open(currentShotURL, "_blank", "noopener");
+            return;
+        }
+        lightboxImg.src = currentShotURL;
         lightbox.classList.add("open");
         document.body.style.overflow = "hidden";
     }
@@ -971,12 +1067,8 @@
     /* ==================== Steam 卡片加载状态 ==================== */
     document.querySelectorAll(".steam-widget").forEach(box => {
         const frame = box.querySelector("iframe");
-        const markReady = () => box.classList.add("ready");
         if (frame) {
-            frame.addEventListener("load", () => {
-                // 跨域读不到内容，用「是否触发 load」+ 超时兜底近似判断
-                markReady();
-            });
+            frame.addEventListener("load", () => box.classList.add("ready"));
         }
         // 10 秒仍未 load（被拦截 / 断网）则显示兜底链接
         setTimeout(() => {
@@ -984,12 +1076,17 @@
         }, 10000);
     });
 
-    shotFrame.addEventListener("click", openLightbox);
-    lightbox.addEventListener("click", closeLightbox);
-    lightboxImg.addEventListener("click", e => e.stopPropagation());
+    /* ==================== 事件绑定 ==================== */
+    if (shotFrame) shotFrame.addEventListener("click", openLightbox);
+    if (shotRetry) shotRetry.addEventListener("click", e => { e.stopPropagation(); retryShot(); });
+    if (shotOpen) shotOpen.addEventListener("click", e => e.stopPropagation());
+    if (lightbox) lightbox.addEventListener("click", closeLightbox);
+    if (lightboxImg) lightboxImg.addEventListener("click", e => e.stopPropagation());
     document.addEventListener("keydown", e => {
-        if (e.key === "Escape" && lightbox.classList.contains("open")) closeLightbox();
+        if (e.key === "Escape" && lightbox && lightbox.classList.contains("open")) closeLightbox();
     });
+
+    loadShot();
 </script>
 
 </body>
