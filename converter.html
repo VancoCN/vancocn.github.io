@@ -553,22 +553,22 @@
         table.pe {
             width: 100%; border-collapse: collapse; font-size: 0.76em; letter-spacing: 0.3px;
         }
-        table.pe.wide { min-width: 640px; }
-        table.pe th {
+        table.pe.wide, table.po.wide { min-width: 640px; }
+        table.pe th, table.po th {
             position: sticky; top: 0; z-index: 1;
             background: rgba(24,24,38,0.98); color: rgba(255,255,255,0.45);
             font-weight: 500; text-align: left; white-space: nowrap;
             padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.1);
             cursor: pointer; user-select: none;
         }
-        table.pe th:hover { color: #c8c8e8; }
-        table.pe td {
+        table.pe th:hover, table.po th:hover { color: #c8c8e8; }
+        table.pe td, table.po td {
             padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,0.055);
             color: #d0d0e0; vertical-align: top; word-break: break-all;
         }
-        table.pe tbody tr:hover { background: rgba(255,255,255,0.035); }
-        table.pe tbody tr:last-child td { border-bottom: none; }
-        table.pe td.n { text-align: right; color: rgba(255,255,255,0.5); white-space: nowrap; }
+        table.pe tbody tr:hover, table.po tbody tr:hover { background: rgba(255,255,255,0.035); }
+        table.pe tbody tr:last-child td, table.po tbody tr:last-child td { border-bottom: none; }
+        table.pe td.n, table.po td.n { text-align: right; color: rgba(255,255,255,0.5); white-space: nowrap; }
 
         .pe-empty {
             padding: 30px; text-align: center; font-size: 0.82em;
@@ -600,6 +600,58 @@
         .pe-subhead:first-child { margin-top: 0; }
         .note.warn { border-left: 3px solid rgba(227,195,143,0.6); background: rgba(227,195,143,0.06); }
         .note.warn b { color: #e3c38f; }
+
+        /* ---------- MO / PO 在线编辑 ---------- */
+        table.po td.po-cell {
+            max-width: 330px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        table.po tbody tr { cursor: pointer; }
+        table.po tbody tr.po-sel td { background: rgba(160,160,220,0.14); }
+        table.po td.po-idx { color: rgba(255,255,255,0.32); white-space: nowrap; }
+        .po-more { margin-top: 12px; text-align: center; }
+
+        .po-mini {
+            padding: 7px 14px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.13); background: rgba(255,255,255,0.05);
+            color: #c0c0d8; font-family: inherit; font-size: 0.82em; letter-spacing: 1px;
+            cursor: pointer; transition: all 0.25s ease;
+        }
+        .po-mini:hover { color: #fff; border-color: rgba(160,160,220,0.5); background: rgba(160,160,220,0.14); }
+        .po-mini.ok { color: #8fe3b0; border-color: rgba(143,227,176,0.35); }
+        .po-mini.ok:hover { background: rgba(143,227,176,0.14); border-color: rgba(143,227,176,0.6); }
+        .po-mini.del { color: #ff8f8f; border-color: rgba(255,143,143,0.3); }
+        .po-mini.del:hover { background: rgba(255,143,143,0.14); border-color: rgba(255,143,143,0.55); }
+        .po-mini:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        .po-edit {
+            margin-top: 18px; padding: 18px 20px; border-radius: 14px;
+            background: rgba(0,0,0,0.22); border: 1px solid rgba(160,160,220,0.28);
+        }
+        .po-edit-head {
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;
+            font-size: 0.88em; color: #c8c8e0; letter-spacing: 1px;
+        }
+        .po-edit-head .sp { flex: 1; }
+        .po-field { margin-bottom: 12px; }
+        .po-field > label {
+            display: block; font-size: 0.74em; color: rgba(255,255,255,0.42);
+            letter-spacing: 1px; margin-bottom: 5px;
+        }
+        .po-src {
+            padding: 9px 12px; border-radius: 9px; background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07); color: #c8c8d8;
+            font-size: 0.86em; line-height: 1.7; white-space: pre-wrap;
+            word-break: break-word; max-height: 170px; overflow: auto;
+        }
+        .po-ta {
+            width: 100%; min-height: 78px; background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+            padding: 11px 13px; color: #dcdcea; font-family: inherit;
+            font-size: 0.9em; line-height: 1.65; resize: vertical; outline: none;
+        }
+        .po-ta:focus { border-color: rgba(160,160,220,0.55); }
+        .po-ta:disabled { opacity: 0.5; }
+        .po-hd-box { margin-top: 14px; }
     </style>
 <base target="_blank">
 </head>
@@ -765,6 +817,7 @@
             <div class="seg" id="langMode">
                 <button class="seg-btn active" data-v="mo2po">MO → PO（反编译）</button>
                 <button class="seg-btn" data-v="po2mo">PO → MO（编译）</button>
+                <button class="seg-btn" data-v="edit">编辑 / 查看</button>
             </div>
         </div>
 
@@ -776,6 +829,45 @@
         </div>
 
         <div class="file-list" id="langFiles"></div>
+        <div class="file-list" id="poFiles" hidden></div>
+
+        <div id="poWork" hidden>
+            <div class="stat-row" id="poStats"></div>
+
+            <div class="opt-row">
+                <span class="opt-label">筛选</span>
+                <div class="seg" id="poFilter">
+                    <button class="seg-btn active" data-v="all">全部</button>
+                    <button class="seg-btn" data-v="untrans">未翻译</button>
+                    <button class="seg-btn" data-v="trans">已翻译</button>
+                    <button class="seg-btn" data-v="fuzzy">模糊</button>
+                    <button class="seg-btn" data-v="plural">复数</button>
+                </div>
+            </div>
+
+            <div class="opt-row">
+                <input class="pe-search" id="poSearch" placeholder="搜索原文 / 译文 / 上下文…">
+                <span class="pe-hint" id="poCount" style="margin-top:0"></span>
+                <span style="flex:1"></span>
+                <button type="button" class="po-mini" id="poHeaderBtn">编 辑 文 件 头</button>
+            </div>
+
+            <div class="po-hd-box" id="poHeaderBox" hidden>
+                <div class="po-field">
+                    <label>文件头（Header）· 含 charset 与 Plural-Forms，修改后立即生效</label>
+                    <textarea class="po-ta" id="poHeaderText" style="min-height:150px"></textarea>
+                </div>
+            </div>
+
+            <div id="poTable"></div>
+            <div id="poEditBox"></div>
+
+            <div class="opt-row" style="border-top:none;padding-top:14px">
+                <button class="run-btn" id="poSavePo" style="width:auto;flex:1;margin-top:0;background:rgba(255,255,255,0.08);">保 存 为 .po</button>
+                <button class="run-btn" id="poSaveMo" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);">保 存 为 .mo</button>
+                <button class="run-btn" id="poClear" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);">清 空 列 表</button>
+            </div>
+        </div>
 
         <div class="opt-row" id="langOptMo2Po">
             <span class="opt-label">导出选项</span>
@@ -803,7 +895,9 @@
             · .mo 是 gettext 编译后的二进制文件，反编译即还原出可编辑的 .po 源码（含 msgctxt、复数形式与转义）<br>
             · 自动识别大端 / 小端序，并按 .mo 头部声明的字符集解码（缺省 UTF-8）<br>
             · PO → MO 会跳过 <code>#~</code> 废弃条目，默认排除 fuzzy 条目，与 msgfmt 的行为一致<br>
-            · 生成的 .mo 不含哈希表，字符串表按字节序排序，可被 gettext / PHP / Python 正常读取
+            · 生成的 .mo 不含哈希表，字符串表按字节序排序，可被 gettext / PHP / Python 正常读取<br>
+            · <b>编辑 / 查看</b>：上传 .mo 或 .po 后可直接浏览全部条目，点击任意一行修改译文（改动即时写入，Ctrl+Enter 完成），编辑完可另存为 .po 或 .mo<br>
+            · 复数条目会按文件头 Plural-Forms 里的 nplurals 自动展开对应数量的译文框；被标为 fuzzy 的条目默认不会写入 .mo
         </div>
     </div>
 </section>
@@ -1436,21 +1530,29 @@ function parsePo(text) {
     const ensure = () => { if (!cur) cur = newEntry(); return cur; };
 
     for (let li = 0; li < lines.length; li++) {
-        const line = lines[li].trim();
+        let line = lines[li].trim();
 
         if (line === "") { flush(); continue; }
+
+        // #~ 废弃块：去掉前缀后按普通条目解析，保证往返不丢内容
+        let obsolete = false;
+        if (/^#~/.test(line)) {
+            obsolete = true;
+            line = line.replace(/^#~\s*/, "");
+            if (line === "" || line.charAt(0) === "#") continue;   // 裸 #~ 或 #~| 旧值行
+        }
 
         if (line.charAt(0) === "#") {
             if (!cur || mode !== null) flush();       // 注释开启新条目
             const e = ensure();
-            if (/^#~/.test(line)) e.obsolete = true;
-            else if (/^#,/.test(line) && /\bfuzzy\b/.test(line)) e.fuzzy = true;
+            if (/^#,/.test(line) && /\bfuzzy\b/.test(line)) e.fuzzy = true;
             continue;
         }
 
         const kw = /^(msgctxt|msgid_plural|msgid|msgstr|msgstr\[(\d+)\])\s*"(.*)"$/.exec(line);
         if (kw) {
             const e = ensure();
+            if (obsolete) e.obsolete = true;
             const text0 = poUnescape(kw[3]);
             if (kw[1] === "msgctxt") { e.msgctxt = text0; mode = "msgctxt"; }
             else if (kw[1] === "msgid") { e.msgid = text0; mode = "msgid"; }
@@ -1839,24 +1941,549 @@ $("imageRun").addEventListener("click", async () => {
     btn.disabled = false;
 });
 
+
+/* ==================== MO / PO 在线编辑 ==================== */
+
+const PO_ROW_STEP = 300;          // 表格每次渲染的行数
+let PO_SEQ = 0;                   // 文件 id
+let PO_UID = 0;                   // 条目 id
+
+const PO_STATE = { files: [], sel: null, filter: "all", q: "", limit: PO_ROW_STEP, view: [] };
+
+function poEsc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+// 从文件头 Plural-Forms 里取 nplurals，决定复数条目展开几个译文框
+function poNPlurals(header) {
+    const m = /nplurals\s*=\s*(\d+)/.exec(header || "");
+    if (!m) return 2;
+    return Math.max(1, Math.min(8, parseInt(m[1], 10)));
+}
+
+function poIsTrans(e) { return (e.msgstr || []).some(s => s && s !== ""); }
+
+// 表格里单行显示：换行压成 ⏎，超长截断
+function poOneLine(s) {
+    const t = String(s == null ? "" : s).replace(/\r?\n/g, " ⏎ ");
+    return t.length > 160 ? t.slice(0, 160) + "…" : t;
+}
+
+function poCurrent() { return PO_STATE.files.filter(f => f.id === PO_STATE.sel)[0] || null; }
+
+function poEntryById(id) {
+    const f = poCurrent();
+    return f ? f.entries.filter(e => e._id === id)[0] || null : null;
+}
+
+/* ---------- 载入 ---------- */
+async function poLoadFiles(files) {
+    const st = $("langStatus");
+    let ok = 0, bad = 0;
+
+    for (const file of files) {
+        try {
+            const ext = extOf(file.name);
+            const buf = await file.arrayBuffer();
+            let header = "", entries = [], charset = "utf-8", endian = "—";
+
+            if (ext === "mo") {
+                const mo = decodeMo(parseMoBytes(buf));
+                charset = mo.charset;
+                endian = mo.endian;
+                let gotHeader = false;
+                for (const e of mo.entries) {
+                    if (e.msgid === "" && !gotHeader) { header = e.msgstr; gotHeader = true; continue; }
+                    const it = splitMoEntry(e);
+                    it.fuzzy = false;
+                    it.obsolete = false;
+                    entries.push(it);
+                }
+            } else if (ext === "po") {
+                const text = new TextDecoder("utf-8").decode(buf);
+                const all = parsePo(text);
+                let gotHeader = false;
+                for (const e of all) {
+                    if (e.msgid === "" && !gotHeader && !e.obsolete) { header = e.msgstr[0] || ""; gotHeader = true; continue; }
+                    entries.push(e);
+                }
+                const cm = /charset\s*=\s*([\w-]+)/i.exec(header);
+                if (cm) charset = cm[1].toLowerCase();
+            } else {
+                throw new Error("不支持的扩展名 ." + (ext || "?") + "，请选择 .mo 或 .po");
+            }
+
+            entries.forEach(e => { e._id = ++PO_UID; if (!Array.isArray(e.msgstr)) e.msgstr = [e.msgstr || ""]; });
+
+            const rec = {
+                id: ++PO_SEQ, name: file.name, kind: ext,
+                header, entries, charset, endian, dirty: false
+            };
+            PO_STATE.files.push(rec);
+            if (PO_STATE.sel === null) PO_STATE.sel = rec.id;
+            ok++;
+        } catch (err) {
+            bad++;
+            st.className = "status err";
+            st.textContent = file.name + " 解析失败：" + ((err && err.message) ? err.message : err);
+        }
+    }
+
+    PO_STATE.limit = PO_ROW_STEP;
+    PO_STATE.editId = null;
+    poRenderList();
+    poRender();
+    if (ok) {
+        st.className = "status ok";
+        st.textContent = bad
+            ? "已载入 " + ok + " 个文件，另有 " + bad + " 个失败"
+            : "已载入 " + ok + " 个文件，点击任意一行即可编辑";
+    }
+}
+
+/* ---------- 文件列表 ---------- */
+function poRenderList() {
+    const box = $("poFiles");
+    box.innerHTML = "";
+    PO_STATE.files.forEach(f => {
+        const row = document.createElement("div");
+        row.className = "file-item clickable" + (f.id === PO_STATE.sel ? " sel" : "");
+
+        const ic = document.createElement("div");
+        ic.className = "fi-icon";
+        ic.textContent = f.kind.toUpperCase();
+
+        const mn = document.createElement("div");
+        mn.className = "fi-main";
+        const nm = document.createElement("div");
+        nm.className = "fi-name";
+        nm.textContent = (f.dirty ? "● " : "") + f.name;
+        const mt = document.createElement("div");
+        mt.className = "fi-meta done";
+        mt.textContent = f.kind.toUpperCase() + " · " + f.entries.length + " 条 · " + f.charset +
+            (f.kind === "mo" ? " · " + f.endian + " endian" : "");
+        mn.appendChild(nm);
+        mn.appendChild(mt);
+
+        const del = document.createElement("button");
+        del.className = "fi-del";
+        del.type = "button";
+        del.textContent = "×";
+        del.title = "移除";
+        del.addEventListener("click", e => {
+            e.stopPropagation();
+            PO_STATE.files = PO_STATE.files.filter(x => x.id !== f.id);
+            if (PO_STATE.sel === f.id) PO_STATE.sel = PO_STATE.files.length ? PO_STATE.files[0].id : null;
+            PO_STATE.limit = PO_ROW_STEP;
+            PO_STATE.editId = null;
+            poRenderList();
+            poRender();
+        });
+
+        row.addEventListener("click", () => {
+            if (PO_STATE.sel === f.id) return;
+            PO_STATE.sel = f.id;
+            PO_STATE.limit = PO_ROW_STEP;
+            PO_STATE.editId = null;
+            poRenderList();
+            poRender();
+        });
+
+        row.appendChild(ic);
+        row.appendChild(mn);
+        row.appendChild(del);
+        box.appendChild(row);
+    });
+}
+
+/* ---------- 统计 ---------- */
+function poRenderStats(f) {
+    let tr = 0, un = 0, fz = 0, pl = 0, ct = 0, ob = 0;
+    f.entries.forEach(e => {
+        if (e.obsolete) { ob++; return; }
+        if (e.fuzzy) fz++;
+        if (poIsTrans(e)) tr++; else un++;
+        if (e.msgid_plural) pl++;
+        if (e.msgctxt) ct++;
+    });
+    const data = [
+        ["条目总数", f.entries.length - ob],
+        ["已翻译", tr],
+        ["未翻译", un],
+        ["模糊 fuzzy", fz],
+        ["复数条目", pl],
+        ["带上下文", ct]
+    ].concat(ob ? [["废弃条目", ob]] : []);
+    $("poStats").innerHTML = data.map(d =>
+        '<div class="stat">' + d[0] + "<b>" + d[1] + "</b></div>").join("");
+}
+
+/* ---------- 表格 ---------- */
+function poMatched(f) {
+    const q = PO_STATE.q.trim().toLowerCase();
+    const fv = PO_STATE.filter;
+    return f.entries.filter(e => {
+        if (e.obsolete) return false;                       // 废弃条目不参与编辑
+        if (fv === "untrans" && poIsTrans(e)) return false;
+        if (fv === "trans" && !poIsTrans(e)) return false;
+        if (fv === "fuzzy" && !e.fuzzy) return false;
+        if (fv === "plural" && !e.msgid_plural) return false;
+        if (!q) return true;
+        return (e.msgid || "").toLowerCase().indexOf(q) >= 0 ||
+               (e.msgctxt || "").toLowerCase().indexOf(q) >= 0 ||
+               (e.msgid_plural || "").toLowerCase().indexOf(q) >= 0 ||
+               (e.msgstr || []).join("\n").toLowerCase().indexOf(q) >= 0;
+    });
+}
+
+function poRenderTable() {
+    const f = poCurrent();
+    const box = $("poTable");
+    if (!f) { box.innerHTML = ""; return; }
+
+    const list = PO_STATE.view;
+    const shown = list.slice(0, PO_STATE.limit);
+
+    const live = f.entries.filter(e => !e.obsolete).length;
+    if (!list.length) {
+        box.innerHTML = '<div class="pe-empty">没有符合条件的条目</div>';
+        $("poCount").textContent = "0 / " + live + " 条";
+        return;
+    }
+
+    const rows = shown.map((e, i) => {
+        const st = e.fuzzy ? '<span class="pe-tag y">模糊</span>'
+            : poIsTrans(e) ? '<span class="pe-tag g">已译</span>'
+            : '<span class="pe-tag">未译</span>';
+        const src = e.msgctxt
+            ? '<span style="color:rgba(255,255,255,0.35)">[' + poEsc(poOneLine(e.msgctxt)) + "]</span> " + poEsc(poOneLine(e.msgid))
+            : poEsc(poOneLine(e.msgid));
+        const dst = e.msgstr.length > 1
+            ? e.msgstr.map((s, k) => '<span style="color:rgba(255,255,255,0.3)">[' + k + "]</span> " + poEsc(poOneLine(s))).join("<br>")
+            : poEsc(poOneLine(e.msgstr[0] || ""));
+        return [
+            '<span class="po-idx">' + (i + 1) + "</span>",
+            st + (e.msgid_plural ? ' <span class="pe-tag">复数</span>' : ""),
+            src,
+            dst || '<span style="color:rgba(255,255,255,0.25)">（空）</span>'
+        ];
+    });
+
+    let h = '<div class="pe-table-wrap"><table class="po wide"><thead><tr>' +
+        '<th data-i="0" style="width:52px">#</th>' +
+        '<th data-i="1" style="width:96px">状态</th>' +
+        '<th data-i="2">原文 msgid</th>' +
+        '<th data-i="3">译文 msgstr</th>' +
+        "</tr></thead><tbody>" +
+        rows.map((r, i) => {
+            const e = shown[i];
+            return '<tr data-id="' + e._id + '"' + (e._id === PO_STATE.editId ? ' class="po-sel"' : "") +
+                ' title="点击编辑">' +
+                "<td>" + r[0] + "</td><td>" + r[1] + "</td>" +
+                '<td class="po-cell">' + r[2] + "</td>" +
+                '<td class="po-cell">' + r[3] + "</td></tr>";
+        }).join("") + "</tbody></table></div>";
+
+    if (list.length > PO_STATE.limit) {
+        h += '<div class="po-more"><button type="button" class="po-mini" id="poMoreRows">再显示 ' +
+            Math.min(PO_ROW_STEP, list.length - PO_STATE.limit) + " 条（共 " + list.length + " 条）</button></div>";
+    }
+    box.innerHTML = h;
+    $("poCount").textContent = "显示 " + shown.length + " / " + list.length + " 条（共 " + live + " 条）";
+
+    box.querySelectorAll("tbody tr").forEach(tr => {
+        tr.addEventListener("click", () => {
+            PO_STATE.editId = parseInt(tr.dataset.id, 10);
+            poRenderTable();
+            poRenderEdit();
+        });
+    });
+    const more = $("poMoreRows");
+    if (more) more.addEventListener("click", () => { PO_STATE.limit += PO_ROW_STEP; poRenderTable(); });
+}
+
+/* ---------- 编辑框 ---------- */
+function poRenderEdit() {
+    const f = poCurrent();
+    const box = $("poEditBox");
+    const e = poEntryById(PO_STATE.editId);
+    if (!f || !e) { box.innerHTML = ""; return; }
+
+    const idx = PO_STATE.view.findIndex(x => x._id === e._id);
+    const n = e.msgid_plural ? poNPlurals(f.header) : 1;
+    while (e.msgstr.length < n) e.msgstr.push("");
+
+    let h = '<div class="po-edit">';
+    h += '<div class="po-edit-head"><b>编辑条目</b>' +
+        '<span style="color:rgba(255,255,255,0.35)">第 ' + (idx + 1) + " / " + PO_STATE.view.length + " 条</span>" +
+        '<span class="sp"></span>' +
+        '<button type="button" class="po-mini" id="edPrev"' + (idx <= 0 ? " disabled" : "") + ">← 上一个</button>" +
+        '<button type="button" class="po-mini" id="edNext"' + (idx >= PO_STATE.view.length - 1 ? " disabled" : "") + ">下一个 →</button>" +
+        "</div>";
+
+    if (e.msgctxt) h += '<div class="po-field"><label>上下文 msgctxt</label><div class="po-src">' + poEsc(e.msgctxt) + "</div></div>";
+    h += '<div class="po-field"><label>原文 msgid</label><div class="po-src">' + poEsc(e.msgid) + "</div></div>";
+    if (e.msgid_plural) h += '<div class="po-field"><label>复数原文 msgid_plural</label><div class="po-src">' + poEsc(e.msgid_plural) + "</div></div>";
+
+    for (let i = 0; i < n; i++) {
+        h += '<div class="po-field"><label>译文 msgstr' + (n > 1 ? "[" + i + "]" : "") + "</label>" +
+            '<textarea class="po-ta" data-i="' + i + '" placeholder="在此填写译文…">' + poEsc(e.msgstr[i] || "") + "</textarea></div>";
+    }
+
+    h += '<div class="opt-row" style="border-top:none;padding-top:6px">' +
+        '<label class="chk"><input type="checkbox" id="edFuzzy"' + (e.fuzzy ? " checked" : "") + "> 标记为 fuzzy（模糊）</label>" +
+        '<button type="button" class="po-mini" id="edFill">用原文填充</button>' +
+        '<span class="sp" style="flex:1"></span>' +
+        '<button type="button" class="po-mini del" id="edDel">删除条目</button>' +
+        '<button type="button" class="po-mini ok" id="edDone">完 成（Ctrl+Enter）</button>' +
+        "</div></div>";
+
+    box.innerHTML = h;
+
+    // 译文改动即时写入内存，不需要点保存
+    box.querySelectorAll("textarea.po-ta").forEach(ta => {
+        ta.addEventListener("input", () => {
+            e.msgstr[+ta.dataset.i] = ta.value;
+            f.dirty = true;
+            poRefreshRow(e);
+            poRenderStats(f);
+            poRenderList();
+        });
+    });
+    $("edFuzzy").addEventListener("change", ev => {
+        e.fuzzy = ev.target.checked;
+        f.dirty = true;
+        poRenderTable();
+        poRenderStats(f);
+        poRenderList();
+    });
+    $("edFill").addEventListener("click", () => {
+        e.msgstr[0] = e.msgid;
+        for (let i = 1; i < n; i++) e.msgstr[i] = e.msgid_plural || e.msgid;
+        f.dirty = true;
+        poRenderEdit();
+        poRenderTable();
+        poRenderStats(f);
+        poRenderList();
+    });
+    $("edDel").addEventListener("click", () => {
+        if (!confirm("确定删除这条条目？该操作只影响当前页面的编辑结果。")) return;
+        f.entries = f.entries.filter(x => x._id !== e._id);
+        f.dirty = true;
+        PO_STATE.editId = null;
+        poRender();
+    });
+    $("edDone").addEventListener("click", () => { PO_STATE.editId = null; poRenderTable(); poRenderEdit(); });
+    $("edPrev").addEventListener("click", () => {
+        if (idx > 0) { PO_STATE.editId = PO_STATE.view[idx - 1]._id; poRenderTable(); poRenderEdit(); }
+    });
+    $("edNext").addEventListener("click", () => {
+        if (idx < PO_STATE.view.length - 1) { PO_STATE.editId = PO_STATE.view[idx + 1]._id; poRenderTable(); poRenderEdit(); }
+    });
+    box.addEventListener("keydown", ev => {
+        if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) {
+            ev.preventDefault();
+            PO_STATE.editId = null;
+            poRenderTable();
+            poRenderEdit();
+        }
+    });
+}
+
+// 只更新当前行，避免打字时整表重绘
+function poRefreshRow(e) {
+    const tr = $("poTable").querySelector('tr[data-id="' + e._id + '"]');
+    if (!tr) return;
+    const cells = tr.cells;
+    const st = e.fuzzy ? '<span class="pe-tag y">模糊</span>'
+        : poIsTrans(e) ? '<span class="pe-tag g">已译</span>'
+        : '<span class="pe-tag">未译</span>';
+    cells[1].innerHTML = st + (e.msgid_plural ? ' <span class="pe-tag">复数</span>' : "");
+    const dst = e.msgstr.length > 1
+        ? e.msgstr.map((s, k) => '<span style="color:rgba(255,255,255,0.3)">[' + k + "]</span> " + poEsc(poOneLine(s))).join("<br>")
+        : poEsc(poOneLine(e.msgstr[0] || ""));
+    cells[3].innerHTML = dst || '<span style="color:rgba(255,255,255,0.25)">（空）</span>';
+}
+
+/* ---------- 总渲染 ---------- */
+function poRender() {
+    const f = poCurrent();
+    $("poWork").hidden = !f;
+    if (!f) {
+        $("poTable").innerHTML = "";
+        $("poEditBox").innerHTML = "";
+        $("poStats").innerHTML = "";
+        $("poHeaderBox").hidden = true;
+        return;
+    }
+    poRenderStats(f);
+    PO_STATE.view = poMatched(f);
+    poRenderTable();
+    poRenderEdit();
+    const ht = $("poHeaderText");
+    if (ht && document.activeElement !== ht) ht.value = f.header || "";
+}
+
+/* ---------- 导出 ---------- */
+function poToText(f, opts) {
+    opts = opts || {};
+    const lines = ["# 由在线编辑器生成", "#"];
+    lines.push(...poLines("msgid", ""));
+    let hdr = /\S/.test(f.header || "") ? f.header : defaultHeader();
+    if (!/\n$/.test(hdr)) hdr += "\n";
+    lines.push(...poLines("msgstr", hdr));
+    lines.push("");
+
+    for (const it of f.entries) {
+        // 废弃条目按 gettext 惯例写成 #~ 块，保证往返不丢
+        if (it.obsolete) {
+            const blk = [];
+            if (it.msgctxt) blk.push(...poLines("msgctxt", it.msgctxt));
+            blk.push(...poLines("msgid", it.msgid));
+            if (it.msgid_plural) blk.push(...poLines("msgid_plural", it.msgid_plural));
+            if (it.msgstr.length > 1) it.msgstr.forEach((s, i) => blk.push(...poLines("msgstr[" + i + "]", s)));
+            else blk.push(...poLines("msgstr", it.msgstr[0] || ""));
+            lines.push(blk.map(l => "#~ " + l).join("\n"));
+            lines.push("");
+            continue;
+        }
+        if (opts.onlyTranslated && !poIsTrans(it)) continue;
+        if (it.fuzzy) lines.push("#, fuzzy");
+        if (it.msgctxt) lines.push(...poLines("msgctxt", it.msgctxt));
+        lines.push(...poLines("msgid", it.msgid));
+        if (it.msgid_plural) lines.push(...poLines("msgid_plural", it.msgid_plural));
+        if (it.msgstr.length > 1) it.msgstr.forEach((s, i) => lines.push(...poLines("msgstr[" + i + "]", s)));
+        else lines.push(...poLines("msgstr", it.msgstr[0] || ""));
+        lines.push("");
+    }
+    return lines.join("\n").replace(/\n+$/, "\n");
+}
+
+function poToMoBlob(f, includeFuzzy) {
+    const h = newEntry();
+    h.msgstr = [/\S/.test(f.header || "") ? f.header : defaultHeader()];
+    return buildMo([h].concat(f.entries), includeFuzzy);
+}
+
+/* ---------- 事件绑定 ---------- */
+PO_STATE.filter = bindSeg("poFilter", v => { PO_STATE.filter = v; PO_STATE.limit = PO_ROW_STEP; PO_STATE.editId = null; poRender(); });
+
+$("poSearch").addEventListener("input", e => {
+    PO_STATE.q = e.target.value;
+    PO_STATE.limit = PO_ROW_STEP;
+    PO_STATE.editId = null;
+    poRender();
+});
+
+$("poHeaderBtn").addEventListener("click", () => {
+    const box = $("poHeaderBox");
+    box.hidden = !box.hidden;
+    if (!box.hidden) {
+        const f = poCurrent();
+        if (f) $("poHeaderText").value = f.header || "";
+    }
+});
+
+$("poHeaderText").addEventListener("input", e => {
+    const f = poCurrent();
+    if (!f) return;
+    f.header = e.target.value;
+    f.dirty = true;
+    poRenderList();
+});
+
+$("poSavePo").addEventListener("click", () => {
+    const f = poCurrent();
+    if (!f) return;
+    const text = poToText(f, { onlyTranslated: false });
+    download(new Blob([text], { type: "text/plain;charset=utf-8" }), baseName(f.name) + ".po");
+    $("langStatus").className = "status ok";
+    $("langStatus").textContent = "已导出 " + baseName(f.name) + ".po（" + f.entries.length + " 条）";
+});
+
+$("poSaveMo").addEventListener("click", () => {
+    const f = poCurrent();
+    if (!f) return;
+    try {
+        const r = poToMoBlob(f, false);
+        const skipped = f.entries.filter(e => e.fuzzy && !e.obsolete).length;
+        download(r.blob, baseName(f.name) + ".mo");
+        $("langStatus").className = "status ok";
+        $("langStatus").textContent = "已导出 " + baseName(f.name) + ".mo（写入 " + (r.count - 1) + " 条）" +
+            (skipped ? "，跳过 " + skipped + " 条 fuzzy" : "");
+    } catch (err) {
+        $("langStatus").className = "status err";
+        $("langStatus").textContent = "生成 .mo 失败：" + ((err && err.message) ? err.message : err);
+    }
+});
+
+$("poClear").addEventListener("click", () => {
+    PO_STATE.files = [];
+    PO_STATE.sel = null;
+    PO_STATE.editId = null;
+    PO_STATE.view = [];
+    PO_STATE.limit = PO_ROW_STEP;
+    poRenderList();
+    poRender();
+    $("poHeaderBox").hidden = true;
+    $("langStatus").className = "status";
+    $("langStatus").textContent = "已清空列表";
+});
+
 /* ==================== MO / PO 面板 ==================== */
 const langFiles = makeFileList($("langFiles"));
 let langMode = bindSeg("langMode", v => {
     langMode = v;
+    const edit = v === "edit";
     const mo2po = v === "mo2po";
-    $("langDropTitle").textContent = mo2po ? "拖拽 .mo 文件到这里，或点击选择" : "拖拽 .po 文件到这里，或点击选择";
-    $("langDropSub").innerHTML = mo2po
-        ? "编译后的二进制语言包 → 可编辑的 gettext 源文件<br>可一次选择多个文件"
-        : "可编辑的 gettext 源文件 → 编译后的二进制语言包<br>可一次选择多个文件";
-    $("langInput").accept = mo2po ? ".mo" : ".po";
+    const titles = {
+        mo2po: "拖拽 .mo 文件到这里，或点击选择",
+        po2mo: "拖拽 .po 文件到这里，或点击选择",
+        edit:  "拖拽 .mo 或 .po 文件到这里，或点击选择"
+    };
+    const subs = {
+        mo2po: "编译后的二进制语言包 → 可编辑的 gettext 源文件<br>可一次选择多个文件",
+        po2mo: "可编辑的 gettext 源文件 → 编译后的二进制语言包<br>可一次选择多个文件",
+        edit:  "载入后可浏览全部条目、直接修改译文，再另存为 .po 或 .mo<br>可一次选择多个文件"
+    };
+    $("langDropTitle").textContent = titles[v];
+    $("langDropSub").innerHTML = subs[v];
+    $("langInput").accept = edit ? ".mo,.po" : (mo2po ? ".mo" : ".po");
     $("langOptMo2Po").hidden = !mo2po;
-    $("langOptPo2Mo").hidden = mo2po;
+    $("langOptPo2Mo").hidden = edit || mo2po;
+    $("langRun").hidden = edit;
+    $("langFiles").hidden = edit;
+    $("poFiles").hidden = !edit;
+    if (!edit) $("poWork").hidden = true;
     langFiles.clear();
     $("langStats").hidden = true;
     $("langStatus").textContent = "";
+    if (!edit) {
+        PO_STATE.files = [];
+        PO_STATE.sel = null;
+        PO_STATE.editId = null;
+        PO_STATE.view = [];
+        PO_STATE.limit = PO_ROW_STEP;
+        poRenderList();
+        $("poFiles").hidden = true;
+    } else {
+        poRenderList();
+        poRender();
+    }
 });
 
 bindDropZone($("langDrop"), $("langInput"), files => {
+    if (langMode === "edit") {
+        const got = files.filter(f => { const e = extOf(f.name); return e === "mo" || e === "po"; });
+        if (!got.length) {
+            $("langStatus").className = "status err";
+            $("langStatus").textContent = "请选择 .mo 或 .po 文件";
+            return;
+        }
+        $("poFiles").hidden = false;
+        poLoadFiles(got);
+        return;
+    }
     const want = langMode === "mo2po" ? ".mo" : ".po";
     langFiles.add(files.filter(f => extOf(f.name) === want.slice(1)));
 });
@@ -1884,12 +2511,13 @@ $("langRun").addEventListener("click", async () => {
             st.textContent = "(" + (i + 1) + "/" + items.length + ") 正在解析 " + name;
             await yieldUI();
 
+            let detail;
             if (mo2po) {
                 const mo = decodeMo(parseMoBytes(await it.file.arrayBuffer()));
                 const { text, stats } = moToPo(mo, { onlyTranslated: onlyTrans });
                 Object.keys(agg).forEach(k => agg[k] += stats[k]);
-                st.textContent = "(" + (i + 1) + "/" + items.length + ") " + name
-                    + " · " + stats.total + " 条 · " + mo.charset + " · " + mo.endian + " endian";
+                detail = stats.total + " 条 · " + mo.charset + " · " + mo.endian + " endian";
+                st.textContent = "(" + (i + 1) + "/" + items.length + ") " + name + " · " + detail;
                 download(new Blob([text], { type: "text/plain;charset=utf-8" }), baseName(name) + ".po");
             } else {
                 const text = await it.file.text();
@@ -1904,14 +2532,15 @@ $("langRun").addEventListener("click", async () => {
                 agg.untranslated += Math.max(0, count - 1 - trans);
                 agg.pluralCount += plural;
                 agg.ctxCount += ctx;
-                st.textContent = "(" + (i + 1) + "/" + items.length + ") " + name
-                    + " · 写入 " + (count - 1) + " 条"
-                    + (incFuzzy ? "" : " · 跳过 " + fuzzySkipped + " 条 fuzzy");
+                detail = "写入 " + (count - 1) + " 条" +
+                    (incFuzzy ? "" : " · 跳过 " + fuzzySkipped + " 条 fuzzy");
+                st.textContent = "(" + (i + 1) + "/" + items.length + ") " + name + " · " + detail;
                 download(blob, baseName(name) + ".mo");
             }
 
             langFiles.setProgress(it, 1);
-            langFiles.setMeta(it, "完成 · 已开始下载", "done");
+            // 逐条详情写进文件行，避免被最后的汇总语覆盖掉
+            langFiles.setMeta(it, "完成 · " + detail + " · 已开始下载", "done");
             ok++;
             await new Promise(r => setTimeout(r, 400));
         } catch (err) {
@@ -2967,9 +3596,9 @@ $("peClear").addEventListener("click", () => {
 
 /* 表格标题点击排序（仅作用于 PE 面板表格） */
 document.addEventListener("click", e => {
-    const th = e.target.closest ? e.target.closest("table.pe th[data-i]") : null;
+    const th = e.target.closest ? e.target.closest("th[data-i]") : null;
     if (!th) return;
-    const tb = th.closest("table.pe").tBodies[0];
+    const tb = th.closest("table").tBodies[0];
     const idx = +th.dataset.i;
     const dir = th.dataset.dir === "asc" ? "desc" : "asc";
     th.dataset.dir = dir;
