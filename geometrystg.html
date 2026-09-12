@@ -46,10 +46,13 @@
     <div class="row"><span class="lbl">难度</span><div class="opts" id="diffOpts"></div></div>
     <div class="row"><span class="lbl">血量</span><div class="opts" id="hpOpts"></div></div>
     <div class="row"><span class="lbl">符卡</span><div class="opts" id="bombOpts"></div></div>
+    <div class="row"><span class="lbl">BGM</span><div class="opts" id="bgmOpts"></div></div>
+    <div class="row"><span class="lbl">音量</span><div class="opts" id="volOpts"></div></div>
     <button class="big" id="startBtn">开 始</button>
     <div class="help">
       <b>←↑↓→ / WASD</b> 移动　<b>Shift</b> 低速（显示判定点）<br>
-      <b>Z</b> 射击（默认自动射击）　<b>X</b> 符卡清屏　<b>Esc/P</b> 暂停　<b>M</b> 静音<br>
+      <b>Z</b> 射击（默认自动射击）　<b>X</b> 符卡清屏　<b>Esc/P</b> 暂停<br>
+      <b>M</b> 全部静音　<b>N</b> BGM 开关　<b>[ ]</b> 音量 −/+<br>
       擦弹（Graze）加分，只有<b>判定小点</b>被击中才算中弹
     </div>
   </div>
@@ -87,6 +90,54 @@ const BOMB_OPTS = [1,2,3,5,8];
 
 let selDiff = 'normal', selHp = 3, selBomb = 3;
 
+/* ======================= BGM ======================= */
+/* 直链列表：主源 raw.githubusercontent，备用 jsDelivr CDN；任一可用即循环播放 */
+const BGM_URLS = [
+  'https://raw.githubusercontent.com/VancoCN/vancocn.github.io/main/music/gsbgm.mp3',
+  'https://cdn.jsdelivr.net/gh/VancoCN/vancocn.github.io@main/music/gsbgm.mp3',
+];
+let bgmOn = true, bgmVol = 0.5, bgmSrcIdx = 0, bgmReady = false;
+const bgm = new Audio();
+bgm.loop = true;
+bgm.preload = 'auto';
+bgm.crossOrigin = 'anonymous';
+bgm.volume = bgmVol;
+
+function bgmLoad(i) {
+  if (i >= BGM_URLS.length) { bgmReady = false; return; }
+  bgmSrcIdx = i; bgm.src = BGM_URLS[i]; bgm.load();
+}
+/* 某个源出错/无法解码时自动切下一个 */
+bgm.addEventListener('error', () => { if (bgmSrcIdx < BGM_URLS.length - 1) bgmLoad(bgmSrcIdx + 1); });
+bgm.addEventListener('stalled', () => { if (bgmSrcIdx < BGM_URLS.length - 1) bgmLoad(bgmSrcIdx + 1); });
+bgm.addEventListener('canplay', () => { bgmReady = true; });
+bgmLoad(0);
+
+/* 浏览器自动播放限制兜底：任意一次用户交互后重试播放 */
+let bgmNeedGesture = false;
+function bgmRetryOnGesture() {
+  if (!bgmNeedGesture) return;
+  bgmNeedGesture = false;
+  if (bgmOn && !muted && state === 'playing') bgmPlay();
+}
+['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+  addEventListener(ev, bgmRetryOnGesture, { once: false, passive: true }));
+
+function bgmPlay() {
+  if (!bgmOn) return;
+  if (!bgm.src) bgmLoad(0);
+  const pr = bgm.play();
+  if (pr && pr.catch) pr.catch(() => { bgmNeedGesture = true; });   // 自动播放被拦截：等下次交互重试
+}
+function bgmPause() { try { bgm.pause(); } catch (e) {} }
+function bgmSetVol(v) { bgmVol = Math.max(0, Math.min(1, v)); bgm.volume = bgmVol; }
+function bgmToggle() {
+  bgmOn = !bgmOn;
+  if (bgmOn) bgmPlay(); else bgmPause();
+  syncBgmBtns();
+  if (state === 'playing') floats.push({ txt: bgmOn ? 'BGM ON' : 'BGM OFF', y: FH - 40, life: 70, color: '#ffffff' });
+}
+
 /* ======================= 输入 ======================= */
 const keys = Object.create(null);
 const pressed = Object.create(null);
@@ -95,8 +146,14 @@ addEventListener('keydown', e => {
   if (HOLD.includes(e.code)) e.preventDefault();
   if (!keys[e.code]) pressed[e.code] = true;
   keys[e.code] = true;
-  if (e.code === 'Escape' || e.code === 'KeyP') { if (state === 'playing') state = 'paused'; else if (state === 'paused') state = 'playing'; }
-  if (e.code === 'KeyM') muted = !muted;
+  if (e.code === 'Escape' || e.code === 'KeyP') {
+    if (state === 'playing') { state = 'paused'; bgmPause(); }
+    else if (state === 'paused') { state = 'playing'; if (bgmOn && !muted) bgmPlay(); }
+  }
+  if (e.code === 'KeyM') { muted = !muted; if (muted) bgmPause(); else if (state === 'playing') bgmPlay(); }
+  if (e.code === 'KeyN') bgmToggle();
+  if (e.code === 'BracketLeft')  { bgmSetVol(bgmVol - 0.1); syncVolBtns(); }
+  if (e.code === 'BracketRight') { bgmSetVol(bgmVol + 0.1); syncVolBtns(); }
   if (e.code === 'KeyR' && state === 'over') toMenu();
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
@@ -778,6 +835,8 @@ function drawHUD() {
   ctx.font = '9px "PingFang SC",sans-serif'; ctx.fillStyle = '#6e6e6e';
   ctx.fillText('P:暂停  M:静音', x0, y); y += 13;
   ctx.fillText('X:符卡  Shift:低速', x0, y);
+  y = H - 26; ctx.font = '9px "Courier New",monospace'; ctx.fillStyle = '#6e6e6e';
+  ctx.fillText((bgmOn && !muted ? '\u266A BGM ' + Math.round(bgmVol * 100) + '%' : '\u266A MUTE') + (muted ? '' : '') + (bgmReady ? '' : ' LOADING'), x0, y);
   y = H - 14; ctx.font = '9px "Courier New",monospace'; ctx.fillStyle = '#5c5c5c';
   ctx.fillText('BULLETS ' + ebullets.length, x0, y);
 }
@@ -869,14 +928,28 @@ buildOpts(document.getElementById('diffOpts'), Object.values(DIFFS), d => d.name
 buildOpts(document.getElementById('hpOpts'), HP_OPTS, v => v + ' 血', selHp, v => selHp = v);
 buildOpts(document.getElementById('bombOpts'), BOMB_OPTS, v => v + ' 张', selBomb, v => selBomb = v);
 
+const bgmBtns = [];
+buildOpts(document.getElementById('bgmOpts'), [true, false], v => v ? '开 (LOOP)' : '关', bgmOn,
+  v => { bgmOn = v; if (v) { bgmPlay(); } else bgmPause(); });
+document.querySelectorAll('#bgmOpts .opt').forEach(b => bgmBtns.push(b));
+const volBtns = [];
+buildOpts(document.getElementById('volOpts'), [0.2, 0.35, 0.5, 0.7, 1.0], v => Math.round(v * 100) + '%', bgmVol,
+  v => { bgmSetVol(v); beep(1000, 0.05, 'triangle', 0.05); });
+document.querySelectorAll('#volOpts .opt').forEach(b => volBtns.push(b));
+function syncBgmBtns() { bgmBtns.forEach((b, i) => b.classList.toggle('on', (i === 0) === bgmOn)); }
+function syncVolBtns() { volBtns.forEach((b, i) => b.classList.toggle('on', Math.abs([0.2,0.35,0.5,0.7,1.0][i] - bgmVol) < 0.01)); }
+syncBgmBtns(); syncVolBtns();
+
 function startGame() {
   ac(); reset(); state = 'playing';
+  if (bgmOn && !muted) bgmPlay();
   document.getElementById('menu').classList.add('hidden');
   document.getElementById('over').classList.add('hidden');
   startWave(1);
 }
 function toMenu() {
   state = 'menu';
+  if (bgmOn && !muted) bgmPlay();
   document.getElementById('over').classList.add('hidden');
   document.getElementById('menu').classList.remove('hidden');
 }
