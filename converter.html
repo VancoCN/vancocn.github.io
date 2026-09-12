@@ -668,6 +668,8 @@
 <div class="tabs">
     <button class="tab active" data-tab="audio">音频转换</button>
     <button class="tab" data-tab="image">图片转换</button>
+    <button class="tab" data-tab="sheet">表格转换</button>
+    <button class="tab" data-tab="font">字体转换</button>
     <button class="tab" data-tab="lang">MO / PO</button>
     <button class="tab" data-tab="crypto">加解密</button>
     <button class="tab" data-tab="pe">PE 解析</button>
@@ -679,8 +681,8 @@
         <div class="drop-zone" id="audioDrop">
             <svg class="dz-icon" viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
             <div class="dz-title">拖拽音频文件到这里，或点击选择</div>
-            <div class="dz-sub">支持 mp3 / wav / ogg / flac / m4a / aac / opus / webm 等浏览器可解码格式<br>可一次选择多个文件</div>
-            <input type="file" id="audioInput" accept="audio/*" multiple hidden>
+            <div class="dz-sub">支持 mp3 / wav / ogg / flac / m4a / aac / opus / webm 等浏览器可解码格式<br>也可直接拖入 mp4 / mov / mkv / webm 等视频，自动提取其中的音轨<br>可一次选择多个文件</div>
+            <input type="file" id="audioInput" accept="audio/*,video/*,.mp3,.wav,.ogg,.flac,.m4a,.aac,.opus,.mp4,.m4v,.mov,.mkv,.webm" multiple hidden>
         </div>
 
         <div class="file-list" id="audioFiles"></div>
@@ -728,6 +730,7 @@
         <div class="note">
             <b>说明</b><br>
             · 解码由浏览器原生完成，能播就能转；编码由 lamejs（MP3）与 libvorbis（OGG）在页面内完成<br>
+            · 拖入 MP4 / MOV 等视频时会只取其中的音轨，视频画面与时长无关的部分会被丢弃<br>
             · MP3 / OGG 是纯 JS 编码器，首次切换格式时需下载解码库（OGG 约 2 MB），之后同一页面内不再重复下载<br>
             · 超过两声道的音源在转 MP3 / OGG 时会取前两声道；WAV 保留全部声道<br>
             · 有损转无损（如 mp3 → wav）不会恢复丢失的细节，只是换容器
@@ -741,7 +744,7 @@
         <div class="drop-zone" id="imageDrop">
             <svg class="dz-icon" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
             <div class="dz-title">拖拽图片文件到这里，或点击选择</div>
-            <div class="dz-sub">支持 png / jpg / jpeg / webp / gif / bmp / ico / avif 等浏览器可解码格式<br>可一次选择多个文件（GIF 只取第一帧）</div>
+            <div class="dz-sub">支持 png / jpg / jpeg / webp / gif / bmp / ico / avif 等浏览器可解码格式<br>任意一种都能转成 JPG，可一次选择多个文件（GIF 只取第一帧）</div>
             <input type="file" id="imageInput" accept="image/*" multiple hidden>
         </div>
 
@@ -751,7 +754,7 @@
             <span class="opt-label">输出格式</span>
             <div class="seg" id="imageFormat">
                 <button class="seg-btn active" data-v="png">PNG</button>
-                <button class="seg-btn" data-v="jpeg">JPEG</button>
+                <button class="seg-btn" data-v="jpeg">JPG / JPEG</button>
                 <button class="seg-btn" data-v="webp">WEBP</button>
                 <button class="seg-btn" data-v="bmp">BMP</button>
                 <button class="seg-btn" data-v="ico">ICO</button>
@@ -801,10 +804,115 @@
 
         <div class="note">
             <b>说明</b><br>
-            · PNG / JPEG / WEBP 走浏览器原生编码器；BMP 与 ICO 由页面自行拼装字节<br>
+            · PNG / JPG / WEBP 走浏览器原生编码器；BMP 与 ICO 由页面自行拼装字节<br>
+            · 输出 JPG 时文件后缀为 .jpg；透明区域会先用上方选择的颜色铺底，质量滑杆只在 JPG / WEBP 下生效<br>
             · JPEG 不支持透明，透明区域会按上方选择的颜色填充；BMP 输出为 32 位带透明通道<br>
             · ICO 内嵌 PNG 数据，需 Windows Vista 及以后的系统才能正确识别<br>
             · 画布上限约 16384 px，超长图请先限制尺寸；EXIF 方向由浏览器自动处理
+        </div>
+    </div>
+</section>
+
+<!-- ==================== 表格 ==================== -->
+<section class="panel" id="panel-sheet" hidden>
+    <div class="panel-card glass">
+        <div class="drop-zone" id="sheetDrop">
+            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm2 2v14h14V5H5zm2 3h4v2H7V8zm0 4h10v2H7v-2zm0 4h10v2H7v-2zm6-8h4v2h-4V8z"/></svg>
+            <div class="dz-title">拖拽 .xlsx 或 .csv 文件到这里，或点击选择</div>
+            <div class="dz-sub">Excel 工作簿与 CSV 文本互转，可一次选择多个文件<br>中文、含逗号 / 引号 / 换行的内容、日期与数字都会按原样保留</div>
+            <input type="file" id="sheetInput" accept=".xlsx,.xlsm,.csv,.tsv,.txt" multiple hidden>
+        </div>
+
+        <div class="file-list" id="sheetFiles"></div>
+
+        <div class="opt-row">
+            <span class="opt-label">转换方向</span>
+            <div class="seg" id="sheetDir">
+                <button class="seg-btn active" data-v="x2c">XLSX → CSV</button>
+                <button class="seg-btn" data-v="c2x">CSV → XLSX</button>
+            </div>
+        </div>
+
+        <div class="opt-row" id="optX2c">
+            <span class="opt-label">工作表</span>
+            <div class="seg" id="sheetScope">
+                <button class="seg-btn active" data-v="first">仅第一个</button>
+                <button class="seg-btn" data-v="all">每个工作表一个 CSV</button>
+            </div>
+            <label class="chk"><input type="checkbox" id="csvBomChk" checked> 写入 UTF-8 BOM（Excel 双击不乱码）</label>
+        </div>
+
+        <div class="opt-row" id="optC2x" hidden>
+            <span class="opt-label">输出方式</span>
+            <div class="seg" id="csvMerge">
+                <button class="seg-btn active" data-v="merge">合并为一个工作簿</button>
+                <button class="seg-btn" data-v="single">每个 CSV 一个 XLSX</button>
+            </div>
+            <label class="chk"><input type="checkbox" id="csvNumChk" checked> 数字识别为数值</label>
+        </div>
+
+        <div class="opt-row">
+            <span class="opt-label">CSV 分隔符</span>
+            <div class="seg" id="csvDelim">
+                <button class="seg-btn active" data-v="auto">自动识别</button>
+                <button class="seg-btn" data-v=",">逗号 ,</button>
+                <button class="seg-btn" data-v=";">分号 ;</button>
+                <button class="seg-btn" data-v="tab">制表符</button>
+                <button class="seg-btn" data-v="|">竖线 |</button>
+            </div>
+        </div>
+
+        <div class="opt-row">
+            <span class="opt-label">CSV 编码</span>
+            <div class="seg" id="csvEnc">
+                <button class="seg-btn active" data-v="utf-8">UTF-8</button>
+                <button class="seg-btn" data-v="gbk">GBK / 国标</button>
+            </div>
+        </div>
+
+        <button class="run-btn" id="sheetRun">开 始 转 换</button>
+        <div class="status" id="sheetStatus"></div>
+
+        <div class="note">
+            <b>说明</b><br>
+            · 全部由页面自己读写 XML 与 CSV，不依赖外部库，也不上传任何数据<br>
+            · XLSX → CSV 会按单元格的数字格式把日期还原成 <span class="mono">2024-05-01</span> 这样的文本<br>
+            · CSV → XLSX 默认把看起来是数字的内容写成数值，取消勾选则全部按文本写入<br>
+            · 单元格里的公式只导出计算结果，图表、图片、批注与条件格式不会保留
+        </div>
+    </div>
+</section>
+
+<!-- ==================== 字体 ==================== -->
+<section class="panel" id="panel-font" hidden>
+    <div class="panel-card glass">
+        <div class="drop-zone" id="fontDrop">
+            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M9 4v3h5.5v13h3V7H23V4H9zM6 4H3v3h3v13h3V7h3V4H6z"/></svg>
+            <div class="dz-title">拖拽字体文件到这里，或点击选择</div>
+            <div class="dz-sub">支持 TTF / OTF / WOFF2 三种格式互转，可一次选择多个文件<br>源文件格式自动识别，只需选择想要的输出格式</div>
+            <input type="file" id="fontInput" accept=".ttf,.otf,.woff2,.ttc,.otc" multiple hidden>
+        </div>
+
+        <div class="file-list" id="fontFiles"></div>
+
+        <div class="opt-row">
+            <span class="opt-label">输出格式</span>
+            <div class="seg" id="fontTarget">
+                <button class="seg-btn active" data-v="woff2">WOFF2</button>
+                <button class="seg-btn" data-v="ttf">TTF</button>
+                <button class="seg-btn" data-v="otf">OTF</button>
+            </div>
+        </div>
+
+        <button class="run-btn" id="fontRun">开 始 转 换</button>
+        <div class="status" id="fontStatus"></div>
+
+        <div class="note">
+            <b>说明</b><br>
+            · WOFF2 压缩 / 解压用 Google woff2 的 wasm 版本，OTF → TTF 用 fonteditor-core，TTF → OTF 由页面自行拼装 CFF 轮廓<br>
+            · 首次使用某个方向时会按需下载对应引擎（各几百 KB），同一页面内不会重复下载<br>
+            · OTF 与 TTF 的轮廓类型不同（三次贝塞尔 ↔ 二次曲线），来回转换会有极小的取整误差，且不会恢复原有的 hinting 指令<br>
+            · 转换只处理字形轮廓与基础度量，可变字体（VF）与位图字体请先用专业工具处理
         </div>
     </div>
 </section>
@@ -1037,10 +1145,1092 @@ function download(blob, filename) {
     setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
 }
 
+/* ==================== 表格转换核心（XLSX / CSV） ==================== */
+/* ==================== 表格转换核心（XLSX / CSV） ==================== */
+/* 纯前端实现：ZIP 读写 + XLSX(XML) 解析/生成 + CSV 解析/生成 */
+
+/* ---------- CRC32 ---------- */
+const CRC_TABLE = (() => {
+    const t = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+        let c = i;
+        for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        t[i] = c >>> 0;
+    }
+    return t;
+})();
+
+function crc32(buf) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+/* ---------- 极简 XML 解析 ---------- */
+function xmlUnescape(s) {
+    return s.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (m, e) => {
+        if (e[0] === "#") {
+            const code = e[1] === "x" || e[1] === "X"
+                ? parseInt(e.slice(2), 16)
+                : parseInt(e.slice(1), 10);
+            return isNaN(code) ? m : String.fromCodePoint(code);
+        }
+        switch (e) {
+            case "amp": return "&";
+            case "lt": return "<";
+            case "gt": return ">";
+            case "quot": return '"';
+            case "apos": return "'";
+            default: return m;
+        }
+    });
+}
+
+function xmlEscape(s) {
+    return String(s).replace(/[&<>"']/g, c =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[c]));
+}
+
+// 解析成轻量树：{ tag, attrs, children, text }
+function parseXml(text) {
+    const root = { tag: "#root", attrs: {}, children: [], text: "" };
+    const stack = [root];
+    let i = 0;
+    const n = text.length;
+    while (i < n) {
+        const lt = text.indexOf("<", i);
+        if (lt < 0) { stack[stack.length - 1].text += xmlUnescape(text.slice(i)); break; }
+        if (lt > i) stack[stack.length - 1].text += xmlUnescape(text.slice(i, lt));
+        if (text.startsWith("<!--", lt)) { const e = text.indexOf("-->", lt); i = e < 0 ? n : e + 3; continue; }
+        if (text.startsWith("<?", lt)) { const e = text.indexOf("?>", lt); i = e < 0 ? n : e + 2; continue; }
+        if (text.startsWith("<![CDATA[", lt)) {
+            const e = text.indexOf("]]>", lt);
+            const raw = text.slice(lt + 9, e < 0 ? n : e);
+            stack[stack.length - 1].text += raw;
+            i = e < 0 ? n : e + 3;
+            continue;
+        }
+        if (text.startsWith("</", lt)) {
+            const e = text.indexOf(">", lt);
+            const tag = text.slice(lt + 2, e).trim();
+            for (let k = stack.length - 1; k > 0; k--) {
+                if (stack[k].tag === tag) { stack.length = k; break; }
+            }
+            i = e + 1;
+            continue;
+        }
+        // 开标签
+        let e = lt + 1, selfClose = false, inStr = false;
+        for (; e < n; e++) {
+            const ch = text[e];
+            if (ch === '"' || ch === "'") inStr = !inStr;
+            else if (!inStr && ch === ">") break;
+        }
+        let body = text.slice(lt + 1, e);
+        if (body.endsWith("/")) { selfClose = true; body = body.slice(0, -1); }
+        const sp = body.search(/[\s]/);
+        const tag = (sp < 0 ? body : body.slice(0, sp)).trim();
+        const attrs = {};
+        const re = /([^\s=/]+)\s*=\s*("([^"]*)"|'([^']*)')/g;
+        let m;
+        while ((m = re.exec(body))) attrs[m[1]] = xmlUnescape(m[3] !== undefined ? m[3] : m[4]);
+        const node = { tag, attrs, children: [], text: "" };
+        stack[stack.length - 1].children.push(node);
+        if (!selfClose) stack.push(node);
+        i = e + 1;
+    }
+    return root;
+}
+
+function childNodes(node, tag) {
+    const out = [];
+    for (const c of node.children) if (c.tag === tag) out.push(c);
+    return out;
+}
+// 支持 "a/b" 两级路径
+function findNodes(node, path) {
+    const parts = path.split("/");
+    let cur = [node];
+    for (const p of parts) {
+        const next = [];
+        for (const c of cur) for (const k of c.children) if (k.tag === p || k.tag.endsWith(":" + p)) next.push(k);
+        cur = next;
+        if (!cur.length) return cur;
+    }
+    return cur;
+}
+function nodeText(node) {
+    let s = node.text || "";
+    for (const c of node.children) s += nodeText(c);
+    return s;
+}
+
+/* ---------- ZIP 读取 ---------- */
+async function inflateRaw(u8) {
+    if (typeof DecompressionStream === "function") {
+        try {
+            const ds = new DecompressionStream("deflate-raw");
+            const blob = new Blob([u8]);
+            const ab = await new Response(blob.stream().pipeThrough(ds)).arrayBuffer();
+            return new Uint8Array(ab);
+        } catch (e) { /* 落到下面的纯 JS 实现 */ }
+    }
+    return inflateRawJS(u8);
+}
+
+// 兜底：纯 JS raw-inflate（存错位 + 动态/固定哈夫曼）
+function inflateRawJS(src) {
+    let pos = 0, bitBuf = 0, bitCnt = 0;
+    const out = [];
+    function bits(need) {
+        while (bitCnt < need) {
+            if (pos >= src.length) throw new Error("数据不完整");
+            bitBuf = (bitBuf | (src[pos++] << bitCnt)) >>> 0;
+            bitCnt += 8;
+        }
+        const v = bitBuf & ((1 << need) - 1);
+        bitBuf = bitBuf >>> need;
+        bitCnt -= need;
+        return v;
+    }
+    function buildTree(lengths) {
+        const arr = Array.from(lengths);
+        const maxBits = Math.max.apply(null, arr.concat([0]));
+        const blCount = new Int32Array(maxBits + 1);
+        for (const l of arr) if (l) blCount[l]++;
+        const nextCode = new Int32Array(maxBits + 2);
+        let code = 0;
+        for (let b = 1; b <= maxBits; b++) {
+            code = (code + blCount[b - 1]) << 1;
+            nextCode[b] = code;
+        }
+        const codes = new Int32Array(arr.length);
+        for (let i = 0; i < arr.length; i++) if (arr[i]) codes[i] = nextCode[arr[i]]++;
+        // 按长度建索引，解码时避免逐位遍历整张表
+        const byLen = [];
+        const counts = new Int32Array(maxBits + 1);
+        for (let i = 0; i < arr.length; i++) {
+            const l = arr[i];
+            if (!l) continue;
+            if (!byLen[l]) byLen[l] = [];
+            byLen[l].push({ sym: i, code: codes[i] });
+            counts[l]++;
+        }
+        return { lengths: arr, codes, maxBits, byLen, counts };
+    }
+    function decode(tree) {
+        let code = 0, first = 0;
+        for (let len = 1; len <= tree.maxBits; len++) {
+            code |= bits(1);
+            const count = tree.counts[len] || 0;
+            if (code - first < count && tree.byLen[len]) {
+                return tree.byLen[len][code - first].sym;
+            }
+            first = (first + count) << 1;
+            code <<= 1;
+        }
+        throw new Error("哈夫曼解码失败");
+    }
+    const LEN_BASE = [3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258];
+    const LEN_EXTRA = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0];
+    const DIST_BASE = [1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577];
+    const DIST_EXTRA = [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13];
+    const CLEN_ORDER = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
+
+    for (;;) {
+        const last = bits(1);
+        const type = bits(2);
+        if (type === 0) {
+            bitBuf = 0; bitCnt = 0;
+            const len = src[pos] | (src[pos + 1] << 8);
+            pos += 4;
+            for (let i = 0; i < len; i++) out.push(src[pos + i]);
+            pos += len;
+        } else {
+            let litTree, distTree;
+            if (type === 1) {
+                const lengths = new Uint8Array(288);
+                for (let i = 0; i < 144; i++) lengths[i] = 8;
+                for (let i = 144; i < 256; i++) lengths[i] = 9;
+                for (let i = 256; i < 280; i++) lengths[i] = 7;
+                for (let i = 280; i < 288; i++) lengths[i] = 8;
+                litTree = buildTree(lengths);
+                const dl = new Uint8Array(30);
+                for (let i = 0; i < 30; i++) dl[i] = 5;
+                distTree = buildTree(dl);
+            } else {
+                const hlit = bits(5) + 257, hdist = bits(5) + 1, hclen = bits(4) + 4;
+                const cl = new Uint8Array(19);
+                for (let i = 0; i < hclen; i++) cl[CLEN_ORDER[i]] = bits(3);
+                const clTree = buildTree(cl);
+                const lengths = [];
+                while (lengths.length < hlit + hdist) {
+                    const sym = decode(clTree);
+                    if (sym < 16) lengths.push(sym);
+                    else if (sym === 16) { let r = 3 + bits(2); const p = lengths[lengths.length - 1]; while (r-- > 0) lengths.push(p); }
+                    else if (sym === 17) { let r = 3 + bits(3); while (r-- > 0) lengths.push(0); }
+                    else { let r = 11 + bits(7); while (r-- > 0) lengths.push(0); }
+                }
+                litTree = buildTree(lengths.slice(0, hlit));
+                distTree = buildTree(lengths.slice(hlit));
+            }
+            for (;;) {
+                const sym = decode(litTree);
+                if (sym === 256) break;
+                if (sym < 256) out.push(sym);
+                else {
+                    const li = sym - 257;
+                    const len = LEN_BASE[li] + bits(LEN_EXTRA[li]);
+                    const ds = decode(distTree);
+                    const dist = DIST_BASE[ds] + bits(DIST_EXTRA[ds]);
+                    const start = out.length - dist;
+                    for (let i = 0; i < len; i++) out.push(out[start + i] !== undefined ? out[start + i] : 0);
+                }
+            }
+        }
+        if (last) break;
+    }
+    return new Uint8Array(out);
+}
+
+async function unzip(buf) {
+    const u8 = new Uint8Array(buf);
+    const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+    let eocd = -1;
+    for (let i = u8.length - 22; i >= 0 && i >= u8.length - 22 - 65535; i--) {
+        if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) throw new Error("不是有效的 xlsx / zip 文件");
+    let count = dv.getUint16(eocd + 10, true);
+    let cdOff = dv.getUint32(eocd + 16, true);
+    if (cdOff === 0xFFFFFFFF || count === 0xFFFF) {
+        // ZIP64：读 locator
+        const loc = eocd - 20;
+        if (loc >= 0 && dv.getUint32(loc, true) === 0x07064b50) {
+            const z64 = dv.getBigUint64(loc + 8, true);
+            if (z64 > BigInt(u8.length)) throw new Error("xlsx 过大或已损坏");
+            cdOff = Number(z64);
+            const zdv = new DataView(u8.buffer, u8.byteOffset + cdOff, 56);
+            count = Number(zdv.getBigUint64(32, true));
+        }
+    }
+    const files = {};
+    const raw = [];
+    let p = cdOff;
+    for (let i = 0; i < count; i++) {
+        if (dv.getUint32(p, true) !== 0x02014b50) break;
+        const method = dv.getUint16(p + 10, true);
+        const compSize = dv.getUint32(p + 20, true);
+        const nameLen = dv.getUint16(p + 28, true);
+        const extraLen = dv.getUint16(p + 30, true);
+        const cmtLen = dv.getUint16(p + 32, true);
+        let lhOff = dv.getUint32(p + 42, true);
+        const name = new TextDecoder("utf-8").decode(u8.subarray(p + 46, p + 46 + nameLen));
+        if (lhOff === 0xFFFFFFFF || compSize === 0xFFFFFFFF) {
+            // 从 extra field 里取真实值
+            const ex = u8.subarray(p + 46 + nameLen, p + 46 + nameLen + extraLen);
+            let q = 0;
+            while (q + 4 <= ex.length) {
+                const id = ex[q] | (ex[q + 1] << 8);
+                const sz = ex[q + 2] | (ex[q + 3] << 8);
+                const body = ex.subarray(q + 4, q + 4 + sz);
+                const bdv = new DataView(body.buffer, body.byteOffset, body.byteLength);
+                let o = 0;
+                if (id === 0x0001) {
+                    if (compSize === 0xFFFFFFFF && o + 8 <= body.length) { /* size */ o += 8; }
+                    if (lhOff === 0xFFFFFFFF && o + 8 <= body.length) { lhOff = Number(bdv.getBigUint64(o, true)); o += 8; }
+                }
+                q += 4 + sz;
+            }
+        }
+        raw.push({ name, method, lhOff, compSize });
+        p += 46 + nameLen + extraLen + cmtLen;
+    }
+    for (const e of raw) {
+        const lh = new DataView(u8.buffer, u8.byteOffset + e.lhOff, 30);
+        if (lh.getUint32(0, true) !== 0x04034b50) throw new Error("xlsx 内部结构损坏");
+        const lNameLen = lh.getUint16(26, true);
+        const lExtraLen = lh.getUint16(28, true);
+        let csize = lh.getUint32(18, true);
+        const dataStart = e.lhOff + 30 + lNameLen + lExtraLen;
+        if (csize === 0xFFFFFFFF) {
+            const ex = u8.subarray(dataStart - lExtraLen, dataStart);
+            let q = 0;
+            while (q + 4 <= ex.length) {
+                const id = ex[q] | (ex[q + 1] << 8);
+                const sz = ex[q + 2] | (ex[q + 3] << 8);
+                if (id === 0x0001) csize = Number(new DataView(ex.buffer, ex.byteOffset + q + 4, 8).getBigUint64(0, true));
+                q += 4 + sz;
+            }
+        }
+        const data = u8.subarray(dataStart, dataStart + csize);
+        files[e.name] = e.method === 0 ? data : await inflateRaw(data);
+    }
+    return files;
+}
+
+/* ---------- ZIP 写入（store，不压缩） ---------- */
+function zipStore(files) {
+    const enc = new TextEncoder();
+    const chunks = [];
+    const central = [];
+    let offset = 0;
+    for (const f of files) {
+        const nameBytes = enc.encode(f.name);
+        const crc = crc32(f.data);
+        const lh = new Uint8Array(30 + nameBytes.length);
+        const dv = new DataView(lh.buffer);
+        dv.setUint32(0, 0x04034b50, true);
+        dv.setUint16(4, 20, true);      // version needed
+        dv.setUint16(6, 0x0800, true);  // UTF-8 名称
+        dv.setUint16(8, 0, true);       // store
+        dv.setUint16(10, 0, true);
+        dv.setUint16(12, 0x2821, true); // 固定时间，保证可复现
+        dv.setUint32(14, crc, true);
+        dv.setUint32(18, f.data.length, true);
+        dv.setUint32(22, f.data.length, true);
+        dv.setUint16(26, nameBytes.length, true);
+        lh.set(nameBytes, 30);
+        chunks.push(lh, f.data);
+
+        const ch = new Uint8Array(46 + nameBytes.length);
+        const cv = new DataView(ch.buffer);
+        cv.setUint32(0, 0x02014b50, true);
+        cv.setUint16(4, 20, true);
+        cv.setUint16(6, 20, true);
+        cv.setUint16(8, 0x0800, true);
+        cv.setUint16(10, 0, true);
+        cv.setUint16(12, 0, true);
+        cv.setUint16(14, 0x2821, true);
+        cv.setUint32(16, crc, true);
+        cv.setUint32(20, f.data.length, true);
+        cv.setUint32(24, f.data.length, true);
+        cv.setUint16(28, nameBytes.length, true);
+        cv.setUint32(42, offset, true);
+        ch.set(nameBytes, 46);
+        central.push(ch);
+
+        offset += lh.length + f.data.length;
+    }
+    const cdStart = offset;
+    let cdSize = 0;
+    for (const c of central) { chunks.push(c); cdSize += c.length; }
+    const eocd = new Uint8Array(22);
+    const ev = new DataView(eocd.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(8, files.length, true);
+    ev.setUint16(10, files.length, true);
+    ev.setUint32(12, cdSize, true);
+    ev.setUint32(16, cdStart, true);
+    chunks.push(eocd);
+
+    let total = 0;
+    for (const c of chunks) total += c.length;
+    const out = new Uint8Array(total);
+    let p = 0;
+    for (const c of chunks) { out.set(c, p); p += c.length; }
+    return out;
+}
+
+/* ---------- XLSX 读取 ---------- */
+const BUILTIN_DATE_FMT = new Set([14, 15, 16, 17, 18, 19, 20, 21, 22, 45, 46, 47, 27, 30, 36, 50, 57]);
+
+function colIndexFromRef(ref) {
+    const m = /^([A-Z]+)/.exec(ref || "");
+    if (!m) return -1;
+    let n = 0;
+    for (const ch of m[1]) n = n * 26 + (ch.charCodeAt(0) - 64);
+    return n - 1;
+}
+
+function excelSerialToDate(serial) {
+    // 1900 系统（含 1900 闰年 bug 的偏移）
+    const days = Math.floor(serial);
+    const frac = serial - days;
+    let ms;
+    if (days >= 60) ms = (days - 25569) * 86400000;
+    else ms = (days - 25568) * 86400000;
+    const d = new Date(Math.round(ms + frac * 86400000));
+    const pad = v => String(v).padStart(2, "0");
+    const time = d.getUTCHours() + ":" + pad(d.getUTCMinutes()) + ":" + pad(d.getUTCSeconds());
+    const date = d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate());
+    return frac > 1e-9 ? date + " " + time : date;
+}
+
+function readSharedStrings(xml) {
+    if (!xml) return [];
+    const root = parseXml(xml);
+    const si = findNodes(root, "sst/si");
+    return si.map(node => nodeText(node));
+}
+
+function readDateStyles(xml) {
+    // 返回 Set：cellXf 序号 -> 是否日期
+    const set = new Set();
+    if (!xml) return set;
+    const root = parseXml(xml);
+    const custom = new Map();
+    for (const n of findNodes(root, "styleSheet/numFmts/numFmt")) {
+        const id = parseInt(n.attrs.numFmtId || "0", 10);
+        const code = (n.attrs.formatCode || "").toLowerCase();
+        custom.set(id, /[ymdhs]/.test(code.replace(/\[[^\]]*\]/g, "")) && !/^["']/.test(code));
+    }
+    const xfs = findNodes(root, "styleSheet/cellXfs/xf");
+    xfs.forEach((n, i) => {
+        const id = parseInt(n.attrs.numFmtId || "0", 10);
+        if (BUILTIN_DATE_FMT.has(id) || custom.get(id)) set.add(i);
+    });
+    return set;
+}
+
+async function parseXlsx(file, onProgress) {
+    const buf = await file.arrayBuffer();
+    const files = await unzip(buf);
+    if (onProgress) onProgress(0.35);
+
+    const shared = readSharedStrings(files["xl/sharedStrings.xml"]
+        ? new TextDecoder("utf-8").decode(files["xl/sharedStrings.xml"]) : null);
+    const dateStyles = readDateStyles(files["xl/styles.xml"]
+        ? new TextDecoder("utf-8").decode(files["xl/styles.xml"]) : null);
+
+    const wbXml = files["xl/workbook.xml"] ? new TextDecoder("utf-8").decode(files["xl/workbook.xml"]) : null;
+    if (!wbXml) throw new Error("缺少 workbook.xml，可能不是 xlsx 文件");
+    const wbRoot = parseXml(wbXml);
+    const relXml = files["xl/_rels/workbook.xml.rels"]
+        ? new TextDecoder("utf-8").decode(files["xl/_rels/workbook.xml.rels"]) : "";
+    const rels = {};
+    if (relXml) {
+        for (const r of findNodes(parseXml(relXml), "Relationships/Relationship")) {
+            rels[r.attrs.Id || ""] = r.attrs.Target || "";
+        }
+    }
+
+    const sheetDefs = [];
+    for (const s of findNodes(wbRoot, "workbook/sheets/sheet")) {
+        const rid = s.attrs["r:id"] || s.attrs.id || "";
+        let target = rels[rid] || "";
+        if (target) {
+            target = target.replace(/^\/?xl\//, "");
+            if (!target.startsWith("worksheets/")) target = "worksheets/" + target.replace(/^.*\//, "");
+        }
+        sheetDefs.push({ name: s.attrs.name || "Sheet", target: "xl/" + target });
+    }
+    if (!sheetDefs.length) throw new Error("工作簿中没有找到工作表");
+
+    const sheets = [];
+    for (let i = 0; i < sheetDefs.length; i++) {
+        const def = sheetDefs[i];
+        const data = files[def.target];
+        if (!data) continue;
+        if (onProgress) onProgress(0.35 + 0.6 * (i / sheetDefs.length));
+        const xml = new TextDecoder("utf-8").decode(data);
+        const root = parseXml(xml);
+        const rows = [];
+        for (const rNode of findNodes(root, "worksheet/sheetData/row")) {
+            let rowIdx = parseInt(rNode.attrs.r || "", 10);
+            if (isNaN(rowIdx)) rowIdx = rows.length + 1;
+            const cells = [];
+            for (const cNode of findNodes(rNode, "c")) {
+                let ci = colIndexFromRef(cNode.attrs.r || "");
+                if (ci < 0) ci = cells.length;
+                const t = cNode.attrs.t || "n";
+                const sIdx = parseInt(cNode.attrs.s || "0", 10);
+                let value = "";
+                if (t === "inlineStr") {
+                    const isNode = findNodes(cNode, "is")[0];
+                    value = isNode ? nodeText(isNode) : "";
+                } else {
+                    const vNode = findNodes(cNode, "v")[0];
+                    value = vNode ? nodeText(vNode) : "";
+                    if (t === "s") {
+                        const idx = parseInt(value, 10);
+                        value = isNaN(idx) ? "" : (shared[idx] !== undefined ? shared[idx] : "");
+                    } else if (t === "b") {
+                        value = value === "1" ? "TRUE" : "FALSE";
+                    } else if (t === "e") {
+                        // 错误值原样保留
+                    } else if (value !== "" && dateStyles.has(sIdx) && !isNaN(parseFloat(value))) {
+                        value = excelSerialToDate(parseFloat(value));
+                    }
+                }
+                while (cells.length < ci) cells.push("");
+                cells[ci] = value;
+            }
+            while (rows.length < rowIdx - 1) rows.push([]);
+            rows[rowIdx - 1] = cells;
+        }
+        // 补齐为矩形
+        let maxCol = 0;
+        for (const r of rows) if (r.length > maxCol) maxCol = r.length;
+        for (const r of rows) while (r.length < maxCol) r.push("");
+        sheets.push({ name: def.name, rows });
+    }
+    if (!sheets.length) throw new Error("没有可读取的工作表");
+    return sheets;
+}
+
+/* ---------- CSV 解析 / 生成 ---------- */
+function detectDelimiter(text) {
+    const head = text.split(/\r?\n/).slice(0, 5).filter(s => s.trim() !== "");
+    const cands = [",", ";", "\t", "|"];
+    let best = ",", bestScore = -1;
+    for (const d of cands) {
+        let counts = head.map(line => {
+            let n = 0, inQ = false;
+            for (let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                if (ch === '"') inQ = !inQ;
+                else if (ch === d && !inQ) n++;
+            }
+            return n;
+        });
+        const avg = counts.reduce((a, b) => a + b, 0) / (counts.length || 1);
+        const same = counts.every(c => c === counts[0]);
+        const score = (avg > 0 ? 1 : 0) * 2 + (same ? 1 : 0) + Math.min(avg, 12) / 12;
+        if (counts.length && avg > 0 && score > bestScore) { bestScore = score; best = d; }
+    }
+    return best;
+}
+
+function parseCsv(text, delim) {
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+    if (!delim || delim === "auto") delim = detectDelimiter(text);
+    const rows = [];
+    let row = [], field = "", inQ = false;
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (inQ) {
+            if (ch === '"') {
+                if (text[i + 1] === '"') { field += '"'; i++; }
+                else inQ = false;
+            } else field += ch;
+        } else {
+            if (ch === '"') inQ = true;
+            else if (ch === delim) { row.push(field); field = ""; }
+            else if (ch === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+            else if (ch === "\r") { /* 忽略，\n 时结算 */ }
+            else field += ch;
+        }
+    }
+    if (field !== "" || row.length) { row.push(field); rows.push(row); }
+    return rows.filter((r, i) => !(r.length === 1 && r[0] === "" && i === rows.length - 1));
+}
+
+function toCsv(rows, delim, withBom) {
+    const q = s => {
+        const str = s === null || s === undefined ? "" : String(s);
+        return /[",\r\n]/.test(str) || (delim !== "," && str.indexOf(delim) >= 0)
+            ? '"' + str.replace(/"/g, '""') + '"' : str;
+    };
+    let out = "";
+    for (let i = 0; i < rows.length; i++) {
+        out += rows[i].map(q).join(delim);
+        if (i < rows.length - 1) out += "\r\n";
+    }
+    return (withBom ? "\uFEFF" : "") + out;
+}
+
+/* ---------- XLSX 生成 ---------- */
+function colName(i) {
+    let s = "";
+    i += 1;
+    while (i > 0) {
+        const m = (i - 1) % 26;
+        s = String.fromCharCode(65 + m) + s;
+        i = Math.floor((i - 1) / 26);
+    }
+    return s;
+}
+
+function looksNumeric(s) {
+    if (typeof s !== "string") return false;
+    const t = s.trim();
+    if (t === "" || t.length > 20) return false;
+    if (/^[+-]?(\d{1,3}(,\d{3})+|\d+)(\.\d+)?$/.test(t) && !/^0\d/.test(t.replace(/[+-]/, ""))) return true;
+    return /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)$/.test(t);
+}
+
+function sheetXml(rows, opts) {
+    const numAsNumber = !opts || opts.numAsNumber !== false;
+    let xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        + '<sheetData>';
+    for (let r = 0; r < rows.length; r++) {
+        const row = rows[r] || [];
+        if (!row.length) { xml += '<row r="' + (r + 1) + '"/>'; continue; }
+        xml += '<row r="' + (r + 1) + '">';
+        for (let c = 0; c < row.length; c++) {
+            const v = row[c];
+            if (v === "" || v === null || v === undefined) continue;
+            const ref = colName(c) + (r + 1);
+            if (numAsNumber && looksNumeric(v)) {
+                xml += '<c r="' + ref + '"><v>' + String(v).replace(/,/g, "") + '</v></c>';
+            } else {
+                xml += '<c r="' + ref + '" t="inlineStr"><is><t xml:space="preserve">'
+                    + xmlEscape(v) + '</t></is></c>';
+            }
+        }
+        xml += '</row>';
+    }
+    xml += '</sheetData></worksheet>';
+    return xml;
+}
+
+function buildXlsx(sheets) {
+    const enc = new TextEncoder();
+    let contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        + '<Default Extension="xml" ContentType="application/xml"/>'
+        + '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+        + '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>';
+    let wbSheets = "", wbRels = "";
+    const files = [];
+    sheets.forEach((sh, i) => {
+        const n = i + 1;
+        contentTypes += '<Override PartName="/xl/worksheets/sheet' + n + '.xml"'
+            + ' ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+        wbSheets += '<sheet name="' + xmlEscape(sh.name || ("Sheet" + n)) + '" sheetId="' + n + '" r:id="rId' + n + '"/>';
+        wbRels += '<Relationship Id="rId' + n + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"'
+            + ' Target="worksheets/sheet' + n + '.xml"/>';
+        files.push({ name: "xl/worksheets/sheet" + n + ".xml", data: enc.encode(sheetXml(sh.rows, sh.opts)) });
+    });
+    contentTypes += '</Types>';
+
+    const rootRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"'
+        + ' Target="xl/workbook.xml"/></Relationships>';
+
+    const workbook = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+        + ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        + '<sheets>' + wbSheets + '</sheets></workbook>';
+
+    const wbRelXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        + wbRels
+        + '<Relationship Id="rId' + (sheets.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"'
+        + ' Target="styles.xml"/></Relationships>';
+
+    const styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        + '<fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>'
+        + '<fills count="2"><fill><patternFill patternType="none"/></fill>'
+        + '<fill><patternFill patternType="gray125"/></fill></fills>'
+        + '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+        + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+        + '<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>'
+        + '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
+        + '</styleSheet>';
+
+    files.push(
+        { name: "[Content_Types].xml", data: enc.encode(contentTypes) },
+        { name: "_rels/.rels", data: enc.encode(rootRels) },
+        { name: "xl/workbook.xml", data: enc.encode(workbook) },
+        { name: "xl/_rels/workbook.xml.rels", data: enc.encode(wbRelXml) },
+        { name: "xl/styles.xml", data: enc.encode(styles) }
+    );
+    return zipStore(files);
+}
+
+/* ---------- 文件名安全化（用作工作表名） ---------- */
+function sheetNameFrom(file, fallback) {
+    let n = (file || "").replace(/\.[^.]+$/, "").trim() || (fallback || "Sheet");
+    n = n.replace(/[\\\/\?\*\[\]:]/g, "_").slice(0, 31);
+    return n || "Sheet";
+}
+
+
+/* ==================== 字体转换核心（TTF / OTF） ==================== */
+/* ==================== 字体转换核心（TTF / OTF / WOFF2） ==================== */
+
+/* ---------- SFNT 表读写 ---------- */
+function sfntRead(u8) {
+    const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+    const version = dv.getUint32(0);
+    const numTables = dv.getUint16(4);
+    const tables = [];
+    for (let i = 0; i < numTables; i++) {
+        const p = 12 + i * 16;
+        let tag = "";
+        for (let k = 0; k < 4; k++) tag += String.fromCharCode(u8[p + k]);
+        const off = dv.getUint32(p + 8);
+        const len = dv.getUint32(p + 12);
+        if (off + len > u8.length) continue;
+        tables.push({ tag, data: u8.subarray(off, off + len) });
+    }
+    return { version, tables };
+}
+
+function fontChecksum(u8) {
+    const len = (u8.length + 3) & ~3;
+    const padded = new Uint8Array(len);
+    padded.set(u8);
+    const dv = new DataView(padded.buffer);
+    let sum = 0;
+    for (let i = 0; i < len; i += 4) sum = (sum + dv.getUint32(i)) >>> 0;
+    return sum >>> 0;
+}
+
+function tableChecksum(u8) {
+    return fontChecksum(u8);
+}
+
+// tables: [{tag, data}]，magic: 0x00010000 或 'OTTO'
+function sfntWrite(tables, magic) {
+    tables = tables.slice().sort((a, b) => a.tag < b.tag ? -1 : a.tag > b.tag ? 1 : 0);
+    const n = tables.length;
+    let entrySelector = 0;
+    while ((1 << (entrySelector + 1)) <= n) entrySelector++;
+    const searchRange = (1 << entrySelector) * 16;
+    const rangeShift = n * 16 - searchRange;
+
+    const headerLen = 12 + n * 16;
+    let total = headerLen;
+    const offsets = [];
+    for (const t of tables) {
+        offsets.push(total);
+        total += t.data.length;
+        total = (total + 3) & ~3;
+    }
+    const out = new Uint8Array(total);
+    const dv = new DataView(out.buffer);
+    dv.setUint32(0, magic >>> 0);
+    dv.setUint16(4, n);
+    dv.setUint16(6, searchRange);
+    dv.setUint16(8, entrySelector);
+    dv.setUint16(10, rangeShift);
+    tables.forEach((t, i) => {
+        const p = 12 + i * 16;
+        for (let k = 0; k < 4; k++) out[p + k] = t.tag.charCodeAt(k);
+        dv.setUint32(p + 4, tableChecksum(t.data));
+        dv.setUint32(p + 8, offsets[i]);
+        dv.setUint32(p + 12, t.data.length);
+        out.set(t.data, offsets[i]);
+    });
+    // head.checkSumAdjustment
+    const headIdx = tables.findIndex(t => t.tag === "head");
+    if (headIdx >= 0) {
+        const hp = offsets[headIdx] + 8;
+        dv.setUint32(hp, 0);
+        const adj = (0xB1B0AFBA - fontChecksum(out)) >>> 0;
+        dv.setUint32(hp, adj);
+    }
+    return out;
+}
+
+/* ---------- CFF 数字 / 实数编码 ---------- */
+function pushInt(out, v) {
+    v = Math.round(v);
+    if (v >= -107 && v <= 107) out.push(v + 139);
+    else if (v >= 108 && v <= 1131) { v -= 108; out.push((v >> 8) + 247, v & 0xFF); }
+    else if (v >= -1131 && v <= -108) { v = -v - 108; out.push((v >> 8) + 251, v & 0xFF); }
+    else if (v >= -32768 && v <= 32767) out.push(28, (v >> 8) & 0xFF, v & 0xFF);
+    else out.push(29, (v >>> 24) & 0xFF, (v >>> 16) & 0xFF, (v >>> 8) & 0xFF, v & 0xFF);
+}
+
+function pushReal(out, v) {
+    if (v === 0) { out.push(30, 0x0F); return; }
+    let s;
+    const abs = Math.abs(v);
+    if (abs >= 1e-4 && abs < 1e7) {
+        s = v.toFixed(9).replace(/0+$/, "").replace(/\.$/, "");
+    } else {
+        s = v.toExponential(8).replace(/e\+?/, "e").replace(/0+e/, "e").replace(/e$/, "e0");
+    }
+    const nibbles = [];
+    for (const ch of s) {
+        if (ch >= "0" && ch <= "9") nibbles.push(+ch);
+        else if (ch === ".") nibbles.push(0xA);
+        else if (ch === "-") nibbles.push(0xE);
+        else if (ch === "e") nibbles.push(0xB);
+        else if (ch === "+") continue;
+    }
+    nibbles.push(0xF);
+    out.push(30);
+    for (let i = 0; i < nibbles.length; i += 2) {
+        out.push(((nibbles[i] << 4) | (i + 1 < nibbles.length ? nibbles[i + 1] : 0xF)) & 0xFF);
+    }
+}
+
+/* ---------- Type2 CharString ---------- */
+// cmds: opentype.js 的 path.commands（M / L / Q / C / Z）
+function buildCharString(width, cmds) {
+    const out = [];
+    if (width !== undefined && width !== null) pushInt(out, width);
+    let cx = 0, cy = 0;
+    let pendingLine = [], pendingCurve = [];
+    const flushLine = () => { if (pendingLine.length) { pendingLine.forEach(v => pushInt(out, v)); out.push(5); pendingLine = []; } };
+    const flushCurve = () => { if (pendingCurve.length) { pendingCurve.forEach(v => pushInt(out, v)); out.push(8); pendingCurve = []; } };
+
+    for (const c of (cmds || [])) {
+        const x = Math.round(c.x || 0), y = Math.round(c.y || 0);
+        const x1 = Math.round(c.x1 || 0), y1 = Math.round(c.y1 || 0);
+        const x2 = c.x2 !== undefined ? Math.round(c.x2) : undefined;
+        const y2 = c.y2 !== undefined ? Math.round(c.y2) : undefined;
+        if (c.type === "M") {
+            flushLine(); flushCurve();
+            pushInt(out, x - cx); pushInt(out, y - cy); out.push(21); // rmoveto
+            cx = x; cy = y;
+        } else if (c.type === "L") {
+            flushCurve();
+            pendingLine.push(x - cx, y - cy);
+            cx = x; cy = y;
+            if (pendingLine.length >= 40) flushLine();
+        } else if (c.type === "Q") {
+            flushLine();
+            // 二次 → 三次
+            const c1x = Math.round(cx + (2 / 3) * (x1 - cx));
+            const c1y = Math.round(cy + (2 / 3) * (y1 - cy));
+            const c2x = Math.round(x + (2 / 3) * (x1 - x));
+            const c2y = Math.round(y + (2 / 3) * (y1 - y));
+            // Type2 rrcurveto：后一段增量相对前一个控制点
+            pendingCurve.push(c1x - cx, c1y - cy, c2x - c1x, c2y - c1y, x - c2x, y - c2y);
+            cx = x; cy = y;
+            if (pendingCurve.length >= 36) flushCurve();
+        } else if (c.type === "C") {
+            flushLine();
+            pendingCurve.push(x1 - cx, y1 - cy, (x2 || 0) - (x1 || 0), (y2 || 0) - (y1 || 0), x - (x2 || 0), y - (y2 || 0));
+            cx = x; cy = y;
+            if (pendingCurve.length >= 36) flushCurve();
+        } else if (c.type === "Z") {
+            flushLine(); flushCurve();
+            // CFF 轮廓隐式闭合
+        }
+    }
+    flushLine(); flushCurve();
+    out.push(14); // endchar
+    return new Uint8Array(out);
+}
+
+/* ---------- CFF INDEX ---------- */
+function buildIndex(items) {
+    const count = items.length;
+    if (count === 0) return new Uint8Array([0, 0]);
+    let dataLen = 0;
+    for (const it of items) dataLen += it.length;
+    const maxOff = dataLen + 1;
+    const offSize = maxOff <= 0xFF ? 1 : maxOff <= 0xFFFF ? 2 : maxOff <= 0xFFFFFF ? 3 : 4;
+    const headSize = 3 + (count + 1) * offSize;
+    const buf = new Uint8Array(headSize + dataLen);
+    const dv = new DataView(buf.buffer);
+    dv.setUint16(0, count);
+    buf[2] = offSize;
+    const writeOff = (idx, v) => {
+        const p = 3 + idx * offSize;
+        if (offSize === 1) dv.setUint8(p, v);
+        else if (offSize === 2) dv.setUint16(p, v);
+        else if (offSize === 3) { dv.setUint8(p, (v >>> 16) & 0xFF); dv.setUint16(p + 1, v & 0xFFFF); }
+        else dv.setUint32(p, v >>> 0);
+    };
+    let off = 1, p = headSize;
+    for (let i = 0; i < count; i++) {
+        writeOff(i, off);
+        buf.set(items[i], p);
+        p += items[i].length;
+        off += items[i].length;
+    }
+    writeOff(count, off);
+    return buf;
+}
+
+/* ---------- CFF 表构建 ---------- */
+// glyphs: [{ name, width, cmds }]，bbox: [xMin,yMin,xMax,yMax]，upem
+function buildCff(glyphs, upem, bbox, psName) {
+    const enc = new TextEncoder();
+    const n = glyphs.length;
+
+    // 字形名 → 自定义字符串（SID 从 391 起）
+    const names = glyphs.map((g, i) => g.name || ("glyph" + i));
+    const stringItems = names.map(nm => enc.encode(nm));
+    const charStrings = glyphs.map(g => buildCharString(Math.round(g.width || 0), g.cmds));
+
+    const nameIndex = buildIndex([enc.encode(psName || "ConvertedFont")]);
+    const stringIndex = buildIndex(stringItems);
+    const gsubrIndex = buildIndex([]);
+    const charStringIndex = buildIndex(charStrings);
+
+    // charset format 0：跳过 GID 0（.notdef）
+    const charset = new Uint8Array(1 + Math.max(0, n - 1) * 2);
+    charset[0] = 0;
+    for (let i = 1; i < n; i++) {
+        const sid = 391 + i;
+        charset[1 + (i - 1) * 2] = (sid >> 8) & 0xFF;
+        charset[2 + (i - 1) * 2] = sid & 0xFF;
+    }
+
+    // Private DICT：nominalWidthX = 0, defaultWidthX = 0
+    const priv = [];
+    pushInt(priv, 0); priv.push(20); // nominalWidthX
+    pushInt(priv, 0); priv.push(21); // defaultWidthX
+    const privData = new Uint8Array(priv);
+
+    const HEADER = 4;
+    const topDictStart = HEADER + nameIndex.length;
+    const topDictIndexLen = 3 + 2 * 4 + 0; // 稍后用真实值替换（offSize=4 占位过大，改用精确计算）
+
+    // 先按 5 字节偏移算一次，得到确定的长度
+    const dictBody = [];
+    pushInt(dictBody, bbox[0]); pushInt(dictBody, bbox[1]); pushInt(dictBody, bbox[2]); pushInt(dictBody, bbox[3]);
+    dictBody.push(5);                                   // FontBBox
+    if (upem !== 1000) {
+        const s = 1 / upem;
+        pushReal(dictBody, s); pushReal(dictBody, 0); pushReal(dictBody, 0);
+        pushReal(dictBody, s); pushReal(dictBody, 0); pushReal(dictBody, 0);
+        dictBody.push(12, 7);                           // FontMatrix
+    }
+    const pushOffset5 = (arr, op) => { arr.push(29, 0, 0, 0, 0); if (Array.isArray(op)) arr.push(op[0], op[1]); else arr.push(op); };
+    pushOffset5(dictBody, 15);                          // charset
+    pushOffset5(dictBody, 17);                          // CharStrings
+    pushInt(dictBody, privData.length);
+    pushOffset5(dictBody, 18);                          // Private
+
+    const topDictData = new Uint8Array(dictBody);
+    const topDictIndex = buildIndex([topDictData]);
+    const stringStart = topDictStart + topDictIndex.length;
+    const gsubrStart = stringStart + stringIndex.length;
+    const charStringsStart = gsubrStart + gsubrIndex.length;
+    const charsetStart = charStringsStart + charStringIndex.length;
+    const privStart = charsetStart + charset.length;
+
+    // 回填偏移（每个 5 字节编码：29 xx xx xx xx）
+    const patch = (op, value) => {
+        let i = 0;
+        while (i < topDictData.length) {
+            // 找到该操作符的位置：其前面的 5 字节是 29 开头
+            if (topDictData[i] === op && i >= 5 && topDictData[i - 5] === 29) {
+                topDictData[i - 4] = (value >>> 24) & 0xFF;
+                topDictData[i - 3] = (value >>> 16) & 0xFF;
+                topDictData[i - 2] = (value >>> 8) & 0xFF;
+                topDictData[i - 1] = value & 0xFF;
+                return;
+            }
+            // 跳过当前操作数
+            const b = topDictData[i];
+            if (b === 29) i += 5;
+            else if (b === 28) i += 3;
+            else if (b === 30) { i += 1; while (i < topDictData.length && (topDictData[i] & 0x0F) !== 0x0F && (topDictData[i] >> 4) !== 0x0F) i++; i++; }
+            else if (b >= 247 && b <= 254) i += 2;
+            else if (b === 12) i += 2;
+            else if (b >= 32 && b <= 246) i += 1;
+            else i += 1;
+        }
+    };
+    patch(15, charsetStart);
+    patch(17, charStringsStart);
+    // Private 的操作数形如 [size, 29 xx xx xx xx, 18]
+    for (let i = 0; i < topDictData.length - 6; i++) {
+        if (topDictData[i + 6] === 18 && topDictData[i + 1] === 29) {
+            topDictData[i + 2] = (privStart >>> 24) & 0xFF;
+            topDictData[i + 3] = (privStart >>> 16) & 0xFF;
+            topDictData[i + 4] = (privStart >>> 8) & 0xFF;
+            topDictData[i + 5] = privStart & 0xFF;
+            break;
+        }
+    }
+    // 回填后重建 INDEX（内容已就地修改，INDEX 持有同一引用即可，但保险起见重建）
+    const topDictIndex2 = buildIndex([topDictData]);
+
+    const total = privStart + privData.length;
+    const out = new Uint8Array(total);
+    let p = 0;
+    out[0] = 1; out[1] = 0; out[2] = 4; out[3] = 1;   // header: major minor hdrSize offSize
+    p = 4;
+    out.set(nameIndex, p); p += nameIndex.length;
+    out.set(topDictIndex2, p); p += topDictIndex2.length;
+    out.set(stringIndex, p); p += stringIndex.length;
+    out.set(gsubrIndex, p); p += gsubrIndex.length;
+    out.set(charStringIndex, p); p += charStringIndex.length;
+    out.set(charset, p); p += charset.length;
+    out.set(privData, p);
+    return out;
+}
+
+/* ---------- TTF → OTF ---------- */
+// ttfBytes: Uint8Array（TrueType 轮廓）；font: opentype.js 解析结果
+function ttfToOtf(ttfBytes, font) {
+    const src = sfntRead(ttfBytes);
+    const get = tag => src.tables.find(t => t.tag === tag);
+    const head = get("head");
+    if (!head) throw new Error("字体缺少 head 表");
+
+    const upem = font.unitsPerEm || 1000;
+    const glyphs = [];
+    let xMin = Infinity, yMin = Infinity, xMax = -Infinity, yMax = -Infinity;
+    const gset = font.glyphs;
+    const nGlyphsTotal = (typeof gset.length === "number") ? gset.length : 0;
+    for (let i = 0; i < nGlyphsTotal; i++) {
+        const g = (typeof gset.get === "function") ? gset.get(i) : (gset.glyphs ? gset.glyphs[i] : gset[i]);
+        if (!g) continue;
+        const cmds = (g.path && g.path.commands) ? g.path.commands : [];
+        glyphs.push({ name: g.name || ("glyph" + i), width: g.advanceWidth, cmds });
+        for (const c of cmds) {
+            const pts = [];
+            if (c.type === "M" || c.type === "L") pts.push([c.x, c.y]);
+            else if (c.type === "Q") pts.push([c.x, c.y], [c.x1, c.y1]);
+            else if (c.type === "C") pts.push([c.x, c.y], [c.x1, c.y1], [c.x2, c.y2]);
+            for (const pt of pts) {
+                if (pt[0] < xMin) xMin = pt[0];
+                if (pt[0] > xMax) xMax = pt[0];
+                if (pt[1] < yMin) yMin = pt[1];
+                if (pt[1] > yMax) yMax = pt[1];
+            }
+        }
+    }
+    if (!isFinite(xMin)) { xMin = yMin = 0; xMax = yMax = 0; }
+    // 与 head 表原有 bbox 取并集，避免个别字形无轮廓导致范围过小
+    const hd = new DataView(head.data.buffer, head.data.byteOffset, head.data.byteLength);
+    const bbox = [
+        Math.min(xMin, hd.getInt16(36)),
+        Math.min(yMin, hd.getInt16(38)),
+        Math.max(xMax, hd.getInt16(40)),
+        Math.max(yMax, hd.getInt16(42))
+    ];
+
+    const psName = (font.names && (font.names.postScriptName && font.names.postScriptName.en
+        || font.names.postScriptName)) || (font.names && font.names.fullName && font.names.fullName.en)
+        || (font.names && font.names.fontFamily && font.names.fontFamily.en) || "ConvertedFont";
+    const cff = buildCff(glyphs, upem, bbox, String(psName).replace(/[^\x20-\x7E]/g, "") || "ConvertedFont");
+
+    // 复制需要的表
+    const keep = ["head", "hhea", "hmtx", "cmap", "name", "OS/2", "post", "GSUB", "GPOS", "GDEF", "MATH", "BASE", "COLR", "CPAL", "vhea", "vmtx", "VORG"];
+    let tables = [];
+    for (const t of src.tables) {
+        if (keep.indexOf(t.tag) < 0) continue;
+        tables.push({ tag: t.tag, data: new Uint8Array(t.data) });
+    }
+    // maxp：CFF 字体使用 0.5 版
+    const nGlyphs = glyphs.length;
+    const maxp = new Uint8Array(6);
+    new DataView(maxp.buffer).setUint16(0, 0x0000);
+    maxp[0] = 0x00; maxp[1] = 0x00; maxp[2] = 0x50; maxp[3] = 0x00;
+    new DataView(maxp.buffer).setUint16(4, nGlyphs);
+    tables = tables.filter(t => t.tag !== "maxp").concat([{ tag: "maxp", data: maxp }]);
+
+    // head：indexToLocFormat 归零（CFF 无 loca）
+    const h = tables.find(t => t.tag === "head");
+    if (h) {
+        const hv = new DataView(h.data.buffer, h.data.byteOffset, h.data.byteLength);
+        hv.setInt16(50, 0);
+        hv.setInt16(36, Math.round(bbox[0]));
+        hv.setInt16(38, Math.round(bbox[1]));
+        hv.setInt16(40, Math.round(bbox[2]));
+        hv.setInt16(42, Math.round(bbox[3]));
+    }
+    tables.push({ tag: "CFF ", data: cff });
+    return sfntWrite(tables, 0x4F54544F); // 'OTTO'
+}
+
+
 /* ==================== 按需加载编码库 ==================== */
 const LIBS = {
     lame:   "https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js",
-    vorbis: "https://cdn.jsdelivr.net/npm/vorbis-encoder-js@1.0.2/dist/libvorbis.js"
+    vorbis: "https://cdn.jsdelivr.net/npm/vorbis-encoder-js@1.0.2/dist/libvorbis.js",
+    opentype: "https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.js",
+    woff2enc: "https://cdn.jsdelivr.net/npm/wawoff2@2.0.1/build/compress_binding.js",
+    woff2dec: "https://cdn.jsdelivr.net/npm/wawoff2@2.0.1/build/decompress_binding.js",
+    fontEditor: "https://cdn.jsdelivr.net/npm/fonteditor-core@2.6.3/+esm"
 };
 
 let _lamejs = null;
@@ -1791,7 +2981,8 @@ let audioQuality = bindSeg("audioQuality", v => { audioQuality = v; });
 let audioDepth = bindSeg("audioDepth", v => { audioDepth = v; });
 
 bindDropZone($("audioDrop"), $("audioInput"), files => {
-    audioFiles.add(files.filter(f => f.type.startsWith("audio/") || /\.(mp3|wav|ogg|oga|flac|m4a|aac|opus|weba|webm)$/i.test(f.name)));
+    audioFiles.add(files.filter(f => f.type.startsWith("audio/") || f.type.startsWith("video/")
+        || /\.(mp3|wav|ogg|oga|flac|m4a|aac|opus|weba|webm|mp4|m4v|mov|mkv|3gp|avi)$/i.test(f.name)));
 });
 
 $("audioRun").addEventListener("click", async () => {
@@ -1807,7 +2998,8 @@ $("audioRun").addEventListener("click", async () => {
         const it = items[i];
         const name = it.file.name;
         try {
-            audioFiles.setMeta(it, "解码中…");
+            const isVideo = /\.(mp4|m4v|mov|mkv|3gp|avi|webm)$/i.test(name) || (it.file.type || "").startsWith("video/");
+            audioFiles.setMeta(it, isVideo ? "提取音轨中…" : "解码中…");
             audioFiles.setProgress(it, 0.05);
             await yieldUI();
 
@@ -1941,6 +3133,288 @@ $("imageRun").addEventListener("click", async () => {
     btn.disabled = false;
 });
 
+
+/* ==================== 表格面板 ==================== */
+const sheetFiles = makeFileList($("sheetFiles"));
+let sheetDir = "x2c";
+let csvDelim = "auto";
+let csvEnc = "utf-8";
+let sheetScope = "first";
+let csvMerge = true;
+let csvBom = true;
+let csvNumDetect = true;
+
+function refreshSheetOpts() {
+    $("optX2c").hidden = sheetDir !== "x2c";
+    $("optC2x").hidden = sheetDir !== "c2x";
+}
+
+bindSeg("sheetDir", v => { sheetDir = v; refreshSheetOpts(); });
+bindSeg("csvDelim", v => { csvDelim = v; });
+bindSeg("csvEnc", v => { csvEnc = v; });
+bindSeg("sheetScope", v => { sheetScope = v; });
+bindSeg("csvMerge", v => { csvMerge = v === "merge"; });
+$("csvBomChk").addEventListener("change", e => { csvBom = e.target.checked; });
+$("csvNumChk").addEventListener("change", e => { csvNumDetect = e.target.checked; });
+refreshSheetOpts();
+
+const DELIM_MAP = { ",": ",", ";": ";", "tab": "\t", "|": "|" };
+
+bindDropZone($("sheetDrop"), $("sheetInput"), files => {
+    const ok = files.filter(f => /\.(xlsx|xlsm|csv|tsv|txt)$/i.test(f.name));
+    sheetFiles.add(ok);
+});
+
+$("sheetRun").addEventListener("click", async () => {
+    const btn = $("sheetRun"), st = $("sheetStatus");
+    const items = sheetFiles.all();
+    if (!items.length) { st.className = "status err"; st.textContent = "请先选择 xlsx 或 csv 文件"; return; }
+
+    btn.disabled = true;
+    st.className = "status";
+    const delim = DELIM_MAP[csvDelim] || "auto";
+    let ok = 0, fail = 0, rows = 0, cells = 0;
+    const workbook = [];
+
+    for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        const name = it.file.name;
+        try {
+            st.textContent = "(" + (i + 1) + "/" + items.length + ") 正在处理 " + name;
+            sheetFiles.setMeta(it, "读取中…");
+            sheetFiles.setProgress(it, 0.1);
+            await yieldUI();
+
+            const ext = extOf(name);
+            const isXlsx = ext === "xlsx" || ext === "xlsm";
+
+            if (sheetDir === "x2c") {
+                if (!isXlsx) throw new Error("当前方向是 XLSX → CSV，请把方向切到 CSV → XLSX");
+                const sheets = await parseXlsx(it.file, p => sheetFiles.setProgress(it, p * 0.7));
+                sheetFiles.setProgress(it, 0.8);
+                const use = sheetScope === "first" ? sheets.slice(0, 1) : sheets;
+                let n = 0;
+                for (const sh of use) {
+                    const text = toCsv(sh.rows, delim === "auto" ? "," : delim, csvBom);
+                    const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+                    const fname = use.length > 1
+                        ? baseName(name) + "_" + String(sh.name).replace(/[\\\/:*?\[\]]/g, "_") + ".csv"
+                        : baseName(name) + ".csv";
+                    download(blob, fname);
+                    rows += sh.rows.length;
+                    cells += sh.rows.reduce((a, r) => a + r.length, 0);
+                    n++;
+                    await new Promise(r => setTimeout(r, 350));
+                }
+                sheetFiles.setProgress(it, 1);
+                sheetFiles.setMeta(it, "完成 · " + n + " 个 CSV · "
+                    + sheets.reduce((a, s) => a + s.rows.length, 0) + " 行", "done");
+                ok++;
+            } else {
+                if (isXlsx) throw new Error("当前方向是 CSV → XLSX，请把方向切到 XLSX → CSV");
+                const buf = await it.file.arrayBuffer();
+                const text = new TextDecoder(csvEnc, { fatal: false }).decode(new Uint8Array(buf));
+                const parsed = parseCsv(text, delim);
+                if (!parsed.length) throw new Error("CSV 内容为空");
+                rows += parsed.length;
+                cells += parsed.reduce((a, r) => a + r.length, 0);
+                const sheet = { name: sheetNameFrom(name, "Sheet" + (i + 1)), rows: parsed, opts: { numAsNumber: csvNumDetect } };
+
+                if (csvMerge) {
+                    workbook.push(sheet);
+                    sheetFiles.setProgress(it, 1);
+                    sheetFiles.setMeta(it, "已加入工作簿 · " + parsed.length + " 行", "done");
+                } else {
+                    sheetFiles.setProgress(it, 0.6);
+                    const blob = new Blob([buildXlsx([sheet])], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                    download(blob, baseName(name) + ".xlsx");
+                    sheetFiles.setProgress(it, 1);
+                    sheetFiles.setMeta(it, "完成 · " + parsed.length + " 行 · " + fmtBytes(blob.size), "done");
+                    await new Promise(r => setTimeout(r, 350));
+                }
+                ok++;
+            }
+        } catch (err) {
+            fail++;
+            sheetFiles.setProgress(it, 0);
+            sheetFiles.setMeta(it, "失败：" + (err && err.message ? err.message : err), "err");
+        }
+    }
+
+    if (csvMerge && sheetDir === "c2x" && workbook.length) {
+        st.textContent = "正在打包 " + workbook.length + " 个工作表…";
+        await yieldUI();
+        const blob = new Blob([buildXlsx(workbook)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        download(blob, "合并工作簿.xlsx");
+    }
+
+    st.className = "status " + (fail ? "err" : "ok");
+    st.textContent = "完成 " + ok + " 个" + (fail ? "，失败 " + fail + " 个" : "")
+        + (rows ? " · 共 " + rows + " 行 / " + cells + " 个单元格" : "");
+    btn.disabled = false;
+});
+
+/* ==================== 字体面板 ==================== */
+const fontFiles = makeFileList($("fontFiles"));
+let fontTarget = bindSeg("fontTarget", v => { fontTarget = v; });
+
+function sfntKind(u8) {
+    if (!u8 || u8.length < 4) return null;
+    const s = String.fromCharCode(u8[0], u8[1], u8[2], u8[3]);
+    if (s === "wOF2") return "woff2";
+    if (s === "wOFF") return "woff";
+    if (s === "OTTO") return "otf";
+    if (s === "true" || s === "ttcf") return "ttf";
+    const dv = new DataView(u8.buffer, u8.byteOffset, 4).getUint32(0);
+    if (dv === 0x00010000) return "ttf";
+    return null;
+}
+
+function toArrayBuffer(u8) {
+    return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
+}
+
+async function ensureOpenType(onProgress) {
+    if (window.opentype) return window.opentype;
+    const src = await fetchText(LIBS.opentype, onProgress);
+    new Function(src)();
+    if (!window.opentype) throw new Error("opentype.js 加载失败");
+    return window.opentype;
+}
+
+async function ensureWoff2(kind, onProgress) {
+    const key = kind === "compress" ? "_woff2enc" : "_woff2dec";
+    if (window[key]) return window[key];
+    const src = await fetchText(kind === "compress" ? LIBS.woff2enc : LIBS.woff2dec, onProgress);
+    const M = evalModule(src, "Module");
+    await new Promise((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error("WOFF2 引擎初始化超时")), 20000);
+        const done = () => { clearTimeout(t); resolve(); };
+        if (typeof M[kind] === "function" && M.calledRun) return done();
+        M.onRuntimeInitialized = () => {
+            if (typeof M[kind] !== "function") { clearTimeout(t); reject(new Error("WOFF2 引擎缺少入口")); }
+            else done();
+        };
+    });
+    window[key] = M;
+    return M;
+}
+
+async function ensureFontEditorCore(onProgress) {
+    if (window._fontEditorCore) return window._fontEditorCore;
+    if (onProgress) onProgress(0, 1);
+    const mod = await import(LIBS.fontEditor);
+    const fec = mod.default || mod;
+    window._fontEditorCore = fec;
+    return fec;
+}
+
+// 各个转换步骤
+async function fontToOtf(u8, log) {
+    const ot = await ensureOpenType(p => log("正在加载字体解析库…"));
+    log("解析 TrueType 轮廓…");
+    await yieldUI();
+    const font = ot.parse(toArrayBuffer(u8));
+    if (!font || !font.glyphs) throw new Error("无法解析该 TrueType 字体");
+    log("正在构建 CFF 轮廓…");
+    await yieldUI();
+    return ttfToOtf(u8, font);
+}
+
+async function fontToTtf(u8, log) {
+    const fec = await ensureFontEditorCore(p => log("正在加载 OTF 转换库…"));
+    log("CFF 轮廓转 TrueType 轮廓…");
+    await yieldUI();
+    const font = fec.Font.create(toArrayBuffer(u8), { type: "otf" });
+    const out = font.write({ type: "ttf" });
+    return new Uint8Array(out);
+}
+
+async function fontToWoff2(u8, log) {
+    const M = await ensureWoff2("compress", p => log("正在加载 WOFF2 压缩引擎…"));
+    log("压缩为 WOFF2…");
+    await yieldUI();
+    const out = M.compress(u8);
+    if (!out) throw new Error("WOFF2 压缩失败，可能不是有效的 TTF / OTF 字体");
+    return new Uint8Array(out);
+}
+
+async function fontFromWoff2(u8, log) {
+    const M = await ensureWoff2("decompress", p => log("正在加载 WOFF2 解压引擎…"));
+    log("解压 WOFF2…");
+    await yieldUI();
+    const out = M.decompress(u8);
+    if (!out) throw new Error("WOFF2 解压失败，文件可能已损坏");
+    return new Uint8Array(out);
+}
+
+async function convertFontBytes(u8, target, log) {
+    let kind = sfntKind(u8);
+    if (!kind) throw new Error("无法识别的字体格式（仅支持 TTF / OTF / WOFF2）");
+    if (kind === "woff") throw new Error("暂不支持 WOFF 1.0，请先转成 TTF 或 OTF 再处理");
+    let cur = u8, note = "";
+    const srcLabel = { ttf: "TTF", otf: "OTF", woff2: "WOFF2" }[kind] || kind;
+
+    if (kind === "woff2") {
+        cur = await fontFromWoff2(cur, log);
+        kind = sfntKind(cur) || "ttf";
+    }
+    if (kind === target) return { data: cur, note: "源文件已是 " + target.toUpperCase() + "，按原样导出" };
+    if (target === "woff2") return { data: await fontToWoff2(cur, log), note: srcLabel + " → WOFF2" };
+    if (target === "otf") {
+        if (kind === "ttf") return { data: await fontToOtf(cur, log), note: "TTF → OTF" };
+        return { data: cur, note: "源文件已是 OTF" };
+    }
+    if (target === "ttf") {
+        if (kind === "otf") return { data: await fontToTtf(cur, log), note: "OTF → TTF" };
+        return { data: cur, note: "源文件已是 TTF" };
+    }
+    throw new Error("不支持的转换组合");
+}
+
+bindDropZone($("fontDrop"), $("fontInput"), files => {
+    fontFiles.add(files.filter(f => /\.(ttf|otf|woff2|ttc|otc)$/i.test(f.name)));
+});
+
+$("fontRun").addEventListener("click", async () => {
+    const btn = $("fontRun"), st = $("fontStatus");
+    const items = fontFiles.all();
+    if (!items.length) { st.className = "status err"; st.textContent = "请先选择字体文件"; return; }
+
+    btn.disabled = true;
+    st.className = "status";
+    let ok = 0, fail = 0;
+
+    for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        const name = it.file.name;
+        const log = msg => {
+            st.textContent = "(" + (i + 1) + "/" + items.length + ") " + name + "：" + msg;
+            fontFiles.setMeta(it, msg);
+        };
+        try {
+            fontFiles.setMeta(it, "读取中…");
+            fontFiles.setProgress(it, 0.1);
+            await yieldUI();
+            const u8 = new Uint8Array(await it.file.arrayBuffer());
+            const res = await convertFontBytes(u8, fontTarget, log);
+            fontFiles.setProgress(it, 1);
+            fontFiles.setMeta(it, "完成 · " + (res.note ? res.note + " · " : "") + fmtBytes(res.data.length), "done");
+            const mime = fontTarget === "woff2" ? "font/woff2" : "font/otf";
+            download(new Blob([res.data], { type: mime }), baseName(name) + "." + fontTarget);
+            ok++;
+            await new Promise(r => setTimeout(r, 400));
+        } catch (err) {
+            fail++;
+            fontFiles.setProgress(it, 0);
+            fontFiles.setMeta(it, "失败：" + (err && err.message ? err.message : err), "err");
+        }
+    }
+
+    st.className = "status " + (fail ? "err" : "ok");
+    st.textContent = "完成 " + ok + " 个" + (fail ? "，失败 " + fail + " 个" : "");
+    btn.disabled = false;
+});
 
 /* ==================== MO / PO 在线编辑 ==================== */
 
