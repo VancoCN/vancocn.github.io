@@ -509,6 +509,97 @@
         .ta { width: 100%; min-height: 180px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px; color: #dcdcea; font-family: inherit; font-size: 0.9em; line-height: 1.6; resize: vertical; outline: none; }
         .ta:focus { border-color: rgba(160,160,220,0.5); }
         .crypto-hint { font-size: 0.78em; color: rgba(255,255,255,0.3); text-align: right; letter-spacing: 0.5px; }
+
+        /* ==================== PE 解析面板 ==================== */
+        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+
+        .file-item.clickable { cursor: pointer; transition: background 0.25s, border-color 0.25s; }
+        .file-item.clickable:hover { background: rgba(255,255,255,0.07); }
+        .file-item.sel { border-color: rgba(160,160,220,0.5); background: rgba(160,160,220,0.1); }
+        .file-item.bad { border-color: rgba(255,120,120,0.3); }
+
+        .pe-hint {
+            margin-top: 16px; font-size: 0.78em; color: rgba(255,255,255,0.32);
+            letter-spacing: 0.5px;
+        }
+
+        .pe-kv {
+            display: grid; grid-template-columns: 168px 1fr;
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
+            overflow: hidden; background: rgba(0,0,0,0.18);
+        }
+        .pe-kv > div {
+            padding: 8px 14px; font-size: 0.8em; letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255,255,255,0.055); word-break: break-all;
+        }
+        .pe-kv > div:nth-child(odd) { background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.42); }
+        .pe-kv > div:nth-child(even) { color: #dcdcea; }
+        .pe-kv > div:nth-last-child(-n+2) { border-bottom: none; }
+
+        .pe-tag {
+            display: inline-block; padding: 2px 8px; margin: 2px 4px 2px 0;
+            border-radius: 6px; font-size: 0.72em; letter-spacing: 0.5px;
+            background: rgba(160,160,220,0.14); border: 1px solid rgba(160,160,220,0.3);
+            color: #c2c2e2;
+        }
+        .pe-tag.g { background: rgba(143,227,176,0.12); border-color: rgba(143,227,176,0.3); color: #8fe3b0; }
+        .pe-tag.y { background: rgba(227,195,143,0.12); border-color: rgba(227,195,143,0.3); color: #e3c38f; }
+        .pe-tag.r { background: rgba(255,143,143,0.12); border-color: rgba(255,143,143,0.32); color: #ff8f8f; }
+
+        .pe-table-wrap {
+            max-height: 460px; overflow: auto;
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
+        }
+        table.pe {
+            width: 100%; border-collapse: collapse; font-size: 0.76em; letter-spacing: 0.3px;
+        }
+        table.pe.wide { min-width: 640px; }
+        table.pe th {
+            position: sticky; top: 0; z-index: 1;
+            background: rgba(24,24,38,0.98); color: rgba(255,255,255,0.45);
+            font-weight: 500; text-align: left; white-space: nowrap;
+            padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer; user-select: none;
+        }
+        table.pe th:hover { color: #c8c8e8; }
+        table.pe td {
+            padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,0.055);
+            color: #d0d0e0; vertical-align: top; word-break: break-all;
+        }
+        table.pe tbody tr:hover { background: rgba(255,255,255,0.035); }
+        table.pe tbody tr:last-child td { border-bottom: none; }
+        table.pe td.n { text-align: right; color: rgba(255,255,255,0.5); white-space: nowrap; }
+
+        .pe-empty {
+            padding: 30px; text-align: center; font-size: 0.82em;
+            color: rgba(255,255,255,0.28); letter-spacing: 1px;
+            border: 1px dashed rgba(255,255,255,0.12); border-radius: 12px;
+        }
+
+        .pe-hex, .pe-str {
+            max-height: 440px; overflow: auto; white-space: pre;
+            background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px; padding: 14px;
+            font-size: 0.78em; line-height: 1.7; color: #c8c8d8;
+        }
+        .pe-str { white-space: pre-wrap; word-break: break-all; color: #d0d0e0; }
+        .pe-hex .off { color: rgba(255,255,255,0.22); }
+        .pe-hex .as  { color: #8fe3b0; }
+        .pe-hex .nz  { color: rgba(255,255,255,0.16); }
+
+        .pe-search {
+            padding: 7px 12px; border-radius: 9px; width: 230px;
+            border: 1px solid rgba(255,255,255,0.13); background: rgba(20,20,32,0.75);
+            color: #dcdcea; font-family: inherit; font-size: 0.82em; outline: none;
+        }
+        .pe-search:focus { border-color: rgba(160,160,220,0.55); }
+
+        .pe-subhead {
+            font-size: 0.85em; color: #c0c0d8; letter-spacing: 1px; margin: 16px 0 8px;
+        }
+        .pe-subhead:first-child { margin-top: 0; }
+        .note.warn { border-left: 3px solid rgba(227,195,143,0.6); background: rgba(227,195,143,0.06); }
+        .note.warn b { color: #e3c38f; }
     </style>
 <base target="_blank">
 </head>
@@ -527,6 +618,7 @@
     <button class="tab" data-tab="image">图片转换</button>
     <button class="tab" data-tab="lang">MO / PO</button>
     <button class="tab" data-tab="crypto">加解密</button>
+    <button class="tab" data-tab="pe">PE 解析</button>
 </div>
 
 <!-- ==================== 音频 ==================== -->
@@ -760,6 +852,57 @@
             · 解密：将 Base 字符串还原为字节后，再按 UTF-8 解码为文本；若字节流不是合法 UTF-8，则提供二进制下载<br>
             · Base16 即 Hex；Base85 采用 Adobe ASCII85 字符集（不含 &lt;~ ~&gt; 包裹符）；Base91 采用 Henke 标准字符集<br>
             · 支持拖拽文本文件到输入框自动读取
+        </div>
+    </div>
+</section>
+
+<!-- ==================== PE 解析 ==================== -->
+<section class="panel" id="panel-pe" hidden>
+    <div class="panel-card glass">
+        <div class="drop-zone" id="peDrop">
+            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM8.5 13h7v1.5h-7V13zm0 3h7v1.5h-7V16z"/></svg>
+            <div class="dz-title">拖拽 .dll / .exe / .sys 到这里，或点击选择</div>
+            <div class="dz-sub">解析 PE 文件结构：文件头 · 节区表 · 导出函数 · 导入表 · 资源 · 字符串<br>支持 .dll / .exe / .sys / .ocx / .cpl / .drv / .efi，可一次选择多个</div>
+            <input type="file" id="peInput" accept=".dll,.exe,.sys,.ocx,.cpl,.drv,.efi,.mui" multiple hidden>
+        </div>
+
+        <div class="file-list" id="peFiles"></div>
+
+        <div id="peResult" hidden>
+            <div class="stat-row" id="peStats"></div>
+            <div id="peNotes"></div>
+
+            <div class="opt-row">
+                <span class="opt-label">查看详情</span>
+                <div class="seg" id="peTab">
+                    <button class="seg-btn active" data-v="header">文件头</button>
+                    <button class="seg-btn" data-v="sections">节区表</button>
+                    <button class="seg-btn" data-v="exports">导出函数</button>
+                    <button class="seg-btn" data-v="imports">导入表</button>
+                    <button class="seg-btn" data-v="resources">资源</button>
+                    <button class="seg-btn" data-v="strings">字符串</button>
+                    <button class="seg-btn" data-v="hex">十六进制</button>
+                </div>
+            </div>
+
+            <div id="peBody" style="margin-top:18px"></div>
+        </div>
+
+        <div class="opt-row" id="peActions" hidden style="border-top:none;padding-top:10px">
+            <button class="run-btn" id="peCsv" style="width:auto;flex:1;margin-top:0;background:rgba(255,255,255,0.08);">导 出 函 数 表</button>
+            <button class="run-btn" id="peCopy" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);">复 制 函 数 名</button>
+            <button class="run-btn" id="peClear" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);">清 空 列 表</button>
+        </div>
+
+        <div class="status" id="peStatus"></div>
+
+        <div class="note">
+            <b>说明</b><br>
+            · 纯本地解析，文件不会离开你的设备；本页<b>只做只读分析</b>，不会修改任何字节<br>
+            · 解析范围：DOS / PE 头、COFF 头、可选头（PE32 与 PE32+）、节区表、导出表（含转发导出）、导入表、资源目录、CLR 头<br>
+            · <b>节区熵值</b>接近 8.00 通常意味着被压缩或加壳，此时静态解析出的导入表只是壳的存根，不代表程序真实依赖<br>
+            · 检测到 .NET 程序集时，函数体是以 IL 中间语言存放的，要看 C# 代码请用 dnSpy / ILSpy<br>
+            · 点击表格标题可排序；大文件的字符串提取会比较占内存
         </div>
     </div>
 </section>
@@ -2040,6 +2183,804 @@ $("cryptoDown").addEventListener("click", () => {
   if (cryptoOut._bytes) download(new Blob([cryptoOut._bytes], { type: "application/octet-stream" }), "decoded.bin");
   else download(new Blob([cryptoOut.value], { type: "text/plain;charset=utf-8" }), "encoded.txt");
   cryptoStatus.className = "status ok"; cryptoStatus.textContent = "已开始下载";
+});
+
+
+/* ==================== PE / DLL 解析 ==================== */
+/* ---- 解析核心：纯逻辑，不依赖 DOM ---- */
+
+/* 纯逻辑层：不依赖 DOM，可在浏览器 / Node 中独立运行 */
+
+const MACHINE = {
+  0x0:'未知',0x184:'DEC Alpha AXP',0x1a2:'Hitachi SH3',0x1a3:'Hitachi SH3 DSP',0x1a6:'Hitachi SH4',
+  0x1a8:'Hitachi SH5',0x1c0:'ARM',0x1c2:'Thumb',0x1c4:'ARMv7 / Thumb-2',0x1d3:'Matsushita AM33',
+  0x1f0:'PowerPC (LE)',0x1f1:'PowerPC (FP)',0x200:'Intel IA64 (Itanium)',0x266:'MIPS16',
+  0x366:'MIPS + FPU',0x466:'MIPS16 + FPU',0xebc:'EFI Byte Code',0x14c:'x86 (i386)',
+  0x162:'MIPS R3000 (BE)',0x166:'MIPS (LE)',0x169:'MIPS (LE WCE v2)',0x5032:'RISC-V 32',
+  0x5064:'RISC-V 64',0x5128:'RISC-V 128',0x6232:'LoongArch 32',0x6264:'LoongArch 64',
+  0x8664:'x86-64 (AMD64)',0x9041:'Mitsubishi M32R',0xa641:'ARM64 (AArch64)',0xaa64:'ARM64 (AArch64)'
+};
+
+const FILE_CHAR = [
+  [0x0001,'重定位信息已剥离',''],[0x0002,'可执行映像',''],[0x0004,'行号信息已剥离',''],
+  [0x0008,'本地符号已剥离',''],[0x0010,'强制工作集裁剪',''],[0x0020,'支持 >2GB 地址','g'],
+  [0x0080,'低字节序反转','y'],[0x0100,'32 位机器',''],
+  [0x0200,'调试信息已剥离',''],[0x0400,'可从移动介质运行',''],
+  [0x0800,'可从网络运行',''],[0x1000,'系统文件',''],[0x2000,'是 DLL（不是 EXE）','g'],
+  [0x4000,'仅单处理器运行',''],[0x8000,'高字节序反转','y']
+];
+
+const SUBSYSTEM = {
+  0:'未知',1:'Native（驱动）',2:'Windows GUI',3:'Windows 控制台 (CUI)',4:'OS/2 CUI',
+  5:'POSIX CUI',7:'POSIX CUI (native)',8:'Windows 9x Native',9:'Windows CE GUI',
+  10:'EFI 应用程序',11:'EFI 启动服务驱动',12:'EFI 运行时驱动',13:'EFI ROM',14:'XBOX',
+  16:'Windows 启动应用程序',17:'XBOX 代码目录'
+};
+
+const DLL_CHAR = [
+  [0x0020,'高熵 ASLR（64位）','g'],[0x0040,'ASLR 动态基址','g'],[0x0080,'强制完整性校验','g'],
+  [0x0100,'DEP / NX 兼容','g'],[0x0200,'无需隔离',''],[0x0400,'不使用 SEH','y'],
+  [0x0800,'禁止绑定',''],[0x1000,'AppContainer','y'],[0x2000,'WDM 驱动',''],
+  [0x4000,'控制流保护 CFG','g'],[0x8000,'终端服务感知','']
+];
+
+const SEC_CHAR = [
+  [0x00000020,'含代码',''],[0x00000040,'已初始化数据',''],[0x00000080,'未初始化数据',''],
+  [0x00000100,'其他 / 注释',''],[0x00000200,'信息 / 注释',''],[0x00000800,'将移除',''],
+  [0x00001000,'COMDAT',''],[0x00008000,'GP 相对',''],[0x00020000,'已弃用内存',''],
+  [0x00080000,'已弃用内存',''],[0x01000000,'重定位溢出',''],
+  [0x02000000,'可丢弃',''],[0x04000000,'不可缓存',''],[0x08000000,'不可分页',''],
+  [0x10000000,'可共享',''],[0x20000000,'可执行','g'],[0x40000000,'可读',''],
+  [0x80000000,'可写','y']
+];
+
+const DIR_NAMES = ['导出表','导入表','资源','异常','安全/证书','重定位','调试',
+  '架构特定','全局指针','TLS','加载配置','绑定导入','IAT','延迟导入','CLR 运行时头','保留'];
+
+const RES_TYPES = {1:'光标',2:'位图',3:'图标',4:'菜单',5:'对话框',6:'字符串表',7:'字体目录',
+  8:'字体',9:'加速器',10:'RCData',11:'消息表',12:'光标组',14:'图标组',16:'版本信息',
+  17:'DlgInclude',19:'即插即用',20:'VXD',21:'动画光标',22:'动画图标',23:'HTML',24:'清单 (Manifest)'};
+
+function flagsToTags(v, table){
+  return table.filter(f => v & f[0]).map(f => ({text:f[1], cls:f[2]}));
+}
+
+function entropyOf(bytes){
+  if(!bytes.length) return 0;
+  const c = new Uint32Array(256);
+  for(let i=0;i<bytes.length;i++) c[bytes[i]]++;
+  let e = 0, n = bytes.length;
+  for(let i=0;i<256;i++){ if(!c[i]) continue; const p = c[i]/n; e -= p*Math.log2(p); }
+  return e;
+}
+
+function peHex(n, w){ return '0x' + (n>>>0).toString(16).toUpperCase().padStart(w||8,'0'); }
+
+class PEFile {
+  constructor(arrayBuffer){
+    this.buf = arrayBuffer;
+    this.dv  = new DataView(arrayBuffer);
+    this.u8  = new Uint8Array(arrayBuffer);
+    this.sizeOfHeaders = 0;
+    this.sections = [];
+    this.dirs = [];
+    this.warnings = [];
+  }
+  chk(o,n){ return o >= 0 && o + n <= this.buf.byteLength; }
+  r8 (o){ return this.chk(o,1) ? this.dv.getUint8(o)   : 0; }
+  r16(o){ return this.chk(o,2) ? this.dv.getUint16(o,true) : 0; }
+  r32(o){ return this.chk(o,4) ? this.dv.getUint32(o,true) : 0; }
+  r64(o){ return this.chk(o,8) ? this.dv.getBigUint64(o,true) : 0n; }
+
+  ascii(o, max){
+    if(!this.chk(o,1)) return '';
+    let s = '', i = o, end = Math.min(this.buf.byteLength, o + (max||256));
+    for(; i < end; i++){ const c = this.u8[i]; if(c === 0) break; s += String.fromCharCode(c & 0x7f); }
+    return s;
+  }
+  utf16(o, chars){
+    if(!this.chk(o,1)) return '';
+    let s = '';
+    for(let i=0;i<chars;i++){ const c = this.r16(o + i*2); if(c === 0) break; s += String.fromCharCode(c); }
+    return s;
+  }
+
+  /* RVA -> 文件偏移 */
+  rvaToOffset(rva){
+    if(rva <= 0) return null;
+    if(rva < this.sizeOfHeaders && rva < this.buf.byteLength) return rva;
+    for(const s of this.sections){
+      const vSize = Math.max(s.virtualSize, s.sizeOfRawData);
+      if(rva >= s.virtualAddress && rva < s.virtualAddress + vSize){
+        const d = rva - s.virtualAddress;
+        return d < s.sizeOfRawData ? s.pointerToRawData + d : null;
+      }
+    }
+    return null;
+  }
+
+  parse(){
+    if(this.buf.byteLength < 64) throw new Error('文件太小，不是有效的 PE 文件');
+    if(this.r16(0) !== 0x5A4D) throw new Error('缺少 MZ 头，不是 PE/DLL 文件');
+
+    const lf = this.r32(0x3C);
+    if(!this.chk(lf,4) || this.r32(lf) !== 0x00004550)
+      throw new Error('PE 签名无效（偏移 ' + peHex(lf) + ' 处未找到 "PE\\0\\0"）');
+
+    const R = {};
+    R.dosStub = this.ascii(0x4E, 60).replace(/[^\x20-\x7e]/g,'');
+    R.e_lfanew = lf;
+
+    const c = lf + 4;
+    R.machine       = this.r16(c);
+    R.nSections     = this.r16(c + 2);
+    R.timeDateStamp = this.r32(c + 4);
+    R.pSymTable     = this.r32(c + 8);
+    R.nSymbols      = this.r32(c + 12);
+    R.sizeOfOptHdr  = this.r16(c + 16);
+    R.characteristics = this.r16(c + 18);
+
+    const o = c + 20;
+    R.magic = this.r16(o);
+    R.isPlus = R.magic === 0x20B;
+    if(R.magic !== 0x10B && R.magic !== 0x20B){
+      R.magic = 0x10B; R.isPlus = false;
+      this.warnings.push('可选头 Magic 异常，已按 PE32 尝试解析');
+    }
+
+    /* PE32 与 PE32+ 在 DllCharacteristics 之前字段偏移完全一致：
+       PE32  = BaseOfData(24) + ImageBase(28,4)
+       PE32+ = ImageBase(24,8)，BaseOfData 不存在 —— 两者都在 32 处对齐到 SectionAlignment。
+       差异只出现在尾部：NumberOfRvaAndSizes = 92(PE32) / 108(PE32+)，数据目录 = 96 / 112。 */
+    R.linker      = this.r8(o+2) + '.' + this.r8(o+3);
+    R.sizeOfCode  = this.r32(o+4);
+    R.entry       = this.r32(o+16);
+    R.baseOfCode  = this.r32(o+20);
+    R.imageBase   = R.isPlus ? this.r64(o+24) : BigInt(this.r32(o+28));
+    R.sectAlign   = this.r32(o+32);
+    R.fileAlign   = this.r32(o+36);
+    R.osVer       = this.r16(o+40) + '.' + this.r16(o+42);
+    R.imgVer      = this.r16(o+44) + '.' + this.r16(o+46);
+    R.subsysVer   = this.r16(o+48) + '.' + this.r16(o+50);
+    R.sizeOfImage = this.r32(o+56);
+    R.sizeOfHeaders = this.r32(o+60);
+    R.checkSum    = this.r32(o+64);
+    R.subsystem   = this.r16(o+68);
+    R.dllChar     = this.r16(o+70);
+    const nDirs   = this.r32(R.isPlus ? o+108 : o+92);
+    const dirOff  = (R.isPlus ? o+112 : o+96);
+    this.sizeOfHeaders = R.sizeOfHeaders;
+
+    R.nDirs = nDirs;
+    this.dirs = [];
+    for(let i=0;i<Math.min(nDirs,16);i++){
+      this.dirs.push({ rva:this.r32(dirOff+i*8), size:this.r32(dirOff+i*8+4) });
+    }
+
+    /* 节区表 */
+    const secOff = o + R.sizeOfOptHdr;
+    this.sections = [];
+    for(let i=0;i<R.nSections;i++){
+      const s = secOff + i*40;
+      if(!this.chk(s,40)) break;
+      const sec = {
+        name: this.ascii(s, 8),
+        virtualSize: this.r32(s+8),
+        virtualAddress: this.r32(s+12),
+        sizeOfRawData: this.r32(s+16),
+        pointerToRawData: this.r32(s+20),
+        characteristics: this.r32(s+36)
+      };
+      const from = sec.pointerToRawData;
+      sec.entropy = (sec.sizeOfRawData && this.chk(from, Math.min(sec.sizeOfRawData, this.buf.byteLength - from)))
+        ? entropyOf(this.u8.subarray(from, from + Math.min(sec.sizeOfRawData, this.buf.byteLength - from)))
+        : 0;
+      this.sections.push(sec);
+    }
+    this.R = R;
+
+    R.exports  = this.parseExports();
+    R.imports  = this.parseImports();
+    R.resources = this.parseResources();
+    R.clr      = this.parseCLR();
+    return R;
+  }
+
+  parseExports(){
+    const d = this.dirs[0];
+    if(!d || !d.rva) return null;
+    const off = this.rvaToOffset(d.rva);
+    if(off == null) return null;
+
+    const nFuncs = this.r32(off+20), nNames = this.r32(off+24);
+    const base   = this.r32(off+16);
+    const aFn = this.rvaToOffset(this.r32(off+28));
+    const aNm = this.rvaToOffset(this.r32(off+32));
+    const aOr = this.rvaToOffset(this.r32(off+36));
+    if(aFn == null) return null;
+
+    const out = {
+      dllName: this.ascii(this.rvaToOffset(this.r32(off+12)) ?? 0, 256),
+      timeDateStamp: this.r32(off+4),
+      version: this.r16(off+8) + '.' + this.r16(off+10),
+      ordinalBase: base, nFunctions: nFuncs, nNames: nNames, items: []
+    };
+    const dirEnd = d.rva, dirSize = d.size || 1;
+
+    for(let i=0;i<Math.min(nFuncs, 20000);i++){
+      const rva = this.r32(aFn + i*4);
+      if(!rva) continue;
+      /* 转发导出：函数 RVA 落在导出表自身范围内，这里存的是一个 "Other.dll.Func" 字符串 */
+      const fwd = (rva >= dirEnd && rva < dirEnd + dirSize)
+        ? this.ascii(this.rvaToOffset(rva) ?? 0, 256) : null;
+      out.items.push({ ordinal: base + i, rva: rva, forward: fwd, name: '' });
+    }
+    for(let i=0;i<Math.min(nNames, 20000);i++){
+      if(aNm == null || aOr == null) break;
+      const nrva = this.r32(aNm + i*4);
+      const nam  = this.ascii(this.rvaToOffset(nrva) ?? 0, 512);
+      const idx  = this.r16(aOr + i*2);
+      if(out.items[idx]) out.items[idx].name = nam;
+    }
+    return out;
+  }
+
+  parseImports(){
+    const d = this.dirs[1];
+    if(!d || !d.rva) return null;
+    const off = this.rvaToOffset(d.rva);
+    if(off == null) return null;
+
+    const list = [];
+    for(let i=0;i<512;i++){
+      const e = off + i*20;
+      if(!this.chk(e,20)) break;
+      const oft = this.r32(e), nameR = this.r32(e+12), ft = this.r32(e+16);
+      if(!nameR && !ft && !oft) break;
+
+      const nmOff = this.rvaToOffset(nameR);
+      const dll = nmOff != null ? this.ascii(nmOff, 256) : '<?>';
+      const thunkRva = oft || ft;
+      const tOff = this.rvaToOffset(thunkRva);
+      const funcs = [];
+      if(tOff != null){
+        const step = this.R && this.R.isPlus ? 8 : 4;
+        for(let j=0;j<3000;j++){
+          const p = tOff + j*step;
+          if(!this.chk(p,step)) break;
+          const val = step === 8 ? this.r64(p) : BigInt(this.r32(p));
+          if(val === 0n) break;
+          const isOrd = step === 8 ? ((val >> 63n) & 1n) === 1n : ((val >> 31n) & 1n) === 1n;
+          if(isOrd){
+            funcs.push({ name:'', ordinal:Number(val & 0xFFFFn), hint:-1 });
+          }else{
+            const hn = this.rvaToOffset(Number(val & 0xFFFFFFFFn));
+            if(hn == null) continue;
+            funcs.push({ name: this.ascii(hn+2, 512), ordinal:-1, hint: this.r16(hn) });
+          }
+        }
+      }
+      list.push({ dll, funcs, timeDateStamp: this.r32(e+4) });
+    }
+    return list;
+  }
+
+  parseResources(){
+    const d = this.dirs[2];
+    if(!d || !d.rva) return null;
+    const base = this.rvaToOffset(d.rva);
+    if(base == null) return null;
+
+    const out = [];
+    let count = 0;
+    const walk = (off, depth, path) => {
+      if(depth > 3 || count > 4000) return;
+      const nNamed = this.r16(off+12), nId = this.r16(off+14);
+      for(let i=0;i<nNamed + nId;i++){
+        const e = off + 16 + i*8;
+        if(!this.chk(e,8)) return;
+        const nameF = this.r32(e), dataF = this.r32(e+4);
+        let label;
+        if(nameF & 0x80000000){
+          const so = base + (nameF & 0x7FFFFFFF);
+          label = this.utf16(so + 2, this.r16(so));
+        }else{
+          label = (depth === 0 && RES_TYPES[nameF]) ? RES_TYPES[nameF] : '#' + nameF;
+        }
+        if(dataF & 0x80000000){
+          walk(base + (dataF & 0x7FFFFFFF), depth + 1, path.concat(label));
+        }else{
+          const dOff = base + (dataF & 0x7FFFFFFF);
+          if(!this.chk(dOff,16)) continue;
+          const rva = this.r32(dOff);
+          out.push({
+            path: path.concat(label).join(' / '),
+            rva, size: this.r32(dOff+4), codepage: this.r32(dOff+8),
+            offset: this.rvaToOffset(rva)
+          });
+          count++;
+        }
+      }
+    };
+    walk(base, 0, []);
+    return out;
+  }
+
+  parseCLR(){
+    const d = this.dirs[14];
+    if(!d || !d.rva) return null;
+    const off = this.rvaToOffset(d.rva);
+    if(off == null) return null;
+    return {
+      runtimeVersion: this.r16(off+4) + '.' + this.r16(off+6),
+      metaDataRva: this.r32(off+8),
+      metaDataSize: this.r32(off+12),
+      flags: this.r32(off+16),
+      entryPointToken: this.r32(off+20),
+      strongNameSigned: ((this.r32(off+16) & 0x8) === 0) && this.r32(off+24) !== 0
+    };
+  }
+
+  /* 提取可读字符串 */
+  strings(minLen){
+    minLen = minLen || 5;
+    const res = [], n = this.u8.length;
+    let cur = '';
+    for(let i=0;i<n;i++){
+      const b = this.u8[i];
+      if(b >= 0x20 && b < 0x7F){ cur += String.fromCharCode(b); }
+      else { if(cur.length >= minLen) res.push({t:'A', v:cur}); cur = ''; }
+    }
+    if(cur.length >= minLen) res.push({t:'A', v:cur});
+    /* UTF-16LE */
+    let w = '';
+    for(let i=0;i+1<n;i+=2){
+      const b = this.u8[i];
+      if(this.u8[i+1] === 0 && b >= 0x20 && b < 0x7F){ w += String.fromCharCode(b); }
+      else { if(w.length >= minLen) res.push({t:'U', v:w}); w = ''; i--; }
+    }
+    if(w.length >= minLen) res.push({t:'U', v:w});
+    return res;
+  }
+}
+
+/* ---- 面板 UI ---- */
+
+const peStatus = $("peStatus");
+let PE_SEQ = 0;
+let PE_LIST = [];              // {id, file, pe, R, sha, err}
+let PE_SEL = null;             // 当前查看的文件 id
+let PE_TAB = "header";
+let PE_HEXLEN = 4096;
+let PE_EXP_Q = "";
+let PE_STR_Q = "";
+let PE_STR_MIN = 5;
+
+function peEsc(s) {
+    return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function peSay(msg, cls) {
+    peStatus.className = "status " + (cls || "");
+    peStatus.textContent = msg;
+}
+
+function peDate(ts) {
+    if (!ts) return "—";
+    try { return new Date(ts * 1000).toISOString().replace("T", " ").slice(0, 19) + " UTC"; }
+    catch (e) { return String(ts); }
+}
+
+function peTags(arr) {
+    if (!arr || !arr.length) return '<span style="color:rgba(255,255,255,0.25)">—</span>';
+    return arr.map(t => '<span class="pe-tag ' + (t.cls || "") + '">' + peEsc(t.text) + "</span>").join("");
+}
+
+function peKv(pairs) {
+    return '<div class="pe-kv">' + pairs.map(p =>
+        "<div>" + peEsc(p[0]) + '</div><div class="mono">' + peEsc(p[1]) + "</div>"
+    ).join("") + "</div>";
+}
+
+function peTable(heads, rows, cls) {
+    if (!rows.length) return '<div class="pe-empty">这一项没有数据</div>';
+    return '<div class="pe-table-wrap"><table class="pe' + (heads.length >= 5 ? " wide" : "") + '"><thead><tr>' +
+        heads.map((h, i) => '<th data-i="' + i + '">' + peEsc(h) + "</th>").join("") +
+        "</tr></thead><tbody>" + rows.map(r => "<tr>" + r.map((c, i) =>
+            '<td' + (cls && cls[i] ? ' class="' + cls[i] + '"' : "") + ">" + c + "</td>"
+        ).join("") + "</tr>").join("") + "</tbody></table></div>";
+}
+
+function peEmpty(t) { return '<div class="pe-empty">' + peEsc(t) + "</div>"; }
+
+/* ---------- 文件列表 ---------- */
+function peRenderList() {
+    const box = $("peFiles");
+    box.innerHTML = "";
+    PE_LIST.forEach(it => {
+        const row = document.createElement("div");
+        row.className = "file-item clickable" +
+            (it.id === PE_SEL ? " sel" : "") + (it.err ? " bad" : "");
+
+        const ic = document.createElement("div");
+        ic.className = "fi-icon";
+        ic.textContent = extOf(it.file.name) || "?";
+
+        const mn = document.createElement("div");
+        mn.className = "fi-main";
+        const nm = document.createElement("div");
+        nm.className = "fi-name";
+        nm.textContent = it.file.name;
+        const mt = document.createElement("div");
+        mt.className = "fi-meta" + (it.err ? " err" : (it.R ? " done" : ""));
+        if (it.err) mt.textContent = "解析失败：" + it.err;
+        else if (!it.R) mt.textContent = fmtBytes(it.file.size);
+        else {
+            const R = it.R;
+            mt.textContent = (R.characteristics & 0x2000 ? "DLL" : "EXE") + " · " +
+                (R.isPlus ? "64 位" : "32 位") +
+                " · 导出 " + (R.exports ? R.exports.nFunctions : 0) +
+                " · 依赖 " + (R.imports ? R.imports.length : 0) +
+                (R.clr ? " · .NET" : "");
+        }
+        mn.appendChild(nm);
+        mn.appendChild(mt);
+
+        const del = document.createElement("button");
+        del.className = "fi-del";
+        del.type = "button";
+        del.textContent = "×";
+        del.title = "移除";
+        del.addEventListener("click", e => {
+            e.stopPropagation();
+            PE_LIST = PE_LIST.filter(x => x.id !== it.id);
+            if (PE_SEL === it.id) PE_SEL = PE_LIST.length ? PE_LIST[0].id : null;
+            peRenderList();
+            peShow();
+        });
+
+        row.addEventListener("click", () => {
+            if (PE_SEL === it.id) return;
+            PE_SEL = it.id;
+            PE_HEXLEN = 4096;
+            peRenderList();
+            peShow();
+        });
+
+        row.appendChild(ic);
+        row.appendChild(mn);
+        row.appendChild(del);
+        box.appendChild(row);
+    });
+}
+
+/* ---------- 顶部统计与提示 ---------- */
+function peMaxEnt(pe) {
+    return pe.sections.reduce((a, s) => Math.max(a, s.entropy), 0);
+}
+
+function peRenderStats(it) {
+    const R = it.R, ent = peMaxEnt(it.pe);
+    const aslr = !!(R.dllChar & 0x40), nx = !!(R.dllChar & 0x100);
+    const data = [
+        ["类型", (R.characteristics & 0x2000) ? "DLL" : "EXE"],
+        ["位宽", R.isPlus ? "64 位" : "32 位"],
+        ["架构", (MACHINE[R.machine] || "未知").replace(/\s*[（(].*$/, "")],
+        ["导出函数", R.exports ? R.exports.nFunctions : 0],
+        ["依赖模块", R.imports ? R.imports.length : 0],
+        [".NET", R.clr ? "是" : "否"],
+        ["最高节区熵", '<span style="color:' + (ent > 7.2 ? "#ff8f8f" : (ent > 6.8 ? "#e3c38f" : "#e0e0f0")) + '">' + ent.toFixed(2) + "</span>"],
+        ["安全缓解", (aslr ? "ASLR " : "") + (nx ? "DEP" : "") || "无"]
+    ];
+    $("peStats").innerHTML = data.map(d =>
+        '<div class="stat">' + peEsc(d[0]) + "<b>" + d[1] + "</b></div>").join("");
+}
+
+function peRenderNotes(it) {
+    const R = it.R, pe = it.pe, ent = peMaxEnt(pe);
+    const aslr = !!(R.dllChar & 0x40), nx = !!(R.dllChar & 0x100);
+    let h = "";
+    if (ent > 7.2) h += '<div class="note warn"><b>节区熵值 ' + ent.toFixed(2) +
+        "</b>，接近随机数据 —— 该模块可能被压缩或加壳（UPX / VMProtect / Themida 等），此时导入表只反映壳的存根依赖。</div>";
+    if (R.clr) h += '<div class="note"><b>.NET 程序集</b>：函数体以 IL 中间语言存放在元数据中，本页只解析 PE 外壳。要查看并编辑 C# 代码请用 dnSpy / ILSpy。</div>';
+    if (!R.exports && (R.characteristics & 0x2000)) h += '<div class="note warn">这个 DLL 没有导出表，通常是资源库、.NET 类库，或仅供特定宿主程序加载。</div>';
+    if (!aslr || !nx) h += '<div class="note warn">缺少 ' + (!aslr ? "ASLR（动态基址）" : "") +
+        (!aslr && !nx ? " 与 " : "") + (!nx ? "DEP / NX 兼容" : "") + "，安全缓解措施不完整。</div>";
+    if (pe.warnings && pe.warnings.length) h += '<div class="note warn">' + pe.warnings.map(peEsc).join("；") + "</div>";
+    $("peNotes").innerHTML = h;
+}
+
+/* ---------- 各视图 ---------- */
+function peViewHeader(it) {
+    const R = it.R, pe = it.pe;
+    const epOff = pe.rvaToOffset(R.entry);
+    const kv = [
+        ["文件类型", (R.characteristics & 0x2000) ? "DLL（动态链接库）" : "EXE / 其他映像"],
+        ["目标架构", (MACHINE[R.machine] || ("未知 " + peHex(R.machine, 4))) + " · " + (R.isPlus ? "PE32+（64 位）" : "PE32（32 位）")],
+        ["链接器版本", R.linker],
+        ["编译时间戳", peDate(R.timeDateStamp)],
+        ["子系统", (SUBSYSTEM[R.subsystem] || ("未知 " + R.subsystem)) + "（要求 " + R.subsysVer + "）"],
+        ["映像基址", "0x" + R.imageBase.toString(16).toUpperCase()],
+        ["入口点 RVA", R.entry ? peHex(R.entry) + "（文件偏移 0x" +
+            (epOff != null ? epOff.toString(16).toUpperCase() : "—") + "）" : "无（DLL 常见）"],
+        ["映像大小 / 头大小", fmtBytes(R.sizeOfImage) + " / " + fmtBytes(R.sizeOfHeaders)],
+        ["节区对齐 / 文件对齐", peHex(R.sectAlign) + " / " + peHex(R.fileAlign)],
+        ["代码大小", fmtBytes(R.sizeOfCode)],
+        ["校验和 CheckSum", peHex(R.checkSum)],
+        ["节区数量", R.nSections],
+        ["导出 / 导入", (R.exports ? R.exports.nFunctions + " 个函数" : "无") + " / " + (R.imports ? R.imports.length + " 个模块" : "无")],
+        ["COFF 符号表", R.nSymbols ? R.nSymbols + " 个符号 @ " + peHex(R.pSymTable) : "已剥离"],
+        [".NET 程序集", R.clr ? ("是 · 运行时 v" + R.clr.runtimeVersion + (R.clr.strongNameSigned ? " · 已强名称签名" : "")) : "否（原生代码）"],
+        ["DOS 存根", R.dosStub || "—"]
+    ];
+    let h = '<div class="pe-subhead">文件头信息</div>' + peKv(kv);
+    h += '<div class="pe-subhead" style="margin-top:22px">文件特征 Characteristics</div><div>' +
+        peTags(flagsToTags(R.characteristics, FILE_CHAR)) + "</div>";
+    h += '<div class="pe-subhead" style="margin-top:22px">安全属性 DllCharacteristics</div><div>' +
+        peTags(flagsToTags(R.dllChar, DLL_CHAR)) + "</div>";
+    h += '<div class="pe-subhead" style="margin-top:22px">数据目录</div>' +
+        peTable(["#", "名称", "RVA", "大小", "文件偏移"],
+            pe.dirs.map((d, i) => [
+                String(i), peEsc(DIR_NAMES[i] || "—"), peHex(d.rva), fmtBytes(d.size),
+                d.rva ? (pe.rvaToOffset(d.rva) != null ? peHex(pe.rvaToOffset(d.rva)) : '<span class="pe-tag r">RVA 越界</span>')
+                      : '<span style="color:rgba(255,255,255,0.25)">空</span>'
+            ]), ["n", "", "n", "n", "n"]);
+    if (it.sha) h += '<div class="pe-subhead" style="margin-top:22px">哈希</div>' + peKv([["SHA-256", it.sha]]);
+    return h;
+}
+
+function peViewSections(it) {
+    const secs = it.pe.sections;
+    return '<div class="pe-subhead">共 ' + secs.length + " 个节区 · 熵值高于 7.2 通常表示该节已被压缩或加壳</div>" +
+        peTable(["名称", "虚拟地址", "虚拟大小", "文件偏移", "原始大小", "熵", "特征"],
+            secs.map(s => [
+                "<b>" + peEsc(s.name) + "</b>",
+                peHex(s.virtualAddress), peHex(s.virtualSize),
+                peHex(s.pointerToRawData), peHex(s.sizeOfRawData),
+                s.entropy > 7.2 ? '<span class="pe-tag r">' + s.entropy.toFixed(2) + "</span>"
+                    : (s.entropy > 6.8 ? '<span class="pe-tag y">' + s.entropy.toFixed(2) + "</span>" : s.entropy.toFixed(2)),
+                peTags(flagsToTags(s.characteristics, SEC_CHAR))
+            ]), ["", "n", "n", "n", "n", "n", ""]);
+}
+
+function peViewExports(it) {
+    const E = it.R.exports;
+    if (!E) return peEmpty("这个模块没有导出表（没有对外暴露函数）");
+    let h = '<div class="pe-subhead">导出表 · <span class="mono">' + peEsc(E.dllName || "(无名称)") + "</span></div>";
+    h += peKv([
+        ["序号基数 Base", E.ordinalBase],
+        ["函数数 / 具名数", E.nFunctions + " / " + E.nNames],
+        ["版本 / 时间戳", E.version + " · " + peDate(E.timeDateStamp)]
+    ]);
+    h += '<div class="opt-row" style="margin-top:16px;padding-top:16px">' +
+        '<input class="pe-search" id="peExpQ" placeholder="按函数名或序号过滤…">' +
+        '<span class="pe-hint" id="peExpCnt" style="margin-top:0"></span></div>' +
+        '<div id="peExpBox"></div>';
+    return h;
+}
+
+function peRenderExports(it) {
+    const box = $("peExpBox");
+    if (!box) return;
+    const E = it.R.exports, q = PE_EXP_Q.toLowerCase();
+    const items = E.items.filter(i => !q ||
+        (i.name || "").toLowerCase().includes(q) ||
+        String(i.ordinal).indexOf(q) >= 0 ||
+        (i.forward || "").toLowerCase().includes(q));
+    box.innerHTML = peTable(["序号", "函数名", "RVA", "转发到"], items.map(i => [
+        String(i.ordinal),
+        i.name ? "<b>" + peEsc(i.name) + "</b>" : '<span style="color:rgba(255,255,255,0.3)">（按序号导出）</span>',
+        peHex(i.rva),
+        i.forward ? '<span class="pe-tag y">→ ' + peEsc(i.forward) + "</span>" : "—"
+    ]), ["n", "", "n", ""]);
+    const c = $("peExpCnt");
+    if (c) c.textContent = "显示 " + items.length + " / " + E.items.length + " 个";
+}
+
+function peViewImports(it) {
+    const I = it.R.imports;
+    if (!I || !I.length) return peEmpty("没有导入表（该模块不依赖其他 DLL）");
+    const total = I.reduce((a, b) => a + b.funcs.length, 0);
+    let h = '<div class="pe-subhead">依赖 ' + I.length + " 个模块，共 " + total + " 个符号</div>";
+    I.forEach(m => {
+        h += '<div style="margin:18px 0 6px"><b class="mono" style="color:#c8c8e8">' + peEsc(m.dll) +
+            '</b> <span class="pe-hint" style="margin-top:0">（' + m.funcs.length + " 个）</span></div>";
+        h += peTable(["函数名 / 序号", "Hint", "导入方式"], m.funcs.map(f => [
+            f.name ? peEsc(f.name) : '<span class="pe-tag y">按序号导入 #' + f.ordinal + "</span>",
+            f.hint >= 0 ? String(f.hint) : "—",
+            f.name ? "名称" : "序号"
+        ]), ["", "n", ""]);
+    });
+    return h;
+}
+
+function peViewResources(it) {
+    const Rr = it.R.resources;
+    if (!Rr || !Rr.length) return peEmpty("没有资源数据");
+    return '<div class="pe-subhead">共 ' + Rr.length + " 项</div>" +
+        peTable(["路径（类型 / 名称 / 语言）", "RVA", "大小", "文件偏移", "代码页"],
+            Rr.map(r => [
+                peEsc(r.path), peHex(r.rva), fmtBytes(r.size),
+                r.offset != null ? peHex(r.offset) : "—",
+                r.codepage ? String(r.codepage) : "—"
+            ]), ["", "n", "n", "n", "n"]);
+}
+
+function peViewStrings(it) {
+    return '<div class="opt-row" style="margin-top:0;padding-top:0;border-top:none">' +
+        '<input class="pe-search" id="peStrQ" placeholder="过滤字符串…">' +
+        '<input class="pe-search" id="peStrMin" style="width:120px" placeholder="最小长度">' +
+        '<span class="pe-hint" id="peStrCnt" style="margin-top:0"></span></div>' +
+        '<div id="peStrBox"></div>';
+}
+
+function peRenderStrings(it) {
+    const box = $("peStrBox");
+    if (!box) return;
+    const all = it.pe.strings(PE_STR_MIN);
+    const q = PE_STR_Q.toLowerCase();
+    const list = q ? all.filter(x => x.v.toLowerCase().indexOf(q) >= 0) : all;
+    const show = list.slice(0, 3000);
+    box.innerHTML = '<div class="pe-str mono">' + (show.length
+        ? show.map(x => '<span style="color:' + (x.t === "U" ? "#e3c38f" : "#d0d0e0") + '">' + peEsc(x.v) + "</span>").join("\n")
+        : "没有匹配结果") + "</div>";
+    const c = $("peStrCnt");
+    if (c) c.textContent = "命中 " + list.length + " 条" + (list.length > 3000 ? "（仅显示前 3000 条）" : "");
+}
+
+function peViewHex(it) {
+    const pe = it.pe, n = Math.min(PE_HEXLEN, pe.u8.length);
+    let out = "";
+    for (let i = 0; i < n; i += 16) {
+        let hx = "", as = "";
+        for (let j = 0; j < 16; j++) {
+            const p = i + j;
+            if (p < n) {
+                const b = pe.u8[p];
+                hx += '<span class="' + (b ? "" : "nz") + '">' + b.toString(16).padStart(2, "0").toUpperCase() + "</span> ";
+                if (j === 7) hx += " ";
+                as += (b >= 0x20 && b < 0x7F) ? '<span class="as">' + peEsc(String.fromCharCode(b)) + "</span>" : ".";
+            } else hx += "   ";
+        }
+        out += '<span class="off">' + i.toString(16).toUpperCase().padStart(8, "0") + "</span>  " + hx + " |" + as + "|\n";
+    }
+    return '<div class="pe-hex mono">' + out + "</div>" +
+        (n < pe.u8.length
+            ? '<div class="opt-row" style="border-top:none;padding-top:12px">' +
+              '<button class="run-btn" id="peMoreHex" style="width:auto;margin-top:0;padding:9px 22px;letter-spacing:1px;background:rgba(255,255,255,0.08)">' +
+              "再加载 64 KB（已显示 " + fmtBytes(n) + " / " + fmtBytes(pe.u8.length) + "）</button></div>"
+            : '<div class="pe-hint">已显示全部 ' + fmtBytes(pe.u8.length) + "</div>");
+}
+
+/* ---------- 主渲染 ---------- */
+function peShow() {
+    const it = PE_LIST.filter(x => x.id === PE_SEL)[0];
+    const res = $("peResult"), act = $("peActions");
+
+    if (!it || !it.R) {
+        res.hidden = true;
+        act.hidden = PE_LIST.length === 0;
+        return;
+    }
+    res.hidden = false;
+    act.hidden = false;
+
+    peRenderStats(it);
+    peRenderNotes(it);
+
+    const body = $("peBody");
+    if (PE_TAB === "header") body.innerHTML = peViewHeader(it);
+    else if (PE_TAB === "sections") body.innerHTML = peViewSections(it);
+    else if (PE_TAB === "exports") { body.innerHTML = peViewExports(it); peRenderExports(it); }
+    else if (PE_TAB === "imports") body.innerHTML = peViewImports(it);
+    else if (PE_TAB === "resources") body.innerHTML = peViewResources(it);
+    else if (PE_TAB === "strings") { body.innerHTML = peViewStrings(it); peRenderStrings(it); }
+    else body.innerHTML = peViewHex(it);
+
+    const eq = $("peExpQ");
+    if (eq) {
+        eq.value = PE_EXP_Q;
+        eq.addEventListener("input", () => { PE_EXP_Q = eq.value; peRenderExports(it); });
+    }
+    const sq = $("peStrQ"), sm = $("peStrMin");
+    if (sq) {
+        sq.value = PE_STR_Q;
+        sq.addEventListener("input", () => { PE_STR_Q = sq.value; peRenderStrings(it); });
+    }
+    if (sm) {
+        sm.value = PE_STR_MIN;
+        sm.addEventListener("input", () => {
+            const v = parseInt(sm.value, 10);
+            if (!isNaN(v) && v >= 2 && v <= 200) { PE_STR_MIN = v; peRenderStrings(it); }
+        });
+    }
+    const mh = $("peMoreHex");
+    if (mh) mh.addEventListener("click", () => { PE_HEXLEN += 65536; peShow(); });
+}
+
+/* ---------- 载入 ---------- */
+async function peAdd(files) {
+    let ok = 0, bad = 0;
+    for (const f of files) {
+        const it = { id: ++PE_SEQ, file: f, pe: null, R: null, sha: null, err: null };
+        PE_LIST.push(it);
+        try {
+            const buf = await f.arrayBuffer();
+            const pe = new PEFile(buf);
+            const R = pe.parse();
+            it.pe = pe;
+            it.R = R;
+            try {
+                const d = await crypto.subtle.digest("SHA-256", buf);
+                it.sha = Array.from(new Uint8Array(d)).map(b => b.toString(16).padStart(2, "0")).join("");
+            } catch (e) { /* file:// 下可能不可用，忽略 */ }
+            if (PE_SEL === null) PE_SEL = it.id;
+            ok++;
+        } catch (err) {
+            it.err = (err && err.message) ? err.message : String(err);
+            bad++;
+        }
+    }
+    peRenderList();
+    peShow();
+    if (bad) peSay("解析完成：成功 " + ok + " 个，失败 " + bad + " 个", "err");
+    else peSay("已解析 " + ok + " 个文件", "ok");
+}
+
+/* ---------- 事件绑定 ---------- */
+bindDropZone($("peDrop"), $("peInput"), peAdd);
+PE_TAB = bindSeg("peTab", v => { PE_TAB = v; peShow(); });
+
+$("peCsv").addEventListener("click", () => {
+    const it = PE_LIST.filter(x => x.id === PE_SEL)[0];
+    if (!it || !it.R || !it.R.exports) { peSay("当前文件没有导出表，无法导出", "err"); return; }
+    const E = it.R.exports;
+    const rows = [["名称", "序号", "RVA", "转发到"]].concat(
+        E.items.map(i => [i.name, i.ordinal, peHex(i.rva), i.forward || ""]));
+    const csv = "\uFEFF" + rows.map(r =>
+        r.map(c => '"' + String(c == null ? "" : c).replace(/"/g, '""') + '"').join(",")).join("\r\n");
+    download(new Blob([csv], { type: "text/csv;charset=utf-8" }),
+        baseName(it.file.name) + "_exports.csv");
+    peSay("已导出 " + E.items.length + " 个函数", "ok");
+});
+
+$("peCopy").addEventListener("click", async () => {
+    const it = PE_LIST.filter(x => x.id === PE_SEL)[0];
+    if (!it || !it.R || !it.R.exports) { peSay("当前文件没有导出表", "err"); return; }
+    const names = it.R.exports.items.map(i => i.name).filter(Boolean);
+    if (!names.length) { peSay("这个 DLL 没有具名的导出函数", "err"); return; }
+    try {
+        await navigator.clipboard.writeText(names.join("\n"));
+        peSay("已复制 " + names.length + " 个函数名", "ok");
+    } catch (e) { peSay("复制失败，请手动选择", "err"); }
+});
+
+$("peClear").addEventListener("click", () => {
+    PE_LIST = [];
+    PE_SEL = null;
+    PE_HEXLEN = 4096;
+    peRenderList();
+    peShow();
+    $("peActions").hidden = true;
+    peSay("已清空列表");
+});
+
+/* 表格标题点击排序（仅作用于 PE 面板表格） */
+document.addEventListener("click", e => {
+    const th = e.target.closest ? e.target.closest("table.pe th[data-i]") : null;
+    if (!th) return;
+    const tb = th.closest("table.pe").tBodies[0];
+    const idx = +th.dataset.i;
+    const dir = th.dataset.dir === "asc" ? "desc" : "asc";
+    th.dataset.dir = dir;
+    const rows = Array.from(tb.rows);
+    rows.sort((a, b) => {
+        const x = a.cells[idx].textContent.trim(), y = b.cells[idx].textContent.trim();
+        const nx = parseFloat(x.replace(/[^0-9.eE+-]/g, "")), ny = parseFloat(y.replace(/[^0-9.eE+-]/g, ""));
+        const c = (!isNaN(nx) && !isNaN(ny)) ? nx - ny : x.localeCompare(y, "zh");
+        return dir === "asc" ? c : -c;
+    });
+    rows.forEach(r => tb.appendChild(r));
 });
 
 </script>
