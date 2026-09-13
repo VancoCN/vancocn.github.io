@@ -11,28 +11,34 @@
     display:flex;align-items:center;justify-content:center;overflow:hidden}
   #wrap{position:relative;box-shadow:0 0 0 1px #2a2a2a,0 10px 40px rgba(255,255,255,.9)}
   canvas{display:block;background:#000}
-  .overlay{position:absolute;left:0;top:0;right:0;bottom:0;background:rgba(255,255,255,.92);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:22px;text-align:center;overflow:auto}
+  .overlay{position:absolute;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.94);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:16px;text-align:center;overflow:auto}
   .hidden{display:none!important}
-  h1{font-size:24px;letter-spacing:8px;color:#fff;font-weight:600}
-  .sub{font-size:11px;color:#8a8a8a;letter-spacing:3px;margin-top:-8px}
-  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
-  .lbl{font-size:11px;color:#797979;width:42px;text-align:right;letter-spacing:2px}
-  .opts{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-  .opt{padding:6px 12px;font-size:12px;border:1px solid #4a4a4a;border-radius:0;
-    background:#0b0b0b;color:#9a9a9a;cursor:pointer;letter-spacing:1px;transition:.12s}
+  .panel{display:flex;flex-direction:column;align-items:center;width:100%;max-width:420px;gap:8px}
+  h1{font-size:23px;letter-spacing:10px;color:#fff;font-weight:500}
+  .sub{font-size:9px;color:#6e6e6e;letter-spacing:3px;margin-top:-5px}
+  .sep{width:100%;height:1px;background:#2a2a2a;margin:3px 0}
+  .row{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:10px;width:100%}
+  .lbl{font-size:10px;color:#7a7a7a;text-align:right;letter-spacing:1px}
+  .opts{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-start}
+  .opt{padding:5px 9px;font-size:11px;border:1px solid #3d3d3d;background:#0b0b0b;color:#9a9a9a;
+    cursor:pointer;letter-spacing:1px;transition:.12s;white-space:nowrap}
   .opt:hover{border-color:#fff;color:#fff}
   .opt.on{background:#fff;border-color:#fff;color:#000}
-  button.big{margin-top:6px;padding:12px 42px;font-size:15px;letter-spacing:8px;cursor:pointer;
-    border:1px solid #fff;border-radius:0;color:#000;font-weight:700;background:#fff;font-family:inherit}
+  .num{width:52px;padding:5px 6px;font-size:11px;border:1px solid #3d3d3d;background:#0b0b0b;
+    color:#fff;font-family:"Courier New",monospace;text-align:center;outline:none;letter-spacing:0}
+  .num:focus{border-color:#fff}
+  .num::placeholder{color:#4d4d4d;letter-spacing:0}
+  .num::-webkit-outer-spin-button,.num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .hint{font-size:10px;color:#6e6e6e;letter-spacing:1px;min-height:13px;margin:-4px 0 2px 50px;text-align:left;width:calc(100% - 50px)}
+  button.big{margin-top:10px;padding:11px 40px;font-size:14px;letter-spacing:8px;cursor:pointer;
+    border:1px solid #fff;color:#000;font-weight:700;background:#fff;font-family:inherit}
   button.big:hover{background:#000;color:#fff}
-  .help{font-size:11px;line-height:2;color:#8a8a8a;margin-top:4px}
-  .help b{color:#fff}
+  .help{font-size:10px;line-height:1.85;color:#707070;margin-top:6px;letter-spacing:.5px}
+  .help b{color:#d0d0d0;font-weight:500}
   .stats{font-size:13px;line-height:2;color:#bdbdbd}
   .stats span{color:#fff;font-weight:700}
-  #touch{position:absolute;left:0;right:0;bottom:8px;display:none;justify-content:space-between;padding:0 12px}
-  #touch div{width:74px;height:44px;border:1px solid #666;background:rgba(255,255,255,.06);
-    display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;user-select:none}
+  .tag{display:inline-block;border:1px solid #3d3d3d;padding:1px 6px;font-size:9px;color:#8a8a8a;letter-spacing:1px}
   @media (pointer:coarse){#touch{display:flex}}
 </style>
 </head>
@@ -41,19 +47,26 @@
   <canvas id="game"></canvas>
 
   <div id="menu" class="overlay">
-    <h1>几何弹幕</h1>
-    <p class="sub">MONOCHROME STG · 生存躲避 · ENDLESS</p>
-    <div class="row"><span class="lbl">难度</span><div class="opts" id="diffOpts"></div></div>
-    <div class="row"><span class="lbl">血量</span><div class="opts" id="hpOpts"></div></div>
-    <div class="row"><span class="lbl">符卡</span><div class="opts" id="bombOpts"></div></div>
-    <div class="row"><span class="lbl">BGM</span><div class="opts" id="bgmOpts"></div></div>
-    <div class="row"><span class="lbl">音量</span><div class="opts" id="volOpts"></div></div>
-    <button class="big" id="startBtn">开 始</button>
-    <div class="help">
-      <b>←↑↓→ / WASD</b> 移动　<b>Shift</b> 低速（显示判定点）<br>
-      <b>Z</b> 射击（默认自动射击）　<b>X</b> 符卡清屏　<b>Esc/P</b> 暂停<br>
-      <b>M</b> 全部静音　<b>N</b> BGM 开关　<b>[ ]</b> 音量 −/+<br>
-      擦弹（Graze）加分，只有<b>判定小点</b>被击中才算中弹
+    <div class="panel">
+      <h1>几何弹幕</h1>
+      <p class="sub">MONOCHROME STG · ENDLESS DANMAKU</p>
+      <div class="sep"></div>
+      <div class="row"><span class="lbl">难度</span><div class="opts" id="diffOpts"></div><span class="tag" id="diffTag"></span></div>
+      <p class="hint" id="diffHint"></p>
+      <div class="row"><span class="lbl">血量</span><div class="opts" id="hpOpts"></div>
+        <input id="hpIn" class="num" type="number" min="1" max="99" placeholder="自定"></div>
+      <div class="row"><span class="lbl">符卡</span><div class="opts" id="bombOpts"></div>
+        <input id="bombIn" class="num" type="number" min="0" max="99" placeholder="自定"></div>
+      <div class="row"><span class="lbl">托管</span><div class="opts" id="autoOpts"></div>
+        <span class="tag">AUTO · AI 躲避 / 拾取 / 符卡</span></div>
+      <div class="sep"></div>
+      <div class="row"><span class="lbl">BGM</span><div class="opts" id="bgmOpts"></div><div class="opts" id="volOpts"></div></div>
+      <button class="big" id="startBtn">开 始</button>
+      <div class="help">
+        <b>←↑↓→ / WASD</b> 移动　<b>Shift</b> 低速　<b>X</b> 符卡　<b>Esc/P</b> 暂停<br>
+        <b>T</b> AUTO 托管　<b>N</b> BGM 开关　<b>[ ]</b> 音量　<b>M</b> 静音<br>
+        血量 / 符卡支持输入框自定义（1–99 / 0–99）；擦弹得分，只有<b>判定点</b>中弹才算
+      </div>
     </div>
   </div>
 
@@ -143,6 +156,8 @@ const keys = Object.create(null);
 const pressed = Object.create(null);
 const HOLD = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','ShiftLeft','ShiftRight','KeyW','KeyA','KeyS','KeyD','KeyZ','KeyX'];
 addEventListener('keydown', e => {
+  const ae = document.activeElement;
+  if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) return;   // 输入中不响应游戏按键
   if (HOLD.includes(e.code)) e.preventDefault();
   if (!keys[e.code]) pressed[e.code] = true;
   keys[e.code] = true;
@@ -152,6 +167,7 @@ addEventListener('keydown', e => {
   }
   if (e.code === 'KeyM') { muted = !muted; if (muted) bgmPause(); else if (state === 'playing') bgmPlay(); }
   if (e.code === 'KeyN') bgmToggle();
+  if (e.code === 'KeyT') toggleAuto();
   if (e.code === 'BracketLeft')  { bgmSetVol(bgmVol - 0.1); syncVolBtns(); }
   if (e.code === 'BracketRight') { bgmSetVol(bgmVol + 0.1); syncVolBtns(); }
   if (e.code === 'KeyR' && state === 'over') toMenu();
@@ -435,19 +451,144 @@ function updateWave() {
   } else clearWait = 0;
 }
 
+
+/* ======================= AUTO · AI 托管 ======================= */
+let autoOn = false, aiOverride = 0, aiFocus = false;
+const aiDbg = { best: 0, now: 0, near: 0 };
+const AI_DIRS = [];
+for (let i = 0; i < 16; i++) AI_DIRS.push({ c: Math.cos(i * Math.PI / 8), s: Math.sin(i * Math.PI / 8) });
+const AI_RADII = [0, 1, 2.5, 5, 9, 14];  // 采样半径（× 每帧位移）
+const AI_SAFE = 60;                      // 威胁感知半径
+
+/* 某点的弹幕威胁：用 CPA（最近接近点）预测，比逐帧模拟快且准 */
+function aiThreatAt(cx, cy, near, lz, T) {
+  let cost = 0, closest = 999;
+  const grazeW = 26;
+  for (const b of near) {
+    const dx = b.x - cx, dy = b.y - cy;
+    if (dx * dx + dy * dy > 270 * 270) continue;
+    let t = 0;
+    const v2 = b.vx * b.vx + b.vy * b.vy;
+    if (v2 > 1e-8) { t = -(dx * b.vx + dy * b.vy) / v2; if (t < 0) t = 0; else if (t > T) t = T; }
+    const mx = dx + b.vx * t, my = dy + b.vy * t;
+    const d = Math.sqrt(mx * mx + my * my) - b.r - HIT_R;
+    if (d < closest) closest = d;
+    if (d < 0) cost += 1200;                                   // 必被撞
+    else if (d < AI_SAFE) { const k = 1 - d / AI_SAFE; cost += k * k * k * 150; }
+    // 适度贴弹：擦弹安全区给一点奖励，鼓励 Graze 而不是一味逃远
+    else if (d < grazeW) cost -= 10;
+  }
+  for (const L of lz) {
+    if (L.ang == null) continue;
+    const d = distSeg(cx, cy, L.x, L.y, L.ang, L.len) - (L.w / 2 + HIT_R);
+    if (d < 30) cost += (30 - d) * 14;
+  }
+  return cost;
+}
+
+function aiControl(p) {
+  const sp = 5.0;
+  // 1) 预筛附近威胁（候选点最多远离 45px，取 300px 足够）
+  const near = [], lz = [];
+  for (const b of ebullets) {
+    if (b.delay > 0) continue;
+    const dx = b.x - p.x, dy = b.y - p.y;
+    if (dx * dx + dy * dy < 300 * 300) { near.push(b); b._dx = dx; b._dy = dy; }
+  }
+  for (const L of lasers) if (L.t > L.warn - 50) lz.push(L);
+
+  // 2) 目标点：道具优先（power 未满时更贪），否则对准 Boss / 屏幕下方
+  const brave = p.invuln > 100;                // 无敌尚有余量时才大胆上前，避免无敌一结束就困死
+  const homeY = brave ? FH * 0.55 : (p.hp <= 1 ? FH * 0.84 : (boss ? FH * 0.80 : FH * 0.76));
+  let tgt = null, tw = 0;
+  const wantPower = p.power < 48;
+  for (const it of items) {
+    if (it.dead) continue;
+    const w = (it.type === 'P' ? (wantPower ? 1 : 0.34) : 0.6);
+    if (w <= tw) continue;
+    const d = Math.hypot(it.x - p.x, it.y - p.y);
+    if (d > 260) continue;
+    tgt = it; tw = w;
+  }
+
+  // 3) 采样评分
+  let best = null, bestCost = Infinity, bestThreat = 0;
+  for (let ri = 0; ri < AI_RADII.length; ri++) {
+    const rad = AI_RADII[ri] * sp;
+    const dirs = (rad === 0) ? [{ c: 0, s: 0 }] : AI_DIRS;
+    for (const d of dirs) {
+      const cx = p.x + d.c * rad, cy = p.y + d.s * rad;
+      if (cx < 9 || cx > FW - 9 || cy < 12 || cy > FH - 14) continue;
+      const threat = aiThreatAt(cx, cy, near, lz, brave ? 18 : 34);
+      let c = threat * (brave ? 0.28 : 1);
+      // 只有在本体够安全时才去贪道具
+      if ((brave || threat < 40) && tgt) c -= Math.max(0, 260 - Math.hypot(tgt.x - cx, tgt.y - cy)) * 0.30 * tw;
+      // 站位：靠下、不贴边；危急时放下站位全力钻缝，安全时才去够道具
+      let homePull = brave ? 0.2 : 0.5;
+      if (threat > 60) homePull = 0.08;
+      else if (tgt && threat < 15) homePull = 0.12;
+      c += Math.abs(cy - homeY) * homePull;
+      c += Math.max(0, 72 - Math.min(cx, FW - cx)) * 0.9;
+      if (boss && !tgt) c += Math.abs(cx - boss.x) * (brave ? 0.12 : 0.05);
+      c += rad * 0.10;                                  // 抑制抖动
+      if (c < bestCost) { bestCost = c; best = { cx, cy }; bestThreat = threat; }
+    }
+  }
+  aiDbg.best = bestThreat; aiDbg.near = near.length;
+  if (!best) return;
+
+  // 4) 低速：近距离弹多时切低速精确定位
+  let close = 0;
+  for (const b of near) if (b._dx * b._dx + b._dy * b._dy < 46 * 46) close++;
+  aiFocus = close >= 3 || (tgt && bestThreat < 10);
+  p.focus = aiFocus;
+
+  // 5) 移动
+  const dx = best.cx - p.x, dy = best.cy - p.y, len = Math.hypot(dx, dy);
+  if (len > 0.001) {
+    const mv = Math.min(len, aiFocus ? 2.1 : 5.0);
+    p.x += dx / len * mv; p.y += dy / len * mv;
+    p.x = Math.max(7, Math.min(FW - 7, p.x));
+    p.y = Math.max(10, Math.min(FH - 10, p.y));
+  }
+
+  // 6) 符卡：当前位置短期威胁过高且躲不掉时发动
+  if (p.invuln <= 0 && p.bombs > 0) {
+    const now = aiThreatAt(p.x, p.y, near, lz, 16);
+    aiDbg.now = now;
+    // 符卡要省：杂兵波几乎不放，留给 Boss 战与残机告急
+    let need;
+    if (p.hp <= 1) need = 150;
+    else if (p.hp <= 2) need = 230;
+    else if (boss) need = 330;
+    else need = 620;                                               // 杂兵波基本不放，攒给 Boss
+    const trapped = bestThreat > need && near.length > 5;          // 最优落点仍危险 = 躲不掉
+    const doomed = now > 1500;                                     // 已有多弹必中，来不及走
+    if (trapped || doomed) useBomb();
+  }
+}
+
 /* ======================= 更新 ======================= */
 function updatePlayer() {
   const p = player; p.anim++;
-  p.focus = kdown('ShiftLeft') || kdown('ShiftRight');
-  let vx = 0, vy = 0;
-  if (kdown('ArrowLeft') || kdown('KeyA')) vx -= 1;
-  if (kdown('ArrowRight') || kdown('KeyD')) vx += 1;
-  if (kdown('ArrowUp') || kdown('KeyW')) vy -= 1;
-  if (kdown('ArrowDown') || kdown('KeyS')) vy += 1;
-  if (vx && vy) { vx *= 0.7071; vy *= 0.7071; }
-  const sp = p.focus ? 2.1 : 5.0;
-  p.x = Math.max(7, Math.min(FW - 7, p.x + vx * sp));
-  p.y = Math.max(10, Math.min(FH - 10, p.y + vy * sp));
+  // AUTO 托管；玩家一按方向键即临时接管 0.75 秒
+  if (autoOn && (kdown('ArrowLeft') || kdown('ArrowRight') || kdown('ArrowUp') || kdown('ArrowDown') ||
+                 kdown('KeyA') || kdown('KeyD') || kdown('KeyW') || kdown('KeyS'))) aiOverride = 45;
+  if (aiOverride > 0) aiOverride--;
+  if (autoOn && aiOverride <= 0) {
+    aiControl(p);
+  } else {
+    p.focus = kdown('ShiftLeft') || kdown('ShiftRight');
+    let vx = 0, vy = 0;
+    if (kdown('ArrowLeft') || kdown('KeyA')) vx -= 1;
+    if (kdown('ArrowRight') || kdown('KeyD')) vx += 1;
+    if (kdown('ArrowUp') || kdown('KeyW')) vy -= 1;
+    if (kdown('ArrowDown') || kdown('KeyS')) vy += 1;
+    if (vx && vy) { vx *= 0.7071; vy *= 0.7071; }
+    const sp = p.focus ? 2.1 : 5.0;
+    p.x = Math.max(7, Math.min(FW - 7, p.x + vx * sp));
+    p.y = Math.max(10, Math.min(FH - 10, p.y + vy * sp));
+  }
   if (p.invuln > 0) p.invuln--;
 
   // 射击（自动连射，东方式：只要活着就一直打）
@@ -545,7 +686,7 @@ function damageEnemy(e, d) {
   e.dead = true;
   score += (e.score || 100) * D.mul * (1 + wave * 0.04);
   for (let i = 0; i < 14; i++) spawnPart(e.x, e.y, [e.color, '#fff', '#d5d5d5'][i % 3], 1, 2 + Math.random() * 5);
-  if (Math.random() < 0.30) items.push({ x: e.x, y: e.y, vx: (Math.random() - .5) * 1.6, vy: -1.2, type: Math.random() < 0.55 ? 'P' : 'S', t: 0, dead: false });
+  if (Math.random() < 0.40) items.push({ x: e.x, y: e.y, vx: (Math.random() - .5) * 1.6, vy: -1.2, type: Math.random() < 0.60 ? 'P' : 'S', t: 0, dead: false });
   SFX.down();
 }
 
@@ -605,7 +746,7 @@ function updateItems() {
     it.vx *= 0.96; it.x += it.vx; it.y += it.vy;
     if (d < 18) {
       it.dead = true;
-      if (it.type === 'P') { p.power = Math.min(60, p.power + 3); score += 300 * D.mul; }
+      if (it.type === 'P') { p.power = Math.min(60, p.power + 4); score += 300 * D.mul; }
       else score += 1200 * D.mul;
       beep(1200, 0.05, 'triangle', 0.04);
     }
@@ -633,7 +774,7 @@ function playerHit() {
   const p = player;
   p.hp--; p.invuln = 170; shake = 26;
   // 掉资源：灵力减半，并散落可回收的 P 道具
-  const lost = Math.floor(p.power / 3);
+  const lost = Math.floor(p.power / 4);
   p.power = Math.max(0, p.power - lost);
   const drops = Math.min(6, Math.max(2, Math.ceil(lost / 5)));
   for (let i = 0; i < drops; i++) {
@@ -655,7 +796,7 @@ function gameOver() {
     '难度：<span>' + result.diff + '</span>　到达 WAVE <span>' + result.wave + '</span><br>' +
     '得分：<span>' + result.score.toLocaleString() + '</span><br>' +
     '擦弹：<span>' + result.graze + '</span>　生存：<span>' + fmtTime(result.time) + '</span><br>' +
-    '评价：<span>' + rankOf(result.score) + '</span>';
+    '模式：<span>' + (autoOn ? 'AUTO 托管' : '手动操作') + '</span>　评价：<span>' + rankOf(result.score) + '</span>';
   document.getElementById('menu').classList.add('hidden');
   document.getElementById('over').classList.remove('hidden');
 }
@@ -855,7 +996,7 @@ function drawHUD() {
   label('DIFF'); value(D.name, 14, '#c9c9c9');
   y += 4;
   ctx.font = '9px "PingFang SC",sans-serif'; ctx.fillStyle = '#6e6e6e';
-  ctx.fillText('P:暂停  M:静音', x0, y); y += 13;
+  ctx.fillText(autoOn ? 'AUTO 托管中  T:退出' : 'T:AUTO  P:暂停  M:静音', x0, y); y += 13;
   ctx.fillText('X:符卡  Shift:低速', x0, y);
   y = H - 26; ctx.font = '9px "Courier New",monospace'; ctx.fillStyle = '#6e6e6e';
   ctx.fillText((bgmOn && !muted ? '\u266A BGM ' + Math.round(bgmVol * 100) + '%' : '\u266A MUTE') + (muted ? '' : '') + (bgmReady ? '' : ' LOADING'), x0, y);
@@ -945,9 +1086,47 @@ function buildOpts(el, list, getLabel, cur, onPick) {
     el.appendChild(d);
   });
 }
-buildOpts(document.getElementById('diffOpts'), Object.values(DIFFS), d => d.name + (d.desc ? ' · ' + d.desc : ''), DIFFS[selDiff], d => selDiff = d.key);
-buildOpts(document.getElementById('hpOpts'), HP_OPTS, v => v + ' 血', selHp, v => selHp = v);
-buildOpts(document.getElementById('bombOpts'), BOMB_OPTS, v => v + ' 张', selBomb, v => selBomb = v);
+function syncDiffInfo() {
+  const d = DIFFS[selDiff];
+  document.getElementById('diffHint').textContent = d.desc;
+  document.getElementById('diffTag').textContent = 'SCORE ×' + d.mul;
+}
+buildOpts(document.getElementById('diffOpts'), Object.values(DIFFS), d => d.name, DIFFS[selDiff],
+  d => { selDiff = d.key; syncDiffInfo(); });
+syncDiffInfo();
+const hpBox = document.getElementById('hpOpts'), bombBox = document.getElementById('bombOpts');
+buildOpts(hpBox, HP_OPTS, v => v, selHp, v => { selHp = v; document.getElementById('hpIn').value = ''; });
+buildOpts(bombBox, BOMB_OPTS, v => v, selBomb, v => { selBomb = v; document.getElementById('bombIn').value = ''; });
+/* 自定义输入：血量 1-99，符卡 0-99 */
+function bindNum(inputId, box, setV) {
+  const el = document.getElementById(inputId);
+  el.addEventListener('input', () => {
+    const n = parseInt(el.value, 10);
+    if (!isNaN(n) && n >= 0) {
+      setV(Math.max(inputId === 'hpIn' ? 1 : 0, Math.min(99, n)));
+      [...box.children].forEach(c => c.classList.remove('on'));
+    } else if (el.value === '') {
+      setV(inputId === 'hpIn' ? 3 : 3);
+      [...box.children].forEach(c => c.classList.remove('on'));
+    }
+  });
+  el.addEventListener('blur', () => { const n = parseInt(el.value, 10); if (isNaN(n)) el.value = ''; });
+  el.addEventListener('keydown', e => { if (e.code === 'Enter') el.blur(); });
+}
+bindNum('hpIn', hpBox, v => selHp = v);
+bindNum('bombIn', bombBox, v => selBomb = v);
+
+function toggleAuto() {
+  autoOn = !autoOn;
+  syncAutoBtns();
+  if (state === 'playing') floats.push({ txt: autoOn ? 'AUTO  ON' : 'AUTO  OFF', y: FH - 46, life: 80, color: '#ffffff' });
+  beep(autoOn ? 1200 : 600, 0.06, 'triangle', 0.05);
+}
+const autoBtns = [];
+buildOpts(document.getElementById('autoOpts'), [false, true], v => v ? '开' : '关', autoOn, v => { autoOn = v; });
+document.querySelectorAll('#autoOpts .opt').forEach(b => autoBtns.push(b));
+function syncAutoBtns() { autoBtns.forEach((b, i) => b.classList.toggle('on', (i === 1) === autoOn)); }
+syncAutoBtns();
 
 const bgmBtns = [];
 buildOpts(document.getElementById('bgmOpts'), [true, false], v => v ? '开 (LOOP)' : '关', bgmOn,
