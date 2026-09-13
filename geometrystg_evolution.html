@@ -32,6 +32,11 @@
   .help{font-size:10px;line-height:1.9;color:#707070;margin-top:6px;letter-spacing:.5px}
   .help b{color:#d0d0d0;font-weight:500}
   .tag{display:inline-block;border:1px solid #3d3d3d;padding:1px 6px;font-size:9px;color:#8a8a8a;letter-spacing:1px}
+  .seed{flex:1;height:46px;background:#0b0b0b;border:1px solid #3d3d3d;color:#e8e8e8;
+    font-family:"Courier New",monospace;font-size:10px;line-height:1.4;padding:5px 7px;
+    resize:none;outline:none;word-break:break-all}
+  .seed:focus{border-color:#fff}
+  .seed::placeholder{color:#4a4a4a}
 </style>
 </head>
 <body>
@@ -47,19 +52,28 @@
       <p class="hint" id="diffHint"></p>
       <div class="row"><span class="lbl">初速</span><div class="opts" id="spdOpts"></div><span class="tag" id="spdTag">1.0x</span></div>
       <div class="row"><span class="lbl">BGM</span><div class="opts" id="bgmOpts"></div><div class="opts" id="volOpts"></div></div>
+      <div class="row"><span class="lbl">样本</span><textarea id="seedInput" class="seed" spellcheck="false"
+        placeholder="粘贴高分样本参数字符串（GDA1-…），可多个：换行 / 空格 / 分号分隔。留空 = 随机初始化"></textarea></div>
+      <p class="hint" id="seedHint"></p>
       <div class="sep"></div>
       <button class="big" id="startBtn">开 始 进 化</button>
       <div class="help">
         每代 <b>100</b> 个 AI 判定点 · 血量固定 <b>10</b> · 符卡固定 <b>5</b><br>
+        <b>残机与符卡永不回复</b> —— 全程没有任何回血 / 补卡机制<br>
+        <b>必须全部阵亡</b>才会结算并开启下一代（无时间上限，建议 5x 运行）<br>
         <b>无攻击</b> —— AI 只学躲避；符卡仅为自己提供无敌<br>
         每个 AI 头顶显示 <b>符卡|血量</b>，侧栏同步展示状态<br>
         左侧面板列出 <b>全部 100 个</b> AI 的 符卡 / 血量（阵亡置灰划掉）<br>
         点击面板任一行即可选中，被选中 AI 头顶出现 <b>黄色倒三角 ▼</b><br>
         面板顶部实时显示 <b>存活 x / 100</b>；滚轮滚动，<b>↑↓</b> 切换，<b>F</b> 自动跟随<br>
+        面板底部常驻 <b>综合分最高纪录</b>（跨代、跨波次，只在新纪录诞生时更新）<br>
         波次推进前会清空残留弹幕，避免「没打完就刷新」<br>
-        适应度 = <b>存活帧数 + 擦弹 × 4</b><br>
+        综合分 = <b>存活帧数 + 擦弹 × 4 + 存活奖励 200</b><br>
         保留最优样本 → 复制 100 份 → 变异 → 下一代<br>
-        游戏内 <b>1–5</b> 或点击侧栏按钮实时调速（最高 5x）<br>
+        每代结束会弹出 <b>高分样本参数</b>，可<b>复制</b>存档或<b>忽略</b>继续<br>
+        把字符串粘回上方「样本」框即可<b>恢复训练</b>（支持多个样本一起载入）<br>
+        游戏内 <b>1–9</b> 调速、<b>0</b> 键 = 10x，或点击侧栏按钮实时调速（最高 10x）<br>
+        高倍速若跑不满，侧栏会显示<b>实际倍率</b>（受设备性能影响）<br>
         <b>Space</b> 暂停　<b>R</b> 重置种群　<b>N</b> BGM　<b>[ ]</b> 音量　<b>M</b> 静音
       </div>
     </div>
@@ -82,9 +96,14 @@ const GRAZE_R = 15;
 const MAX_BULLET = 2400;
 
 const POP            = 100;
+/* 每个个体固定 10 残机 / 5 符卡，且【永不回血、永不补符卡】：
+   整代运行中没有任何 hp++ / bombs++ 逻辑，只在换新一代时随新个体重置为满值 */
 const HP_FIXED       = 10;
 const BOMB_FIXED     = 5;
-const MAX_GEN_FRAMES = 5400;
+const NO_HEAL        = true;
+/* 代际时限：Infinity = 取消时限，只有全部个体阵亡才结算下一代。
+   若担心某代久拖不决，把它改回一个数字（如 20000）即可恢复时限换代 */
+const MAX_GEN_FRAMES = Infinity;
 const AI_DECIDE      = 3;
 const CARD_DUR       = 600;
 
@@ -97,6 +116,10 @@ const DIFFS = {
 };
 let selDiff = 'normal';
 let simSpeed = 1;
+/* 模拟速度上限：1x ~ 10x（0 键 = 10x）。
+   高倍速下单帧要跑的 update 数 = ticks(最多6) × simSpeed，最多 60 次，
+   主循环带时间预算保护，跑不满时会在 HUD 显示实际倍率，不会卡死页面。 */
+const MAX_SPEED = 10;
 
 /* ======================= BGM ======================= */
 const BGM_URLS = [
@@ -144,8 +167,15 @@ addEventListener('keydown', e => {
   if (HOLD.includes(e.code)) e.preventDefault();
   keys[e.code] = true;
   if (e.code === 'Space') {
+    /* 代末面板开着时，Space = 忽略并继续 */
+    if (state === 'playing' && genState === 'inter' && interHold) { continueGeneration(); return; }
     if (state === 'playing') { state = 'paused'; bgmPause(); }
     else if (state === 'paused') { state = 'playing'; if (bgmOn && !muted) bgmPlay(); }
+  }
+  /* 代末面板：C 复制最优样本 */
+  if (e.code === 'KeyC' && state === 'playing' && genState === 'inter' && interHold) {
+    if (interTop[0]) { copyText(interTop[0].str); showToast('已复制 ① 样本参数'); }
+    return;
   }
   if (e.code === 'KeyM') { muted = !muted; if (muted) bgmPause(); else if (state === 'playing') bgmPlay(); }
   if (e.code === 'KeyN') bgmToggle();
@@ -165,23 +195,23 @@ addEventListener('keydown', e => {
     }
   }
   if (e.code === 'KeyF') { autoFollow = !autoFollow; }
-  if (e.code === 'Digit1') setSpeed(1);
-  if (e.code === 'Digit2') setSpeed(2);
-  if (e.code === 'Digit3') setSpeed(3);
-  if (e.code === 'Digit4') setSpeed(4);
-  if (e.code === 'Digit5') setSpeed(5);
-  if (e.code === 'KeyR' && state === 'playing') { gen = 0; bestEver = 0; histBest.length = 0; startGeneration(null); }
+  /* 数字键调速：1–9 = 1x–9x，0 = 10x */
+  if (/^Digit[0-9]$/.test(e.code)) {
+    const d = +e.code.slice(5);
+    setSpeed(d === 0 ? MAX_SPEED : d);
+  }
+  if (e.code === 'KeyR' && state === 'playing') { gen = 0; bestEver = 0; lastBest = 0; lastAvg = 0; histBest.length = 0; bestScore = 0; bestScoreGen = 0; bestScoreId = 0; bestScoreFrames = 0; bestScoreGraze = 0; interSkip = false; interTop = []; seedCount = 0; toast.t = 0; startGeneration(null); }
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
 
-function setSpeed(v) { simSpeed = v; syncSpdBtns(); }
+function setSpeed(v) { simSpeed = Math.max(1, Math.min(MAX_SPEED, v | 0)); syncSpdBtns(); }
 function syncSpdBtns() {
   document.querySelectorAll('#spdOpts .opt').forEach((b, i) => b.classList.toggle('on', (i + 1) === simSpeed));
   const t = document.getElementById('spdTag'); if (t) t.textContent = simSpeed.toFixed(1) + 'x';
 }
 
-/* 侧栏速度按钮点击热区 */
-const SPD_BTN = { x: OX + FW + 12, y: H - 62, w: SW - 24, h: 22, n: 5 };
+/* 侧栏速度按钮点击热区：1x–10x 共 10 格 */
+const SPD_BTN = { x: OX + FW + 12, y: H - 62, w: SW - 24, h: 22, n: MAX_SPEED };
 function hitSpdBtn(mx, my) {
   const b = SPD_BTN;
   if (my < b.y || my > b.y + b.h) return 0;
@@ -202,6 +232,10 @@ cvs.addEventListener('pointerdown', e => {
   const r = cvs.getBoundingClientRect();
   const mx = (e.clientX - r.left) * W / r.width;
   const my = (e.clientY - r.top) * H / r.height;
+  /* 代末结算面板优先接管全部点击 */
+  if (state === 'playing' && genState === 'inter' && interHold) {
+    interClick(mx, my); e.preventDefault(); return;
+  }
   if (mx < LW) { panelClick(mx, my); return; }
   if (state !== 'playing') return;
   const s = hitSpdBtn(mx, my);
@@ -243,6 +277,18 @@ let selected = 0;          // 当前选中的 AI id
 let autoFollow = true;     // 自动跟随存活最久的个体
 let onlyAlive = false;     // 仅显示存活个体
 let panelScroll = 0;       // 列表滚动偏移
+
+/* 综合分历史纪录：跨代、跨波次保存，只有破纪录才更新 */
+let bestScore = 0, bestScoreGen = 0, bestScoreId = 0, bestScoreFrames = 0, bestScoreGraze = 0;
+
+/* 代末结算面板：停下展示本代高分样本参数，可复制 / 忽略 */
+let interHold = true;      // 每代结束是否停下等待（面板内可切换）
+let interSkip = false;     // 用户点了「继续」，跳过等待
+let interTop = [];         // 本代 TOP3 样本
+let interBest = 0, interAvg = 0, interGen = 0;
+let seedCount = 0;         // 本局由多少个载入样本起家（0 = 随机初始化）
+let toast = { msg: '', t: 0 };
+function showToast(m) { toast.msg = m; toast.t = 120; }
 
 /* 波次状态：fight = 交战中，clear = 清屏等待，wait = 刚生成 */
 let waveState = 'fight';
@@ -540,6 +586,94 @@ function mutate(g) {
   }
   return o;
 }
+function mutateScaled(g, rate, amp) {
+  const o = new Float32Array(GENE_N);
+  for (let i = 0; i < GENE_N; i++) {
+    const d = GENE_DEF[i];
+    let v = g[i];
+    if (Math.random() < rate) v += (Math.random() * 2 - 1) * (d[2] - d[1]) * amp;
+    o[i] = Math.max(d[1], Math.min(d[2], v));
+  }
+  return o;
+}
+
+/* ======================= 基因组 序列化 / 反序列化 =======================
+   格式：GDA1-<base64url>
+   payload = [版本1B][12×uint16 量化基因][校验1B]，共 26 字节 → 约 35 字符
+   量化到 65535 级，精度远高于显示需要，可无损往返（误差 < 量程的 1/65535） */
+const GENE_FMT = 'GDA1';
+
+function b64urlEncode(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function b64urlDecode(str) {
+  let s = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) s += '=';
+  const bin = atob(s);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function encodeGenes(g) {
+  const buf = new Uint8Array(1 + GENE_N * 2 + 1);
+  buf[0] = 1;
+  let sum = 0;
+  for (let i = 0; i < GENE_N; i++) {
+    const d = GENE_DEF[i];
+    let t = (g[i] - d[1]) / (d[2] - d[1]);
+    if (t < 0) t = 0; else if (t > 1) t = 1;
+    const q = Math.round(t * 65535);
+    buf[1 + i * 2]     = (q >> 8) & 255;
+    buf[1 + i * 2 + 1] = q & 255;
+    sum = (sum + (q & 255) + ((q >> 8) & 255)) & 255;
+  }
+  buf[buf.length - 1] = sum;
+  return GENE_FMT + '-' + b64urlEncode(buf);
+}
+/* 解析失败会抛错，调用方负责捕获 */
+function decodeGenes(str) {
+  const s = String(str).trim();
+  if (s.slice(0, GENE_FMT.length + 1) !== GENE_FMT + '-') throw new Error('格式不正确');
+  const buf = b64urlDecode(s.slice(GENE_FMT.length + 1));
+  if (buf.length !== 1 + GENE_N * 2 + 1) throw new Error('长度不符');
+  if (buf[0] !== 1) throw new Error('版本不支持');
+  let sum = 0;
+  for (let i = 1; i < buf.length - 1; i++) sum = (sum + buf[i]) & 255;
+  if (sum !== buf[buf.length - 1]) throw new Error('校验失败');
+  const g = new Float32Array(GENE_N);
+  for (let i = 0; i < GENE_N; i++) {
+    const d = GENE_DEF[i];
+    const q = (buf[1 + i * 2] << 8) | buf[1 + i * 2 + 1];
+    g[i] = d[1] + (q / 65535) * (d[2] - d[1]);
+  }
+  return g;
+}
+/* 从文本里抠出所有样本：换行 / 空格 / 逗号 / 分号 都当分隔符 */
+function parseSeeds(text) {
+  const tokens = String(text || '').split(/[\s,;]+/).filter(Boolean);
+  const genes = [], errs = [];
+  for (const tk of tokens) {
+    try { genes.push(decodeGenes(tk)); }
+    catch (e) { errs.push(tk); }
+  }
+  return { genes, errs };
+}
+/* 用载入的样本铺满种群：样本原样保留（当精英），其余由其变异而来 */
+function buildSeedGenes(seeds) {
+  const out = [];
+  for (let i = 0; i < seeds.length && out.length < POP; i++) out.push(new Float32Array(seeds[i]));
+  let i = 0;
+  while (out.length < POP) {
+    const base = seeds[i % seeds.length];
+    /* 前 25% 小幅精调，其余大步探索，避免单一来源导致多样性塌缩 */
+    const fine = out.length < Math.max(4, Math.round(POP * 0.25));
+    out.push(mutateScaled(base, fine ? 0.25 : 0.5, fine ? 0.06 : 0.22));
+    i++;
+  }
+  return out;
+}
 
 /* ======================= AI 决策 ======================= */
 const AI_DIRS = [];
@@ -677,6 +811,26 @@ function getSelected() {
   if (!agents) return null;
   for (let i = 0; i < agents.length; i++) if (agents[i].id === selected) return agents[i];
   return null;
+}
+
+/* 综合分 = 存活帧数 + 擦弹 × 4 + 存活奖励 200
+   （与 endGeneration 的适应度公式完全一致，保证"最高分"和"最优个体"口径统一） */
+function scoreOf(a) { return a.frames + a.graze * 4 + (a.dead ? 0 : 200); }
+
+/* 刷新历史最高综合分：只在真正破纪录时写入，波次变化/时间流逝都不会改动它 */
+function updateBestScore() {
+  if (!agents) return;
+  for (let i = 0; i < agents.length; i++) {
+    const a = agents[i];
+    const s = scoreOf(a);
+    if (s > bestScore) {
+      bestScore = s;
+      bestScoreGen = gen;
+      bestScoreId = a.id;
+      bestScoreFrames = a.frames;
+      bestScoreGraze = a.graze;
+    }
+  }
 }
 
 function updateAgents() {
@@ -846,11 +1000,86 @@ function startGeneration(genes) {
   interTimer = 0;
 }
 
+/* ======================= 代末：高分样本结算面板 ======================= */
+const INTER_BTN = {
+  copy1: { x: 160, y: 392, w: 118, h: 26, label: '复制 ①' },
+  copy3: { x: 288, y: 392, w: 118, h: 26, label: '复制前三' },
+  next:  { x: 416, y: 392, w: 118, h: 26, label: '忽略并继续' },
+  hold:  { x: 160, y: 424, w: 374, h: 14 },
+};
+const INTER_BOX = { x: 137, w: 420 };
+const INTER_ROW = [
+  { y: 126, h: 22 },   // ①
+  { y: 168, h: 20 },   // ②
+  { y: 206, h: 20 },   // ③
+];
+
+function buildInterPanel() {
+  if (!agents || !agents.length) return;
+  const list = agents.slice().sort((p, q) => scoreOf(q) - scoreOf(p));
+  interTop = list.slice(0, 3).map(a => ({
+    id: a.id, fit: scoreOf(a), frames: a.frames, graze: a.graze,
+    str: encodeGenes(a.g),
+  }));
+  interGen = gen;
+  interBest = interTop[0].fit;
+  let s = 0;
+  for (let i = 0; i < agents.length; i++) s += scoreOf(agents[i]);
+  interAvg = s / agents.length;
+}
+
+function copyText(s) {
+  let done = false;
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(s).then(() => {}, () => fallbackCopy(s));
+      done = true;
+    }
+  } catch (e) { /* 落到 fallback */ }
+  if (!done) fallbackCopy(s);
+}
+function fallbackCopy(s) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = s;
+    ta.style.position = 'fixed'; ta.style.left = '-9999px';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  } catch (e) { /* 复制不可用时，字符串仍在面板上可手动选取 */ }
+}
+
+function interClick(mx, my) {
+  const inR = b => mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h;
+  if (inR(INTER_BTN.copy1)) {
+    if (interTop[0]) { copyText(interTop[0].str); showToast('已复制 ① 样本参数'); }
+    return;
+  }
+  if (inR(INTER_BTN.copy3)) {
+    if (interTop.length) { copyText(interTop.map(t => t.str).join('\n')); showToast('已复制前三样本参数'); }
+    return;
+  }
+  if (inR(INTER_BTN.next)) { interHold = interHold; continueGeneration(); return; }
+  if (inR(INTER_BTN.hold)) { interHold = !interHold; showToast(interHold ? '每代结束会停下询问' : '每代自动继续'); return; }
+  /* 点字符串框也能复制对应项 */
+  for (let i = 0; i < INTER_ROW.length; i++) {
+    const r = INTER_ROW[i];
+    if (mx >= INTER_BOX.x && mx <= INTER_BOX.x + INTER_BOX.w && my >= r.y && my <= r.y + r.h) {
+      if (interTop[i]) { copyText(interTop[i].str); showToast('已复制 ' + '①②③'[i] + ' 样本参数'); }
+      return;
+    }
+  }
+}
+function continueGeneration() {
+  interSkip = true;      // 下一帧由 update 推进 endGeneration
+}
+
 function endGeneration() {
+  buildInterPanel();   // 先按当前状态算一遍（endGeneration 也可能被强制推进）
+
   for (let i = 0; i < agents.length; i++) {
     const a = agents[i];
-    a.fit = a.frames + a.graze * 4;
-    if (!a.dead) a.fit += 200;
+    a.fit = scoreOf(a);   // 综合分，与历史纪录同一公式
   }
   agents.sort((p, q) => q.fit - p.fit);
 
@@ -858,7 +1087,15 @@ function endGeneration() {
   let sum = 0;
   for (let i = 0; i < agents.length; i++) sum += agents[i].fit;
   lastAvg = sum / agents.length;
-  if (lastBest > bestEver) bestEver = lastBest;
+  /* 历史最高综合分：与实时 bestScore 用同一口径，取二者较大值 */
+  if (lastBest > bestScore) {
+    bestScore = lastBest;
+    bestScoreGen = gen;
+    bestScoreId = agents[0].id;
+    bestScoreFrames = agents[0].frames;
+    bestScoreGraze = agents[0].graze;
+  }
+  bestEver = bestScore;
   histBest.push(lastBest);
   if (histBest.length > 90) histBest.shift();
 
@@ -879,6 +1116,9 @@ function endGeneration() {
 /* ======================= 主更新 ======================= */
 function update() {
   if (state !== 'playing') return;
+  if (toast.t > 0) toast.t--;
+  /* 代末停下询问时冻结世界：既省算力，也保证面板上的样本数据是结算瞬间的 */
+  if (genState === 'inter' && interHold && !interSkip) return;
   frames++; timeMs += 1000 / 60;
   if (shake > 0) shake *= 0.86;
 
@@ -898,10 +1138,18 @@ function update() {
     if (!s || s.dead) { const L = pickLeader(); if (L) selected = L.id; }
   }
 
+  /* 实时刷新综合分纪录：只有真的破纪录才会变，波次推进 / 时间流逝都不会动 */
+  updateBestScore();
+
+  /* 换代条件：必须全部阵亡（时限默认 Infinity，即不设时限） */
   if (genState === 'run') {
-    if (aliveCount <= 0 || frames >= MAX_GEN_FRAMES) { genState = 'inter'; interTimer = 0; }
+    if (aliveCount <= 0 || frames >= MAX_GEN_FRAMES) {
+      genState = 'inter'; interTimer = 0;
+      buildInterPanel();
+    }
   } else {
-    if (++interTimer > 45) endGeneration();
+    /* 停下询问时不自动推进，等用户点「忽略并继续」/ 按 Space */
+    if (interSkip || ++interTimer > (interHold ? Infinity : 20)) { interSkip = false; endGeneration(); }
   }
 }
 
@@ -1086,7 +1334,7 @@ function fmtTime(ms) {
 
 /* ======================= 左侧 AI 面板 ======================= */
 const LP = { x: 4, w: LW - 18, rowH: 15, top: 64 };
-const LIST_H = H - LP.top - 28;
+const LIST_H = H - LP.top - 68;
 const VIS_ROWS = Math.floor(LIST_H / LP.rowH);
 const BTN_ALL    = { x: 6,           y: 46, w: 36, h: 14, label: '全部'   };
 const BTN_ALIVE  = { x: 44,          y: 46, w: 46, h: 14, label: '仅存活' };
@@ -1252,21 +1500,149 @@ function drawPanel() {
     ctx.fillStyle = '#5a5a5a'; ctx.fillRect(sx, sy, 4, th);
   }
 
-  /* 底部：总血量（存活量的另一维度）+ 操作提示 */
+  /* ---------- 底部：综合分最高纪录 ---------- */
+  const by0 = LP.top + LIST_H + 6;
+  ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(6, by0 - .5); ctx.lineTo(LW - 8, by0 - .5); ctx.stroke();
+
+  ctx.textAlign = 'left';
+  ctx.font = '8px "PingFang SC",sans-serif';
+  ctx.fillStyle = '#8a8a8a';
+  ctx.fillText('综合分最高', 6, by0 + 12);
+  ctx.textAlign = 'right';
+  ctx.font = 'bold 15px "Courier New",monospace';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(Math.floor(bestScore).toLocaleString(), LW - 8, by0 + 14);
+
+  ctx.textAlign = 'left';
+  ctx.font = '8px "Courier New",monospace';
+  ctx.fillStyle = '#6a6a6a';
+  ctx.fillText('#' + String(bestScoreId).padStart(2, '0') + ' 第' + bestScoreGen + '代 '
+    + bestScoreFrames + '帧 擦弹' + bestScoreGraze, 6, by0 + 26);
+
+  /* 总血量 / 剩余符卡：存活量的另一维度 */
   let sumHp = 0, sumBomb = 0;
   if (agents) for (let i = 0; i < agents.length; i++) { sumHp += Math.max(0, agents[i].hp); sumBomb += agents[i].bombs; }
   const hpMax = POP * HP_FIXED, bmMax = POP * BOMB_FIXED;
-  ctx.textAlign = 'left';
   ctx.font = '8px "PingFang SC",sans-serif';
   ctx.fillStyle = '#6a6a6a';
-  ctx.fillText('血量 ' + sumHp + '/' + hpMax + '  符卡 ' + sumBomb + '/' + bmMax, 6, H - 19);
+  ctx.fillText('血量 ' + sumHp + '/' + hpMax + '  符卡 ' + sumBomb + '/' + bmMax, 6, by0 + 38);
   const fw = (LW - 12) / 2;
-  ctx.fillStyle = '#1a1a1a'; ctx.fillRect(6, H - 16, fw - 4, 4); ctx.fillRect(6 + fw, H - 16, fw - 4, 4);
+  ctx.fillStyle = '#1a1a1a'; ctx.fillRect(6, by0 + 41, fw - 4, 4); ctx.fillRect(6 + fw, by0 + 41, fw - 4, 4);
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(6, H - 16, (fw - 4) * (sumHp / hpMax), 4);
-  ctx.fillRect(6 + fw, H - 16, (fw - 4) * (sumBomb / bmMax), 4);
+  ctx.fillRect(6, by0 + 41, (fw - 4) * (sumHp / hpMax), 4);
+  ctx.fillRect(6 + fw, by0 + 41, (fw - 4) * (sumBomb / bmMax), 4);
   ctx.fillStyle = '#5c5c5c';
-  ctx.fillText('滚轮滚动 · 点选 · ▼标记选中', 6, H - 4);
+  ctx.fillText('滚轮滚动 · 点选 · ▼标记选中', 6, by0 + 55);
+}
+
+/* ======================= 代末结算面板（高分样本参数） ======================= */
+function drawInterPanel() {
+  ctx.fillStyle = 'rgba(0,0,0,.93)'; ctx.fillRect(0, 0, W, H);
+  ctx.textBaseline = 'alphabetic';
+
+  /* 标题 */
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 19px "PingFang SC",sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('第 ' + interGen + ' 代结束', W / 2, 44);
+
+  ctx.font = '11px "Courier New",monospace';
+  ctx.fillStyle = '#9a9a9a';
+  ctx.fillText('BEST ' + Math.floor(interBest).toLocaleString()
+    + '    AVG ' + Math.floor(interAvg).toLocaleString()
+    + '    历史纪录 ' + Math.floor(bestScore).toLocaleString(), W / 2, 66);
+
+  ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(INTER_BOX.x, 80.5); ctx.lineTo(INTER_BOX.x + INTER_BOX.w, 80.5); ctx.stroke();
+
+  ctx.textAlign = 'left';
+  ctx.font = '10px "PingFang SC",sans-serif';
+  ctx.fillStyle = '#8a8a8a';
+  ctx.fillText('本代高分样本参数（点框即复制）', INTER_BOX.x, 100);
+
+  const marks = ['①', '②', '③'];
+  for (let i = 0; i < 3; i++) {
+    const t = interTop[i];
+    const r = INTER_ROW[i];
+    if (!t) break;
+
+    /* 左侧：标记 + 编号 + 分数 */
+    ctx.textAlign = 'left';
+    ctx.font = 'bold ' + (i === 0 ? 15 : 12) + 'px "Courier New",monospace';
+    ctx.fillStyle = i === 0 ? '#ffd400' : '#c8c8c8';
+    ctx.fillText(marks[i], INTER_BOX.x, r.y - 3);
+    ctx.font = '10px "Courier New",monospace';
+    ctx.fillStyle = i === 0 ? '#ffffff' : '#8a8a8a';
+    ctx.fillText('#' + String(t.id).padStart(2, '0'), INTER_BOX.x + 22, r.y - 3);
+
+    ctx.textAlign = 'right';
+    ctx.font = 'bold ' + (i === 0 ? 12 : 10) + 'px "Courier New",monospace';
+    ctx.fillStyle = i === 0 ? '#ffffff' : '#a0a0a0';
+    ctx.fillText(Math.floor(t.fit).toLocaleString() + ' 分  ' + t.frames + '帧  擦弹' + t.graze,
+      INTER_BOX.x + INTER_BOX.w, r.y - 3);
+
+    /* 参数字符串框 */
+    ctx.fillStyle = i === 0 ? '#141414' : '#0d0d0d';
+    ctx.fillRect(INTER_BOX.x, r.y, INTER_BOX.w, r.h);
+    ctx.strokeStyle = i === 0 ? 'rgba(255,212,0,.55)' : '#3d3d3d';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(INTER_BOX.x + .5, r.y + .5, INTER_BOX.w - 1, r.h - 1);
+    ctx.textAlign = 'left';
+    ctx.font = (i === 0 ? 'bold 11px' : '10px') + ' "Courier New",monospace';
+    ctx.fillStyle = i === 0 ? '#ffffff' : '#9a9a9a';
+    ctx.fillText(t.str, INTER_BOX.x + 8, r.y + (i === 0 ? 15 : 14));
+  }
+
+  ctx.strokeStyle = '#2a2a2a';
+  ctx.beginPath(); ctx.moveTo(INTER_BOX.x, 240.5); ctx.lineTo(INTER_BOX.x + INTER_BOX.w, 240.5); ctx.stroke();
+
+  ctx.textAlign = 'left';
+  ctx.font = '10px "PingFang SC",sans-serif';
+  ctx.fillStyle = '#707070';
+  const tips = [
+    '把字符串保存下来，下次开局粘进菜单「样本」框即可从这套基因继续训练。',
+    '可同时粘贴多个样本（换行 / 空格 / 分号分隔），会自动铺满并变异出 100 个个体。',
+    '样本会被原样保留为精英，其余个体由它变异而来：前 25% 小幅精调，其余大步探索。',
+    '综合分 = 存活帧数 + 擦弹 × 4 + 存活奖励 200；分数越高说明这套躲避基因越强。',
+  ];
+  for (let i = 0; i < tips.length; i++) {
+    ctx.fillText(tips[i], INTER_BOX.x, 262 + i * 17);
+  }
+
+  /* 按钮 */
+  const btn = (b, primary) => {
+    ctx.fillStyle = primary ? '#ffffff' : '#0b0b0b';
+    ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.strokeStyle = primary ? '#ffffff' : '#4a4a4a';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(b.x + .5, b.y + .5, b.w - 1, b.h - 1);
+    ctx.fillStyle = primary ? '#000000' : '#d0d0d0';
+    ctx.font = 'bold 11px "PingFang SC",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(b.label, b.x + b.w / 2, b.y + 17);
+  };
+  btn(INTER_BTN.copy1, true);
+  btn(INTER_BTN.copy3, false);
+  btn(INTER_BTN.next, false);
+
+  /* 每代是否停下的开关 */
+  const hb = INTER_BTN.hold;
+  ctx.textAlign = 'left';
+  ctx.font = '10px "PingFang SC",sans-serif';
+  ctx.fillStyle = '#6a6a6a';
+  ctx.fillText((interHold ? '☑' : '☐') + ' 每代结束都停下询问（取消则自动连续训练）', hb.x + 2, hb.y + 11);
+
+  /* 提示条 */
+  if (toast.t > 0) {
+    const al = Math.min(1, toast.t / 30);
+    ctx.globalAlpha = al;
+    ctx.fillStyle = '#ffd400';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 11px "PingFang SC",sans-serif';
+    ctx.fillText(toast.msg, W / 2, 380);
+    ctx.globalAlpha = 1;
+  }
 }
 
 function drawHUD() {
@@ -1301,6 +1677,8 @@ function drawHUD() {
     ctx.strokeRect(x0 + .5, y - 11.5, abw - 1, 4);
     y += 7;
   }
+  row('RECORD', Math.floor(bestScore).toLocaleString(), '#ffd400', 13);
+  if (seedCount > 0) row('SEED', String(seedCount), '#ffd400');
   row('BEST', Math.floor(lastBest).toLocaleString(), '#d8d8d8');
   row('AVG', Math.floor(lastAvg).toLocaleString(), '#a0a0a0');
   row('WAVE', String(wave), '#ffffff');
@@ -1373,28 +1751,32 @@ function drawHUD() {
   ctx.font = '9px "Courier New",monospace'; ctx.fillStyle = '#5c5c5c'; ctx.textAlign = 'left';
   ctx.fillText('FITNESS HISTORY', x0, hy + hh + 12);
 
-  /* 实时速度按钮（可点击） */
+  /* 实时速度按钮（可点击）1x–10x */
   const b = SPD_BTN, cw2 = b.w / b.n;
-  ctx.font = '9px "Courier New",monospace'; ctx.fillStyle = '#5c5c5c';
-  ctx.fillText('SIM SPEED  (1-5)', x0, b.y - 5);
+  ctx.font = '8px "Courier New",monospace';
+  ctx.textAlign = 'left'; ctx.fillStyle = '#5c5c5c';
+  ctx.fillText('SIM SPEED 1-10', x0, b.y - 5);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = realSpeedX + 0.15 < simSpeed ? '#ffffff' : '#5c5c5c';
+  ctx.fillText('实速 ' + realSpeedX.toFixed(1) + 'x', xr, b.y - 5);
   for (let i = 0; i < b.n; i++) {
     const bx = b.x + i * cw2;
     const on = (i + 1) === simSpeed;
     ctx.fillStyle = on ? '#ffffff' : '#0b0b0b';
-    ctx.fillRect(bx + 1, b.y, cw2 - 3, b.h);
+    ctx.fillRect(bx + 1, b.y, cw2 - 2, b.h);
     ctx.strokeStyle = on ? '#ffffff' : '#3d3d3d';
     ctx.lineWidth = 1;
     ctx.strokeRect(bx + 1.5, b.y + 0.5, cw2 - 3, b.h - 1);
     ctx.fillStyle = on ? '#000000' : '#9a9a9a';
-    ctx.font = 'bold 10px "Courier New",monospace';
+    ctx.font = 'bold 8px "Courier New",monospace';
     ctx.textAlign = 'center';
-    ctx.fillText((i + 1) + 'x', bx + cw2 / 2, b.y + 15);
+    ctx.fillText(String(i + 1), bx + cw2 / 2, b.y + 15);
   }
 
   /* 底部提示 */
   ctx.textAlign = 'left';
   ctx.font = '8px "PingFang SC",sans-serif'; ctx.fillStyle = '#6e6e6e';
-  ctx.fillText('点击 / 1-5 调速', x0, H - 30);
+  ctx.fillText('调速 1-9 · 0 = 10x', x0, H - 30);
   ctx.fillText('Space 暂停  R 重置  F 跟随', x0, H - 19);
   ctx.font = '8px "Courier New",monospace'; ctx.fillStyle = '#5c5c5c';
   ctx.fillText((bgmOn && !muted ? '\u266A BGM ' + Math.round(bgmVol * 100) + '%' : '\u266A MUTE') + (bgmReady ? '' : ' LOADING'), x0, H - 8);
@@ -1439,6 +1821,9 @@ function render() {
   drawPanel();
   drawHUD();
 
+  /* 代末结算面板：盖住整个画布，展示高分样本参数 */
+  if (genState === 'inter' && interHold) { drawInterPanel(); return; }
+
   /* 覆盖层同样使用场地坐标 */
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, OX, 0);
@@ -1447,10 +1832,6 @@ function render() {
     ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 17px "PingFang SC",sans-serif';
     ctx.fillText('第 ' + gen + ' 代结束', FW / 2, FH / 2 - 16);
-    ctx.font = '12px "Courier New",monospace'; ctx.fillStyle = '#c0c0c0';
-    ctx.fillText('BEST ' + Math.floor(lastBest).toLocaleString() + '   AVG ' + Math.floor(lastAvg).toLocaleString(), FW / 2, FH / 2 + 12);
-    ctx.font = '11px "PingFang SC",sans-serif'; ctx.fillStyle = '#8a8a8a';
-    ctx.fillText('保留精英 · 变异复制下一代', FW / 2, FH / 2 + 38);
   }
 
   if (state === 'paused') {
@@ -1464,6 +1845,12 @@ function render() {
 
 /* ======================= 主循环 ======================= */
 let last = performance.now(), acc = 0;
+/* 高倍速保护：单帧 update 硬上限 + 时间预算，跑不完就丢弃积压，避免雪崩卡死 */
+const MAX_UPDATES = 90;
+const FRAME_BUDGET = 26;      // ms，留给渲染的余量
+let realSpeedX = 1;           // 实际达成的模拟倍率（HUD 显示）
+let _updCount = 0, _updT0 = performance.now();
+
 function loop(now) {
   requestAnimationFrame(loop);
   let dt = now - last; last = now;
@@ -1472,8 +1859,27 @@ function loop(now) {
   const step = 1000 / 60;
   let ticks = 0;
   while (acc >= step && ticks < 6) { acc -= step; ticks++; }
-  const total = ticks * simSpeed;
-  for (let i = 0; i < total; i++) update();
+
+  let total = ticks * simSpeed;
+  if (total > MAX_UPDATES) { total = MAX_UPDATES; acc = 0; }
+
+  const t0 = performance.now();
+  let done = 0;
+  for (let i = 0; i < total; i++) {
+    update();
+    done++;
+    /* 每 8 次检查一次预算，超时就停，剩余步进丢弃（宁可慢一点也不卡页面） */
+    if ((i & 7) === 7 && performance.now() - t0 > FRAME_BUDGET) { acc = 0; break; }
+  }
+  if (state !== 'playing') done = 0;
+  _updCount += done;
+
+  /* 每 500ms 统计一次实际倍率 */
+  const el = now - _updT0;
+  if (el >= 500) {
+    realSpeedX = Math.min(MAX_SPEED, _updCount / (el / 1000 * 60));
+    _updCount = 0; _updT0 = now;
+  }
   render();
 }
 requestAnimationFrame(loop);
@@ -1504,7 +1910,7 @@ buildOpts(document.getElementById('diffOpts'), Object.values(DIFFS), d => d.name
   d => { selDiff = d.key; syncDiffInfo(); });
 syncDiffInfo();
 
-buildOpts(document.getElementById('spdOpts'), [1, 2, 3, 4, 5], v => v + 'x', simSpeed, v => setSpeed(v));
+buildOpts(document.getElementById('spdOpts'), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], v => v + 'x', simSpeed, v => setSpeed(v));
 syncSpdBtns();
 
 const bgmBtns = [];
@@ -1519,14 +1925,51 @@ function syncBgmBtns() { bgmBtns.forEach((b, i) => b.classList.toggle('on', (i =
 function syncVolBtns() { volBtns.forEach((b, i) => b.classList.toggle('on', Math.abs([0.2,0.35,0.5,0.7,1.0][i] - bgmVol) < 0.01)); }
 syncBgmBtns(); syncVolBtns();
 
+/* ---- 样本参数输入框：实时校验 ---- */
+function syncSeedHint() {
+  const box = document.getElementById('seedInput');
+  const hint = document.getElementById('seedHint');
+  const raw = (box && box.value || '').trim();
+  if (!raw) { hint.textContent = '留空 = 随机初始化 100 个个体'; hint.style.color = ''; return; }
+  const r = parseSeeds(raw);
+  if (r.genes.length && !r.errs.length) {
+    hint.textContent = '✓ 已识别 ' + r.genes.length + ' 个样本，将作为精英并变异出 100 个个体';
+    hint.style.color = '#d0d0d0';
+  } else if (r.genes.length && r.errs.length) {
+    hint.textContent = '△ 识别 ' + r.genes.length + ' 个，忽略 ' + r.errs.length + ' 段无效文本';
+    hint.style.color = '#c8a000';
+  } else {
+    hint.textContent = '✗ 未识别到有效样本（应为 GDA1- 开头），将以随机初始化开始';
+    hint.style.color = '#a06060';
+  }
+}
+{
+  const box = document.getElementById('seedInput');
+  if (box) { box.addEventListener('input', syncSeedHint); box.addEventListener('paste', () => setTimeout(syncSeedHint, 0)); }
+  syncSeedHint();
+}
+
 function startGame() {
   ac();
   D = DIFFS[selDiff];
   state = 'playing';
   gen = 0; bestEver = 0; lastBest = 0; lastAvg = 0; histBest.length = 0;
-  startGeneration(null);
+  bestScore = 0; bestScoreGen = 0; bestScoreId = 0; bestScoreFrames = 0; bestScoreGraze = 0;
+  interSkip = false; interTop = [];
+  toast.t = 0;
+
+  /* 解析载入的样本：有则从这些基因起家，无则随机初始化 */
+  const box = document.getElementById('seedInput');
+  let seedGenes = null;
+  seedCount = 0;
+  if (box && box.value.trim()) {
+    const r = parseSeeds(box.value);
+    if (r.genes.length) { seedGenes = buildSeedGenes(r.genes); seedCount = r.genes.length; }
+  }
+  startGeneration(seedGenes);
   if (bgmOn && !muted) bgmPlay();
   document.getElementById('menu').classList.add('hidden');
+  if (seedCount > 0) showToast('已载入 ' + seedCount + ' 个样本，继续训练');
 }
 document.getElementById('startBtn').onclick = startGame;
 
