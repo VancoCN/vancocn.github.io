@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="zh-CN" data-page-node-id="JHyE7XKl0Dbm8N0i83K6hP" data-dm-ref="2"><head data-page-node-id="ZvYfRSq3LGRHRYOhSJDCZ7">
+    <meta charset="UTF-8" data-page-node-id="XZls3ultgLDHmRCXu1W5z6">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="CHcS3RjiyGyA5lRHCLPN71">
     <title>Vanco的格式转换工具</title>
 
     <!-- 预加载字体 -->
-    <link rel="preload" href="alfyt.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="alfyt.ttf" as="font" type="font/ttf" crossorigin="" data-page-node-id="ScE7GZEwwb75Ucz0e4xuWo">
 
     <style>
         /* ==================== 自定义字体 ==================== */
@@ -510,7 +509,7 @@
         .ta:focus { border-color: rgba(160,160,220,0.5); }
         .crypto-hint { font-size: 0.78em; color: rgba(255,255,255,0.3); text-align: right; letter-spacing: 0.5px; }
 
-        /* ==================== PE 解析面板 ==================== */
+        /* ==================== 等宽字体 ==================== */
         .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
 
         .file-item.clickable { cursor: pointer; transition: background 0.25s, border-color 0.25s; }
@@ -522,19 +521,6 @@
             margin-top: 16px; font-size: 0.78em; color: rgba(255,255,255,0.32);
             letter-spacing: 0.5px;
         }
-
-        .pe-kv {
-            display: grid; grid-template-columns: 168px 1fr;
-            border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
-            overflow: hidden; background: rgba(0,0,0,0.18);
-        }
-        .pe-kv > div {
-            padding: 8px 14px; font-size: 0.8em; letter-spacing: 0.5px;
-            border-bottom: 1px solid rgba(255,255,255,0.055); word-break: break-all;
-        }
-        .pe-kv > div:nth-child(odd) { background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.42); }
-        .pe-kv > div:nth-child(even) { color: #dcdcea; }
-        .pe-kv > div:nth-last-child(-n+2) { border-bottom: none; }
 
         .pe-tag {
             display: inline-block; padding: 2px 8px; margin: 2px 4px 2px 0;
@@ -550,25 +536,25 @@
             max-height: 460px; overflow: auto;
             border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
         }
-        table.pe {
+        table.po {
             width: 100%; border-collapse: collapse; font-size: 0.76em; letter-spacing: 0.3px;
         }
-        table.pe.wide, table.po.wide { min-width: 640px; }
-        table.pe th, table.po th {
+        table.po.wide { min-width: 640px; }
+        table.po th {
             position: sticky; top: 0; z-index: 1;
             background: rgba(24,24,38,0.98); color: rgba(255,255,255,0.45);
             font-weight: 500; text-align: left; white-space: nowrap;
             padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.1);
             cursor: pointer; user-select: none;
         }
-        table.pe th:hover, table.po th:hover { color: #c8c8e8; }
-        table.pe td, table.po td {
+        table.po th:hover { color: #c8c8e8; }
+        table.po td {
             padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,0.055);
             color: #d0d0e0; vertical-align: top; word-break: break-all;
         }
-        table.pe tbody tr:hover, table.po tbody tr:hover { background: rgba(255,255,255,0.035); }
-        table.pe tbody tr:last-child td, table.po tbody tr:last-child td { border-bottom: none; }
-        table.pe td.n, table.po td.n { text-align: right; color: rgba(255,255,255,0.5); white-space: nowrap; }
+        table.po tbody tr:hover { background: rgba(255,255,255,0.035); }
+        table.po tbody tr:last-child td { border-bottom: none; }
+        table.po td.n { text-align: right; color: rgba(255,255,255,0.5); white-space: nowrap; }
 
         .pe-empty {
             padding: 30px; text-align: center; font-size: 0.82em;
@@ -576,30 +562,12 @@
             border: 1px dashed rgba(255,255,255,0.12); border-radius: 12px;
         }
 
-        .pe-hex, .pe-str {
-            max-height: 440px; overflow: auto; white-space: pre;
-            background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px; padding: 14px;
-            font-size: 0.78em; line-height: 1.7; color: #c8c8d8;
-        }
-        .pe-str { white-space: pre-wrap; word-break: break-all; color: #d0d0e0; }
-        .pe-hex .off { color: rgba(255,255,255,0.22); }
-        .pe-hex .as  { color: #8fe3b0; }
-        .pe-hex .nz  { color: rgba(255,255,255,0.16); }
-
         .pe-search {
             padding: 7px 12px; border-radius: 9px; width: 230px;
             border: 1px solid rgba(255,255,255,0.13); background: rgba(20,20,32,0.75);
             color: #dcdcea; font-family: inherit; font-size: 0.82em; outline: none;
         }
         .pe-search:focus { border-color: rgba(160,160,220,0.55); }
-
-        .pe-subhead {
-            font-size: 0.85em; color: #c0c0d8; letter-spacing: 1px; margin: 16px 0 8px;
-        }
-        .pe-subhead:first-child { margin-top: 0; }
-        .note.warn { border-left: 3px solid rgba(227,195,143,0.6); background: rgba(227,195,143,0.06); }
-        .note.warn b { color: #e3c38f; }
 
         /* ---------- MO / PO 在线编辑 ---------- */
         table.po td.po-cell {
@@ -653,463 +621,411 @@
         .po-ta:disabled { opacity: 0.5; }
         .po-hd-box { margin-top: 14px; }
     </style>
-<base target="_blank">
-</head>
-<body>
+<base target="_blank" data-page-node-id="MdLilM4yNdHhSnFl836W5S">
+<style id="__dm_no_drag_style__">* { -webkit-user-drag: none !important; }</style><style id="__dm_bindable_badge_style__">[data-sp-bindable="database"]{outline:1px dashed #0088ff;outline-offset:2px;border-radius:4px;}[data-sp-bindable="database"] *{pointer-events:none !important;transition:none !important;animation:none !important;}[data-sp-bindable="database"]{transition:none !important;animation:none !important;}</style></head>
+<body data-page-node-id="SaVIAPCT92f0Q5ZpEBtuse" style="">
 
-<div class="noise-overlay"></div>
+<div class="noise-overlay" data-page-node-id="D6QZLZnvT9TDDUxq82tfEE"></div>
 
-<div class="page-header">
-    <div class="page-title">格式转换工具</div>
-    <div class="header-meta">纯本地处理 · 文件不会离开你的设备</div>
+<div class="page-header" data-page-node-id="JaxiMm70IXutvQx1zrDo7K">
+    <div class="page-title" data-page-node-id="kCKsSEUurDoZ8vteJCN1Nj">格式转换工具</div>
+    <div class="header-meta" data-page-node-id="CFjzxEDA0KQ95DXT9ol5Nx" style="font-weight: 400;">纯本地处理 · 文件不会离开你的设备</div>
 </div>
-<div class="header-line"></div>
+<div class="header-line" data-page-node-id="BMqvVLagHr0XRnfKId5wtq"></div>
 
-<div class="tabs">
-    <button class="tab active" data-tab="audio">音频转换</button>
-    <button class="tab" data-tab="image">图片转换</button>
-    <button class="tab" data-tab="sheet">表格转换</button>
-    <button class="tab" data-tab="font">字体转换</button>
-    <button class="tab" data-tab="lang">MO / PO</button>
-    <button class="tab" data-tab="crypto">加解密</button>
-    <button class="tab" data-tab="pe">PE 解析</button>
+<div class="tabs" data-page-node-id="69Qrt1P3xSGaN8ZMMaIjnG">
+    <button class="tab active" data-tab="audio" data-page-node-id="hMnUsn0DEcumfSIMfIAVDb">音频转换</button>
+    <button class="tab" data-tab="image" data-page-node-id="3UAh9jhJvG8rErlV8VkLfn">图片转换</button>
+    <button class="tab" data-tab="sheet" data-page-node-id="6egCSvtHrkBDwRxufGyKYk">表格转换</button>
+    <button class="tab" data-tab="font" data-page-node-id="8FU9JN5TmqD45U1QKMUjT7">字体转换</button>
+    <button class="tab" data-tab="lang" data-page-node-id="QFeGYozf3xXrK8re4EbtnP">MO / PO</button>
+    <button class="tab" data-tab="crypto" data-page-node-id="hx1NnUU4UPloRQLAchSoze">加解密</button>
 </div>
 
 <!-- ==================== 音频 ==================== -->
-<section class="panel" id="panel-audio">
-    <div class="panel-card glass">
-        <div class="drop-zone" id="audioDrop">
-            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
-            <div class="dz-title">拖拽音频文件到这里，或点击选择</div>
-            <div class="dz-sub">支持 mp3 / wav / ogg / flac / m4a / aac / opus / webm 等浏览器可解码格式<br>也可直接拖入 mp4 / mov / mkv / webm 等视频，自动提取其中的音轨<br>可一次选择多个文件</div>
-            <input type="file" id="audioInput" accept="audio/*,video/*,.mp3,.wav,.ogg,.flac,.m4a,.aac,.opus,.mp4,.m4v,.mov,.mkv,.webm" multiple hidden>
+<section class="panel" id="panel-audio" data-page-node-id="1t6R2ObSwhhwgGB5dxE2rv">
+    <div class="panel-card glass" data-page-node-id="zh3COtwW7C0YvICtG5tm68">
+        <div class="drop-zone" id="audioDrop" data-page-node-id="Iv5dgSUoKkaoCIp3xwnSyP">
+            <svg class="dz-icon" viewBox="0 0 24 24" data-page-node-id="blcDrVydMIZ6kz2gRZhn3y"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z" data-page-node-id="lIvILjbrFI8vF0Nk4rAxkn"></path></svg>
+            <div class="dz-title" data-page-node-id="ZKIGXHbzZAjt7VRLfzh1nX">拖拽音频文件到这里，或点击选择</div>
+            <div class="dz-sub" data-page-node-id="R4EzMhyxEFlyX1U28jdrGD">支持 mp3 / wav / ogg / flac / m4a / aac / opus / webm 等浏览器可解码格式<br data-page-node-id="bFfzcrBETHiIrzaLvP2VuF">也可直接拖入 mp4 / mov / mkv / webm 等视频，自动提取其中的音轨<br data-page-node-id="AC4jCNpTnzEFrmZSsEjwsZ">可一次选择多个文件</div>
+            <input type="file" id="audioInput" accept="audio/*,video/*,.mp3,.wav,.ogg,.flac,.m4a,.aac,.opus,.mp4,.m4v,.mov,.mkv,.webm" multiple="" hidden="" data-page-node-id="LkZFpNWhLyE4srof2LlU8s">
         </div>
 
-        <div class="file-list" id="audioFiles"></div>
+        <div class="file-list" id="audioFiles" data-page-node-id="Rb8licG3dYsBfF0vefC3uw"></div>
 
-        <div class="opt-row">
-            <span class="opt-label">输出格式</span>
-            <div class="seg" id="audioFormat">
-                <button class="seg-btn" data-v="wav">WAV</button>
-                <button class="seg-btn active" data-v="mp3">MP3</button>
-                <button class="seg-btn" data-v="ogg">OGG</button>
+        <div class="opt-row" data-page-node-id="p5EpUUqEmHSIksb76ZzOsH">
+            <span class="opt-label" data-page-node-id="SAAjzPw5s1Ep3wncnfHehn">输出格式</span>
+            <div class="seg" id="audioFormat" data-page-node-id="IlbGEBYuNXajF7t2IhxFOp">
+                <button class="seg-btn" data-v="wav" data-page-node-id="KLZ8R85M7ESr9YEeadMeqT">WAV</button>
+                <button class="seg-btn active" data-v="mp3" data-page-node-id="bGSIqMLrQLLFllq5oJUV6E">MP3</button>
+                <button class="seg-btn" data-v="ogg" data-page-node-id="jeNIcCyNt60PRqWm057e9f">OGG</button>
             </div>
         </div>
 
-        <div class="opt-row" id="audioOptMp3">
-            <span class="opt-label">MP3 比特率</span>
-            <div class="seg" id="audioBitrate">
-                <button class="seg-btn" data-v="128">128 kbps</button>
-                <button class="seg-btn active" data-v="192">192 kbps</button>
-                <button class="seg-btn" data-v="256">256 kbps</button>
-                <button class="seg-btn" data-v="320">320 kbps</button>
+        <div class="opt-row" id="audioOptMp3" data-page-node-id="iRJyxdI9kJKuIBPkL8fkrH">
+            <span class="opt-label" data-page-node-id="EsQSgpaW0MuwzSLVrwlj36">MP3 比特率</span>
+            <div class="seg" id="audioBitrate" data-page-node-id="HS1RN8P0HSb7c65WaKNrJP">
+                <button class="seg-btn" data-v="128" data-page-node-id="VrJ3Jhe6Jm9A1f8kZBAJxM">128 kbps</button>
+                <button class="seg-btn active" data-v="192" data-page-node-id="BTvvUddIET6lSBZBUT4JJ2">192 kbps</button>
+                <button class="seg-btn" data-v="256" data-page-node-id="ApgIFgESuIWXvxcFZnUthE">256 kbps</button>
+                <button class="seg-btn" data-v="320" data-page-node-id="HQVFFtfErpG1Fs8nIEBTmr">320 kbps</button>
             </div>
         </div>
 
-        <div class="opt-row" id="audioOptOgg" hidden>
-            <span class="opt-label">OGG 质量</span>
-            <div class="seg" id="audioQuality">
-                <button class="seg-btn" data-v="0.3">低 · 约96k</button>
-                <button class="seg-btn active" data-v="0.5">中 · 约160k</button>
-                <button class="seg-btn" data-v="0.7">高 · 约224k</button>
-                <button class="seg-btn" data-v="0.9">极高 · 约320k</button>
+        <div class="opt-row" id="audioOptOgg" hidden="" data-page-node-id="jNTQPKEi2t8F5FPiGhxbv3">
+            <span class="opt-label" data-page-node-id="LG382m7e9AujvKQmZsUcHa">OGG 质量</span>
+            <div class="seg" id="audioQuality" data-page-node-id="VCrcUo1yon0rY9e16kErh2">
+                <button class="seg-btn" data-v="0.3" data-page-node-id="W2Ra9DEQHCPpqRgIaR0DAZ">低 · 约96k</button>
+                <button class="seg-btn active" data-v="0.5" data-page-node-id="Z5DsTi6lSuIH0uEjHjJBCs">中 · 约160k</button>
+                <button class="seg-btn" data-v="0.7" data-page-node-id="x8VGvYwMxtANvASxia4W0Z">高 · 约224k</button>
+                <button class="seg-btn" data-v="0.9" data-page-node-id="U2swOgV5WFGdiTH2Gb1dPU">极高 · 约320k</button>
             </div>
         </div>
 
-        <div class="opt-row" id="audioOptWav" hidden>
-            <span class="opt-label">WAV 位深</span>
-            <div class="seg" id="audioDepth">
-                <button class="seg-btn active" data-v="16">16 bit</button>
-                <button class="seg-btn" data-v="24">24 bit</button>
+        <div class="opt-row" id="audioOptWav" hidden="" data-page-node-id="u2GiKBCnHu9xLqBpt4Mnt5">
+            <span class="opt-label" data-page-node-id="FRpOEwlHpzvcsFgTufgixc">WAV 位深</span>
+            <div class="seg" id="audioDepth" data-page-node-id="dmavi58NYGPOvM7QMhXvPO">
+                <button class="seg-btn active" data-v="16" data-page-node-id="1lhDP6lrnCeHg4EKRGJRUD">16 bit</button>
+                <button class="seg-btn" data-v="24" data-page-node-id="HIi3Hl2FvezxEMmLul0a3o">24 bit</button>
             </div>
         </div>
 
-        <button class="run-btn" id="audioRun">开 始 转 换</button>
-        <div class="status" id="audioStatus"></div>
+        <button class="run-btn" id="audioRun" data-page-node-id="Zlv1Irpk6N3my05GFAusYm">开 始 转 换</button>
+        <div class="status" id="audioStatus" data-page-node-id="fGyciYUIE7I3CyhJBFRqSa"></div>
 
-        <div class="note">
-            <b>说明</b><br>
-            · 解码由浏览器原生完成，能播就能转；编码由 lamejs（MP3）与 libvorbis（OGG）在页面内完成<br>
-            · 拖入 MP4 / MOV 等视频时会只取其中的音轨，视频画面与时长无关的部分会被丢弃<br>
-            · MP3 / OGG 是纯 JS 编码器，首次切换格式时需下载解码库（OGG 约 2 MB），之后同一页面内不再重复下载<br>
-            · 超过两声道的音源在转 MP3 / OGG 时会取前两声道；WAV 保留全部声道<br>
+        <div class="note" data-page-node-id="X7cnnJpg5E04xphRz1VRpP">
+            <b data-page-node-id="bFE79DXuUYpdP2ws8nW4Ut">说明</b><br data-page-node-id="Gg2vSRNEdvDhPgKuXqBNGm">
+            · 解码由浏览器原生完成，能播就能转；编码由 lamejs（MP3）与 libvorbis（OGG）在页面内完成<br data-page-node-id="mb3kSA4Ni2rWVWfTr86E23">
+            · 拖入 MP4 / MOV 等视频时会只取其中的音轨，视频画面与时长无关的部分会被丢弃<br data-page-node-id="EwoQFM5w414bAdbcbVHxzr">
+            · MP3 / OGG 是纯 JS 编码器，首次切换格式时需下载解码库（OGG 约 2 MB），之后同一页面内不再重复下载<br data-page-node-id="S9DlqGKLjKXRUJJbNbw5VC">
+            · 超过两声道的音源在转 MP3 / OGG 时会取前两声道；WAV 保留全部声道<br data-page-node-id="hAZUk1DGFQfI7TFMBdKfln">
             · 有损转无损（如 mp3 → wav）不会恢复丢失的细节，只是换容器
         </div>
     </div>
 </section>
 
 <!-- ==================== 图片 ==================== -->
-<section class="panel" id="panel-image" hidden>
-    <div class="panel-card glass">
-        <div class="drop-zone" id="imageDrop">
-            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-            <div class="dz-title">拖拽图片文件到这里，或点击选择</div>
-            <div class="dz-sub">支持 png / jpg / jpeg / webp / gif / bmp / ico / avif 等浏览器可解码格式<br>任意一种都能转成 JPG，可一次选择多个文件（GIF 只取第一帧）</div>
-            <input type="file" id="imageInput" accept="image/*" multiple hidden>
+<section class="panel" id="panel-image" hidden="" data-page-node-id="KcWqvXFpFFK1VIjvgKdjF8">
+    <div class="panel-card glass" data-page-node-id="fuEnMeqTDeErzcjYQ58KZE">
+        <div class="drop-zone" id="imageDrop" data-page-node-id="6Bt2tUxCiVcGEZBcuyfy6o">
+            <svg class="dz-icon" viewBox="0 0 24 24" data-page-node-id="jpuKLp98xKCb5iE8pJznQI"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" data-page-node-id="AT6XI4UVWT3GjzRurstGFh"></path></svg>
+            <div class="dz-title" data-page-node-id="My1tuY4qUC79jTq1neKrbM">拖拽图片文件到这里，或点击选择</div>
+            <div class="dz-sub" data-page-node-id="Le7EFOu0PUOFmCnzb1TXE4">支持 png / jpg / jpeg / webp / gif / bmp / ico / avif 等浏览器可解码格式<br data-page-node-id="fFQ8m1YkyPLKMKzboQQHvs">任意一种都能转成 JPG，可一次选择多个文件（GIF 只取第一帧）</div>
+            <input type="file" id="imageInput" accept="image/*" multiple="" hidden="" data-page-node-id="xMEYlunpXe2pULHp47Z6fu">
         </div>
 
-        <div class="file-list" id="imageFiles"></div>
+        <div class="file-list" id="imageFiles" data-page-node-id="AfBQ3dIkVgYt04ntKqeclm"></div>
 
-        <div class="opt-row">
-            <span class="opt-label">输出格式</span>
-            <div class="seg" id="imageFormat">
-                <button class="seg-btn active" data-v="png">PNG</button>
-                <button class="seg-btn" data-v="jpeg">JPG / JPEG</button>
-                <button class="seg-btn" data-v="webp">WEBP</button>
-                <button class="seg-btn" data-v="bmp">BMP</button>
-                <button class="seg-btn" data-v="ico">ICO</button>
+        <div class="opt-row" data-page-node-id="2atf4SCE5ACtzR6un1a28J">
+            <span class="opt-label" data-page-node-id="pZa3IEDXwqPdfD4WrAJjRG">输出格式</span>
+            <div class="seg" id="imageFormat" data-page-node-id="dFBbFIiWEz7fQxDKWGcB8u">
+                <button class="seg-btn active" data-v="png" data-page-node-id="tH1MgONnf3jcVJFj2onD87">PNG</button>
+                <button class="seg-btn" data-v="jpeg" data-page-node-id="oN75U3mA6qc23YE8TXOtGe">JPG / JPEG</button>
+                <button class="seg-btn" data-v="webp" data-page-node-id="CjwLBiRg8jkc6hL43tlByW">WEBP</button>
+                <button class="seg-btn" data-v="bmp" data-page-node-id="ueUNVd68PBaImbC9u35SRL">BMP</button>
+                <button class="seg-btn" data-v="ico" data-page-node-id="bkCPCCJNLQhRxiVuVaBg96">ICO</button>
             </div>
         </div>
 
-        <div class="opt-row" id="imgOptQuality">
-            <span class="opt-label">编码质量</span>
-            <input type="range" id="imgQuality" min="30" max="100" value="92">
-            <span class="range-val" id="imgQualityVal">92</span>
+        <div class="opt-row" id="imgOptQuality" data-page-node-id="1EuivtGZ4W5QZrEvAgejXz">
+            <span class="opt-label" data-page-node-id="3DBaHDg23rz7WCRNg99aAd">编码质量</span>
+            <input type="range" id="imgQuality" min="30" max="100" value="92" data-page-node-id="ksazH8I27ixAg3iWjufE9H">
+            <span class="range-val" id="imgQualityVal" data-page-node-id="FJ6FfSAjHF5M0PHyhvEB10">92</span>
         </div>
 
-        <div class="opt-row" id="imgOptBg" hidden>
-            <span class="opt-label">透明填充</span>
-            <div class="seg" id="imgBg">
-                <button class="seg-btn active" data-v="#ffffff">白色</button>
-                <button class="seg-btn" data-v="#000000">黑色</button>
+        <div class="opt-row" id="imgOptBg" hidden="" data-page-node-id="AXd0WA2qWLOwy3bHqvv5Lt">
+            <span class="opt-label" data-page-node-id="FmVOQc2YTsBDRoM0i3fKyY">透明填充</span>
+            <div class="seg" id="imgBg" data-page-node-id="4zot8UM0FJCVoC1JujW1L7">
+                <button class="seg-btn active" data-v="#ffffff" data-page-node-id="MaUeiAQc4UWCEi9LC6SxpT">白色</button>
+                <button class="seg-btn" data-v="#000000" data-page-node-id="KgwDosLlypnez7wUWIVKDQ">黑色</button>
             </div>
         </div>
 
-        <div class="opt-row" id="imgOptIco" hidden>
-            <span class="opt-label">ICO 尺寸</span>
-            <select class="sel" id="icoSize">
-                <option value="256" selected>256 × 256</option>
-                <option value="128">128 × 128</option>
-                <option value="64">64 × 64</option>
-                <option value="48">48 × 48</option>
-                <option value="32">32 × 32</option>
-                <option value="16">16 × 16</option>
+        <div class="opt-row" id="imgOptIco" hidden="" data-page-node-id="kCezVzhWYKbJXCiC7Lso1w">
+            <span class="opt-label" data-page-node-id="ol9EV4KHlzE4hOD6A8Sv45">ICO 尺寸</span>
+            <select class="sel" id="icoSize" data-page-node-id="ie6ZZQPhgMxHfdmNk74lFq">
+                <option value="256" selected="" data-page-node-id="NDw6h5fIdRWX68Qdrj4QIP">256 × 256</option>
+                <option value="128" data-page-node-id="KeKxF2GL6esA0zoqppK8hb">128 × 128</option>
+                <option value="64" data-page-node-id="PGiOmTm9AtGDENHhyIqKxc">64 × 64</option>
+                <option value="48" data-page-node-id="gqKUsv02Aa6GMdtrV6Drxc">48 × 48</option>
+                <option value="32" data-page-node-id="RE7XlFIkegStM88PUc0Bst">32 × 32</option>
+                <option value="16" data-page-node-id="xHGZx9KVhK0Fh10nZZ2hNm">16 × 16</option>
             </select>
         </div>
 
-        <div class="opt-row">
-            <span class="opt-label">限制最长边</span>
-            <select class="sel" id="imgMax">
-                <option value="0" selected>保持原始尺寸</option>
-                <option value="4096">4096 px</option>
-                <option value="2048">2048 px</option>
-                <option value="1024">1024 px</option>
-                <option value="512">512 px</option>
-                <option value="256">256 px</option>
+        <div class="opt-row" data-page-node-id="nTjpg1qobgdFOps8l48mXN">
+            <span class="opt-label" data-page-node-id="mVWANYKHskonVIyujiZY0F">限制最长边</span>
+            <select class="sel" id="imgMax" data-page-node-id="2N1u6BUeyZ3ZDDBtDsD3A4">
+                <option value="0" selected="" data-page-node-id="efmIcSVyTWe2QqsjG9rUUx">保持原始尺寸</option>
+                <option value="4096" data-page-node-id="qm4JGnWHGPoKRNmOznlraU">4096 px</option>
+                <option value="2048" data-page-node-id="fGxQC4gyzmEIHqjrAL0pHq">2048 px</option>
+                <option value="1024" data-page-node-id="ip4rdkPFR7sTFKwp2HUsx5">1024 px</option>
+                <option value="512" data-page-node-id="7w5lLSSyoSFrrQ7D12hNPu">512 px</option>
+                <option value="256" data-page-node-id="wN51wt8UVdORoNEJR7m4ww">256 px</option>
             </select>
         </div>
 
-        <button class="run-btn" id="imageRun">开 始 转 换</button>
-        <div class="status" id="imageStatus"></div>
+        <button class="run-btn" id="imageRun" data-page-node-id="sfOjFke5alRFSZMVlbgGPy">开 始 转 换</button>
+        <div class="status" id="imageStatus" data-page-node-id="xYackzsoQ8cFOTG69bGQwW"></div>
 
-        <div class="note">
-            <b>说明</b><br>
-            · PNG / JPG / WEBP 走浏览器原生编码器；BMP 与 ICO 由页面自行拼装字节<br>
-            · 输出 JPG 时文件后缀为 .jpg；透明区域会先用上方选择的颜色铺底，质量滑杆只在 JPG / WEBP 下生效<br>
-            · JPEG 不支持透明，透明区域会按上方选择的颜色填充；BMP 输出为 32 位带透明通道<br>
-            · ICO 内嵌 PNG 数据，需 Windows Vista 及以后的系统才能正确识别<br>
+        <div class="note" data-page-node-id="nA2p8Xm8OVG35sMs4EWunO">
+            <b data-page-node-id="elAmrGyYYYBgSY49OqExyl">说明</b><br data-page-node-id="PjSrC9HBRg7wxX6CaXH20a">
+            · PNG / JPG / WEBP 走浏览器原生编码器；BMP 与 ICO 由页面自行拼装字节<br data-page-node-id="uKNBtkRFW2wQ8s6OljoquD">
+            · 输出 JPG 时文件后缀为 .jpg；透明区域会先用上方选择的颜色铺底，质量滑杆只在 JPG / WEBP 下生效<br data-page-node-id="7vNd1f2quVWHnBVoaaSAub">
+            · JPEG 不支持透明，透明区域会按上方选择的颜色填充；BMP 输出为 32 位带透明通道<br data-page-node-id="eti6jh5nFYUIUby6ntvV4D">
+            · ICO 内嵌 PNG 数据，需 Windows Vista 及以后的系统才能正确识别<br data-page-node-id="GXxWtgBpKGWHvJhtPwtt0A">
             · 画布上限约 16384 px，超长图请先限制尺寸；EXIF 方向由浏览器自动处理
         </div>
     </div>
 </section>
 
 <!-- ==================== 表格 ==================== -->
-<section class="panel" id="panel-sheet" hidden>
-    <div class="panel-card glass">
-        <div class="drop-zone" id="sheetDrop">
-            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm2 2v14h14V5H5zm2 3h4v2H7V8zm0 4h10v2H7v-2zm0 4h10v2H7v-2zm6-8h4v2h-4V8z"/></svg>
-            <div class="dz-title">拖拽 .xlsx 或 .csv 文件到这里，或点击选择</div>
-            <div class="dz-sub">Excel 工作簿与 CSV 文本互转，可一次选择多个文件<br>中文、含逗号 / 引号 / 换行的内容、日期与数字都会按原样保留</div>
-            <input type="file" id="sheetInput" accept=".xlsx,.xlsm,.csv,.tsv,.txt" multiple hidden>
+<section class="panel" id="panel-sheet" hidden="" data-page-node-id="LCQ5jR2pKCxkFGVSqkeOF2">
+    <div class="panel-card glass" data-page-node-id="XonA9sQEDAeO38ATEwYoL1">
+        <div class="drop-zone" id="sheetDrop" data-page-node-id="sKk4Qm25l7VH66ubbMXEnn">
+            <svg class="dz-icon" viewBox="0 0 24 24" data-page-node-id="bCvNORTbcotiiR0okPlOWj"><path d="M3 3h18v18H3V3zm2 2v14h14V5H5zm2 3h4v2H7V8zm0 4h10v2H7v-2zm0 4h10v2H7v-2zm6-8h4v2h-4V8z" data-page-node-id="XbsLTMRkSDyxrCLSYwdhgB"></path></svg>
+            <div class="dz-title" data-page-node-id="h7KDFbeJqB6RMEK0BWBYIi">拖拽 .xlsx 或 .csv 文件到这里，或点击选择</div>
+            <div class="dz-sub" data-page-node-id="S580qmHJMWoyO4h9ZhtMGT">Excel 工作簿与 CSV 文本互转，可一次选择多个文件<br data-page-node-id="68hlISID1ofaYIzzwzZDJl">中文、含逗号 / 引号 / 换行的内容、日期与数字都会按原样保留</div>
+            <input type="file" id="sheetInput" accept=".xlsx,.xlsm,.csv,.tsv,.txt" multiple="" hidden="" data-page-node-id="v62gk2TIJoyRMDU0E93F38">
         </div>
 
-        <div class="file-list" id="sheetFiles"></div>
+        <div class="file-list" id="sheetFiles" data-page-node-id="Uyjfb8ZFtVdHP4Nv2DEqry"></div>
 
-        <div class="opt-row">
-            <span class="opt-label">转换方向</span>
-            <div class="seg" id="sheetDir">
-                <button class="seg-btn active" data-v="x2c">XLSX → CSV</button>
-                <button class="seg-btn" data-v="c2x">CSV → XLSX</button>
+        <div class="opt-row" data-page-node-id="eI1BjaHEwWlhXUYCepC3ry">
+            <span class="opt-label" data-page-node-id="XTdAtYK2fxI60Z7oMQdclH">转换方向</span>
+            <div class="seg" id="sheetDir" data-page-node-id="08mMwHfUEwGLDOlo7I9Oqa">
+                <button class="seg-btn active" data-v="x2c" data-page-node-id="n3aRWI8GtDZpdojxFXBo3g">XLSX → CSV</button>
+                <button class="seg-btn" data-v="c2x" data-page-node-id="nBJUwvezocELGEWj1gALsU">CSV → XLSX</button>
             </div>
         </div>
 
-        <div class="opt-row" id="optX2c">
-            <span class="opt-label">工作表</span>
-            <div class="seg" id="sheetScope">
-                <button class="seg-btn active" data-v="first">仅第一个</button>
-                <button class="seg-btn" data-v="all">每个工作表一个 CSV</button>
+        <div class="opt-row" id="optX2c" data-page-node-id="Akt8kURvNvt8W2amNl719x">
+            <span class="opt-label" data-page-node-id="qeZPaII08lRo3XohOJkkFV">工作表</span>
+            <div class="seg" id="sheetScope" data-page-node-id="NaPLZec0pdEeSHc0nJhRot">
+                <button class="seg-btn active" data-v="first" data-page-node-id="yVH0Fz9iSrIQ8ozeNs0Hb8">仅第一个</button>
+                <button class="seg-btn" data-v="all" data-page-node-id="z11KWmDrQFiQc6ZOj4WRkH">每个工作表一个 CSV</button>
             </div>
-            <label class="chk"><input type="checkbox" id="csvBomChk" checked> 写入 UTF-8 BOM（Excel 双击不乱码）</label>
+            <label class="chk" data-page-node-id="VxLgcM6CnqlVnzdD5RK3Bo"><input type="checkbox" id="csvBomChk" checked="" data-page-node-id="fimBhjtetAtyh2rEzcNvlO"> 写入 UTF-8 BOM（Excel 双击不乱码）</label>
         </div>
 
-        <div class="opt-row" id="optC2x" hidden>
-            <span class="opt-label">输出方式</span>
-            <div class="seg" id="csvMerge">
-                <button class="seg-btn active" data-v="merge">合并为一个工作簿</button>
-                <button class="seg-btn" data-v="single">每个 CSV 一个 XLSX</button>
+        <div class="opt-row" id="optC2x" hidden="" data-page-node-id="H3NlckhEtFXZCqEVE1HwZ2">
+            <span class="opt-label" data-page-node-id="Wn0L728siF86ghtXBIkyNg">输出方式</span>
+            <div class="seg" id="csvMerge" data-page-node-id="V82hjUbBCOcFhWhg0FTEJ6">
+                <button class="seg-btn active" data-v="merge" data-page-node-id="iyO9YTDWO65ABxgb4Hd6Kf">合并为一个工作簿</button>
+                <button class="seg-btn" data-v="single" data-page-node-id="WwNe5g2C1d57NCM7gGVnlQ">每个 CSV 一个 XLSX</button>
             </div>
-            <label class="chk"><input type="checkbox" id="csvNumChk" checked> 数字识别为数值</label>
+            <label class="chk" data-page-node-id="2vcPE2ThuKdsNj9VSr2X9r"><input type="checkbox" id="csvNumChk" checked="" data-page-node-id="HvtoSmmGNxAFlPzfxX0yMO"> 数字识别为数值</label>
         </div>
 
-        <div class="opt-row">
-            <span class="opt-label">CSV 分隔符</span>
-            <div class="seg" id="csvDelim">
-                <button class="seg-btn active" data-v="auto">自动识别</button>
-                <button class="seg-btn" data-v=",">逗号 ,</button>
-                <button class="seg-btn" data-v=";">分号 ;</button>
-                <button class="seg-btn" data-v="tab">制表符</button>
-                <button class="seg-btn" data-v="|">竖线 |</button>
-            </div>
-        </div>
-
-        <div class="opt-row">
-            <span class="opt-label">CSV 编码</span>
-            <div class="seg" id="csvEnc">
-                <button class="seg-btn active" data-v="utf-8">UTF-8</button>
-                <button class="seg-btn" data-v="gbk">GBK / 国标</button>
+        <div class="opt-row" data-page-node-id="hQv4hnjLcy6fl8p45lfMtI">
+            <span class="opt-label" data-page-node-id="C7DsVLBi9Zw62RRZrKu8LI">CSV 分隔符</span>
+            <div class="seg" id="csvDelim" data-page-node-id="rPjCXy8tydsByDuZSTE5JR">
+                <button class="seg-btn active" data-v="auto" data-page-node-id="rIBfzVLM3Rb4NRz56vOYTp">自动识别</button>
+                <button class="seg-btn" data-v="," data-page-node-id="iRsWsC6UIPnJSBXf6CQCV1">逗号 ,</button>
+                <button class="seg-btn" data-v=";" data-page-node-id="CEdD3kVYEjdxqN9daWsVJw">分号 ;</button>
+                <button class="seg-btn" data-v="tab" data-page-node-id="BTql6UHFQnnsIDDVH0dhaP">制表符</button>
+                <button class="seg-btn" data-v="|" data-page-node-id="WaZxh061eGUzh1DOo41bcL">竖线 |</button>
             </div>
         </div>
 
-        <button class="run-btn" id="sheetRun">开 始 转 换</button>
-        <div class="status" id="sheetStatus"></div>
+        <div class="opt-row" data-page-node-id="yiOnOGVr4oYBiF6BA4H6Ku">
+            <span class="opt-label" data-page-node-id="qlDbKRXUUD8gGdo5bOgnCy">CSV 编码</span>
+            <div class="seg" id="csvEnc" data-page-node-id="7bvnbcNVYJ2DRTz7fDF9ww">
+                <button class="seg-btn active" data-v="utf-8" data-page-node-id="LJTNzu6M0w0aWD3QPDiC44">UTF-8</button>
+                <button class="seg-btn" data-v="gbk" data-page-node-id="ddaAP43usysgsWXUNP9AtS">GBK / 国标</button>
+            </div>
+        </div>
 
-        <div class="note">
-            <b>说明</b><br>
-            · 全部由页面自己读写 XML 与 CSV，不依赖外部库，也不上传任何数据<br>
-            · XLSX → CSV 会按单元格的数字格式把日期还原成 <span class="mono">2024-05-01</span> 这样的文本<br>
-            · CSV → XLSX 默认把看起来是数字的内容写成数值，取消勾选则全部按文本写入<br>
+        <button class="run-btn" id="sheetRun" data-page-node-id="4g5vDN95DCGE3ZsYej6pqb">开 始 转 换</button>
+        <div class="status" id="sheetStatus" data-page-node-id="8K8aQFD4JoDpdP50abthYE"></div>
+
+        <div class="note" data-page-node-id="nKwwe05bk9mmHXoZaQgvM7">
+            <b data-page-node-id="cTTW53oa1nHatCdzUWXYir">说明</b><br data-page-node-id="nvx2oScKfdEPbgGCHyyjrp">
+            · 全部由页面自己读写 XML 与 CSV，不依赖外部库，也不上传任何数据<br data-page-node-id="WAhzOJBWLqHeiPe163G3Ak">
+            · XLSX → CSV 会按单元格的数字格式把日期还原成 <span class="mono" data-page-node-id="bVJvbS0A0IWMC1zk6GpaS2">2024-05-01</span> 这样的文本<br data-page-node-id="Zl13opExPBkejQPvp8znuI">
+            · CSV → XLSX 默认把看起来是数字的内容写成数值，取消勾选则全部按文本写入<br data-page-node-id="MHBedaiRD21WgxlYUqkmYr">
             · 单元格里的公式只导出计算结果，图表、图片、批注与条件格式不会保留
         </div>
     </div>
 </section>
 
 <!-- ==================== 字体 ==================== -->
-<section class="panel" id="panel-font" hidden>
-    <div class="panel-card glass">
-        <div class="drop-zone" id="fontDrop">
-            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M9 4v3h5.5v13h3V7H23V4H9zM6 4H3v3h3v13h3V7h3V4H6z"/></svg>
-            <div class="dz-title">拖拽字体文件到这里，或点击选择</div>
-            <div class="dz-sub">支持 TTF / OTF / WOFF2 三种格式互转，可一次选择多个文件<br>源文件格式自动识别，只需选择想要的输出格式</div>
-            <input type="file" id="fontInput" accept=".ttf,.otf,.woff2,.ttc,.otc" multiple hidden>
+<section class="panel" id="panel-font" hidden="" data-page-node-id="8sM1FcSIvdvFdExzpcHF6I">
+    <div class="panel-card glass" data-page-node-id="3UnoEYPGdoOjJpFc4o1AFs">
+        <div class="drop-zone" id="fontDrop" data-page-node-id="u1OU7UPNNADjCOF4YbhXR5">
+            <svg class="dz-icon" viewBox="0 0 24 24" data-page-node-id="Wm9OZaajUllZkkKY9k9eyZ"><path d="M9 4v3h5.5v13h3V7H23V4H9zM6 4H3v3h3v13h3V7h3V4H6z" data-page-node-id="PfpmdoOTQwoeHMW9KjKhuy"></path></svg>
+            <div class="dz-title" data-page-node-id="IWu9H1penn2NKWebo1TgJZ">拖拽字体文件到这里，或点击选择</div>
+            <div class="dz-sub" data-page-node-id="1nADZyPzdLP3TSiYqQPF5F">支持 TTF / OTF / WOFF2 三种格式互转，可一次选择多个文件<br data-page-node-id="aLQRzCScj9U8Pfr1CjStgG">源文件格式自动识别，只需选择想要的输出格式</div>
+            <input type="file" id="fontInput" accept=".ttf,.otf,.woff2,.ttc,.otc" multiple="" hidden="" data-page-node-id="RF7cjy5PC4ro2Ncjk3LeL9">
         </div>
 
-        <div class="file-list" id="fontFiles"></div>
+        <div class="file-list" id="fontFiles" data-page-node-id="A05fro5mc4Eu9bCll0jmk5"></div>
 
-        <div class="opt-row">
-            <span class="opt-label">输出格式</span>
-            <div class="seg" id="fontTarget">
-                <button class="seg-btn active" data-v="woff2">WOFF2</button>
-                <button class="seg-btn" data-v="ttf">TTF</button>
-                <button class="seg-btn" data-v="otf">OTF</button>
+        <div class="opt-row" data-page-node-id="Sj9pl3lNlU0wDWYCXUsKys">
+            <span class="opt-label" data-page-node-id="66gf92aJKRM8Ac8HELzVnu">输出格式</span>
+            <div class="seg" id="fontTarget" data-page-node-id="RIcACfEpYaOuT5CbGzEC6j">
+                <button class="seg-btn active" data-v="woff2" data-page-node-id="185WgPcuIQY0LoWMdGBuYT">WOFF2</button>
+                <button class="seg-btn" data-v="ttf" data-page-node-id="CmEN1IKf8bWIsLA1HZdosR">TTF</button>
+                <button class="seg-btn" data-v="otf" data-page-node-id="vhFxo7YNE1GYLGpZAdMgQj">OTF</button>
             </div>
         </div>
 
-        <button class="run-btn" id="fontRun">开 始 转 换</button>
-        <div class="status" id="fontStatus"></div>
+        <button class="run-btn" id="fontRun" data-page-node-id="of1DPk8QYV7tqISgmHXaox">开 始 转 换</button>
+        <div class="status" id="fontStatus" data-page-node-id="mqNm5D8FKclriEWrEM7EGY"></div>
 
-        <div class="note">
-            <b>说明</b><br>
-            · WOFF2 压缩 / 解压用 Google woff2 的 wasm 版本，OTF → TTF 用 fonteditor-core，TTF → OTF 由页面自行拼装 CFF 轮廓<br>
-            · 首次使用某个方向时会按需下载对应引擎（各几百 KB），同一页面内不会重复下载<br>
-            · OTF 与 TTF 的轮廓类型不同（三次贝塞尔 ↔ 二次曲线），来回转换会有极小的取整误差，且不会恢复原有的 hinting 指令<br>
+        <div class="note" data-page-node-id="BKK3NGSPXiDytaaH50VJGY">
+            <b data-page-node-id="uSk0OOVxHdusxsIGwIgpmC">说明</b><br data-page-node-id="6Eqj3JpWMRRGjv5DWBE3eR">
+            · WOFF2 压缩 / 解压用 Google woff2 的 wasm 版本，OTF → TTF 用 fonteditor-core，TTF → OTF 由页面自行拼装 CFF 轮廓<br data-page-node-id="U1VazGGVKKzeoEjprgLqBd">
+            · 首次使用某个方向时会按需下载对应引擎（各几百 KB），同一页面内不会重复下载<br data-page-node-id="0UzJsqln2hsGAZgsQnGnzr">
+            · OTF 与 TTF 的轮廓类型不同（三次贝塞尔 ↔ 二次曲线），来回转换会有极小的取整误差，且不会恢复原有的 hinting 指令<br data-page-node-id="SZWAJrCjDamUg76dT9IRoa">
             · 转换只处理字形轮廓与基础度量，可变字体（VF）与位图字体请先用专业工具处理
         </div>
     </div>
 </section>
 
 <!-- ==================== MO / PO ==================== -->
-<section class="panel" id="panel-lang" hidden>
-    <div class="panel-card glass">
-        <div class="opt-row" style="margin-top:0;padding-top:0;border-top:none">
-            <span class="opt-label">转换方向</span>
-            <div class="seg" id="langMode">
-                <button class="seg-btn active" data-v="mo2po">MO → PO（反编译）</button>
-                <button class="seg-btn" data-v="po2mo">PO → MO（编译）</button>
-                <button class="seg-btn" data-v="edit">编辑 / 查看</button>
+<section class="panel" id="panel-lang" hidden="" data-page-node-id="GrQLqkeYCAECrvPRycEqiy">
+    <div class="panel-card glass" data-page-node-id="Wq4ymSFghAUTcFfLVhK5B0">
+        <div class="opt-row" style="margin-top:0;padding-top:0;border-top:none" data-page-node-id="JZVizfT3bpbwvrFN3sgH43">
+            <span class="opt-label" data-page-node-id="FF30pCYfe2Zq9QleAHXKIi">转换方向</span>
+            <div class="seg" id="langMode" data-page-node-id="MHElIp4tz0XAol8sHLszox">
+                <button class="seg-btn active" data-v="mo2po" data-page-node-id="7O7819dWhuNDf2TlRHGKuz">MO → PO（反编译）</button>
+                <button class="seg-btn" data-v="po2mo" data-page-node-id="K1bhm4c7gJ0hPOJ4TZTHgX">PO → MO（编译）</button>
+                <button class="seg-btn" data-v="edit" data-page-node-id="FqZc6G5K1jmBGozuCUxnjP">编辑 / 查看</button>
             </div>
         </div>
 
-        <div class="drop-zone" id="langDrop" style="margin-top:20px">
-            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M14 6V4h-4v2H5v2h14V6h-5zm-1 4h-2v2H5v2h6v2h2v-2h6v-2h-6v-2zm-3 8v-2h4v2h-4z"/></svg>
-            <div class="dz-title" id="langDropTitle">拖拽 .mo 文件到这里，或点击选择</div>
-            <div class="dz-sub" id="langDropSub">编译后的二进制语言包 → 可编辑的 gettext 源文件<br>可一次选择多个文件</div>
-            <input type="file" id="langInput" accept=".mo,.po" multiple hidden>
+        <div class="drop-zone" id="langDrop" style="margin-top:20px" data-page-node-id="FCFTKkiNVBI52HQXM70SIH">
+            <svg class="dz-icon" viewBox="0 0 24 24" data-page-node-id="yOXaIcAvQdBFlMoVBXTyDT"><path d="M14 6V4h-4v2H5v2h14V6h-5zm-1 4h-2v2H5v2h6v2h2v-2h6v-2h-6v-2zm-3 8v-2h4v2h-4z" data-page-node-id="eGFpCBZ4ZGlAx2fwLeCIPf"></path></svg>
+            <div class="dz-title" id="langDropTitle" data-page-node-id="akbCG7FsmGNYKX1el7ivnC">拖拽 .mo 文件到这里，或点击选择</div>
+            <div class="dz-sub" id="langDropSub" data-page-node-id="S2rAMfHcayvXH02HSpnj7M">编译后的二进制语言包 → 可编辑的 gettext 源文件<br data-page-node-id="kIYWpUpMh3XNMhTwtdvU69">可一次选择多个文件</div>
+            <input type="file" id="langInput" accept=".mo,.po" multiple="" hidden="" data-page-node-id="Hy8o8Ibp1EA1kVphDBGUWF">
         </div>
 
-        <div class="file-list" id="langFiles"></div>
-        <div class="file-list" id="poFiles" hidden></div>
+        <div class="file-list" id="langFiles" data-page-node-id="sqDanoWuvfLz5FKXhNQWmf"></div>
+        <div class="file-list" id="poFiles" hidden="" data-page-node-id="teve3QLrbEVmZm0C2aJTnL"></div>
 
-        <div id="poWork" hidden>
-            <div class="stat-row" id="poStats"></div>
+        <div id="poWork" hidden="" data-page-node-id="ch6BBtCLpA64xef6cbuX84">
+            <div class="stat-row" id="poStats" data-page-node-id="IS8Zd0LiN4OqRslTDSwJlb"></div>
 
-            <div class="opt-row">
-                <span class="opt-label">筛选</span>
-                <div class="seg" id="poFilter">
-                    <button class="seg-btn active" data-v="all">全部</button>
-                    <button class="seg-btn" data-v="untrans">未翻译</button>
-                    <button class="seg-btn" data-v="trans">已翻译</button>
-                    <button class="seg-btn" data-v="fuzzy">模糊</button>
-                    <button class="seg-btn" data-v="plural">复数</button>
+            <div class="opt-row" data-page-node-id="54iKK4pz4NGZ9oHsDLXDUI">
+                <span class="opt-label" data-page-node-id="OfE32G3HyrxSPGEobKxLEI">筛选</span>
+                <div class="seg" id="poFilter" data-page-node-id="KrOtb9GMFDtdmXpNjRH6g7">
+                    <button class="seg-btn active" data-v="all" data-page-node-id="A97Z7Di9vSL5etmxJTuOaL">全部</button>
+                    <button class="seg-btn" data-v="untrans" data-page-node-id="2iRAxDsVVWZIC8lcoOqp8Q">未翻译</button>
+                    <button class="seg-btn" data-v="trans" data-page-node-id="HpVNMDNmSOnxXxWbZ5XTtq">已翻译</button>
+                    <button class="seg-btn" data-v="fuzzy" data-page-node-id="0cNfgXwhvyHooDUHDUAE05">模糊</button>
+                    <button class="seg-btn" data-v="plural" data-page-node-id="xnCPyEA3HhDdjx5HIPRLMJ">复数</button>
                 </div>
             </div>
 
-            <div class="opt-row">
-                <input class="pe-search" id="poSearch" placeholder="搜索原文 / 译文 / 上下文…">
-                <span class="pe-hint" id="poCount" style="margin-top:0"></span>
-                <span style="flex:1"></span>
-                <button type="button" class="po-mini" id="poHeaderBtn">编 辑 文 件 头</button>
+            <div class="opt-row" data-page-node-id="5KVGosSM1n1VNBbL6FIlIL">
+                <input class="pe-search" id="poSearch" placeholder="搜索原文 / 译文 / 上下文…" data-page-node-id="pyo5X5S5KS4iE7maqHrjbx">
+                <span class="pe-hint" id="poCount" style="margin-top:0" data-page-node-id="V7OVA7T1MdwAusBFpyLDmZ"></span>
+                <span style="flex:1" data-page-node-id="glnWD9chbnxnlWqrhVRNL0"></span>
+                <button type="button" class="po-mini" id="poHeaderBtn" data-page-node-id="wogE4tcty0O1BVU3hvJI74">编 辑 文 件 头</button>
             </div>
 
-            <div class="po-hd-box" id="poHeaderBox" hidden>
-                <div class="po-field">
-                    <label>文件头（Header）· 含 charset 与 Plural-Forms，修改后立即生效</label>
+            <div class="po-hd-box" id="poHeaderBox" hidden="" data-page-node-id="qPqHEM1KVtJMTRbtQ4yGU7">
+                <div class="po-field" data-page-node-id="lIfcOj5FmPuPhEB4Ohg6eD">
+                    <label data-page-node-id="tsbnaCXaDzHELRTFfR9U3N">文件头（Header）· 含 charset 与 Plural-Forms，修改后立即生效</label>
                     <textarea class="po-ta" id="poHeaderText" style="min-height:150px"></textarea>
                 </div>
             </div>
 
-            <div id="poTable"></div>
-            <div id="poEditBox"></div>
+            <div id="poTable" data-page-node-id="uvG6DuPMjpzdfiKHCiipWF"></div>
+            <div id="poEditBox" data-page-node-id="heiwe2GJEN2mRoVWcaun24"></div>
 
-            <div class="opt-row" style="border-top:none;padding-top:14px">
-                <button class="run-btn" id="poSavePo" style="width:auto;flex:1;margin-top:0;background:rgba(255,255,255,0.08);">保 存 为 .po</button>
-                <button class="run-btn" id="poSaveMo" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);">保 存 为 .mo</button>
-                <button class="run-btn" id="poClear" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);">清 空 列 表</button>
+            <div class="opt-row" style="border-top:none;padding-top:14px" data-page-node-id="BoufCntdTpBIEWPE46Rvuo">
+                <button class="run-btn" id="poSavePo" style="width:auto;flex:1;margin-top:0;background:rgba(255,255,255,0.08);" data-page-node-id="un9K5TYSXRFdltuEgFlZFp">保 存 为 .po</button>
+                <button class="run-btn" id="poSaveMo" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);" data-page-node-id="ZbK1KPSUGSP8KcTQ8vxAiR">保 存 为 .mo</button>
+                <button class="run-btn" id="poClear" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);" data-page-node-id="ok1a1bsA3j1DpGCwvi7Zl0">清 空 列 表</button>
             </div>
         </div>
 
-        <div class="opt-row" id="langOptMo2Po">
-            <span class="opt-label">导出选项</span>
-            <label class="chk"><input type="checkbox" id="onlyTranslated"> 仅导出已翻译条目</label>
+        <div class="opt-row" id="langOptMo2Po" data-page-node-id="bnreHzVBDSIhqMnCeq8ndO">
+            <span class="opt-label" data-page-node-id="daTApSmFYMsHlejhMC7EHv">导出选项</span>
+            <label class="chk" data-page-node-id="AqbD4ZO55AIJGhHhbO63af"><input type="checkbox" id="onlyTranslated" data-page-node-id="11zhm8DXMF0QUNniGTltwx"> 仅导出已翻译条目</label>
         </div>
 
-        <div class="opt-row" id="langOptPo2Mo" hidden>
-            <span class="opt-label">编译选项</span>
-            <label class="chk"><input type="checkbox" id="includeFuzzy"> 包含 fuzzy（模糊）条目</label>
+        <div class="opt-row" id="langOptPo2Mo" hidden="" data-page-node-id="Q1hOFZwRI4lmGyntiFJNjd">
+            <span class="opt-label" data-page-node-id="fSNcRMZfEQGELyRxfDrpuY">编译选项</span>
+            <label class="chk" data-page-node-id="o8Yji6DL3wG5Eai2ThWjaZ"><input type="checkbox" id="includeFuzzy" data-page-node-id="whSwGOEgsrqKLGKuaRbSez"> 包含 fuzzy（模糊）条目</label>
         </div>
 
-        <button class="run-btn" id="langRun">开 始 转 换</button>
-        <div class="status" id="langStatus"></div>
+        <button class="run-btn" id="langRun" data-page-node-id="nLDZdeduUcmLFDBtsvgdNY">开 始 转 换</button>
+        <div class="status" id="langStatus" data-page-node-id="m85iKlykH6F4TeZzE57cgE"></div>
 
-        <div class="stat-row" id="langStats" hidden>
-            <div class="stat">条目总数<b id="stTotal">0</b></div>
-            <div class="stat">已翻译<b id="stTrans">0</b></div>
-            <div class="stat">未翻译<b id="stUntrans">0</b></div>
-            <div class="stat">复数条目<b id="stPlural">0</b></div>
-            <div class="stat">带上下文<b id="stCtx">0</b></div>
+        <div class="stat-row" id="langStats" hidden="" data-page-node-id="UbjHio75y5w0fYycKrXL7Q">
+            <div class="stat" data-page-node-id="qU30yU5LZduna82xRQAVsB">条目总数<b id="stTotal" data-page-node-id="lFRypu0Kpd2abLc3XvZqzz">0</b></div>
+            <div class="stat" data-page-node-id="Bb9wMycfpritvlDCLCnx5g">已翻译<b id="stTrans" data-page-node-id="XB4P00EqvObypvtGWBBw3c">0</b></div>
+            <div class="stat" data-page-node-id="mAyCHs4RpPDCfsIppehcom">未翻译<b id="stUntrans" data-page-node-id="7PD5G73QmCUOUW02H9ytHr">0</b></div>
+            <div class="stat" data-page-node-id="q3zFH3mmfbuhtP4oz1epUM">复数条目<b id="stPlural" data-page-node-id="MUedWlGCgia6snuLDhrDqg">0</b></div>
+            <div class="stat" data-page-node-id="v2auPChYZrNemDL99Hn4gd">带上下文<b id="stCtx" data-page-node-id="oKhhpHZNWvuR7YagWW66b9">0</b></div>
         </div>
 
-        <div class="note">
-            <b>说明</b><br>
-            · .mo 是 gettext 编译后的二进制文件，反编译即还原出可编辑的 .po 源码（含 msgctxt、复数形式与转义）<br>
-            · 自动识别大端 / 小端序，并按 .mo 头部声明的字符集解码（缺省 UTF-8）<br>
-            · PO → MO 会跳过 <code>#~</code> 废弃条目，默认排除 fuzzy 条目，与 msgfmt 的行为一致<br>
-            · 生成的 .mo 不含哈希表，字符串表按字节序排序，可被 gettext / PHP / Python 正常读取<br>
-            · <b>编辑 / 查看</b>：上传 .mo 或 .po 后可直接浏览全部条目，点击任意一行修改译文（改动即时写入，Ctrl+Enter 完成），编辑完可另存为 .po 或 .mo<br>
+        <div class="note" data-page-node-id="eBLmnlfH6PlUlcF27lUu9B">
+            <b data-page-node-id="AYiSDM4r6sUN3mRy9T2bwG">说明</b><br data-page-node-id="jb1tQYjZVMdcxW7wV7yV7W">
+            · .mo 是 gettext 编译后的二进制文件，反编译即还原出可编辑的 .po 源码（含 msgctxt、复数形式与转义）<br data-page-node-id="OVWBRsN9quTtYY81zSS5Iq">
+            · 自动识别大端 / 小端序，并按 .mo 头部声明的字符集解码（缺省 UTF-8）<br data-page-node-id="edNCv2h48cyGGASunsg5Dq">
+            · PO → MO 会跳过 <code data-page-node-id="mPqOhcNssNda8gfGeBv5Oz">#~</code> 废弃条目，默认排除 fuzzy 条目，与 msgfmt 的行为一致<br data-page-node-id="FB5wcSaHzSKcZEZDhEcmnC">
+            · 生成的 .mo 不含哈希表，字符串表按字节序排序，可被 gettext / PHP / Python 正常读取<br data-page-node-id="Fb9dD81NaF8146GJqsDcFQ">
+            · <b data-page-node-id="UUKspYwa6pyYtqgEgGsxoi">编辑 / 查看</b>：上传 .mo 或 .po 后可直接浏览全部条目，点击任意一行修改译文（改动即时写入，Ctrl+Enter 完成），编辑完可另存为 .po 或 .mo<br data-page-node-id="Q4HT5MRe9CNeLkoH4hY1D1">
             · 复数条目会按文件头 Plural-Forms 里的 nplurals 自动展开对应数量的译文框；被标为 fuzzy 的条目默认不会写入 .mo
         </div>
     </div>
 </section>
 
 <!-- ==================== 加解密 ==================== -->
-<section class="panel" id="panel-crypto" hidden>
-    <div class="panel-card glass">
-        <div class="crypto-box">
-            <div class="crypto-label">输入</div>
+<section class="panel" id="panel-crypto" hidden="" data-page-node-id="ETJdsX4Aq22xptLB2XYvKX">
+    <div class="panel-card glass" data-page-node-id="cnlpaHvRElcbaV9D1p0oDo">
+        <div class="crypto-box" data-page-node-id="5QyvWW1CNTa8iVrpZwnyFb">
+            <div class="crypto-label" data-page-node-id="gUwHVAHrk4pJz2PXRxc9xO">输入</div>
             <textarea class="ta" id="cryptoIn" placeholder="在此输入文本，或拖拽文件到此处…"></textarea>
-            <div class="crypto-hint" id="cryptoInHint">0 字符</div>
+            <div class="crypto-hint" id="cryptoInHint" data-page-node-id="dFDkOpKRN7ETECUfeXkf6o">0 字符</div>
         </div>
-        <div class="opt-row" style="margin-top:20px;">
-            <span class="opt-label">方向</span>
-            <div class="seg" id="cryptoDir">
-                <button class="seg-btn active" data-v="enc">加密 / 编码</button>
-                <button class="seg-btn" data-v="dec">解密 / 解码</button>
+        <div class="opt-row" style="margin-top:20px;" data-page-node-id="uTnbKfBBwFEc1ejA28Uimi">
+            <span class="opt-label" data-page-node-id="et2ZMISUx1d4r95VFTZIPa">方向</span>
+            <div class="seg" id="cryptoDir" data-page-node-id="Ap6xGqTYm6BO96zx96xvKC">
+                <button class="seg-btn active" data-v="enc" data-page-node-id="qOXMhS3jNTOB8tIfibnkyb">加密 / 编码</button>
+                <button class="seg-btn" data-v="dec" data-page-node-id="H77Ky5XNuCmKqjz9SFJEOF">解密 / 解码</button>
             </div>
         </div>
-        <div class="opt-row">
-            <span class="opt-label">算法</span>
-            <div class="seg" id="cryptoAlgo">
-                <button class="seg-btn active" data-v="base64">Base64</button>
-                <button class="seg-btn" data-v="base32">Base32</button>
-                <button class="seg-btn" data-v="base16">Base16</button>
-                <button class="seg-btn" data-v="base58">Base58</button>
-                <button class="seg-btn" data-v="base62">Base62</button>
-                <button class="seg-btn" data-v="base85">Base85</button>
-                <button class="seg-btn" data-v="base91">Base91</button>
+        <div class="opt-row" data-page-node-id="IJeep1HNNm6eU5dGoI1s4W">
+            <span class="opt-label" data-page-node-id="odawxtZwscehzKfORpPC78">算法</span>
+            <div class="seg" id="cryptoAlgo" data-page-node-id="fsQWwsnKW8sq1aypykLw4L">
+                <button class="seg-btn active" data-v="base64" data-page-node-id="XnyBgjz5OkejD2gDNvOAMN">Base64</button>
+                <button class="seg-btn" data-v="base32" data-page-node-id="fVZBZMBOCbqGwbWrkJea0T">Base32</button>
+                <button class="seg-btn" data-v="base16" data-page-node-id="pgyue2nVq9lDCCPieB1LaV">Base16</button>
+                <button class="seg-btn" data-v="base58" data-page-node-id="NrmQNlye1BGCbHgtiqDVUr">Base58</button>
+                <button class="seg-btn" data-v="base62" data-page-node-id="IvdcfdI2bBjdkeeh7zcIvQ">Base62</button>
+                <button class="seg-btn" data-v="base85" data-page-node-id="HIHCEWFhuXtjv43cFcxSzL">Base85</button>
+                <button class="seg-btn" data-v="base91" data-page-node-id="R7YaBC5Hx5FZBxYKTFqYsO">Base91</button>
             </div>
         </div>
-        <button class="run-btn" id="cryptoRun">执 行 转 换</button>
-        <div class="status" id="cryptoStatus"></div>
-        <div class="crypto-box" style="margin-top:20px;">
-            <div class="crypto-label">输出</div>
-            <textarea class="ta" id="cryptoOut" readonly placeholder="结果将显示在这里…"></textarea>
-            <div class="crypto-hint" id="cryptoOutHint">0 字符</div>
+        <button class="run-btn" id="cryptoRun" data-page-node-id="MAaDuHjCp4LAV99PIN4SHp">执 行 转 换</button>
+        <div class="status" id="cryptoStatus" data-page-node-id="1BDNyRAKGlfohUAa42XzPQ"></div>
+        <div class="crypto-box" style="margin-top:20px;" data-page-node-id="cBH1sCovFtDxGxxextTCm5">
+            <div class="crypto-label" data-page-node-id="qCJakCeLFmFvellOfOhSvt">输出</div>
+            <textarea class="ta" id="cryptoOut" readonly="" placeholder="结果将显示在这里…"></textarea>
+            <div class="crypto-hint" id="cryptoOutHint" data-page-node-id="HcZAS3wtS2BkgDh1sAy35i">0 字符</div>
         </div>
-        <div class="opt-row" style="border-top:none;padding-top:10px;">
-            <button class="run-btn" id="cryptoCopy" style="width:auto;flex:1;margin-top:0;background:rgba(255,255,255,0.08);">复 制 结 果</button>
-            <button class="run-btn" id="cryptoDown" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);">下 载 结 果</button>
+        <div class="opt-row" style="border-top:none;padding-top:10px;" data-page-node-id="RM5EzfebkHiz4sLeJwMoyI">
+            <button class="run-btn" id="cryptoCopy" style="width:auto;flex:1;margin-top:0;background:rgba(255,255,255,0.08);" data-page-node-id="4c1cB6E6YxKOpk3Gbfe0x2">复 制 结 果</button>
+            <button class="run-btn" id="cryptoDown" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);" data-page-node-id="q51GrVBCrPeJYGCHEBzX2V">下 载 结 果</button>
         </div>
-        <div class="note">
-            <b>说明</b><br>
-            · 加密：将输入文本按 UTF-8 编码为字节后，再做 Base 转换<br>
-            · 解密：将 Base 字符串还原为字节后，再按 UTF-8 解码为文本；若字节流不是合法 UTF-8，则提供二进制下载<br>
-            · Base16 即 Hex；Base85 采用 Adobe ASCII85 字符集（不含 &lt;~ ~&gt; 包裹符）；Base91 采用 Henke 标准字符集<br>
+        <div class="note" data-page-node-id="cAIpzjWu7Nvnf8dTqmL77v">
+            <b data-page-node-id="ohiuTuc60x84QFyJABWFDC">说明</b><br data-page-node-id="uBW6ozE6ErgghlcHHmTtf4">
+            · 加密：将输入文本按 UTF-8 编码为字节后，再做 Base 转换<br data-page-node-id="FQsId3DMmtNGn24kV57PLN">
+            · 解密：将 Base 字符串还原为字节后，再按 UTF-8 解码为文本；若字节流不是合法 UTF-8，则提供二进制下载<br data-page-node-id="2wWeXy6a5GXiSqI7VPcvA3">
+            · Base16 即 Hex；Base85 采用 Adobe ASCII85 字符集（不含 &lt;~ ~&gt; 包裹符）；Base91 采用 Henke 标准字符集<br data-page-node-id="YmlxWqvsWmhXqVQns1FZbf">
             · 支持拖拽文本文件到输入框自动读取
         </div>
     </div>
 </section>
 
-<!-- ==================== PE 解析 ==================== -->
-<section class="panel" id="panel-pe" hidden>
-    <div class="panel-card glass">
-        <div class="drop-zone" id="peDrop">
-            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM8.5 13h7v1.5h-7V13zm0 3h7v1.5h-7V16z"/></svg>
-            <div class="dz-title">拖拽 .dll / .exe / .sys 到这里，或点击选择</div>
-            <div class="dz-sub">解析 PE 文件结构：文件头 · 节区表 · 导出函数 · 导入表 · 资源 · 字符串<br>支持 .dll / .exe / .sys / .ocx / .cpl / .drv / .efi，可一次选择多个</div>
-            <input type="file" id="peInput" accept=".dll,.exe,.sys,.ocx,.cpl,.drv,.efi,.mui" multiple hidden>
-        </div>
-
-        <div class="file-list" id="peFiles"></div>
-
-        <div id="peResult" hidden>
-            <div class="stat-row" id="peStats"></div>
-            <div id="peNotes"></div>
-
-            <div class="opt-row">
-                <span class="opt-label">查看详情</span>
-                <div class="seg" id="peTab">
-                    <button class="seg-btn active" data-v="header">文件头</button>
-                    <button class="seg-btn" data-v="sections">节区表</button>
-                    <button class="seg-btn" data-v="exports">导出函数</button>
-                    <button class="seg-btn" data-v="imports">导入表</button>
-                    <button class="seg-btn" data-v="resources">资源</button>
-                    <button class="seg-btn" data-v="strings">字符串</button>
-                    <button class="seg-btn" data-v="hex">十六进制</button>
-                </div>
-            </div>
-
-            <div id="peBody" style="margin-top:18px"></div>
-        </div>
-
-        <div class="opt-row" id="peActions" hidden style="border-top:none;padding-top:10px">
-            <button class="run-btn" id="peCsv" style="width:auto;flex:1;margin-top:0;background:rgba(255,255,255,0.08);">导 出 函 数 表</button>
-            <button class="run-btn" id="peCopy" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);">复 制 函 数 名</button>
-            <button class="run-btn" id="peClear" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);">清 空 列 表</button>
-        </div>
-
-        <div class="status" id="peStatus"></div>
-
-        <div class="note">
-            <b>说明</b><br>
-            · 纯本地解析，文件不会离开你的设备；本页<b>只做只读分析</b>，不会修改任何字节<br>
-            · 解析范围：DOS / PE 头、COFF 头、可选头（PE32 与 PE32+）、节区表、导出表（含转发导出）、导入表、资源目录、CLR 头<br>
-            · <b>节区熵值</b>接近 8.00 通常意味着被压缩或加壳，此时静态解析出的导入表只是壳的存根，不代表程序真实依赖<br>
-            · 检测到 .NET 程序集时，函数体是以 IL 中间语言存放的，要看 C# 代码请用 dnSpy / ILSpy<br>
-            · 点击表格标题可排序；大文件的字符串提取会比较占内存
-        </div>
-    </div>
-</section>
-
-<div class="footer">Vanco的小站 · 格式转换</div>
+<div class="footer" data-page-node-id="gxFC48mtdExi1yXW6lM4uS">Vanco的小站 · 格式转换</div>
 
 <!-- ==================== JS ==================== -->
 <script>
@@ -1201,7 +1117,7 @@ function parseXml(text) {
         const lt = text.indexOf("<", i);
         if (lt < 0) { stack[stack.length - 1].text += xmlUnescape(text.slice(i)); break; }
         if (lt > i) stack[stack.length - 1].text += xmlUnescape(text.slice(i, lt));
-        if (text.startsWith("<!--", lt)) { const e = text.indexOf("-->", lt); i = e < 0 ? n : e + 3; continue; }
+        if (text.startsWith("<!--", lt)) { const e = text.indexOf("--><!--pnid:TOLBxdRudtJctPtw1E4hLr-->", lt); i = e < 0 ? n : e + 3; continue; }
         if (text.startsWith("<?", lt)) { const e = text.indexOf("?>", lt); i = e < 0 ? n : e + 2; continue; }
         if (text.startsWith("<![CDATA[", lt)) {
             const e = text.indexOf("]]>", lt);
@@ -4289,786 +4205,7 @@ $("cryptoDown").addEventListener("click", () => {
 });
 
 
-/* ==================== PE / DLL 解析 ==================== */
-/* ---- 解析核心：纯逻辑，不依赖 DOM ---- */
-
-/* 纯逻辑层：不依赖 DOM，可在浏览器 / Node 中独立运行 */
-
-const MACHINE = {
-  0x0:'未知',0x184:'DEC Alpha AXP',0x1a2:'Hitachi SH3',0x1a3:'Hitachi SH3 DSP',0x1a6:'Hitachi SH4',
-  0x1a8:'Hitachi SH5',0x1c0:'ARM',0x1c2:'Thumb',0x1c4:'ARMv7 / Thumb-2',0x1d3:'Matsushita AM33',
-  0x1f0:'PowerPC (LE)',0x1f1:'PowerPC (FP)',0x200:'Intel IA64 (Itanium)',0x266:'MIPS16',
-  0x366:'MIPS + FPU',0x466:'MIPS16 + FPU',0xebc:'EFI Byte Code',0x14c:'x86 (i386)',
-  0x162:'MIPS R3000 (BE)',0x166:'MIPS (LE)',0x169:'MIPS (LE WCE v2)',0x5032:'RISC-V 32',
-  0x5064:'RISC-V 64',0x5128:'RISC-V 128',0x6232:'LoongArch 32',0x6264:'LoongArch 64',
-  0x8664:'x86-64 (AMD64)',0x9041:'Mitsubishi M32R',0xa641:'ARM64 (AArch64)',0xaa64:'ARM64 (AArch64)'
-};
-
-const FILE_CHAR = [
-  [0x0001,'重定位信息已剥离',''],[0x0002,'可执行映像',''],[0x0004,'行号信息已剥离',''],
-  [0x0008,'本地符号已剥离',''],[0x0010,'强制工作集裁剪',''],[0x0020,'支持 >2GB 地址','g'],
-  [0x0080,'低字节序反转','y'],[0x0100,'32 位机器',''],
-  [0x0200,'调试信息已剥离',''],[0x0400,'可从移动介质运行',''],
-  [0x0800,'可从网络运行',''],[0x1000,'系统文件',''],[0x2000,'是 DLL（不是 EXE）','g'],
-  [0x4000,'仅单处理器运行',''],[0x8000,'高字节序反转','y']
-];
-
-const SUBSYSTEM = {
-  0:'未知',1:'Native（驱动）',2:'Windows GUI',3:'Windows 控制台 (CUI)',4:'OS/2 CUI',
-  5:'POSIX CUI',7:'POSIX CUI (native)',8:'Windows 9x Native',9:'Windows CE GUI',
-  10:'EFI 应用程序',11:'EFI 启动服务驱动',12:'EFI 运行时驱动',13:'EFI ROM',14:'XBOX',
-  16:'Windows 启动应用程序',17:'XBOX 代码目录'
-};
-
-const DLL_CHAR = [
-  [0x0020,'高熵 ASLR（64位）','g'],[0x0040,'ASLR 动态基址','g'],[0x0080,'强制完整性校验','g'],
-  [0x0100,'DEP / NX 兼容','g'],[0x0200,'无需隔离',''],[0x0400,'不使用 SEH','y'],
-  [0x0800,'禁止绑定',''],[0x1000,'AppContainer','y'],[0x2000,'WDM 驱动',''],
-  [0x4000,'控制流保护 CFG','g'],[0x8000,'终端服务感知','']
-];
-
-const SEC_CHAR = [
-  [0x00000020,'含代码',''],[0x00000040,'已初始化数据',''],[0x00000080,'未初始化数据',''],
-  [0x00000100,'其他 / 注释',''],[0x00000200,'信息 / 注释',''],[0x00000800,'将移除',''],
-  [0x00001000,'COMDAT',''],[0x00008000,'GP 相对',''],[0x00020000,'已弃用内存',''],
-  [0x00080000,'已弃用内存',''],[0x01000000,'重定位溢出',''],
-  [0x02000000,'可丢弃',''],[0x04000000,'不可缓存',''],[0x08000000,'不可分页',''],
-  [0x10000000,'可共享',''],[0x20000000,'可执行','g'],[0x40000000,'可读',''],
-  [0x80000000,'可写','y']
-];
-
-const DIR_NAMES = ['导出表','导入表','资源','异常','安全/证书','重定位','调试',
-  '架构特定','全局指针','TLS','加载配置','绑定导入','IAT','延迟导入','CLR 运行时头','保留'];
-
-const RES_TYPES = {1:'光标',2:'位图',3:'图标',4:'菜单',5:'对话框',6:'字符串表',7:'字体目录',
-  8:'字体',9:'加速器',10:'RCData',11:'消息表',12:'光标组',14:'图标组',16:'版本信息',
-  17:'DlgInclude',19:'即插即用',20:'VXD',21:'动画光标',22:'动画图标',23:'HTML',24:'清单 (Manifest)'};
-
-function flagsToTags(v, table){
-  return table.filter(f => v & f[0]).map(f => ({text:f[1], cls:f[2]}));
-}
-
-function entropyOf(bytes){
-  if(!bytes.length) return 0;
-  const c = new Uint32Array(256);
-  for(let i=0;i<bytes.length;i++) c[bytes[i]]++;
-  let e = 0, n = bytes.length;
-  for(let i=0;i<256;i++){ if(!c[i]) continue; const p = c[i]/n; e -= p*Math.log2(p); }
-  return e;
-}
-
-function peHex(n, w){ return '0x' + (n>>>0).toString(16).toUpperCase().padStart(w||8,'0'); }
-
-class PEFile {
-  constructor(arrayBuffer){
-    this.buf = arrayBuffer;
-    this.dv  = new DataView(arrayBuffer);
-    this.u8  = new Uint8Array(arrayBuffer);
-    this.sizeOfHeaders = 0;
-    this.sections = [];
-    this.dirs = [];
-    this.warnings = [];
-  }
-  chk(o,n){ return o >= 0 && o + n <= this.buf.byteLength; }
-  r8 (o){ return this.chk(o,1) ? this.dv.getUint8(o)   : 0; }
-  r16(o){ return this.chk(o,2) ? this.dv.getUint16(o,true) : 0; }
-  r32(o){ return this.chk(o,4) ? this.dv.getUint32(o,true) : 0; }
-  r64(o){ return this.chk(o,8) ? this.dv.getBigUint64(o,true) : 0n; }
-
-  ascii(o, max){
-    if(!this.chk(o,1)) return '';
-    let s = '', i = o, end = Math.min(this.buf.byteLength, o + (max||256));
-    for(; i < end; i++){ const c = this.u8[i]; if(c === 0) break; s += String.fromCharCode(c & 0x7f); }
-    return s;
-  }
-  utf16(o, chars){
-    if(!this.chk(o,1)) return '';
-    let s = '';
-    for(let i=0;i<chars;i++){ const c = this.r16(o + i*2); if(c === 0) break; s += String.fromCharCode(c); }
-    return s;
-  }
-
-  /* RVA -> 文件偏移 */
-  rvaToOffset(rva){
-    if(rva <= 0) return null;
-    if(rva < this.sizeOfHeaders && rva < this.buf.byteLength) return rva;
-    for(const s of this.sections){
-      const vSize = Math.max(s.virtualSize, s.sizeOfRawData);
-      if(rva >= s.virtualAddress && rva < s.virtualAddress + vSize){
-        const d = rva - s.virtualAddress;
-        return d < s.sizeOfRawData ? s.pointerToRawData + d : null;
-      }
-    }
-    return null;
-  }
-
-  parse(){
-    if(this.buf.byteLength < 64) throw new Error('文件太小，不是有效的 PE 文件');
-    if(this.r16(0) !== 0x5A4D) throw new Error('缺少 MZ 头，不是 PE/DLL 文件');
-
-    const lf = this.r32(0x3C);
-    if(!this.chk(lf,4) || this.r32(lf) !== 0x00004550)
-      throw new Error('PE 签名无效（偏移 ' + peHex(lf) + ' 处未找到 "PE\\0\\0"）');
-
-    const R = {};
-    R.dosStub = this.ascii(0x4E, 60).replace(/[^\x20-\x7e]/g,'');
-    R.e_lfanew = lf;
-
-    const c = lf + 4;
-    R.machine       = this.r16(c);
-    R.nSections     = this.r16(c + 2);
-    R.timeDateStamp = this.r32(c + 4);
-    R.pSymTable     = this.r32(c + 8);
-    R.nSymbols      = this.r32(c + 12);
-    R.sizeOfOptHdr  = this.r16(c + 16);
-    R.characteristics = this.r16(c + 18);
-
-    const o = c + 20;
-    R.magic = this.r16(o);
-    R.isPlus = R.magic === 0x20B;
-    if(R.magic !== 0x10B && R.magic !== 0x20B){
-      R.magic = 0x10B; R.isPlus = false;
-      this.warnings.push('可选头 Magic 异常，已按 PE32 尝试解析');
-    }
-
-    /* PE32 与 PE32+ 在 DllCharacteristics 之前字段偏移完全一致：
-       PE32  = BaseOfData(24) + ImageBase(28,4)
-       PE32+ = ImageBase(24,8)，BaseOfData 不存在 —— 两者都在 32 处对齐到 SectionAlignment。
-       差异只出现在尾部：NumberOfRvaAndSizes = 92(PE32) / 108(PE32+)，数据目录 = 96 / 112。 */
-    R.linker      = this.r8(o+2) + '.' + this.r8(o+3);
-    R.sizeOfCode  = this.r32(o+4);
-    R.entry       = this.r32(o+16);
-    R.baseOfCode  = this.r32(o+20);
-    R.imageBase   = R.isPlus ? this.r64(o+24) : BigInt(this.r32(o+28));
-    R.sectAlign   = this.r32(o+32);
-    R.fileAlign   = this.r32(o+36);
-    R.osVer       = this.r16(o+40) + '.' + this.r16(o+42);
-    R.imgVer      = this.r16(o+44) + '.' + this.r16(o+46);
-    R.subsysVer   = this.r16(o+48) + '.' + this.r16(o+50);
-    R.sizeOfImage = this.r32(o+56);
-    R.sizeOfHeaders = this.r32(o+60);
-    R.checkSum    = this.r32(o+64);
-    R.subsystem   = this.r16(o+68);
-    R.dllChar     = this.r16(o+70);
-    const nDirs   = this.r32(R.isPlus ? o+108 : o+92);
-    const dirOff  = (R.isPlus ? o+112 : o+96);
-    this.sizeOfHeaders = R.sizeOfHeaders;
-
-    R.nDirs = nDirs;
-    this.dirs = [];
-    for(let i=0;i<Math.min(nDirs,16);i++){
-      this.dirs.push({ rva:this.r32(dirOff+i*8), size:this.r32(dirOff+i*8+4) });
-    }
-
-    /* 节区表 */
-    const secOff = o + R.sizeOfOptHdr;
-    this.sections = [];
-    for(let i=0;i<R.nSections;i++){
-      const s = secOff + i*40;
-      if(!this.chk(s,40)) break;
-      const sec = {
-        name: this.ascii(s, 8),
-        virtualSize: this.r32(s+8),
-        virtualAddress: this.r32(s+12),
-        sizeOfRawData: this.r32(s+16),
-        pointerToRawData: this.r32(s+20),
-        characteristics: this.r32(s+36)
-      };
-      const from = sec.pointerToRawData;
-      sec.entropy = (sec.sizeOfRawData && this.chk(from, Math.min(sec.sizeOfRawData, this.buf.byteLength - from)))
-        ? entropyOf(this.u8.subarray(from, from + Math.min(sec.sizeOfRawData, this.buf.byteLength - from)))
-        : 0;
-      this.sections.push(sec);
-    }
-    this.R = R;
-
-    R.exports  = this.parseExports();
-    R.imports  = this.parseImports();
-    R.resources = this.parseResources();
-    R.clr      = this.parseCLR();
-    return R;
-  }
-
-  parseExports(){
-    const d = this.dirs[0];
-    if(!d || !d.rva) return null;
-    const off = this.rvaToOffset(d.rva);
-    if(off == null) return null;
-
-    const nFuncs = this.r32(off+20), nNames = this.r32(off+24);
-    const base   = this.r32(off+16);
-    const aFn = this.rvaToOffset(this.r32(off+28));
-    const aNm = this.rvaToOffset(this.r32(off+32));
-    const aOr = this.rvaToOffset(this.r32(off+36));
-    if(aFn == null) return null;
-
-    const out = {
-      dllName: this.ascii(this.rvaToOffset(this.r32(off+12)) ?? 0, 256),
-      timeDateStamp: this.r32(off+4),
-      version: this.r16(off+8) + '.' + this.r16(off+10),
-      ordinalBase: base, nFunctions: nFuncs, nNames: nNames, items: []
-    };
-    const dirEnd = d.rva, dirSize = d.size || 1;
-
-    for(let i=0;i<Math.min(nFuncs, 20000);i++){
-      const rva = this.r32(aFn + i*4);
-      if(!rva) continue;
-      /* 转发导出：函数 RVA 落在导出表自身范围内，这里存的是一个 "Other.dll.Func" 字符串 */
-      const fwd = (rva >= dirEnd && rva < dirEnd + dirSize)
-        ? this.ascii(this.rvaToOffset(rva) ?? 0, 256) : null;
-      out.items.push({ ordinal: base + i, rva: rva, forward: fwd, name: '' });
-    }
-    for(let i=0;i<Math.min(nNames, 20000);i++){
-      if(aNm == null || aOr == null) break;
-      const nrva = this.r32(aNm + i*4);
-      const nam  = this.ascii(this.rvaToOffset(nrva) ?? 0, 512);
-      const idx  = this.r16(aOr + i*2);
-      if(out.items[idx]) out.items[idx].name = nam;
-    }
-    return out;
-  }
-
-  parseImports(){
-    const d = this.dirs[1];
-    if(!d || !d.rva) return null;
-    const off = this.rvaToOffset(d.rva);
-    if(off == null) return null;
-
-    const list = [];
-    for(let i=0;i<512;i++){
-      const e = off + i*20;
-      if(!this.chk(e,20)) break;
-      const oft = this.r32(e), nameR = this.r32(e+12), ft = this.r32(e+16);
-      if(!nameR && !ft && !oft) break;
-
-      const nmOff = this.rvaToOffset(nameR);
-      const dll = nmOff != null ? this.ascii(nmOff, 256) : '<?>';
-      const thunkRva = oft || ft;
-      const tOff = this.rvaToOffset(thunkRva);
-      const funcs = [];
-      if(tOff != null){
-        const step = this.R && this.R.isPlus ? 8 : 4;
-        for(let j=0;j<3000;j++){
-          const p = tOff + j*step;
-          if(!this.chk(p,step)) break;
-          const val = step === 8 ? this.r64(p) : BigInt(this.r32(p));
-          if(val === 0n) break;
-          const isOrd = step === 8 ? ((val >> 63n) & 1n) === 1n : ((val >> 31n) & 1n) === 1n;
-          if(isOrd){
-            funcs.push({ name:'', ordinal:Number(val & 0xFFFFn), hint:-1 });
-          }else{
-            const hn = this.rvaToOffset(Number(val & 0xFFFFFFFFn));
-            if(hn == null) continue;
-            funcs.push({ name: this.ascii(hn+2, 512), ordinal:-1, hint: this.r16(hn) });
-          }
-        }
-      }
-      list.push({ dll, funcs, timeDateStamp: this.r32(e+4) });
-    }
-    return list;
-  }
-
-  parseResources(){
-    const d = this.dirs[2];
-    if(!d || !d.rva) return null;
-    const base = this.rvaToOffset(d.rva);
-    if(base == null) return null;
-
-    const out = [];
-    let count = 0;
-    const walk = (off, depth, path) => {
-      if(depth > 3 || count > 4000) return;
-      const nNamed = this.r16(off+12), nId = this.r16(off+14);
-      for(let i=0;i<nNamed + nId;i++){
-        const e = off + 16 + i*8;
-        if(!this.chk(e,8)) return;
-        const nameF = this.r32(e), dataF = this.r32(e+4);
-        let label;
-        if(nameF & 0x80000000){
-          const so = base + (nameF & 0x7FFFFFFF);
-          label = this.utf16(so + 2, this.r16(so));
-        }else{
-          label = (depth === 0 && RES_TYPES[nameF]) ? RES_TYPES[nameF] : '#' + nameF;
-        }
-        if(dataF & 0x80000000){
-          walk(base + (dataF & 0x7FFFFFFF), depth + 1, path.concat(label));
-        }else{
-          const dOff = base + (dataF & 0x7FFFFFFF);
-          if(!this.chk(dOff,16)) continue;
-          const rva = this.r32(dOff);
-          out.push({
-            path: path.concat(label).join(' / '),
-            rva, size: this.r32(dOff+4), codepage: this.r32(dOff+8),
-            offset: this.rvaToOffset(rva)
-          });
-          count++;
-        }
-      }
-    };
-    walk(base, 0, []);
-    return out;
-  }
-
-  parseCLR(){
-    const d = this.dirs[14];
-    if(!d || !d.rva) return null;
-    const off = this.rvaToOffset(d.rva);
-    if(off == null) return null;
-    return {
-      runtimeVersion: this.r16(off+4) + '.' + this.r16(off+6),
-      metaDataRva: this.r32(off+8),
-      metaDataSize: this.r32(off+12),
-      flags: this.r32(off+16),
-      entryPointToken: this.r32(off+20),
-      strongNameSigned: ((this.r32(off+16) & 0x8) === 0) && this.r32(off+24) !== 0
-    };
-  }
-
-  /* 提取可读字符串 */
-  strings(minLen){
-    minLen = minLen || 5;
-    const res = [], n = this.u8.length;
-    let cur = '';
-    for(let i=0;i<n;i++){
-      const b = this.u8[i];
-      if(b >= 0x20 && b < 0x7F){ cur += String.fromCharCode(b); }
-      else { if(cur.length >= minLen) res.push({t:'A', v:cur}); cur = ''; }
-    }
-    if(cur.length >= minLen) res.push({t:'A', v:cur});
-    /* UTF-16LE */
-    let w = '';
-    for(let i=0;i+1<n;i+=2){
-      const b = this.u8[i];
-      if(this.u8[i+1] === 0 && b >= 0x20 && b < 0x7F){ w += String.fromCharCode(b); }
-      else { if(w.length >= minLen) res.push({t:'U', v:w}); w = ''; i--; }
-    }
-    if(w.length >= minLen) res.push({t:'U', v:w});
-    return res;
-  }
-}
-
-/* ---- 面板 UI ---- */
-
-const peStatus = $("peStatus");
-let PE_SEQ = 0;
-let PE_LIST = [];              // {id, file, pe, R, sha, err}
-let PE_SEL = null;             // 当前查看的文件 id
-let PE_TAB = "header";
-let PE_HEXLEN = 4096;
-let PE_EXP_Q = "";
-let PE_STR_Q = "";
-let PE_STR_MIN = 5;
-
-function peEsc(s) {
-    return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-}
-
-function peSay(msg, cls) {
-    peStatus.className = "status " + (cls || "");
-    peStatus.textContent = msg;
-}
-
-function peDate(ts) {
-    if (!ts) return "—";
-    try { return new Date(ts * 1000).toISOString().replace("T", " ").slice(0, 19) + " UTC"; }
-    catch (e) { return String(ts); }
-}
-
-function peTags(arr) {
-    if (!arr || !arr.length) return '<span style="color:rgba(255,255,255,0.25)">—</span>';
-    return arr.map(t => '<span class="pe-tag ' + (t.cls || "") + '">' + peEsc(t.text) + "</span>").join("");
-}
-
-function peKv(pairs) {
-    return '<div class="pe-kv">' + pairs.map(p =>
-        "<div>" + peEsc(p[0]) + '</div><div class="mono">' + peEsc(p[1]) + "</div>"
-    ).join("") + "</div>";
-}
-
-function peTable(heads, rows, cls) {
-    if (!rows.length) return '<div class="pe-empty">这一项没有数据</div>';
-    return '<div class="pe-table-wrap"><table class="pe' + (heads.length >= 5 ? " wide" : "") + '"><thead><tr>' +
-        heads.map((h, i) => '<th data-i="' + i + '">' + peEsc(h) + "</th>").join("") +
-        "</tr></thead><tbody>" + rows.map(r => "<tr>" + r.map((c, i) =>
-            '<td' + (cls && cls[i] ? ' class="' + cls[i] + '"' : "") + ">" + c + "</td>"
-        ).join("") + "</tr>").join("") + "</tbody></table></div>";
-}
-
-function peEmpty(t) { return '<div class="pe-empty">' + peEsc(t) + "</div>"; }
-
-/* ---------- 文件列表 ---------- */
-function peRenderList() {
-    const box = $("peFiles");
-    box.innerHTML = "";
-    PE_LIST.forEach(it => {
-        const row = document.createElement("div");
-        row.className = "file-item clickable" +
-            (it.id === PE_SEL ? " sel" : "") + (it.err ? " bad" : "");
-
-        const ic = document.createElement("div");
-        ic.className = "fi-icon";
-        ic.textContent = extOf(it.file.name) || "?";
-
-        const mn = document.createElement("div");
-        mn.className = "fi-main";
-        const nm = document.createElement("div");
-        nm.className = "fi-name";
-        nm.textContent = it.file.name;
-        const mt = document.createElement("div");
-        mt.className = "fi-meta" + (it.err ? " err" : (it.R ? " done" : ""));
-        if (it.err) mt.textContent = "解析失败：" + it.err;
-        else if (!it.R) mt.textContent = fmtBytes(it.file.size);
-        else {
-            const R = it.R;
-            mt.textContent = (R.characteristics & 0x2000 ? "DLL" : "EXE") + " · " +
-                (R.isPlus ? "64 位" : "32 位") +
-                " · 导出 " + (R.exports ? R.exports.nFunctions : 0) +
-                " · 依赖 " + (R.imports ? R.imports.length : 0) +
-                (R.clr ? " · .NET" : "");
-        }
-        mn.appendChild(nm);
-        mn.appendChild(mt);
-
-        const del = document.createElement("button");
-        del.className = "fi-del";
-        del.type = "button";
-        del.textContent = "×";
-        del.title = "移除";
-        del.addEventListener("click", e => {
-            e.stopPropagation();
-            PE_LIST = PE_LIST.filter(x => x.id !== it.id);
-            if (PE_SEL === it.id) PE_SEL = PE_LIST.length ? PE_LIST[0].id : null;
-            peRenderList();
-            peShow();
-        });
-
-        row.addEventListener("click", () => {
-            if (PE_SEL === it.id) return;
-            PE_SEL = it.id;
-            PE_HEXLEN = 4096;
-            peRenderList();
-            peShow();
-        });
-
-        row.appendChild(ic);
-        row.appendChild(mn);
-        row.appendChild(del);
-        box.appendChild(row);
-    });
-}
-
-/* ---------- 顶部统计与提示 ---------- */
-function peMaxEnt(pe) {
-    return pe.sections.reduce((a, s) => Math.max(a, s.entropy), 0);
-}
-
-function peRenderStats(it) {
-    const R = it.R, ent = peMaxEnt(it.pe);
-    const aslr = !!(R.dllChar & 0x40), nx = !!(R.dllChar & 0x100);
-    const data = [
-        ["类型", (R.characteristics & 0x2000) ? "DLL" : "EXE"],
-        ["位宽", R.isPlus ? "64 位" : "32 位"],
-        ["架构", (MACHINE[R.machine] || "未知").replace(/\s*[（(].*$/, "")],
-        ["导出函数", R.exports ? R.exports.nFunctions : 0],
-        ["依赖模块", R.imports ? R.imports.length : 0],
-        [".NET", R.clr ? "是" : "否"],
-        ["最高节区熵", '<span style="color:' + (ent > 7.2 ? "#ff8f8f" : (ent > 6.8 ? "#e3c38f" : "#e0e0f0")) + '">' + ent.toFixed(2) + "</span>"],
-        ["安全缓解", (aslr ? "ASLR " : "") + (nx ? "DEP" : "") || "无"]
-    ];
-    $("peStats").innerHTML = data.map(d =>
-        '<div class="stat">' + peEsc(d[0]) + "<b>" + d[1] + "</b></div>").join("");
-}
-
-function peRenderNotes(it) {
-    const R = it.R, pe = it.pe, ent = peMaxEnt(pe);
-    const aslr = !!(R.dllChar & 0x40), nx = !!(R.dllChar & 0x100);
-    let h = "";
-    if (ent > 7.2) h += '<div class="note warn"><b>节区熵值 ' + ent.toFixed(2) +
-        "</b>，接近随机数据 —— 该模块可能被压缩或加壳（UPX / VMProtect / Themida 等），此时导入表只反映壳的存根依赖。</div>";
-    if (R.clr) h += '<div class="note"><b>.NET 程序集</b>：函数体以 IL 中间语言存放在元数据中，本页只解析 PE 外壳。要查看并编辑 C# 代码请用 dnSpy / ILSpy。</div>';
-    if (!R.exports && (R.characteristics & 0x2000)) h += '<div class="note warn">这个 DLL 没有导出表，通常是资源库、.NET 类库，或仅供特定宿主程序加载。</div>';
-    if (!aslr || !nx) h += '<div class="note warn">缺少 ' + (!aslr ? "ASLR（动态基址）" : "") +
-        (!aslr && !nx ? " 与 " : "") + (!nx ? "DEP / NX 兼容" : "") + "，安全缓解措施不完整。</div>";
-    if (pe.warnings && pe.warnings.length) h += '<div class="note warn">' + pe.warnings.map(peEsc).join("；") + "</div>";
-    $("peNotes").innerHTML = h;
-}
-
-/* ---------- 各视图 ---------- */
-function peViewHeader(it) {
-    const R = it.R, pe = it.pe;
-    const epOff = pe.rvaToOffset(R.entry);
-    const kv = [
-        ["文件类型", (R.characteristics & 0x2000) ? "DLL（动态链接库）" : "EXE / 其他映像"],
-        ["目标架构", (MACHINE[R.machine] || ("未知 " + peHex(R.machine, 4))) + " · " + (R.isPlus ? "PE32+（64 位）" : "PE32（32 位）")],
-        ["链接器版本", R.linker],
-        ["编译时间戳", peDate(R.timeDateStamp)],
-        ["子系统", (SUBSYSTEM[R.subsystem] || ("未知 " + R.subsystem)) + "（要求 " + R.subsysVer + "）"],
-        ["映像基址", "0x" + R.imageBase.toString(16).toUpperCase()],
-        ["入口点 RVA", R.entry ? peHex(R.entry) + "（文件偏移 0x" +
-            (epOff != null ? epOff.toString(16).toUpperCase() : "—") + "）" : "无（DLL 常见）"],
-        ["映像大小 / 头大小", fmtBytes(R.sizeOfImage) + " / " + fmtBytes(R.sizeOfHeaders)],
-        ["节区对齐 / 文件对齐", peHex(R.sectAlign) + " / " + peHex(R.fileAlign)],
-        ["代码大小", fmtBytes(R.sizeOfCode)],
-        ["校验和 CheckSum", peHex(R.checkSum)],
-        ["节区数量", R.nSections],
-        ["导出 / 导入", (R.exports ? R.exports.nFunctions + " 个函数" : "无") + " / " + (R.imports ? R.imports.length + " 个模块" : "无")],
-        ["COFF 符号表", R.nSymbols ? R.nSymbols + " 个符号 @ " + peHex(R.pSymTable) : "已剥离"],
-        [".NET 程序集", R.clr ? ("是 · 运行时 v" + R.clr.runtimeVersion + (R.clr.strongNameSigned ? " · 已强名称签名" : "")) : "否（原生代码）"],
-        ["DOS 存根", R.dosStub || "—"]
-    ];
-    let h = '<div class="pe-subhead">文件头信息</div>' + peKv(kv);
-    h += '<div class="pe-subhead" style="margin-top:22px">文件特征 Characteristics</div><div>' +
-        peTags(flagsToTags(R.characteristics, FILE_CHAR)) + "</div>";
-    h += '<div class="pe-subhead" style="margin-top:22px">安全属性 DllCharacteristics</div><div>' +
-        peTags(flagsToTags(R.dllChar, DLL_CHAR)) + "</div>";
-    h += '<div class="pe-subhead" style="margin-top:22px">数据目录</div>' +
-        peTable(["#", "名称", "RVA", "大小", "文件偏移"],
-            pe.dirs.map((d, i) => [
-                String(i), peEsc(DIR_NAMES[i] || "—"), peHex(d.rva), fmtBytes(d.size),
-                d.rva ? (pe.rvaToOffset(d.rva) != null ? peHex(pe.rvaToOffset(d.rva)) : '<span class="pe-tag r">RVA 越界</span>')
-                      : '<span style="color:rgba(255,255,255,0.25)">空</span>'
-            ]), ["n", "", "n", "n", "n"]);
-    if (it.sha) h += '<div class="pe-subhead" style="margin-top:22px">哈希</div>' + peKv([["SHA-256", it.sha]]);
-    return h;
-}
-
-function peViewSections(it) {
-    const secs = it.pe.sections;
-    return '<div class="pe-subhead">共 ' + secs.length + " 个节区 · 熵值高于 7.2 通常表示该节已被压缩或加壳</div>" +
-        peTable(["名称", "虚拟地址", "虚拟大小", "文件偏移", "原始大小", "熵", "特征"],
-            secs.map(s => [
-                "<b>" + peEsc(s.name) + "</b>",
-                peHex(s.virtualAddress), peHex(s.virtualSize),
-                peHex(s.pointerToRawData), peHex(s.sizeOfRawData),
-                s.entropy > 7.2 ? '<span class="pe-tag r">' + s.entropy.toFixed(2) + "</span>"
-                    : (s.entropy > 6.8 ? '<span class="pe-tag y">' + s.entropy.toFixed(2) + "</span>" : s.entropy.toFixed(2)),
-                peTags(flagsToTags(s.characteristics, SEC_CHAR))
-            ]), ["", "n", "n", "n", "n", "n", ""]);
-}
-
-function peViewExports(it) {
-    const E = it.R.exports;
-    if (!E) return peEmpty("这个模块没有导出表（没有对外暴露函数）");
-    let h = '<div class="pe-subhead">导出表 · <span class="mono">' + peEsc(E.dllName || "(无名称)") + "</span></div>";
-    h += peKv([
-        ["序号基数 Base", E.ordinalBase],
-        ["函数数 / 具名数", E.nFunctions + " / " + E.nNames],
-        ["版本 / 时间戳", E.version + " · " + peDate(E.timeDateStamp)]
-    ]);
-    h += '<div class="opt-row" style="margin-top:16px;padding-top:16px">' +
-        '<input class="pe-search" id="peExpQ" placeholder="按函数名或序号过滤…">' +
-        '<span class="pe-hint" id="peExpCnt" style="margin-top:0"></span></div>' +
-        '<div id="peExpBox"></div>';
-    return h;
-}
-
-function peRenderExports(it) {
-    const box = $("peExpBox");
-    if (!box) return;
-    const E = it.R.exports, q = PE_EXP_Q.toLowerCase();
-    const items = E.items.filter(i => !q ||
-        (i.name || "").toLowerCase().includes(q) ||
-        String(i.ordinal).indexOf(q) >= 0 ||
-        (i.forward || "").toLowerCase().includes(q));
-    box.innerHTML = peTable(["序号", "函数名", "RVA", "转发到"], items.map(i => [
-        String(i.ordinal),
-        i.name ? "<b>" + peEsc(i.name) + "</b>" : '<span style="color:rgba(255,255,255,0.3)">（按序号导出）</span>',
-        peHex(i.rva),
-        i.forward ? '<span class="pe-tag y">→ ' + peEsc(i.forward) + "</span>" : "—"
-    ]), ["n", "", "n", ""]);
-    const c = $("peExpCnt");
-    if (c) c.textContent = "显示 " + items.length + " / " + E.items.length + " 个";
-}
-
-function peViewImports(it) {
-    const I = it.R.imports;
-    if (!I || !I.length) return peEmpty("没有导入表（该模块不依赖其他 DLL）");
-    const total = I.reduce((a, b) => a + b.funcs.length, 0);
-    let h = '<div class="pe-subhead">依赖 ' + I.length + " 个模块，共 " + total + " 个符号</div>";
-    I.forEach(m => {
-        h += '<div style="margin:18px 0 6px"><b class="mono" style="color:#c8c8e8">' + peEsc(m.dll) +
-            '</b> <span class="pe-hint" style="margin-top:0">（' + m.funcs.length + " 个）</span></div>";
-        h += peTable(["函数名 / 序号", "Hint", "导入方式"], m.funcs.map(f => [
-            f.name ? peEsc(f.name) : '<span class="pe-tag y">按序号导入 #' + f.ordinal + "</span>",
-            f.hint >= 0 ? String(f.hint) : "—",
-            f.name ? "名称" : "序号"
-        ]), ["", "n", ""]);
-    });
-    return h;
-}
-
-function peViewResources(it) {
-    const Rr = it.R.resources;
-    if (!Rr || !Rr.length) return peEmpty("没有资源数据");
-    return '<div class="pe-subhead">共 ' + Rr.length + " 项</div>" +
-        peTable(["路径（类型 / 名称 / 语言）", "RVA", "大小", "文件偏移", "代码页"],
-            Rr.map(r => [
-                peEsc(r.path), peHex(r.rva), fmtBytes(r.size),
-                r.offset != null ? peHex(r.offset) : "—",
-                r.codepage ? String(r.codepage) : "—"
-            ]), ["", "n", "n", "n", "n"]);
-}
-
-function peViewStrings(it) {
-    return '<div class="opt-row" style="margin-top:0;padding-top:0;border-top:none">' +
-        '<input class="pe-search" id="peStrQ" placeholder="过滤字符串…">' +
-        '<input class="pe-search" id="peStrMin" style="width:120px" placeholder="最小长度">' +
-        '<span class="pe-hint" id="peStrCnt" style="margin-top:0"></span></div>' +
-        '<div id="peStrBox"></div>';
-}
-
-function peRenderStrings(it) {
-    const box = $("peStrBox");
-    if (!box) return;
-    const all = it.pe.strings(PE_STR_MIN);
-    const q = PE_STR_Q.toLowerCase();
-    const list = q ? all.filter(x => x.v.toLowerCase().indexOf(q) >= 0) : all;
-    const show = list.slice(0, 3000);
-    box.innerHTML = '<div class="pe-str mono">' + (show.length
-        ? show.map(x => '<span style="color:' + (x.t === "U" ? "#e3c38f" : "#d0d0e0") + '">' + peEsc(x.v) + "</span>").join("\n")
-        : "没有匹配结果") + "</div>";
-    const c = $("peStrCnt");
-    if (c) c.textContent = "命中 " + list.length + " 条" + (list.length > 3000 ? "（仅显示前 3000 条）" : "");
-}
-
-function peViewHex(it) {
-    const pe = it.pe, n = Math.min(PE_HEXLEN, pe.u8.length);
-    let out = "";
-    for (let i = 0; i < n; i += 16) {
-        let hx = "", as = "";
-        for (let j = 0; j < 16; j++) {
-            const p = i + j;
-            if (p < n) {
-                const b = pe.u8[p];
-                hx += '<span class="' + (b ? "" : "nz") + '">' + b.toString(16).padStart(2, "0").toUpperCase() + "</span> ";
-                if (j === 7) hx += " ";
-                as += (b >= 0x20 && b < 0x7F) ? '<span class="as">' + peEsc(String.fromCharCode(b)) + "</span>" : ".";
-            } else hx += "   ";
-        }
-        out += '<span class="off">' + i.toString(16).toUpperCase().padStart(8, "0") + "</span>  " + hx + " |" + as + "|\n";
-    }
-    return '<div class="pe-hex mono">' + out + "</div>" +
-        (n < pe.u8.length
-            ? '<div class="opt-row" style="border-top:none;padding-top:12px">' +
-              '<button class="run-btn" id="peMoreHex" style="width:auto;margin-top:0;padding:9px 22px;letter-spacing:1px;background:rgba(255,255,255,0.08)">' +
-              "再加载 64 KB（已显示 " + fmtBytes(n) + " / " + fmtBytes(pe.u8.length) + "）</button></div>"
-            : '<div class="pe-hint">已显示全部 ' + fmtBytes(pe.u8.length) + "</div>");
-}
-
-/* ---------- 主渲染 ---------- */
-function peShow() {
-    const it = PE_LIST.filter(x => x.id === PE_SEL)[0];
-    const res = $("peResult"), act = $("peActions");
-
-    if (!it || !it.R) {
-        res.hidden = true;
-        act.hidden = PE_LIST.length === 0;
-        return;
-    }
-    res.hidden = false;
-    act.hidden = false;
-
-    peRenderStats(it);
-    peRenderNotes(it);
-
-    const body = $("peBody");
-    if (PE_TAB === "header") body.innerHTML = peViewHeader(it);
-    else if (PE_TAB === "sections") body.innerHTML = peViewSections(it);
-    else if (PE_TAB === "exports") { body.innerHTML = peViewExports(it); peRenderExports(it); }
-    else if (PE_TAB === "imports") body.innerHTML = peViewImports(it);
-    else if (PE_TAB === "resources") body.innerHTML = peViewResources(it);
-    else if (PE_TAB === "strings") { body.innerHTML = peViewStrings(it); peRenderStrings(it); }
-    else body.innerHTML = peViewHex(it);
-
-    const eq = $("peExpQ");
-    if (eq) {
-        eq.value = PE_EXP_Q;
-        eq.addEventListener("input", () => { PE_EXP_Q = eq.value; peRenderExports(it); });
-    }
-    const sq = $("peStrQ"), sm = $("peStrMin");
-    if (sq) {
-        sq.value = PE_STR_Q;
-        sq.addEventListener("input", () => { PE_STR_Q = sq.value; peRenderStrings(it); });
-    }
-    if (sm) {
-        sm.value = PE_STR_MIN;
-        sm.addEventListener("input", () => {
-            const v = parseInt(sm.value, 10);
-            if (!isNaN(v) && v >= 2 && v <= 200) { PE_STR_MIN = v; peRenderStrings(it); }
-        });
-    }
-    const mh = $("peMoreHex");
-    if (mh) mh.addEventListener("click", () => { PE_HEXLEN += 65536; peShow(); });
-}
-
-/* ---------- 载入 ---------- */
-async function peAdd(files) {
-    let ok = 0, bad = 0;
-    for (const f of files) {
-        const it = { id: ++PE_SEQ, file: f, pe: null, R: null, sha: null, err: null };
-        PE_LIST.push(it);
-        try {
-            const buf = await f.arrayBuffer();
-            const pe = new PEFile(buf);
-            const R = pe.parse();
-            it.pe = pe;
-            it.R = R;
-            try {
-                const d = await crypto.subtle.digest("SHA-256", buf);
-                it.sha = Array.from(new Uint8Array(d)).map(b => b.toString(16).padStart(2, "0")).join("");
-            } catch (e) { /* file:// 下可能不可用，忽略 */ }
-            if (PE_SEL === null) PE_SEL = it.id;
-            ok++;
-        } catch (err) {
-            it.err = (err && err.message) ? err.message : String(err);
-            bad++;
-        }
-    }
-    peRenderList();
-    peShow();
-    if (bad) peSay("解析完成：成功 " + ok + " 个，失败 " + bad + " 个", "err");
-    else peSay("已解析 " + ok + " 个文件", "ok");
-}
-
-/* ---------- 事件绑定 ---------- */
-bindDropZone($("peDrop"), $("peInput"), peAdd);
-PE_TAB = bindSeg("peTab", v => { PE_TAB = v; peShow(); });
-
-$("peCsv").addEventListener("click", () => {
-    const it = PE_LIST.filter(x => x.id === PE_SEL)[0];
-    if (!it || !it.R || !it.R.exports) { peSay("当前文件没有导出表，无法导出", "err"); return; }
-    const E = it.R.exports;
-    const rows = [["名称", "序号", "RVA", "转发到"]].concat(
-        E.items.map(i => [i.name, i.ordinal, peHex(i.rva), i.forward || ""]));
-    const csv = "\uFEFF" + rows.map(r =>
-        r.map(c => '"' + String(c == null ? "" : c).replace(/"/g, '""') + '"').join(",")).join("\r\n");
-    download(new Blob([csv], { type: "text/csv;charset=utf-8" }),
-        baseName(it.file.name) + "_exports.csv");
-    peSay("已导出 " + E.items.length + " 个函数", "ok");
-});
-
-$("peCopy").addEventListener("click", async () => {
-    const it = PE_LIST.filter(x => x.id === PE_SEL)[0];
-    if (!it || !it.R || !it.R.exports) { peSay("当前文件没有导出表", "err"); return; }
-    const names = it.R.exports.items.map(i => i.name).filter(Boolean);
-    if (!names.length) { peSay("这个 DLL 没有具名的导出函数", "err"); return; }
-    try {
-        await navigator.clipboard.writeText(names.join("\n"));
-        peSay("已复制 " + names.length + " 个函数名", "ok");
-    } catch (e) { peSay("复制失败，请手动选择", "err"); }
-});
-
-$("peClear").addEventListener("click", () => {
-    PE_LIST = [];
-    PE_SEL = null;
-    PE_HEXLEN = 4096;
-    peRenderList();
-    peShow();
-    $("peActions").hidden = true;
-    peSay("已清空列表");
-});
-
-/* 表格标题点击排序（仅作用于 PE 面板表格） */
+/* 表格标题点击排序（MO / PO 面板的表格使用） */
 document.addEventListener("click", e => {
     const th = e.target.closest ? e.target.closest("th[data-i]") : null;
     if (!th) return;
@@ -5088,5 +4225,7 @@ document.addEventListener("click", e => {
 
 </script>
 
-</body>
-</html>
+
+
+
+</body></html>
