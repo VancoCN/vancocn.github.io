@@ -1,0 +1,2314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vanco的文件分析工具</title>
+
+    <!-- 预加载字体 -->
+    <link rel="preload" href="alfyt.ttf" as="font" type="font/ttf" crossorigin>
+
+<style>
+        /* ==================== 自定义字体 ==================== */
+        @font-face {
+            font-family: "AlfytFont";
+            src: url("alfyt.ttf") format("truetype");
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        /* ==================== 全局重置 ==================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        [hidden] { display: none !important; }
+
+        body {
+            font-family: "AlfytFont", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            color: #e8e8e8;
+            padding: 20px 40px 60px;
+            position: relative;
+            z-index: 0;
+            background-color: #0a0a0f;
+            background-image:
+                radial-gradient(1200px 700px at 15% -10%, rgba(90, 90, 150, 0.16), transparent 60%),
+                radial-gradient(900px 600px at 100% 0%, rgba(140, 90, 150, 0.12), transparent 55%);
+            background-attachment: fixed;
+        }
+
+        .noise-overlay {
+            position: fixed;
+            inset: 0;
+            opacity: 0.04;
+            z-index: -1;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        .page-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 5px;
+        }
+
+        .page-title {
+            font-size: 2.4em;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #ffffff 0%, #a0a0c0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-meta {
+            font-size: 0.85em;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 2px;
+        }
+
+        .header-line {
+            border-top: 2px solid rgba(255,255,255,0.12);
+            margin-bottom: 30px;
+        }
+
+        .category-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin-top: 35px;
+            margin-bottom: 16px;
+            color: #b0b0d0;
+            letter-spacing: 1px;
+            padding-left: 4px;
+            border-left: 3px solid rgba(160, 160, 220, 0.6);
+            padding-left: 12px;
+        }
+
+        /* ==================== 玻璃卡片 ==================== */
+        .glass {
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow:
+                0 4px 24px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.08),
+                inset 0 -1px 0 rgba(0,0,0,0.2);
+        }
+
+        /* ==================== 标签页 ==================== */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .tab {
+            padding: 11px 26px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: #999;
+            font-family: inherit;
+            font-size: 0.95em;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab:hover {
+            color: #e0e0e0;
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.22);
+        }
+
+        .tab.active {
+            color: #fff;
+            background: rgba(160,160,220,0.16);
+            border-color: rgba(160,160,220,0.5);
+            box-shadow: 0 0 22px rgba(160,160,220,0.16);
+        }
+
+        /* ==================== 面板 ==================== */
+        .panel-card {
+            padding: 26px 30px;
+        }
+
+        /* 拖放区 */
+        .drop-zone {
+            border: 1.5px dashed rgba(255,255,255,0.2);
+            border-radius: 14px;
+            padding: 34px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .drop-zone:hover {
+            border-color: rgba(160,160,220,0.55);
+            background: rgba(160,160,220,0.06);
+        }
+
+        .drop-zone.dragover {
+            border-color: rgba(160,160,220,0.9);
+            background: rgba(160,160,220,0.12);
+            transform: scale(1.008);
+        }
+
+        .dz-icon {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 14px;
+            fill: rgba(255,255,255,0.28);
+            transition: fill 0.3s;
+        }
+
+        .drop-zone:hover .dz-icon,
+        .drop-zone.dragover .dz-icon {
+            fill: rgba(200,200,240,0.7);
+        }
+
+        .dz-title {
+            font-size: 1em;
+            color: #d0d0e0;
+            letter-spacing: 1px;
+        }
+
+        .dz-sub {
+            margin-top: 8px;
+            font-size: 0.78em;
+            color: rgba(255,255,255,0.32);
+            letter-spacing: 1px;
+            line-height: 1.7;
+        }
+
+        /* 文件列表 */
+        .file-list {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .fi-icon {
+            flex: 0 0 auto;
+            width: 42px;
+            height: 42px;
+            border-radius: 9px;
+            background: rgba(255,255,255,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.62em;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #b8b8d4;
+            text-transform: uppercase;
+            overflow: hidden;
+        }
+
+        .fi-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .fi-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .fi-name {
+            font-size: 0.9em;
+            color: #dcdcea;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fi-meta {
+            margin-top: 4px;
+            font-size: 0.74em;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 0.5px;
+        }
+
+        .fi-meta.done { color: #8fe3b0; }
+        .fi-meta.err  { color: #ff8f8f; }
+
+        .fi-prog {
+            margin-top: 7px;
+            height: 4px;
+            border-radius: 99px;
+            background: rgba(255,255,255,0.07);
+            overflow: hidden;
+        }
+
+        .fi-prog i {
+            display: block;
+            height: 100%;
+            width: 0;
+            border-radius: 99px;
+            background: linear-gradient(90deg, rgba(160,160,220,0.5), #b8b8e8);
+            transition: width 0.25s ease;
+        }
+
+        .fi-del {
+            flex: 0 0 auto;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: rgba(255,255,255,0.3);
+            font-size: 1.1em;
+            line-height: 1;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+
+        .fi-del:hover {
+            color: #ff8f8f;
+            background: rgba(255,120,120,0.1);
+            border-color: rgba(255,120,120,0.25);
+        }
+
+        /* 选项行 */
+        .opt-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .opt-label {
+            font-size: 0.85em;
+            color: #a8a8c0;
+            letter-spacing: 1px;
+            min-width: 76px;
+        }
+
+        .seg {
+            display: inline-flex;
+            gap: 4px;
+            padding: 4px;
+            border-radius: 11px;
+            background: rgba(0,0,0,0.22);
+            border: 1px solid rgba(255,255,255,0.07);
+            flex-wrap: wrap;
+        }
+
+        .seg-btn {
+            padding: 7px 16px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: #9090a8;
+            font-family: inherit;
+            font-size: 0.85em;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .seg-btn:hover { color: #e0e0e0; }
+
+        .seg-btn.active {
+            color: #fff;
+            background: rgba(160,160,220,0.28);
+            box-shadow: 0 1px 8px rgba(0,0,0,0.3);
+        }
+
+        select.sel {
+            padding: 8px 14px;
+            border-radius: 9px;
+            border: 1px solid rgba(255,255,255,0.13);
+            background: rgba(20,20,32,0.75);
+            color: #dcdcea;
+            font-family: inherit;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        select.sel:focus { border-color: rgba(160,160,220,0.55); }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 170px;
+            height: 4px;
+            border-radius: 99px;
+            background: rgba(255,255,255,0.14);
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #c8c8e8;
+            box-shadow: 0 0 10px rgba(160,160,220,0.6);
+            cursor: pointer;
+        }
+
+        input[type=range]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border: none;
+            border-radius: 50%;
+            background: #c8c8e8;
+            box-shadow: 0 0 10px rgba(160,160,220,0.6);
+            cursor: pointer;
+        }
+
+        .range-val {
+            font-size: 0.82em;
+            color: #c0c0d8;
+            min-width: 42px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .chk {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+            color: #a8a8c0;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .chk input { accent-color: #9090c8; width: 15px; height: 15px; cursor: pointer; }
+
+        /* 运行按钮 */
+        .run-btn {
+            margin-top: 24px;
+            width: 100%;
+            padding: 15px;
+            border-radius: 13px;
+            border: 1px solid rgba(160,160,220,0.35);
+            background: linear-gradient(135deg, rgba(160,160,220,0.22), rgba(120,120,180,0.14));
+            color: #fff;
+            font-family: inherit;
+            font-size: 1em;
+            font-weight: 600;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .run-btn:hover:not(:disabled) {
+            border-color: rgba(160,160,220,0.7);
+            box-shadow: 0 0 26px rgba(160,160,220,0.2);
+            transform: translateY(-1px);
+        }
+
+        .run-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* 状态条 */
+        .status {
+            margin-top: 16px;
+            font-size: 0.82em;
+            color: rgba(255,255,255,0.45);
+            letter-spacing: 1px;
+            min-height: 1.2em;
+            line-height: 1.7;
+        }
+
+        .status.err { color: #ff8f8f; }
+        .status.ok  { color: #8fe3b0; }
+
+        .note {
+            margin-top: 18px;
+            font-size: 0.74em;
+            color: rgba(255,255,255,0.24);
+            letter-spacing: 0.5px;
+            line-height: 1.9;
+        }
+
+        .note b { color: rgba(255,255,255,0.45); font-weight: 600; }
+
+        /* 统计 */
+        .stat-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .stat {
+            padding: 8px 16px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.78em;
+            color: #9090a8;
+            letter-spacing: 1px;
+        }
+
+        .stat b {
+            color: #e0e0f0;
+            font-weight: 700;
+            font-size: 1.15em;
+            margin-left: 6px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .footer {
+            margin-top: 55px;
+            text-align: center;
+            color: rgba(255,255,255,0.2);
+            font-size: 0.85em;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 16px 18px 40px; }
+            .page-title { font-size: 1.8em; }
+            .panel-card { padding: 20px 16px; }
+            .opt-label { min-width: 100%; }
+            .category-title { margin-top: 28px; }
+        }
+        .crypto-box { display: flex; flex-direction: column; gap: 8px; }
+        .crypto-label { font-size: 0.85em; color: #a8a8c0; letter-spacing: 1px; }
+        .ta { width: 100%; min-height: 180px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px; color: #dcdcea; font-family: inherit; font-size: 0.9em; line-height: 1.6; resize: vertical; outline: none; }
+        .ta:focus { border-color: rgba(160,160,220,0.5); }
+        .crypto-hint { font-size: 0.78em; color: rgba(255,255,255,0.3); text-align: right; letter-spacing: 0.5px; }
+
+        /* ==================== PE 解析面板 ==================== */
+        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+
+        .file-item.clickable { cursor: pointer; transition: background 0.25s, border-color 0.25s; }
+        .file-item.clickable:hover { background: rgba(255,255,255,0.07); }
+        .file-item.sel { border-color: rgba(160,160,220,0.5); background: rgba(160,160,220,0.1); }
+        .file-item.bad { border-color: rgba(255,120,120,0.3); }
+
+        .pe-hint {
+            margin-top: 16px; font-size: 0.78em; color: rgba(255,255,255,0.32);
+            letter-spacing: 0.5px;
+        }
+
+        .pe-kv {
+            display: grid; grid-template-columns: 168px 1fr;
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
+            overflow: hidden; background: rgba(0,0,0,0.18);
+        }
+        .pe-kv > div {
+            padding: 8px 14px; font-size: 0.8em; letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255,255,255,0.055); word-break: break-all;
+        }
+        .pe-kv > div:nth-child(odd) { background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.42); }
+        .pe-kv > div:nth-child(even) { color: #dcdcea; }
+        .pe-kv > div:nth-last-child(-n+2) { border-bottom: none; }
+
+        .pe-tag {
+            display: inline-block; padding: 2px 8px; margin: 2px 4px 2px 0;
+            border-radius: 6px; font-size: 0.72em; letter-spacing: 0.5px;
+            background: rgba(160,160,220,0.14); border: 1px solid rgba(160,160,220,0.3);
+            color: #c2c2e2;
+        }
+        .pe-tag.g { background: rgba(143,227,176,0.12); border-color: rgba(143,227,176,0.3); color: #8fe3b0; }
+        .pe-tag.y { background: rgba(227,195,143,0.12); border-color: rgba(227,195,143,0.3); color: #e3c38f; }
+        .pe-tag.r { background: rgba(255,143,143,0.12); border-color: rgba(255,143,143,0.32); color: #ff8f8f; }
+
+        .pe-table-wrap {
+            max-height: 460px; overflow: auto;
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
+        }
+        table.pe {
+            width: 100%; border-collapse: collapse; font-size: 0.76em; letter-spacing: 0.3px;
+        }
+        table.pe.wide, table.po.wide { min-width: 640px; }
+        table.pe th, table.po th {
+            position: sticky; top: 0; z-index: 1;
+            background: rgba(24,24,38,0.98); color: rgba(255,255,255,0.45);
+            font-weight: 500; text-align: left; white-space: nowrap;
+            padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer; user-select: none;
+        }
+        table.pe th:hover, table.po th:hover { color: #c8c8e8; }
+        table.pe td, table.po td {
+            padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,0.055);
+            color: #d0d0e0; vertical-align: top; word-break: break-all;
+        }
+        table.pe tbody tr:hover, table.po tbody tr:hover { background: rgba(255,255,255,0.035); }
+        table.pe tbody tr:last-child td, table.po tbody tr:last-child td { border-bottom: none; }
+        table.pe td.n, table.po td.n { text-align: right; color: rgba(255,255,255,0.5); white-space: nowrap; }
+
+        .pe-empty {
+            padding: 30px; text-align: center; font-size: 0.82em;
+            color: rgba(255,255,255,0.28); letter-spacing: 1px;
+            border: 1px dashed rgba(255,255,255,0.12); border-radius: 12px;
+        }
+
+        .pe-hex, .pe-str {
+            max-height: 440px; overflow: auto; white-space: pre;
+            background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px; padding: 14px;
+            font-size: 0.78em; line-height: 1.7; color: #c8c8d8;
+        }
+        .pe-str { white-space: pre-wrap; word-break: break-all; color: #d0d0e0; }
+        .pe-hex .off { color: rgba(255,255,255,0.22); }
+        .pe-hex .as  { color: #8fe3b0; }
+        .pe-hex .nz  { color: rgba(255,255,255,0.16); }
+
+        .pe-search {
+            padding: 7px 12px; border-radius: 9px; width: 230px;
+            border: 1px solid rgba(255,255,255,0.13); background: rgba(20,20,32,0.75);
+            color: #dcdcea; font-family: inherit; font-size: 0.82em; outline: none;
+        }
+        .pe-search:focus { border-color: rgba(160,160,220,0.55); }
+
+        .pe-subhead {
+            font-size: 0.85em; color: #c0c0d8; letter-spacing: 1px; margin: 16px 0 8px;
+        }
+        .pe-subhead:first-child { margin-top: 0; }
+        .note.warn { border-left: 3px solid rgba(227,195,143,0.6); background: rgba(227,195,143,0.06); }
+        .note.warn b { color: #e3c38f; }
+
+        /* ---------- MO / PO 在线编辑 ---------- */
+        table.po td.po-cell {
+            max-width: 330px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        table.po tbody tr { cursor: pointer; }
+        table.po tbody tr.po-sel td { background: rgba(160,160,220,0.14); }
+        table.po td.po-idx { color: rgba(255,255,255,0.32); white-space: nowrap; }
+        .po-more { margin-top: 12px; text-align: center; }
+
+        .po-mini {
+            padding: 7px 14px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.13); background: rgba(255,255,255,0.05);
+            color: #c0c0d8; font-family: inherit; font-size: 0.82em; letter-spacing: 1px;
+            cursor: pointer; transition: all 0.25s ease;
+        }
+        .po-mini:hover { color: #fff; border-color: rgba(160,160,220,0.5); background: rgba(160,160,220,0.14); }
+        .po-mini.ok { color: #8fe3b0; border-color: rgba(143,227,176,0.35); }
+        .po-mini.ok:hover { background: rgba(143,227,176,0.14); border-color: rgba(143,227,176,0.6); }
+        .po-mini.del { color: #ff8f8f; border-color: rgba(255,143,143,0.3); }
+        .po-mini.del:hover { background: rgba(255,143,143,0.14); border-color: rgba(255,143,143,0.55); }
+        .po-mini:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        .po-edit {
+            margin-top: 18px; padding: 18px 20px; border-radius: 14px;
+            background: rgba(0,0,0,0.22); border: 1px solid rgba(160,160,220,0.28);
+        }
+        .po-edit-head {
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;
+            font-size: 0.88em; color: #c8c8e0; letter-spacing: 1px;
+        }
+        .po-edit-head .sp { flex: 1; }
+        .po-field { margin-bottom: 12px; }
+        .po-field > label {
+            display: block; font-size: 0.74em; color: rgba(255,255,255,0.42);
+            letter-spacing: 1px; margin-bottom: 5px;
+        }
+        .po-src {
+            padding: 9px 12px; border-radius: 9px; background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07); color: #c8c8d8;
+            font-size: 0.86em; line-height: 1.7; white-space: pre-wrap;
+            word-break: break-word; max-height: 170px; overflow: auto;
+        }
+        .po-ta {
+            width: 100%; min-height: 78px; background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+            padding: 11px 13px; color: #dcdcea; font-family: inherit;
+            font-size: 0.9em; line-height: 1.65; resize: vertical; outline: none;
+        }
+        .po-ta:focus { border-color: rgba(160,160,220,0.55); }
+        .po-ta:disabled { opacity: 0.5; }
+        .po-hd-box { margin-top: 14px; }
+    </style>
+<base target="_blank">
+</head>
+<body>
+
+<div class="noise-overlay"></div>
+
+<div class="page-header">
+    <div class="page-title">文件分析工具</div>
+    <div class="header-meta">纯本地处理 · 文件不会离开你的设备</div>
+</div>
+<div class="header-line"></div>
+
+<div class="tabs">
+    <button class="tab active" data-tab="pe">PE 解析</button>
+    <button class="tab" data-tab="midi">MIDI 解析</button>
+</div>
+
+<!-- ==================== PE 解析 ==================== -->
+<section class="panel" id="panel-pe" hidden>
+    <div class="panel-card glass">
+        <div class="drop-zone" id="peDrop">
+            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM8.5 13h7v1.5h-7V13zm0 3h7v1.5h-7V16z"/></svg>
+            <div class="dz-title">拖拽 .dll / .exe / .sys 到这里，或点击选择</div>
+            <div class="dz-sub">解析 PE 文件结构：文件头 · 节区表 · 导出函数 · 导入表 · 资源 · 字符串<br>支持 .dll / .exe / .sys / .ocx / .cpl / .drv / .efi，可一次选择多个</div>
+            <input type="file" id="peInput" accept=".dll,.exe,.sys,.ocx,.cpl,.drv,.efi,.mui" multiple hidden>
+        </div>
+
+        <div class="file-list" id="peFiles"></div>
+
+        <div id="peResult" hidden>
+            <div class="stat-row" id="peStats"></div>
+            <div id="peNotes"></div>
+
+            <div class="opt-row">
+                <span class="opt-label">查看详情</span>
+                <div class="seg" id="peTab">
+                    <button class="seg-btn active" data-v="header">文件头</button>
+                    <button class="seg-btn" data-v="sections">节区表</button>
+                    <button class="seg-btn" data-v="exports">导出函数</button>
+                    <button class="seg-btn" data-v="imports">导入表</button>
+                    <button class="seg-btn" data-v="resources">资源</button>
+                    <button class="seg-btn" data-v="strings">字符串</button>
+                    <button class="seg-btn" data-v="hex">十六进制</button>
+                </div>
+            </div>
+
+            <div id="peBody" style="margin-top:18px"></div>
+        </div>
+
+        <div class="opt-row" id="peActions" hidden style="border-top:none;padding-top:10px">
+            <button class="run-btn" id="peCsv" style="width:auto;flex:1;margin-top:0;background:rgba(255,255,255,0.08);">导 出 函 数 表</button>
+            <button class="run-btn" id="peCopy" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);">复 制 函 数 名</button>
+            <button class="run-btn" id="peClear" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);">清 空 列 表</button>
+        </div>
+
+        <div class="status" id="peStatus"></div>
+
+        <div class="note">
+            <b>说明</b><br>
+            · 纯本地解析，文件不会离开你的设备；本页<b>只做只读分析</b>，不会修改任何字节<br>
+            · 解析范围：DOS / PE 头、COFF 头、可选头（PE32 与 PE32+）、节区表、导出表（含转发导出）、导入表、资源目录、CLR 头<br>
+            · <b>节区熵值</b>接近 8.00 通常意味着被压缩或加壳，此时静态解析出的导入表只是壳的存根，不代表程序真实依赖<br>
+            · 检测到 .NET 程序集时，函数体是以 IL 中间语言存放的，要看 C# 代码请用 dnSpy / ILSpy<br>
+            · 点击表格标题可排序；大文件的字符串提取会比较占内存
+        </div>
+    </div>
+</section>
+
+<!-- ==================== MIDI 解析 ==================== -->
+<section class="panel" id="panel-midi" hidden>
+    <div class="panel-card glass">
+        <div class="drop-zone" id="midiDrop">
+            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
+            <div class="dz-title">拖拽 .mid / .midi 文件到这里，或点击选择</div>
+            <div class="dz-sub">解析标准 MIDI 文件（SMF）结构：文件头 · 轨道 · 音符 · 速度 / 拍号 / 调号 · 事件 · 十六进制<br>支持格式 0 / 1 / 2 与 RIFF(RMID) 包裹文件，可一次选择多个</div>
+            <input type="file" id="midiInput" accept=".mid,.midi,.smf,.kar,.rmi" multiple hidden>
+        </div>
+
+        <div class="file-list" id="midiFiles"></div>
+
+        <div id="midiResult" hidden>
+            <div class="stat-row" id="midiStats"></div>
+            <div id="midiWarn"></div>
+
+            <div class="opt-row">
+                <span class="opt-label">查看详情</span>
+                <div class="seg" id="midiTab">
+                    <button class="seg-btn active" data-v="overview">概览</button>
+                    <button class="seg-btn" data-v="notes">音符</button>
+                    <button class="seg-btn" data-v="events">事件</button>
+                    <button class="seg-btn" data-v="hex">十六进制</button>
+                </div>
+            </div>
+
+            <div id="midiBody" style="margin-top:18px"></div>
+        </div>
+
+        <div class="opt-row" id="midiActions" hidden style="border-top:none;padding-top:10px">
+            <button class="run-btn" id="midiCsv" style="width:auto;flex:1;margin-top:0;background:rgba(255,255,255,0.08);">导 出 音 符 表</button>
+            <button class="run-btn" id="midiClear" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);">清 空 列 表</button>
+        </div>
+
+        <div class="status" id="midiStatus"></div>
+
+        <div class="note">
+            <b>说明</b><br>
+            · 纯本地解析，文件不会离开你的设备；本页<b>只做只读分析</b>，不会修改任何字节<br>
+            · 支持标准 MIDI 文件（SMF）格式 0 / 1 / 2，自动收集速度变化并换算成真实秒数<br>
+            · 音符由 Note On / Note Off（含力度 0 的 Note On）配对得到，未关闭的悬空音符会在提示区标出<br>
+            · 事件视图可按轨道筛选，涵盖元数据（轨道名 / 速度 / 拍号 / 调号 / 歌词 / 标记等）、SysEx 与全部通道事件<br>
+            · .rmi 为 RIFF 容器包裹的 MIDI，会自动定位其中的 MThd 数据；点击表格标题可排序
+        </div>
+    </div>
+</section>
+
+
+<div class="footer">Vanco的小站 · 文件分析</div>
+
+<!-- ==================== JS ==================== -->
+<script>
+/* ==================== 公用 ==================== */
+const $ = id => document.getElementById(id);
+
+function fmtBytes(n) {
+    if (n < 1024) return n + " B";
+    if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
+    if (n < 1073741824) return (n / 1048576).toFixed(2) + " MB";
+    return (n / 1073741824).toFixed(2) + " GB";
+}
+
+function extOf(name) {
+    const i = name.lastIndexOf(".");
+    return i < 0 ? "" : name.slice(i + 1).toLowerCase();
+}
+
+function baseName(name) {
+    const i = name.lastIndexOf(".");
+    return i < 0 ? name : name.slice(0, i);
+}
+
+function yieldUI() { return new Promise(r => setTimeout(r, 0)); }
+
+function download(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
+}
+
+function bindDropZone(zone, input, onFiles) {
+    zone.addEventListener("click", e => {
+        // input.click() 触发的 click 会冒泡回这里，不拦截会无限递归
+        if (e.target === input) return;
+        input.click();
+    });
+    input.addEventListener("change", () => {
+        if (input.files && input.files.length) onFiles(Array.from(input.files));
+        input.value = "";
+    });
+    ["dragenter", "dragover"].forEach(ev =>
+        zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add("dragover"); })
+    );
+    ["dragleave", "drop"].forEach(ev =>
+        zone.addEventListener(ev, e => {
+            e.preventDefault();
+            if (ev === "dragleave" && zone.contains(e.relatedTarget)) return;
+            zone.classList.remove("dragover");
+        })
+    );
+    zone.addEventListener("drop", e => {
+        const fs = Array.from(e.dataTransfer.files || []);
+        if (fs.length) onFiles(fs);
+    });
+}
+
+function bindSeg(segId, onChange) {
+    const seg = $(segId);
+    seg.addEventListener("click", e => {
+        const btn = e.target.closest(".seg-btn");
+        if (!btn) return;
+        Array.from(seg.querySelectorAll(".seg-btn")).forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        onChange(btn.dataset.v);
+    });
+    const active = seg.querySelector(".seg-btn.active");
+    return active ? active.dataset.v : seg.querySelector(".seg-btn").dataset.v;
+}
+
+/* ==================== PE / DLL 解析 ==================== */
+/* ---- 解析核心：纯逻辑，不依赖 DOM ---- */
+
+/* 纯逻辑层：不依赖 DOM，可在浏览器 / Node 中独立运行 */
+
+const MACHINE = {
+  0x0:'未知',0x184:'DEC Alpha AXP',0x1a2:'Hitachi SH3',0x1a3:'Hitachi SH3 DSP',0x1a6:'Hitachi SH4',
+  0x1a8:'Hitachi SH5',0x1c0:'ARM',0x1c2:'Thumb',0x1c4:'ARMv7 / Thumb-2',0x1d3:'Matsushita AM33',
+  0x1f0:'PowerPC (LE)',0x1f1:'PowerPC (FP)',0x200:'Intel IA64 (Itanium)',0x266:'MIPS16',
+  0x366:'MIPS + FPU',0x466:'MIPS16 + FPU',0xebc:'EFI Byte Code',0x14c:'x86 (i386)',
+  0x162:'MIPS R3000 (BE)',0x166:'MIPS (LE)',0x169:'MIPS (LE WCE v2)',0x5032:'RISC-V 32',
+  0x5064:'RISC-V 64',0x5128:'RISC-V 128',0x6232:'LoongArch 32',0x6264:'LoongArch 64',
+  0x8664:'x86-64 (AMD64)',0x9041:'Mitsubishi M32R',0xa641:'ARM64 (AArch64)',0xaa64:'ARM64 (AArch64)'
+};
+
+const FILE_CHAR = [
+  [0x0001,'重定位信息已剥离',''],[0x0002,'可执行映像',''],[0x0004,'行号信息已剥离',''],
+  [0x0008,'本地符号已剥离',''],[0x0010,'强制工作集裁剪',''],[0x0020,'支持 >2GB 地址','g'],
+  [0x0080,'低字节序反转','y'],[0x0100,'32 位机器',''],
+  [0x0200,'调试信息已剥离',''],[0x0400,'可从移动介质运行',''],
+  [0x0800,'可从网络运行',''],[0x1000,'系统文件',''],[0x2000,'是 DLL（不是 EXE）','g'],
+  [0x4000,'仅单处理器运行',''],[0x8000,'高字节序反转','y']
+];
+
+const SUBSYSTEM = {
+  0:'未知',1:'Native（驱动）',2:'Windows GUI',3:'Windows 控制台 (CUI)',4:'OS/2 CUI',
+  5:'POSIX CUI',7:'POSIX CUI (native)',8:'Windows 9x Native',9:'Windows CE GUI',
+  10:'EFI 应用程序',11:'EFI 启动服务驱动',12:'EFI 运行时驱动',13:'EFI ROM',14:'XBOX',
+  16:'Windows 启动应用程序',17:'XBOX 代码目录'
+};
+
+const DLL_CHAR = [
+  [0x0020,'高熵 ASLR（64位）','g'],[0x0040,'ASLR 动态基址','g'],[0x0080,'强制完整性校验','g'],
+  [0x0100,'DEP / NX 兼容','g'],[0x0200,'无需隔离',''],[0x0400,'不使用 SEH','y'],
+  [0x0800,'禁止绑定',''],[0x1000,'AppContainer','y'],[0x2000,'WDM 驱动',''],
+  [0x4000,'控制流保护 CFG','g'],[0x8000,'终端服务感知','']
+];
+
+const SEC_CHAR = [
+  [0x00000020,'含代码',''],[0x00000040,'已初始化数据',''],[0x00000080,'未初始化数据',''],
+  [0x00000100,'其他 / 注释',''],[0x00000200,'信息 / 注释',''],[0x00000800,'将移除',''],
+  [0x00001000,'COMDAT',''],[0x00008000,'GP 相对',''],[0x00020000,'已弃用内存',''],
+  [0x00080000,'已弃用内存',''],[0x01000000,'重定位溢出',''],
+  [0x02000000,'可丢弃',''],[0x04000000,'不可缓存',''],[0x08000000,'不可分页',''],
+  [0x10000000,'可共享',''],[0x20000000,'可执行','g'],[0x40000000,'可读',''],
+  [0x80000000,'可写','y']
+];
+
+const DIR_NAMES = ['导出表','导入表','资源','异常','安全/证书','重定位','调试',
+  '架构特定','全局指针','TLS','加载配置','绑定导入','IAT','延迟导入','CLR 运行时头','保留'];
+
+const RES_TYPES = {1:'光标',2:'位图',3:'图标',4:'菜单',5:'对话框',6:'字符串表',7:'字体目录',
+  8:'字体',9:'加速器',10:'RCData',11:'消息表',12:'光标组',14:'图标组',16:'版本信息',
+  17:'DlgInclude',19:'即插即用',20:'VXD',21:'动画光标',22:'动画图标',23:'HTML',24:'清单 (Manifest)'};
+
+function flagsToTags(v, table){
+  return table.filter(f => v & f[0]).map(f => ({text:f[1], cls:f[2]}));
+}
+
+function entropyOf(bytes){
+  if(!bytes.length) return 0;
+  const c = new Uint32Array(256);
+  for(let i=0;i<bytes.length;i++) c[bytes[i]]++;
+  let e = 0, n = bytes.length;
+  for(let i=0;i<256;i++){ if(!c[i]) continue; const p = c[i]/n; e -= p*Math.log2(p); }
+  return e;
+}
+
+function peHex(n, w){ return '0x' + (n>>>0).toString(16).toUpperCase().padStart(w||8,'0'); }
+
+class PEFile {
+  constructor(arrayBuffer){
+    this.buf = arrayBuffer;
+    this.dv  = new DataView(arrayBuffer);
+    this.u8  = new Uint8Array(arrayBuffer);
+    this.sizeOfHeaders = 0;
+    this.sections = [];
+    this.dirs = [];
+    this.warnings = [];
+  }
+  chk(o,n){ return o >= 0 && o + n <= this.buf.byteLength; }
+  r8 (o){ return this.chk(o,1) ? this.dv.getUint8(o)   : 0; }
+  r16(o){ return this.chk(o,2) ? this.dv.getUint16(o,true) : 0; }
+  r32(o){ return this.chk(o,4) ? this.dv.getUint32(o,true) : 0; }
+  r64(o){ return this.chk(o,8) ? this.dv.getBigUint64(o,true) : 0n; }
+
+  ascii(o, max){
+    if(!this.chk(o,1)) return '';
+    let s = '', i = o, end = Math.min(this.buf.byteLength, o + (max||256));
+    for(; i < end; i++){ const c = this.u8[i]; if(c === 0) break; s += String.fromCharCode(c & 0x7f); }
+    return s;
+  }
+  utf16(o, chars){
+    if(!this.chk(o,1)) return '';
+    let s = '';
+    for(let i=0;i<chars;i++){ const c = this.r16(o + i*2); if(c === 0) break; s += String.fromCharCode(c); }
+    return s;
+  }
+
+  /* RVA -> 文件偏移 */
+  rvaToOffset(rva){
+    if(rva <= 0) return null;
+    if(rva < this.sizeOfHeaders && rva < this.buf.byteLength) return rva;
+    for(const s of this.sections){
+      const vSize = Math.max(s.virtualSize, s.sizeOfRawData);
+      if(rva >= s.virtualAddress && rva < s.virtualAddress + vSize){
+        const d = rva - s.virtualAddress;
+        return d < s.sizeOfRawData ? s.pointerToRawData + d : null;
+      }
+    }
+    return null;
+  }
+
+  parse(){
+    if(this.buf.byteLength < 64) throw new Error('文件太小，不是有效的 PE 文件');
+    if(this.r16(0) !== 0x5A4D) throw new Error('缺少 MZ 头，不是 PE/DLL 文件');
+
+    const lf = this.r32(0x3C);
+    if(!this.chk(lf,4) || this.r32(lf) !== 0x00004550)
+      throw new Error('PE 签名无效（偏移 ' + peHex(lf) + ' 处未找到 "PE\\0\\0"）');
+
+    const R = {};
+    R.dosStub = this.ascii(0x4E, 60).replace(/[^\x20-\x7e]/g,'');
+    R.e_lfanew = lf;
+
+    const c = lf + 4;
+    R.machine       = this.r16(c);
+    R.nSections     = this.r16(c + 2);
+    R.timeDateStamp = this.r32(c + 4);
+    R.pSymTable     = this.r32(c + 8);
+    R.nSymbols      = this.r32(c + 12);
+    R.sizeOfOptHdr  = this.r16(c + 16);
+    R.characteristics = this.r16(c + 18);
+
+    const o = c + 20;
+    R.magic = this.r16(o);
+    R.isPlus = R.magic === 0x20B;
+    if(R.magic !== 0x10B && R.magic !== 0x20B){
+      R.magic = 0x10B; R.isPlus = false;
+      this.warnings.push('可选头 Magic 异常，已按 PE32 尝试解析');
+    }
+
+    /* PE32 与 PE32+ 在 DllCharacteristics 之前字段偏移完全一致：
+       PE32  = BaseOfData(24) + ImageBase(28,4)
+       PE32+ = ImageBase(24,8)，BaseOfData 不存在 —— 两者都在 32 处对齐到 SectionAlignment。
+       差异只出现在尾部：NumberOfRvaAndSizes = 92(PE32) / 108(PE32+)，数据目录 = 96 / 112。 */
+    R.linker      = this.r8(o+2) + '.' + this.r8(o+3);
+    R.sizeOfCode  = this.r32(o+4);
+    R.entry       = this.r32(o+16);
+    R.baseOfCode  = this.r32(o+20);
+    R.imageBase   = R.isPlus ? this.r64(o+24) : BigInt(this.r32(o+28));
+    R.sectAlign   = this.r32(o+32);
+    R.fileAlign   = this.r32(o+36);
+    R.osVer       = this.r16(o+40) + '.' + this.r16(o+42);
+    R.imgVer      = this.r16(o+44) + '.' + this.r16(o+46);
+    R.subsysVer   = this.r16(o+48) + '.' + this.r16(o+50);
+    R.sizeOfImage = this.r32(o+56);
+    R.sizeOfHeaders = this.r32(o+60);
+    R.checkSum    = this.r32(o+64);
+    R.subsystem   = this.r16(o+68);
+    R.dllChar     = this.r16(o+70);
+    const nDirs   = this.r32(R.isPlus ? o+108 : o+92);
+    const dirOff  = (R.isPlus ? o+112 : o+96);
+    this.sizeOfHeaders = R.sizeOfHeaders;
+
+    R.nDirs = nDirs;
+    this.dirs = [];
+    for(let i=0;i<Math.min(nDirs,16);i++){
+      this.dirs.push({ rva:this.r32(dirOff+i*8), size:this.r32(dirOff+i*8+4) });
+    }
+
+    /* 节区表 */
+    const secOff = o + R.sizeOfOptHdr;
+    this.sections = [];
+    for(let i=0;i<R.nSections;i++){
+      const s = secOff + i*40;
+      if(!this.chk(s,40)) break;
+      const sec = {
+        name: this.ascii(s, 8),
+        virtualSize: this.r32(s+8),
+        virtualAddress: this.r32(s+12),
+        sizeOfRawData: this.r32(s+16),
+        pointerToRawData: this.r32(s+20),
+        characteristics: this.r32(s+36)
+      };
+      const from = sec.pointerToRawData;
+      sec.entropy = (sec.sizeOfRawData && this.chk(from, Math.min(sec.sizeOfRawData, this.buf.byteLength - from)))
+        ? entropyOf(this.u8.subarray(from, from + Math.min(sec.sizeOfRawData, this.buf.byteLength - from)))
+        : 0;
+      this.sections.push(sec);
+    }
+    this.R = R;
+
+    R.exports  = this.parseExports();
+    R.imports  = this.parseImports();
+    R.resources = this.parseResources();
+    R.clr      = this.parseCLR();
+    return R;
+  }
+
+  parseExports(){
+    const d = this.dirs[0];
+    if(!d || !d.rva) return null;
+    const off = this.rvaToOffset(d.rva);
+    if(off == null) return null;
+
+    const nFuncs = this.r32(off+20), nNames = this.r32(off+24);
+    const base   = this.r32(off+16);
+    const aFn = this.rvaToOffset(this.r32(off+28));
+    const aNm = this.rvaToOffset(this.r32(off+32));
+    const aOr = this.rvaToOffset(this.r32(off+36));
+    if(aFn == null) return null;
+
+    const out = {
+      dllName: this.ascii(this.rvaToOffset(this.r32(off+12)) ?? 0, 256),
+      timeDateStamp: this.r32(off+4),
+      version: this.r16(off+8) + '.' + this.r16(off+10),
+      ordinalBase: base, nFunctions: nFuncs, nNames: nNames, items: []
+    };
+    const dirEnd = d.rva, dirSize = d.size || 1;
+
+    for(let i=0;i<Math.min(nFuncs, 20000);i++){
+      const rva = this.r32(aFn + i*4);
+      if(!rva) continue;
+      /* 转发导出：函数 RVA 落在导出表自身范围内，这里存的是一个 "Other.dll.Func" 字符串 */
+      const fwd = (rva >= dirEnd && rva < dirEnd + dirSize)
+        ? this.ascii(this.rvaToOffset(rva) ?? 0, 256) : null;
+      out.items.push({ ordinal: base + i, rva: rva, forward: fwd, name: '' });
+    }
+    for(let i=0;i<Math.min(nNames, 20000);i++){
+      if(aNm == null || aOr == null) break;
+      const nrva = this.r32(aNm + i*4);
+      const nam  = this.ascii(this.rvaToOffset(nrva) ?? 0, 512);
+      const idx  = this.r16(aOr + i*2);
+      if(out.items[idx]) out.items[idx].name = nam;
+    }
+    return out;
+  }
+
+  parseImports(){
+    const d = this.dirs[1];
+    if(!d || !d.rva) return null;
+    const off = this.rvaToOffset(d.rva);
+    if(off == null) return null;
+
+    const list = [];
+    for(let i=0;i<512;i++){
+      const e = off + i*20;
+      if(!this.chk(e,20)) break;
+      const oft = this.r32(e), nameR = this.r32(e+12), ft = this.r32(e+16);
+      if(!nameR && !ft && !oft) break;
+
+      const nmOff = this.rvaToOffset(nameR);
+      const dll = nmOff != null ? this.ascii(nmOff, 256) : '<?>';
+      const thunkRva = oft || ft;
+      const tOff = this.rvaToOffset(thunkRva);
+      const funcs = [];
+      if(tOff != null){
+        const step = this.R && this.R.isPlus ? 8 : 4;
+        for(let j=0;j<3000;j++){
+          const p = tOff + j*step;
+          if(!this.chk(p,step)) break;
+          const val = step === 8 ? this.r64(p) : BigInt(this.r32(p));
+          if(val === 0n) break;
+          const isOrd = step === 8 ? ((val >> 63n) & 1n) === 1n : ((val >> 31n) & 1n) === 1n;
+          if(isOrd){
+            funcs.push({ name:'', ordinal:Number(val & 0xFFFFn), hint:-1 });
+          }else{
+            const hn = this.rvaToOffset(Number(val & 0xFFFFFFFFn));
+            if(hn == null) continue;
+            funcs.push({ name: this.ascii(hn+2, 512), ordinal:-1, hint: this.r16(hn) });
+          }
+        }
+      }
+      list.push({ dll, funcs, timeDateStamp: this.r32(e+4) });
+    }
+    return list;
+  }
+
+  parseResources(){
+    const d = this.dirs[2];
+    if(!d || !d.rva) return null;
+    const base = this.rvaToOffset(d.rva);
+    if(base == null) return null;
+
+    const out = [];
+    let count = 0;
+    const walk = (off, depth, path) => {
+      if(depth > 3 || count > 4000) return;
+      const nNamed = this.r16(off+12), nId = this.r16(off+14);
+      for(let i=0;i<nNamed + nId;i++){
+        const e = off + 16 + i*8;
+        if(!this.chk(e,8)) return;
+        const nameF = this.r32(e), dataF = this.r32(e+4);
+        let label;
+        if(nameF & 0x80000000){
+          const so = base + (nameF & 0x7FFFFFFF);
+          label = this.utf16(so + 2, this.r16(so));
+        }else{
+          label = (depth === 0 && RES_TYPES[nameF]) ? RES_TYPES[nameF] : '#' + nameF;
+        }
+        if(dataF & 0x80000000){
+          walk(base + (dataF & 0x7FFFFFFF), depth + 1, path.concat(label));
+        }else{
+          const dOff = base + (dataF & 0x7FFFFFFF);
+          if(!this.chk(dOff,16)) continue;
+          const rva = this.r32(dOff);
+          out.push({
+            path: path.concat(label).join(' / '),
+            rva, size: this.r32(dOff+4), codepage: this.r32(dOff+8),
+            offset: this.rvaToOffset(rva)
+          });
+          count++;
+        }
+      }
+    };
+    walk(base, 0, []);
+    return out;
+  }
+
+  parseCLR(){
+    const d = this.dirs[14];
+    if(!d || !d.rva) return null;
+    const off = this.rvaToOffset(d.rva);
+    if(off == null) return null;
+    return {
+      runtimeVersion: this.r16(off+4) + '.' + this.r16(off+6),
+      metaDataRva: this.r32(off+8),
+      metaDataSize: this.r32(off+12),
+      flags: this.r32(off+16),
+      entryPointToken: this.r32(off+20),
+      strongNameSigned: ((this.r32(off+16) & 0x8) === 0) && this.r32(off+24) !== 0
+    };
+  }
+
+  /* 提取可读字符串 */
+  strings(minLen){
+    minLen = minLen || 5;
+    const res = [], n = this.u8.length;
+    let cur = '';
+    for(let i=0;i<n;i++){
+      const b = this.u8[i];
+      if(b >= 0x20 && b < 0x7F){ cur += String.fromCharCode(b); }
+      else { if(cur.length >= minLen) res.push({t:'A', v:cur}); cur = ''; }
+    }
+    if(cur.length >= minLen) res.push({t:'A', v:cur});
+    /* UTF-16LE */
+    let w = '';
+    for(let i=0;i+1<n;i+=2){
+      const b = this.u8[i];
+      if(this.u8[i+1] === 0 && b >= 0x20 && b < 0x7F){ w += String.fromCharCode(b); }
+      else { if(w.length >= minLen) res.push({t:'U', v:w}); w = ''; i--; }
+    }
+    if(w.length >= minLen) res.push({t:'U', v:w});
+    return res;
+  }
+}
+
+/* ---- 面板 UI ---- */
+
+const peStatus = $("peStatus");
+let PE_SEQ = 0;
+let PE_LIST = [];              // {id, file, pe, R, sha, err}
+let PE_SEL = null;             // 当前查看的文件 id
+let PE_TAB = "header";
+let PE_HEXLEN = 4096;
+let PE_EXP_Q = "";
+let PE_STR_Q = "";
+let PE_STR_MIN = 5;
+
+function peEsc(s) {
+    return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function peSay(msg, cls) {
+    peStatus.className = "status " + (cls || "");
+    peStatus.textContent = msg;
+}
+
+function peDate(ts) {
+    if (!ts) return "—";
+    try { return new Date(ts * 1000).toISOString().replace("T", " ").slice(0, 19) + " UTC"; }
+    catch (e) { return String(ts); }
+}
+
+function peTags(arr) {
+    if (!arr || !arr.length) return '<span style="color:rgba(255,255,255,0.25)">—</span>';
+    return arr.map(t => '<span class="pe-tag ' + (t.cls || "") + '">' + peEsc(t.text) + "</span>").join("");
+}
+
+function peKv(pairs) {
+    return '<div class="pe-kv">' + pairs.map(p =>
+        "<div>" + peEsc(p[0]) + '</div><div class="mono">' + peEsc(p[1]) + "</div>"
+    ).join("") + "</div>";
+}
+
+function peTable(heads, rows, cls) {
+    if (!rows.length) return '<div class="pe-empty">这一项没有数据</div>';
+    return '<div class="pe-table-wrap"><table class="pe' + (heads.length >= 5 ? " wide" : "") + '"><thead><tr>' +
+        heads.map((h, i) => '<th data-i="' + i + '">' + peEsc(h) + "</th>").join("") +
+        "</tr></thead><tbody>" + rows.map(r => "<tr>" + r.map((c, i) =>
+            '<td' + (cls && cls[i] ? ' class="' + cls[i] + '"' : "") + ">" + c + "</td>"
+        ).join("") + "</tr>").join("") + "</tbody></table></div>";
+}
+
+function peEmpty(t) { return '<div class="pe-empty">' + peEsc(t) + "</div>"; }
+
+/* ---------- 文件列表 ---------- */
+function peRenderList() {
+    const box = $("peFiles");
+    box.innerHTML = "";
+    PE_LIST.forEach(it => {
+        const row = document.createElement("div");
+        row.className = "file-item clickable" +
+            (it.id === PE_SEL ? " sel" : "") + (it.err ? " bad" : "");
+
+        const ic = document.createElement("div");
+        ic.className = "fi-icon";
+        ic.textContent = extOf(it.file.name) || "?";
+
+        const mn = document.createElement("div");
+        mn.className = "fi-main";
+        const nm = document.createElement("div");
+        nm.className = "fi-name";
+        nm.textContent = it.file.name;
+        const mt = document.createElement("div");
+        mt.className = "fi-meta" + (it.err ? " err" : (it.R ? " done" : ""));
+        if (it.err) mt.textContent = "解析失败：" + it.err;
+        else if (!it.R) mt.textContent = fmtBytes(it.file.size);
+        else {
+            const R = it.R;
+            mt.textContent = (R.characteristics & 0x2000 ? "DLL" : "EXE") + " · " +
+                (R.isPlus ? "64 位" : "32 位") +
+                " · 导出 " + (R.exports ? R.exports.nFunctions : 0) +
+                " · 依赖 " + (R.imports ? R.imports.length : 0) +
+                (R.clr ? " · .NET" : "");
+        }
+        mn.appendChild(nm);
+        mn.appendChild(mt);
+
+        const del = document.createElement("button");
+        del.className = "fi-del";
+        del.type = "button";
+        del.textContent = "×";
+        del.title = "移除";
+        del.addEventListener("click", e => {
+            e.stopPropagation();
+            PE_LIST = PE_LIST.filter(x => x.id !== it.id);
+            if (PE_SEL === it.id) PE_SEL = PE_LIST.length ? PE_LIST[0].id : null;
+            peRenderList();
+            peShow();
+        });
+
+        row.addEventListener("click", () => {
+            if (PE_SEL === it.id) return;
+            PE_SEL = it.id;
+            PE_HEXLEN = 4096;
+            peRenderList();
+            peShow();
+        });
+
+        row.appendChild(ic);
+        row.appendChild(mn);
+        row.appendChild(del);
+        box.appendChild(row);
+    });
+}
+
+/* ---------- 顶部统计与提示 ---------- */
+function peMaxEnt(pe) {
+    return pe.sections.reduce((a, s) => Math.max(a, s.entropy), 0);
+}
+
+function peRenderStats(it) {
+    const R = it.R, ent = peMaxEnt(it.pe);
+    const aslr = !!(R.dllChar & 0x40), nx = !!(R.dllChar & 0x100);
+    const data = [
+        ["类型", (R.characteristics & 0x2000) ? "DLL" : "EXE"],
+        ["位宽", R.isPlus ? "64 位" : "32 位"],
+        ["架构", (MACHINE[R.machine] || "未知").replace(/\s*[（(].*$/, "")],
+        ["导出函数", R.exports ? R.exports.nFunctions : 0],
+        ["依赖模块", R.imports ? R.imports.length : 0],
+        [".NET", R.clr ? "是" : "否"],
+        ["最高节区熵", '<span style="color:' + (ent > 7.2 ? "#ff8f8f" : (ent > 6.8 ? "#e3c38f" : "#e0e0f0")) + '">' + ent.toFixed(2) + "</span>"],
+        ["安全缓解", (aslr ? "ASLR " : "") + (nx ? "DEP" : "") || "无"]
+    ];
+    $("peStats").innerHTML = data.map(d =>
+        '<div class="stat">' + peEsc(d[0]) + "<b>" + d[1] + "</b></div>").join("");
+}
+
+function peRenderNotes(it) {
+    const R = it.R, pe = it.pe, ent = peMaxEnt(pe);
+    const aslr = !!(R.dllChar & 0x40), nx = !!(R.dllChar & 0x100);
+    let h = "";
+    if (ent > 7.2) h += '<div class="note warn"><b>节区熵值 ' + ent.toFixed(2) +
+        "</b>，接近随机数据 —— 该模块可能被压缩或加壳（UPX / VMProtect / Themida 等），此时导入表只反映壳的存根依赖。</div>";
+    if (R.clr) h += '<div class="note"><b>.NET 程序集</b>：函数体以 IL 中间语言存放在元数据中，本页只解析 PE 外壳。要查看并编辑 C# 代码请用 dnSpy / ILSpy。</div>';
+    if (!R.exports && (R.characteristics & 0x2000)) h += '<div class="note warn">这个 DLL 没有导出表，通常是资源库、.NET 类库，或仅供特定宿主程序加载。</div>';
+    if (!aslr || !nx) h += '<div class="note warn">缺少 ' + (!aslr ? "ASLR（动态基址）" : "") +
+        (!aslr && !nx ? " 与 " : "") + (!nx ? "DEP / NX 兼容" : "") + "，安全缓解措施不完整。</div>";
+    if (pe.warnings && pe.warnings.length) h += '<div class="note warn">' + pe.warnings.map(peEsc).join("；") + "</div>";
+    $("peNotes").innerHTML = h;
+}
+
+/* ---------- 各视图 ---------- */
+function peViewHeader(it) {
+    const R = it.R, pe = it.pe;
+    const epOff = pe.rvaToOffset(R.entry);
+    const kv = [
+        ["文件类型", (R.characteristics & 0x2000) ? "DLL（动态链接库）" : "EXE / 其他映像"],
+        ["目标架构", (MACHINE[R.machine] || ("未知 " + peHex(R.machine, 4))) + " · " + (R.isPlus ? "PE32+（64 位）" : "PE32（32 位）")],
+        ["链接器版本", R.linker],
+        ["编译时间戳", peDate(R.timeDateStamp)],
+        ["子系统", (SUBSYSTEM[R.subsystem] || ("未知 " + R.subsystem)) + "（要求 " + R.subsysVer + "）"],
+        ["映像基址", "0x" + R.imageBase.toString(16).toUpperCase()],
+        ["入口点 RVA", R.entry ? peHex(R.entry) + "（文件偏移 0x" +
+            (epOff != null ? epOff.toString(16).toUpperCase() : "—") + "）" : "无（DLL 常见）"],
+        ["映像大小 / 头大小", fmtBytes(R.sizeOfImage) + " / " + fmtBytes(R.sizeOfHeaders)],
+        ["节区对齐 / 文件对齐", peHex(R.sectAlign) + " / " + peHex(R.fileAlign)],
+        ["代码大小", fmtBytes(R.sizeOfCode)],
+        ["校验和 CheckSum", peHex(R.checkSum)],
+        ["节区数量", R.nSections],
+        ["导出 / 导入", (R.exports ? R.exports.nFunctions + " 个函数" : "无") + " / " + (R.imports ? R.imports.length + " 个模块" : "无")],
+        ["COFF 符号表", R.nSymbols ? R.nSymbols + " 个符号 @ " + peHex(R.pSymTable) : "已剥离"],
+        [".NET 程序集", R.clr ? ("是 · 运行时 v" + R.clr.runtimeVersion + (R.clr.strongNameSigned ? " · 已强名称签名" : "")) : "否（原生代码）"],
+        ["DOS 存根", R.dosStub || "—"]
+    ];
+    let h = '<div class="pe-subhead">文件头信息</div>' + peKv(kv);
+    h += '<div class="pe-subhead" style="margin-top:22px">文件特征 Characteristics</div><div>' +
+        peTags(flagsToTags(R.characteristics, FILE_CHAR)) + "</div>";
+    h += '<div class="pe-subhead" style="margin-top:22px">安全属性 DllCharacteristics</div><div>' +
+        peTags(flagsToTags(R.dllChar, DLL_CHAR)) + "</div>";
+    h += '<div class="pe-subhead" style="margin-top:22px">数据目录</div>' +
+        peTable(["#", "名称", "RVA", "大小", "文件偏移"],
+            pe.dirs.map((d, i) => [
+                String(i), peEsc(DIR_NAMES[i] || "—"), peHex(d.rva), fmtBytes(d.size),
+                d.rva ? (pe.rvaToOffset(d.rva) != null ? peHex(pe.rvaToOffset(d.rva)) : '<span class="pe-tag r">RVA 越界</span>')
+                      : '<span style="color:rgba(255,255,255,0.25)">空</span>'
+            ]), ["n", "", "n", "n", "n"]);
+    if (it.sha) h += '<div class="pe-subhead" style="margin-top:22px">哈希</div>' + peKv([["SHA-256", it.sha]]);
+    return h;
+}
+
+function peViewSections(it) {
+    const secs = it.pe.sections;
+    return '<div class="pe-subhead">共 ' + secs.length + " 个节区 · 熵值高于 7.2 通常表示该节已被压缩或加壳</div>" +
+        peTable(["名称", "虚拟地址", "虚拟大小", "文件偏移", "原始大小", "熵", "特征"],
+            secs.map(s => [
+                "<b>" + peEsc(s.name) + "</b>",
+                peHex(s.virtualAddress), peHex(s.virtualSize),
+                peHex(s.pointerToRawData), peHex(s.sizeOfRawData),
+                s.entropy > 7.2 ? '<span class="pe-tag r">' + s.entropy.toFixed(2) + "</span>"
+                    : (s.entropy > 6.8 ? '<span class="pe-tag y">' + s.entropy.toFixed(2) + "</span>" : s.entropy.toFixed(2)),
+                peTags(flagsToTags(s.characteristics, SEC_CHAR))
+            ]), ["", "n", "n", "n", "n", "n", ""]);
+}
+
+function peViewExports(it) {
+    const E = it.R.exports;
+    if (!E) return peEmpty("这个模块没有导出表（没有对外暴露函数）");
+    let h = '<div class="pe-subhead">导出表 · <span class="mono">' + peEsc(E.dllName || "(无名称)") + "</span></div>";
+    h += peKv([
+        ["序号基数 Base", E.ordinalBase],
+        ["函数数 / 具名数", E.nFunctions + " / " + E.nNames],
+        ["版本 / 时间戳", E.version + " · " + peDate(E.timeDateStamp)]
+    ]);
+    h += '<div class="opt-row" style="margin-top:16px;padding-top:16px">' +
+        '<input class="pe-search" id="peExpQ" placeholder="按函数名或序号过滤…">' +
+        '<span class="pe-hint" id="peExpCnt" style="margin-top:0"></span></div>' +
+        '<div id="peExpBox"></div>';
+    return h;
+}
+
+function peRenderExports(it) {
+    const box = $("peExpBox");
+    if (!box) return;
+    const E = it.R.exports, q = PE_EXP_Q.toLowerCase();
+    const items = E.items.filter(i => !q ||
+        (i.name || "").toLowerCase().includes(q) ||
+        String(i.ordinal).indexOf(q) >= 0 ||
+        (i.forward || "").toLowerCase().includes(q));
+    box.innerHTML = peTable(["序号", "函数名", "RVA", "转发到"], items.map(i => [
+        String(i.ordinal),
+        i.name ? "<b>" + peEsc(i.name) + "</b>" : '<span style="color:rgba(255,255,255,0.3)">（按序号导出）</span>',
+        peHex(i.rva),
+        i.forward ? '<span class="pe-tag y">→ ' + peEsc(i.forward) + "</span>" : "—"
+    ]), ["n", "", "n", ""]);
+    const c = $("peExpCnt");
+    if (c) c.textContent = "显示 " + items.length + " / " + E.items.length + " 个";
+}
+
+function peViewImports(it) {
+    const I = it.R.imports;
+    if (!I || !I.length) return peEmpty("没有导入表（该模块不依赖其他 DLL）");
+    const total = I.reduce((a, b) => a + b.funcs.length, 0);
+    let h = '<div class="pe-subhead">依赖 ' + I.length + " 个模块，共 " + total + " 个符号</div>";
+    I.forEach(m => {
+        h += '<div style="margin:18px 0 6px"><b class="mono" style="color:#c8c8e8">' + peEsc(m.dll) +
+            '</b> <span class="pe-hint" style="margin-top:0">（' + m.funcs.length + " 个）</span></div>";
+        h += peTable(["函数名 / 序号", "Hint", "导入方式"], m.funcs.map(f => [
+            f.name ? peEsc(f.name) : '<span class="pe-tag y">按序号导入 #' + f.ordinal + "</span>",
+            f.hint >= 0 ? String(f.hint) : "—",
+            f.name ? "名称" : "序号"
+        ]), ["", "n", ""]);
+    });
+    return h;
+}
+
+function peViewResources(it) {
+    const Rr = it.R.resources;
+    if (!Rr || !Rr.length) return peEmpty("没有资源数据");
+    return '<div class="pe-subhead">共 ' + Rr.length + " 项</div>" +
+        peTable(["路径（类型 / 名称 / 语言）", "RVA", "大小", "文件偏移", "代码页"],
+            Rr.map(r => [
+                peEsc(r.path), peHex(r.rva), fmtBytes(r.size),
+                r.offset != null ? peHex(r.offset) : "—",
+                r.codepage ? String(r.codepage) : "—"
+            ]), ["", "n", "n", "n", "n"]);
+}
+
+function peViewStrings(it) {
+    return '<div class="opt-row" style="margin-top:0;padding-top:0;border-top:none">' +
+        '<input class="pe-search" id="peStrQ" placeholder="过滤字符串…">' +
+        '<input class="pe-search" id="peStrMin" style="width:120px" placeholder="最小长度">' +
+        '<span class="pe-hint" id="peStrCnt" style="margin-top:0"></span></div>' +
+        '<div id="peStrBox"></div>';
+}
+
+function peRenderStrings(it) {
+    const box = $("peStrBox");
+    if (!box) return;
+    const all = it.pe.strings(PE_STR_MIN);
+    const q = PE_STR_Q.toLowerCase();
+    const list = q ? all.filter(x => x.v.toLowerCase().indexOf(q) >= 0) : all;
+    const show = list.slice(0, 3000);
+    box.innerHTML = '<div class="pe-str mono">' + (show.length
+        ? show.map(x => '<span style="color:' + (x.t === "U" ? "#e3c38f" : "#d0d0e0") + '">' + peEsc(x.v) + "</span>").join("\n")
+        : "没有匹配结果") + "</div>";
+    const c = $("peStrCnt");
+    if (c) c.textContent = "命中 " + list.length + " 条" + (list.length > 3000 ? "（仅显示前 3000 条）" : "");
+}
+
+function peViewHex(it) {
+    const pe = it.pe, n = Math.min(PE_HEXLEN, pe.u8.length);
+    let out = "";
+    for (let i = 0; i < n; i += 16) {
+        let hx = "", as = "";
+        for (let j = 0; j < 16; j++) {
+            const p = i + j;
+            if (p < n) {
+                const b = pe.u8[p];
+                hx += '<span class="' + (b ? "" : "nz") + '">' + b.toString(16).padStart(2, "0").toUpperCase() + "</span> ";
+                if (j === 7) hx += " ";
+                as += (b >= 0x20 && b < 0x7F) ? '<span class="as">' + peEsc(String.fromCharCode(b)) + "</span>" : ".";
+            } else hx += "   ";
+        }
+        out += '<span class="off">' + i.toString(16).toUpperCase().padStart(8, "0") + "</span>  " + hx + " |" + as + "|\n";
+    }
+    return '<div class="pe-hex mono">' + out + "</div>" +
+        (n < pe.u8.length
+            ? '<div class="opt-row" style="border-top:none;padding-top:12px">' +
+              '<button class="run-btn" id="peMoreHex" style="width:auto;margin-top:0;padding:9px 22px;letter-spacing:1px;background:rgba(255,255,255,0.08)">' +
+              "再加载 64 KB（已显示 " + fmtBytes(n) + " / " + fmtBytes(pe.u8.length) + "）</button></div>"
+            : '<div class="pe-hint">已显示全部 ' + fmtBytes(pe.u8.length) + "</div>");
+}
+
+/* ---------- 主渲染 ---------- */
+function peShow() {
+    const it = PE_LIST.filter(x => x.id === PE_SEL)[0];
+    const res = $("peResult"), act = $("peActions");
+
+    if (!it || !it.R) {
+        res.hidden = true;
+        act.hidden = PE_LIST.length === 0;
+        return;
+    }
+    res.hidden = false;
+    act.hidden = false;
+
+    peRenderStats(it);
+    peRenderNotes(it);
+
+    const body = $("peBody");
+    if (PE_TAB === "header") body.innerHTML = peViewHeader(it);
+    else if (PE_TAB === "sections") body.innerHTML = peViewSections(it);
+    else if (PE_TAB === "exports") { body.innerHTML = peViewExports(it); peRenderExports(it); }
+    else if (PE_TAB === "imports") body.innerHTML = peViewImports(it);
+    else if (PE_TAB === "resources") body.innerHTML = peViewResources(it);
+    else if (PE_TAB === "strings") { body.innerHTML = peViewStrings(it); peRenderStrings(it); }
+    else body.innerHTML = peViewHex(it);
+
+    const eq = $("peExpQ");
+    if (eq) {
+        eq.value = PE_EXP_Q;
+        eq.addEventListener("input", () => { PE_EXP_Q = eq.value; peRenderExports(it); });
+    }
+    const sq = $("peStrQ"), sm = $("peStrMin");
+    if (sq) {
+        sq.value = PE_STR_Q;
+        sq.addEventListener("input", () => { PE_STR_Q = sq.value; peRenderStrings(it); });
+    }
+    if (sm) {
+        sm.value = PE_STR_MIN;
+        sm.addEventListener("input", () => {
+            const v = parseInt(sm.value, 10);
+            if (!isNaN(v) && v >= 2 && v <= 200) { PE_STR_MIN = v; peRenderStrings(it); }
+        });
+    }
+    const mh = $("peMoreHex");
+    if (mh) mh.addEventListener("click", () => { PE_HEXLEN += 65536; peShow(); });
+}
+
+/* ---------- 载入 ---------- */
+async function peAdd(files) {
+    let ok = 0, bad = 0;
+    for (const f of files) {
+        const it = { id: ++PE_SEQ, file: f, pe: null, R: null, sha: null, err: null };
+        PE_LIST.push(it);
+        try {
+            const buf = await f.arrayBuffer();
+            const pe = new PEFile(buf);
+            const R = pe.parse();
+            it.pe = pe;
+            it.R = R;
+            try {
+                const d = await crypto.subtle.digest("SHA-256", buf);
+                it.sha = Array.from(new Uint8Array(d)).map(b => b.toString(16).padStart(2, "0")).join("");
+            } catch (e) { /* file:// 下可能不可用，忽略 */ }
+            if (PE_SEL === null) PE_SEL = it.id;
+            ok++;
+        } catch (err) {
+            it.err = (err && err.message) ? err.message : String(err);
+            bad++;
+        }
+    }
+    peRenderList();
+    peShow();
+    if (bad) peSay("解析完成：成功 " + ok + " 个，失败 " + bad + " 个", "err");
+    else peSay("已解析 " + ok + " 个文件", "ok");
+}
+
+/* ---------- 事件绑定 ---------- */
+bindDropZone($("peDrop"), $("peInput"), peAdd);
+PE_TAB = bindSeg("peTab", v => { PE_TAB = v; peShow(); });
+
+$("peCsv").addEventListener("click", () => {
+    const it = PE_LIST.filter(x => x.id === PE_SEL)[0];
+    if (!it || !it.R || !it.R.exports) { peSay("当前文件没有导出表，无法导出", "err"); return; }
+    const E = it.R.exports;
+    const rows = [["名称", "序号", "RVA", "转发到"]].concat(
+        E.items.map(i => [i.name, i.ordinal, peHex(i.rva), i.forward || ""]));
+    const csv = "\uFEFF" + rows.map(r =>
+        r.map(c => '"' + String(c == null ? "" : c).replace(/"/g, '""') + '"').join(",")).join("\r\n");
+    download(new Blob([csv], { type: "text/csv;charset=utf-8" }),
+        baseName(it.file.name) + "_exports.csv");
+    peSay("已导出 " + E.items.length + " 个函数", "ok");
+});
+
+$("peCopy").addEventListener("click", async () => {
+    const it = PE_LIST.filter(x => x.id === PE_SEL)[0];
+    if (!it || !it.R || !it.R.exports) { peSay("当前文件没有导出表", "err"); return; }
+    const names = it.R.exports.items.map(i => i.name).filter(Boolean);
+    if (!names.length) { peSay("这个 DLL 没有具名的导出函数", "err"); return; }
+    try {
+        await navigator.clipboard.writeText(names.join("\n"));
+        peSay("已复制 " + names.length + " 个函数名", "ok");
+    } catch (e) { peSay("复制失败，请手动选择", "err"); }
+});
+
+$("peClear").addEventListener("click", () => {
+    PE_LIST = [];
+    PE_SEL = null;
+    PE_HEXLEN = 4096;
+    peRenderList();
+    peShow();
+    $("peActions").hidden = true;
+    peSay("已清空列表");
+});
+
+/* 表格标题点击排序（仅作用于 PE 面板表格） */
+document.addEventListener("click", e => {
+    const th = e.target.closest ? e.target.closest("th[data-i]") : null;
+    if (!th) return;
+    const tb = th.closest("table").tBodies[0];
+    const idx = +th.dataset.i;
+    const dir = th.dataset.dir === "asc" ? "desc" : "asc";
+    th.dataset.dir = dir;
+    const rows = Array.from(tb.rows);
+    rows.sort((a, b) => {
+        const x = a.cells[idx].textContent.trim(), y = b.cells[idx].textContent.trim();
+        const nx = parseFloat(x.replace(/[^0-9.eE+-]/g, "")), ny = parseFloat(y.replace(/[^0-9.eE+-]/g, ""));
+        const c = (!isNaN(nx) && !isNaN(ny)) ? nx - ny : x.localeCompare(y, "zh");
+        return dir === "asc" ? c : -c;
+    });
+    rows.forEach(r => tb.appendChild(r));
+});
+
+
+/* ==================== MIDI / SMF 解析 ==================== */
+/* ---- 解析核心：纯逻辑，不依赖 DOM ---- */
+
+const MIDI_NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+
+function midiNoteName(n){ return MIDI_NOTE_NAMES[n % 12] + (Math.floor(n / 12) - 1); }
+
+const META_NAMES = {
+  0x00:'序列号',0x01:'文本',0x02:'版权',0x03:'轨道名',0x04:'音色名',0x05:'歌词',
+  0x06:'标记',0x07:'提示点',0x08:'节目名称',0x09:'设备名',0x20:'通道前缀',0x21:'端口',
+  0x2F:'轨道结束',0x51:'速度 Set Tempo',0x54:'SMPTE 偏移',0x58:'拍号',0x59:'调号',
+  0x7F:'音序器专用'
+};
+
+const CTRL_NAMES = {
+  0:'Bank Select (MSB)',1:'Modulation',6:'Data Entry (MSB)',7:'Volume',10:'Pan',
+  11:'Expression',64:'Sustain',65:'Portamento',71:'Resonance',74:'Brightness',
+  91:'Reverb',93:'Chorus',120:'All Sound Off',121:'Reset All Controllers',123:'All Notes Off'
+};
+
+const KEY_MAJORS = ["Cb","Gb","Db","Ab","Eb","Bb","F","C","G","D","A","E","B","F#","C#"];
+const KEY_MINORS = ["Ab","Eb","Bb","F","C","G","D","A","E","B","F#","C#","G#","D#","A#"];
+
+function midiText(bytes){
+    try { return new TextDecoder("utf-8", { fatal: false }).decode(bytes).replace(/\0+$/g, ""); }
+    catch (e) { return ""; }
+}
+
+function midiBpm(uspq){ return uspq > 0 ? 60000000 / uspq : 0; }
+
+class MidiFile {
+  constructor(arrayBuffer){
+    this.buf = arrayBuffer;
+    this.dv  = new DataView(arrayBuffer);
+    this.u8  = new Uint8Array(arrayBuffer);
+    this.tracks = [];
+    this.notes = [];
+    this.tempos = [];
+    this.timeSigs = [];
+    this.keySigs = [];
+    this.markers = [];
+    this.programs = {};
+    this.channels = new Set();
+    this.warnings = [];
+    this.hanging = 0;
+    this.lyrics = 0; this.texts = 0;
+    this.copyright = "";
+  }
+  chk(o,n){ return o >= 0 && o + n <= this.buf.byteLength; }
+  r16(o){ return this.chk(o,2) ? this.dv.getUint16(o,false) : 0; }
+  r32(o){ return this.chk(o,4) ? this.dv.getUint32(o,false) : 0; }
+  vlq(o){
+    let v = 0;
+    for(let i = 0; i < 4; i++){
+      if(!this.chk(o+i,1)) return [v, o+i];
+      const b = this.u8[o+i];
+      v = (v << 7) | (b & 0x7F);
+      if(!(b & 0x80)) return [v, o+i+1];
+    }
+    return [v, o+4];
+  }
+  findMThd(from){
+    const lim = Math.min(this.buf.byteLength - 4, 65536);
+    for(let i = from; i < lim; i++)
+      if(this.u8[i]===0x4D && this.u8[i+1]===0x54 && this.u8[i+2]===0x68 && this.u8[i+3]===0x64) return i;
+    return -1;
+  }
+
+  parse(){
+    let base = 0;
+    if(this.buf.byteLength >= 12 && this.r32(0) === 0x52494646){ /* "RIFF" */
+      const i = this.findMThd(12);
+      if(i < 0) throw new Error("RIFF 容器内未找到 MThd，不是有效的 MIDI 文件");
+      this.warnings.push("文件为 RIFF (RMID) 包裹的 MIDI，已自动定位数据块");
+      base = i;
+    }
+    if(this.buf.byteLength - base < 14) throw new Error("文件太小，不是有效的 MIDI 文件");
+    if(this.r32(base) !== 0x4D546864) throw new Error('缺少 MThd 头，不是标准 MIDI 文件（SMF）');
+
+    const hdrLen = this.r32(base + 4);
+    this.format = this.r16(base + 8);
+    this.nTracks = this.r16(base + 10);
+    this.division = this.r16(base + 12);
+    if(this.division & 0x8000){
+      this.smpteFps = 256 - (this.division >> 8);
+      this.smpteTpf = this.division & 0xFF;
+      this.divDesc = "SMPTE · " + this.smpteFps + " 帧/秒 × " + this.smpteTpf + " tick/帧";
+    }else{
+      this.tpq = this.division || 480;
+      if(!this.division) this.warnings.push("时值划分为 0，已按 480 tick/四分音符处理");
+      this.divDesc = this.tpq + " tick / 四分音符";
+    }
+    this.fmtDesc = { 0:"格式 0 · 单轨", 1:"格式 1 · 多轨（同步）", 2:"格式 2 · 多轨（独立序列）" }[this.format]
+      || ("格式 " + this.format);
+
+    let off = base + 8 + hdrLen;
+    let parsed = 0;
+    while(this.chk(off,8) && parsed < Math.max(this.nTracks, 1) + 16){
+      const id = String.fromCharCode(this.u8[off], this.u8[off+1], this.u8[off+2], this.u8[off+3]);
+      const len = this.r32(off+4);
+      const body = off + 8;
+      if(!this.chk(body, len)){
+        this.warnings.push('块 "' + id + '" 长度越界，已按可读部分解析');
+        break;
+      }
+      if(id === "MTrk"){
+        this.tracks.push(this.parseTrack(body, len, parsed));
+        parsed++;
+      }else if(id === "MThd"){
+        this.warnings.push("文件中出现了重复的 MThd 块，已跳过");
+      }else{
+        this.warnings.push('遇到未知块 "' + id + '"（' + len + ' 字节），已跳过');
+      }
+      off = body + len;
+    }
+    if(this.nTracks > 0 && parsed !== this.nTracks)
+      this.warnings.push("头部声明 " + this.nTracks + " 个轨道，实际解析到 " + parsed + " 个");
+
+    this.tracks.forEach(t => { for(const n of t.notes) this.notes.push(n); });
+
+    this.tempos.sort((a,b) => a.tick - b.tick);
+    const synthetic = !this.tempos.length || this.tempos[0].tick > 0;
+    if(synthetic) this.tempos.unshift({ tick: 0, uspq: 500000 });
+    this.tempoChanges = this.tempos.length - (synthetic && this.tempos.length > 1 ? 0 : 0);
+    this.tempoChanges = this.tempos.length;
+
+    this.totalTicks = 0;
+    this.tracks.forEach(t => { this.totalTicks = Math.max(this.totalTicks, t.endTick); });
+    this.durationSec = this.tickToSec(this.totalTicks);
+    this.bpm = midiBpm(this.tempos[0].uspq);
+    this.minBpm = Math.min.apply(null, this.tempos.map(t => midiBpm(t.uspq)));
+    this.maxBpm = Math.max.apply(null, this.tempos.map(t => midiBpm(t.uspq)));
+    return this;
+  }
+
+  tickToSec(tick){
+    if(this.division & 0x8000) return tick / (this.smpteFps * this.smpteTpf);
+    let sec = 0, lastTick = 0, uspq = 500000;
+    for(const t of this.tempos){
+      if(t.tick >= tick) break;
+      sec += (t.tick - lastTick) * uspq / (this.tpq * 1e6);
+      lastTick = t.tick; uspq = t.uspq;
+    }
+    sec += (tick - lastTick) * uspq / (this.tpq * 1e6);
+    return sec;
+  }
+
+  parseTrack(off, len, idx){
+    const end = off + len;
+    const tr = {
+      index: idx, name: "", instrument: "",
+      notes: [], events: [], eventsTrunc: false,
+      nMeta: 0, nSysex: 0, nCtrl: 0, nProg: 0, nPitch: 0, nAfter: 0,
+      endTick: 0
+    };
+    const openNotes = {};
+    const EV_LIMIT = 20000;
+    let p = off, tick = 0, running = 0;
+    const pushEv = ev => {
+      if(tr.events.length < EV_LIMIT) tr.events.push(ev);
+      else tr.eventsTrunc = true;
+    };
+
+    while(p < end){
+      const d = this.vlq(p);
+      tick += d[0]; p = d[1];
+      if(p >= end) break;
+      let status = this.u8[p];
+      if(status & 0x80){ p++; if(status < 0xF0) running = status; }
+      else{
+        status = running;
+        if(!status){
+          this.warnings.push("轨道 " + (idx+1) + " 出现无效的运行状态，已停止解析该轨道");
+          break;
+        }
+      }
+
+      if(status === 0xFF){
+        const type = this.u8[p]; p++;
+        const L = this.vlq(p); p = L[1];
+        const mlen = L[0];
+        const data = this.u8.subarray(p, Math.min(p + mlen, end));
+        tr.nMeta++;
+        tr.endTick = Math.max(tr.endTick, tick);
+        let label = META_NAMES[type] || ("元事件 0x" + type.toString(16).padStart(2, "0"));
+        if(type === 0x2F){ label = "轨道结束"; }
+        else if(type === 0x51 && mlen >= 3){
+          const uspq = (data[0] << 16) | (data[1] << 8) | data[2];
+          this.tempos.push({ tick, uspq });
+          label = "速度 " + midiBpm(uspq).toFixed(2) + " BPM";
+        }
+        else if(type === 0x58 && mlen >= 2){
+          const num = data[0], den = 1 << data[1];
+          this.timeSigs.push({ tick, num, den });
+          label = "拍号 " + num + "/" + den;
+        }
+        else if(type === 0x59 && mlen >= 2){
+          let sf = data[0]; if(sf > 127) sf -= 256;
+          const mi = data[1];
+          const nm = sf === 0 ? (mi ? "a 小调" : "C 大调")
+            : (mi ? KEY_MINORS[sf+7] + " 小调" : KEY_MAJORS[sf+7] + " 大调");
+          this.keySigs.push({ tick, sf, mi, name: nm });
+          label = "调号 " + nm;
+        }
+        else if(type === 0x03){ tr.name = midiText(data); label = "轨道名：" + tr.name; }
+        else if(type === 0x04){ tr.instrument = midiText(data); label = "音色名：" + tr.instrument; }
+        else if(type === 0x05){ this.lyrics++; label = "歌词：" + midiText(data); }
+        else if(type === 0x06){ this.markers.push({ tick, text: midiText(data) }); label = "标记：" + midiText(data); }
+        else if(type === 0x02){ if(!this.copyright) this.copyright = midiText(data); label = "版权：" + this.copyright; }
+        else if(type === 0x01 || type === 0x07 || type === 0x08 || type === 0x09){
+          this.texts++;
+          const t = midiText(data);
+          if(t) label += "：" + t;
+        }
+        pushEv({ tick, kind: "meta", label, ch: null });
+        p += mlen;
+      }
+      else if(status === 0xF0 || status === 0xF7){
+        const L = this.vlq(p); p = L[1];
+        const slen = L[0];
+        tr.nSysex++;
+        pushEv({ tick, kind: "sysex", label: (status === 0xF0 ? "SysEx (F0)" : "SysEx (F7)") + " · " + slen + " 字节", ch: null });
+        p += slen;
+      }
+      else{
+        const cmd = status & 0xF0, ch = (status & 0x0F) + 1;
+        const two = !(cmd === 0xC0 || cmd === 0xD0);
+        const d1 = this.chk(p,1) ? this.u8[p] : 0;
+        const d2 = (two && this.chk(p+1,1)) ? this.u8[p+1] : 0;
+        p += two ? 2 : 1;
+        tr.endTick = Math.max(tr.endTick, tick);
+        this.channels.add(ch);
+        const closeNote = (n, tEnd) => {
+          const st = openNotes[ch * 128 + n];
+          if(st && st.length){
+            const on = st.shift();
+            tr.notes.push({ track: idx, ch, midi: n, startTick: on.tick, endTick: Math.max(tEnd, on.tick + 1), vel: on.vel });
+          }
+        };
+        if(cmd === 0x90){
+          if(d2 > 0){
+            (openNotes[ch * 128 + d1] = openNotes[ch * 128 + d1] || []).push({ tick, vel: d2 });
+            pushEv({ tick, kind: "note-on", label: "Note On " + midiNoteName(d1) + " · 力度 " + d2, ch, midi: d1 });
+          }else{
+            closeNote(d1, tick);
+            pushEv({ tick, kind: "note-off", label: "Note Off " + midiNoteName(d1), ch, midi: d1 });
+          }
+        }
+        else if(cmd === 0x80){
+          closeNote(d1, tick);
+          pushEv({ tick, kind: "note-off", label: "Note Off " + midiNoteName(d1), ch, midi: d1 });
+        }
+        else if(cmd === 0xB0){
+          tr.nCtrl++;
+          pushEv({ tick, kind: "cc", label: "控制器 " + d1 + (CTRL_NAMES[d1] ? "（" + CTRL_NAMES[d1] + "）" : "") + " = " + d2, ch });
+        }
+        else if(cmd === 0xC0){
+          tr.nProg++;
+          if(this.programs[ch] === undefined) this.programs[ch] = d1;
+          pushEv({ tick, kind: "prog", label: "音色切换 Program " + d1, ch });
+        }
+        else if(cmd === 0xE0){
+          tr.nPitch++;
+          pushEv({ tick, kind: "pitch", label: "弯音 Pitch Bend = " + ((d2 << 7) | d1) + "（范围 " + (d2 >> 1) + "）", ch });
+        }
+        else if(cmd === 0xA0){
+          tr.nAfter++;
+          pushEv({ tick, kind: "after", label: "复触键 " + midiNoteName(d1) + " = " + d2, ch });
+        }
+        else if(cmd === 0xD0){
+          pushEv({ tick, kind: "after", label: "通道压力 = " + d1, ch });
+        }
+      }
+    }
+    /* 收尾：关闭悬空音符 */
+    for(const k in openNotes){
+      for(const on of openNotes[k]){
+        tr.notes.push({ track: idx, ch: Math.floor(k / 128), midi: k % 128, startTick: on.tick, endTick: Math.max(tick, on.tick + 1), vel: on.vel, hanging: true });
+        this.hanging++;
+      }
+    }
+    if(tr.eventsTrunc) this.warnings.push("轨道 " + (idx+1) + " 事件过多，事件视图仅保留前 " + EV_LIMIT + " 条");
+    return tr;
+  }
+}
+
+/* ---- 面板 UI ---- */
+
+const midiStatus = $("midiStatus");
+let MIDI_SEQ = 0;
+let MIDI_LIST = [];            // {id, file, mf, sha, err}
+let MIDI_SEL = null;
+let MIDI_TAB = "overview";
+let MIDI_HEXLEN = 4096;
+let MIDI_NOTE_Q = "";
+let MIDI_EV_TRACK = -1;        // -1 = 全部轨道
+
+function midiEsc(s) {
+    return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function midiSay(msg, cls) {
+    midiStatus.className = "status " + (cls || "");
+    midiStatus.textContent = msg;
+}
+
+function midiSec(t) { return t.toFixed(3) + " s"; }
+
+function midiKv(pairs) {
+    return '<div class="pe-kv">' + pairs.map(p =>
+        "<div>" + midiEsc(p[0]) + '</div><div class="mono">' + midiEsc(p[1]) + "</div>"
+    ).join("") + "</div>";
+}
+
+function midiTable(heads, rows, cls) {
+    if (!rows.length) return '<div class="pe-empty">这一项没有数据</div>';
+    return '<div class="pe-table-wrap"><table class="pe' + (heads.length >= 5 ? " wide" : "") + '"><thead><tr>' +
+        heads.map((h, i) => '<th data-i="' + i + '">' + midiEsc(h) + "</th>").join("") +
+        "</tr></thead><tbody>" + rows.map(r => "<tr>" + r.map((c, i) =>
+            '<td' + (cls && cls[i] ? ' class="' + cls[i] + '"' : "") + ">" + c + "</td>"
+        ).join("") + "</tr>").join("") + "</tbody></table></div>";
+}
+
+function midiEmpty(t) { return '<div class="pe-empty">' + midiEsc(t) + "</div>"; }
+
+/* ---------- 文件列表 ---------- */
+function midiRenderList() {
+    const box = $("midiFiles");
+    box.innerHTML = "";
+    MIDI_LIST.forEach(it => {
+        const row = document.createElement("div");
+        row.className = "file-item clickable" +
+            (it.id === MIDI_SEL ? " sel" : "") + (it.err ? " bad" : "");
+
+        const ic = document.createElement("div");
+        ic.className = "fi-icon";
+        ic.textContent = extOf(it.file.name) || "?";
+
+        const mn = document.createElement("div");
+        mn.className = "fi-main";
+        const nm = document.createElement("div");
+        nm.className = "fi-name";
+        nm.textContent = it.file.name;
+        const mt = document.createElement("div");
+        mt.className = "fi-meta" + (it.err ? " err" : (it.mf ? " done" : ""));
+        if (it.err) mt.textContent = "解析失败：" + it.err;
+        else if (!it.mf) mt.textContent = fmtBytes(it.file.size);
+        else {
+            const mf = it.mf;
+            mt.textContent = "格式 " + mf.format + " · " + mf.tracks.length + " 轨道" +
+                " · 音符 " + mf.notes.length +
+                " · " + mf.divDesc.split(" ·")[0];
+        }
+        mn.appendChild(nm);
+        mn.appendChild(mt);
+
+        const del = document.createElement("button");
+        del.className = "fi-del";
+        del.type = "button";
+        del.textContent = "×";
+        del.title = "移除";
+        del.addEventListener("click", e => {
+            e.stopPropagation();
+            MIDI_LIST = MIDI_LIST.filter(x => x.id !== it.id);
+            if (MIDI_SEL === it.id) MIDI_SEL = MIDI_LIST.length ? MIDI_LIST[0].id : null;
+            midiRenderList();
+            midiShow();
+        });
+
+        row.addEventListener("click", () => {
+            if (MIDI_SEL === it.id) return;
+            MIDI_SEL = it.id;
+            MIDI_HEXLEN = 4096;
+            midiRenderList();
+            midiShow();
+        });
+
+        row.appendChild(ic);
+        row.appendChild(mn);
+        row.appendChild(del);
+        box.appendChild(row);
+    });
+}
+
+/* ---------- 顶部统计与提示 ---------- */
+function midiRenderStats(it) {
+    const mf = it.mf;
+    const chans = mf.channels.size;
+    const bpmTxt = (mf.maxBpm - mf.minBpm) > 0.5
+        ? mf.minBpm.toFixed(1) + " ~ " + mf.maxBpm.toFixed(1)
+        : mf.bpm.toFixed(1);
+    const data = [
+        ["格式", mf.fmtDesc],
+        ["轨道数", mf.tracks.length],
+        ["音符总数", mf.notes.length],
+        ["总时长", midiSec(mf.durationSec)],
+        ["速度 BPM", bpmTxt],
+        ["使用通道", chans + " 个"]
+    ];
+    $("midiStats").innerHTML = data.map(d =>
+        '<div class="stat">' + midiEsc(d[0]) + "<b>" + midiEsc(String(d[1])) + "</b></div>").join("");
+}
+
+function midiRenderWarn(it) {
+    const mf = it.mf;
+    let h = "";
+    if (mf.hanging) h += '<div class="note warn"><b>有 ' + mf.hanging +
+        " 个音符只有 Note On 而没有对应的 Note Off</b>，已按轨道结束时刻自动闭合，可能是异常或损坏的文件。</div>";
+    if (mf.markers.length) h += '<div class="note"><b>标记（Marker）</b>：' +
+        mf.markers.map(m => midiEsc(m.text || "—") + " @" + midiSec(mf.tickToSec(m.tick))).join(" · ") + "</div>";
+    if (mf.warnings.length) h += '<div class="note warn">' + mf.warnings.map(midiEsc).join("；") + "</div>";
+    $("midiWarn").innerHTML = h;
+}
+
+/* ---------- 各视图 ---------- */
+function midiViewOverview(it) {
+    const mf = it.mf;
+    const prog = Object.keys(mf.programs).sort((a,b) => a - b)
+        .map(ch => "Ch" + ch + ":P" + mf.programs[ch]).join("  ");
+    const kv = [
+        ["文件格式", mf.fmtDesc + " · 时值划分 " + mf.divDesc],
+        ["轨道数 / 音符数", mf.tracks.length + " / " + mf.notes.length],
+        ["总时长", midiSec(mf.durationSec) + "（共 " + mf.totalTicks.toLocaleString() + " tick）"],
+        ["速度", "初始 " + mf.bpm.toFixed(2) + " BPM" +
+            ((mf.maxBpm - mf.minBpm) > 0.5 ? "（变化范围 " + mf.minBpm.toFixed(2) + " ~ " + mf.maxBpm.toFixed(2) + "）" : "")],
+        ["速度 / 拍号变化", mf.tempos.length + " 次 / " + mf.timeSigs.length + " 次"],
+        ["调号", mf.keySigs.length ? mf.keySigs[mf.keySigs.length - 1].name : "未指定"],
+        ["使用的通道", mf.channels.size ? Array.from(mf.channels).sort((a,b) => a - b).map(c => "Ch" + c).join(" ") : "无"],
+        ["音色（首次 Program）", prog || "无"],
+        ["歌词 / 文本", mf.lyrics + " 条歌词 / " + mf.texts + " 条文本"],
+        ["SysEx / 控制器", mf.tracks.reduce((a,t) => a + t.nSysex, 0) + " / " + mf.tracks.reduce((a,t) => a + t.nCtrl, 0)],
+        ["版权", mf.copyright || "—"]
+    ];
+    let h = '<div class="pe-subhead">文件头信息</div>' + midiKv(kv);
+
+    h += '<div class="pe-subhead" style="margin-top:22px">轨道概要</div>' +
+        midiTable(["#", "轨道名", "音符", "控制器", "音色切换", "SysEx", "元事件", "结束时刻"],
+            mf.tracks.map(t => [
+                String(t.index + 1),
+                t.name ? "<b>" + midiEsc(t.name) + "</b>" : (t.instrument ? midiEsc(t.instrument) : '<span style="color:rgba(255,255,255,0.3)">（未命名）</span>'),
+                String(t.notes.length),
+                String(t.nCtrl),
+                String(t.nProg),
+                String(t.nSysex),
+                String(t.nMeta),
+                midiSec(mf.tickToSec(t.endTick))
+            ]), ["n", "", "n", "n", "n", "n", "n", "n"]);
+
+    if (mf.tempos.length > 1 || mf.timeSigs.length) {        const rows = [];
+        mf.tempos.forEach(t => rows.push(["速度", String(t.tick), midiSec(mf.tickToSec(t.tick)), midiBpm(t.uspq).toFixed(2) + " BPM"]));
+        mf.timeSigs.forEach(t => rows.push(["拍号", String(t.tick), midiSec(mf.tickToSec(t.tick)), t.num + "/" + t.den]));
+        mf.keySigs.forEach(t => rows.push(["调号", String(t.tick), midiSec(mf.tickToSec(t.tick)), t.name]));
+        rows.sort((a, b) => (+a[1]) - (+b[1]));
+        h += '<div class="pe-subhead" style="margin-top:22px">速度 / 拍号 / 调号变化时间线</div>' +
+            midiTable(["类型", "Tick", "时间", "内容"], rows, ["", "n", "n", ""]);
+    }
+
+    if (it.sha) h += '<div class="pe-subhead" style="margin-top:22px">哈希</div>' + midiKv([["SHA-256", it.sha]]);
+    return h;
+}
+
+function midiViewNotes(it) {
+    return '<div class="opt-row" style="margin-top:0;padding-top:0;border-top:none">' +
+        '<input class="pe-search" id="midiNoteQ" placeholder="按音符名 / 轨道 / 通道 / 力度过滤…">' +
+        '<span class="pe-hint" id="midiNoteCnt" style="margin-top:0"></span></div>' +
+        '<div id="midiNoteBox"></div>';
+}
+
+function midiRenderNotes(it) {
+    const box = $("midiNoteBox");
+    if (!box) return;
+    const mf = it.mf, q = MIDI_NOTE_Q.trim().toLowerCase();
+    let list = mf.notes;
+    if (q) list = list.filter(n =>
+        midiNoteName(n.midi).toLowerCase().includes(q) ||
+        ("ch" + n.ch).includes(q) ||
+        ("轨道" + (n.track + 1)).includes(q) ||
+        ("t" + (n.track + 1)).includes(q) ||
+        String(n.midi) === q ||
+        String(n.vel) === q);
+    list = list.slice().sort((a, b) => a.startTick - b.startTick);
+    const show = list.slice(0, 3000);
+    box.innerHTML = midiTable(
+        ["轨道", "通道", "音符", "MIDI #", "起始时间", "时长", "起始 Tick", "力度"],
+        show.map(n => [
+            String(n.track + 1),
+            "Ch" + n.ch,
+            "<b>" + midiEsc(midiNoteName(n.midi)) + "</b>" + (n.hanging ? ' <span class="pe-tag y">悬空</span>' : ""),
+            String(n.midi),
+            midiSec(mf.tickToSec(n.startTick)),
+            midiSec(mf.tickToSec(n.endTick) - mf.tickToSec(n.startTick)),
+            n.startTick.toLocaleString(),
+            String(n.vel)
+        ]), ["n", "n", "", "n", "n", "n", "n", "n"]);
+    const c = $("midiNoteCnt");
+    if (c) c.textContent = "显示 " + show.length + " / " + list.length + " 个音符" +
+        (list.length > 3000 ? "（仅显示前 3000 条）" : "");
+}
+
+function midiViewEvents(it) {
+    const mf = it.mf;
+    let h = '<div class="opt-row" style="margin-top:0;padding-top:0;border-top:none">' +
+        '<span class="opt-label">轨道</span>' +
+        '<select class="sel" id="midiEvTrack"><option value="-1">全部轨道</option>';
+    mf.tracks.forEach(t => {
+        h += '<option value="' + t.index + '">轨道 ' + (t.index + 1) +
+            (t.name ? " · " + midiEsc(t.name) : "") + "</option>";
+    });
+    h += '</select><span class="pe-hint" id="midiEvCnt" style="margin-top:0"></span></div>' +
+        '<div id="midiEvBox"></div>';
+    return h;
+}
+
+const EV_KIND_NAMES = {
+    "note-on":"音符开", "note-off":"音符关", "cc":"控制器", "prog":"音色",
+    "pitch":"弯音", "after":"触键", "meta":"元数据", "sysex":"SysEx"
+};
+
+function midiRenderEvents(it) {
+    const box = $("midiEvBox");
+    if (!box) return;
+    const mf = it.mf;
+    let events = [];
+    mf.tracks.forEach(t => {
+        if (MIDI_EV_TRACK === -1 || t.index === MIDI_EV_TRACK)
+            t.events.forEach(ev => events.push({ tr: t.index, ev }));
+    });
+    events.sort((a, b) => a.ev.tick - b.ev.tick);
+    const total = events.length;
+    const show = events.slice(0, 2000);
+    box.innerHTML = midiTable(
+        ["轨道", "Tick", "时间", "类型", "通道", "内容"],
+        show.map(x => [
+            String(x.tr + 1),
+            x.ev.tick.toLocaleString(),
+            midiSec(mf.tickToSec(x.ev.tick)),
+            EV_KIND_NAMES[x.ev.kind] || x.ev.kind,
+            x.ev.ch ? "Ch" + x.ev.ch : "—",
+            midiEsc(x.ev.label)
+        ]), ["n", "n", "n", "", "n", ""]);
+    const c = $("midiEvCnt");
+    if (c) c.textContent = "显示 " + show.length + " / " + total + " 条事件" +
+        (total > 2000 ? "（仅显示前 2000 条）" : "");
+}
+
+function midiViewHex(it) {
+    const mf = it.mf, n = Math.min(MIDI_HEXLEN, mf.u8.length);
+    let out = "";
+    for (let i = 0; i < n; i += 16) {
+        let hx = "", as = "";
+        for (let j = 0; j < 16; j++) {
+            const p = i + j;
+            if (p < n) {
+                const b = mf.u8[p];
+                hx += '<span class="' + (b ? "" : "nz") + '">' + b.toString(16).padStart(2, "0").toUpperCase() + "</span> ";
+                if (j === 7) hx += " ";
+                as += (b >= 0x20 && b < 0x7F) ? '<span class="as">' + midiEsc(String.fromCharCode(b)) + "</span>" : ".";
+            } else hx += "   ";
+        }
+        out += '<span class="off">' + i.toString(16).toUpperCase().padStart(8, "0") + "</span>  " + hx + " |" + as + "|\n";
+    }
+    return '<div class="pe-hex mono">' + out + "</div>" +
+        (n < mf.u8.length
+            ? '<div class="opt-row" style="border-top:none;padding-top:12px">' +
+              '<button class="run-btn" id="midiMoreHex" style="width:auto;margin-top:0;padding:9px 22px;letter-spacing:1px;background:rgba(255,255,255,0.08)">' +
+              "再加载 64 KB（已显示 " + fmtBytes(n) + " / " + fmtBytes(mf.u8.length) + "）</button></div>"
+            : '<div class="pe-hint">已显示全部 ' + fmtBytes(mf.u8.length) + "</div>");
+}
+
+/* ---------- 主渲染 ---------- */
+function midiShow() {
+    const it = MIDI_LIST.filter(x => x.id === MIDI_SEL)[0];
+    const res = $("midiResult"), act = $("midiActions");
+
+    if (!it || !it.mf) {
+        res.hidden = true;
+        act.hidden = MIDI_LIST.length === 0;
+        return;
+    }
+    res.hidden = false;
+    act.hidden = false;
+
+    midiRenderStats(it);
+    midiRenderWarn(it);
+
+    const body = $("midiBody");
+    if (MIDI_TAB === "overview") body.innerHTML = midiViewOverview(it);
+    else if (MIDI_TAB === "notes") { body.innerHTML = midiViewNotes(it); midiRenderNotes(it); }
+    else if (MIDI_TAB === "events") { body.innerHTML = midiViewEvents(it); midiRenderEvents(it); }
+    else body.innerHTML = midiViewHex(it);
+
+    const nq = $("midiNoteQ");
+    if (nq) {
+        nq.value = MIDI_NOTE_Q;
+        nq.addEventListener("input", () => { MIDI_NOTE_Q = nq.value; midiRenderNotes(it); });
+    }
+    const et = $("midiEvTrack");
+    if (et) {
+        et.value = String(MIDI_EV_TRACK);
+        et.addEventListener("change", () => { MIDI_EV_TRACK = parseInt(et.value, 10); midiRenderEvents(it); });
+    }
+    const mh = $("midiMoreHex");
+    if (mh) mh.addEventListener("click", () => { MIDI_HEXLEN += 65536; midiShow(); });
+}
+
+/* ---------- 载入 ---------- */
+async function midiAdd(files) {
+    let ok = 0, bad = 0;
+    for (const f of files) {
+        const it = { id: ++MIDI_SEQ, file: f, mf: null, sha: null, err: null };
+        MIDI_LIST.push(it);
+        try {
+            const buf = await f.arrayBuffer();
+            const mf = new MidiFile(buf);
+            mf.parse();
+            it.mf = mf;
+            try {
+                const d = await crypto.subtle.digest("SHA-256", buf);
+                it.sha = Array.from(new Uint8Array(d)).map(b => b.toString(16).padStart(2, "0")).join("");
+            } catch (e) { /* file:// 下可能不可用，忽略 */ }
+            if (MIDI_SEL === null) MIDI_SEL = it.id;
+            ok++;
+        } catch (err) {
+            it.err = (err && err.message) ? err.message : String(err);
+            bad++;
+        }
+    }
+    midiRenderList();
+    midiShow();
+    if (bad) midiSay("解析完成：成功 " + ok + " 个，失败 " + bad + " 个", "err");
+    else midiSay("已解析 " + ok + " 个文件", "ok");
+}
+
+/* ---------- 事件绑定 ---------- */
+bindDropZone($("midiDrop"), $("midiInput"), midiAdd);
+MIDI_TAB = bindSeg("midiTab", v => { MIDI_TAB = v; midiShow(); });
+
+$("midiCsv").addEventListener("click", () => {
+    const it = MIDI_LIST.filter(x => x.id === MIDI_SEL)[0];
+    if (!it || !it.mf) { midiSay("没有可导出的文件", "err"); return; }
+    const mf = it.mf;
+    const rows = [["轨道", "通道", "音符", "MIDI编号", "起始时间(秒)", "时长(秒)", "起始Tick", "力度", "悬空"]].concat(
+        mf.notes.slice().sort((a, b) => a.startTick - b.startTick).map(n => [
+            n.track + 1, n.ch, midiNoteName(n.midi), n.midi,
+            mf.tickToSec(n.startTick).toFixed(3),
+            (mf.tickToSec(n.endTick) - mf.tickToSec(n.startTick)).toFixed(3),
+            n.startTick, n.vel, n.hanging ? "是" : ""]));
+    const csv = "\uFEFF" + rows.map(r =>
+        r.map(c => '"' + String(c == null ? "" : c).replace(/"/g, '""') + '"').join(",")).join("\r\n");
+    download(new Blob([csv], { type: "text/csv;charset=utf-8" }),
+        baseName(it.file.name) + "_notes.csv");
+    midiSay("已导出 " + mf.notes.length + " 个音符", "ok");
+});
+
+$("midiClear").addEventListener("click", () => {
+    MIDI_LIST = [];
+    MIDI_SEL = null;
+    MIDI_HEXLEN = 4096;
+    MIDI_NOTE_Q = "";
+    MIDI_EV_TRACK = -1;
+    midiRenderList();
+    midiShow();
+    $("midiActions").hidden = true;
+    midiSay("已清空列表");
+});
+
+</script>
+
+</body>
+</html>
