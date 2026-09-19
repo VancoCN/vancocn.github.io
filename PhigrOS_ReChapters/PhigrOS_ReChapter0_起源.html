@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhigrOS：ReChapter0 - 起源</title>
+<style>
+  /* 英文 / 数字 */
+  @font-face{
+    font-family:"Saira";
+    src:url('https://vancocn.github.io/saira-regular.ttf') format('truetype');
+    font-weight:100 900;
+    font-display:swap;
+    unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+2000-206F,
+                  U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215;
+  }
+  /* 中文 */
+  @font-face{
+    font-family:"Alfyt";
+    src:url('https://vancocn.github.io/alfyt.ttf') format('truetype');
+    font-weight:100 900;
+    font-display:swap;
+  }
+  :root{
+    --ice:#8fd3ff;
+    --ice-dim:rgba(143,211,255,.55);
+    --amber:#ffcf8a;
+    --ink:#e9f0f8;
+    --ink-dim:rgba(233,240,248,.62);
+    --panel:rgba(7,12,21,.74);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{width:100%;height:100%;overflow:hidden;background:#03060c;}
+  body{font-family:"Saira","Alfyt","PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+       -webkit-font-smoothing:antialiased;}
+  button,input,select{font-family:inherit;}
+  #stage{position:relative;width:100vw;height:100vh;}
+
+  /* ===== 背景层 ===== */
+  .bg{position:absolute;inset:0;background-size:cover;background-position:center;
+      opacity:0;transition:opacity 1.5s ease;transform:scale(1.03);
+      filter:brightness(.46) saturate(.32) contrast(1.06) blur(1.6px);}
+  /* 底部压暗，保证文字区干净 */
+  #scrim{position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(3,6,12,.35) 0%,transparent 30%,
+               rgba(3,6,12,.45) 62%,rgba(3,6,12,.88) 100%);}
+  .bg.show{opacity:1;}
+  .bg.zoom{animation:kb 46s ease-in-out infinite alternate;}
+  @keyframes kb{from{transform:scale(1.03);}to{transform:scale(1.11);}}
+
+  /* 纯色氛围模式 */
+  .tint{position:absolute;inset:0;opacity:0;transition:opacity 1.5s ease;}
+  .tint.show{opacity:1;}
+  .tint.a{background:
+     radial-gradient(120% 90% at 50% 8%, #1b2c44 0%, #0a1220 45%, #03060c 100%);}
+  .tint.b{background:
+     radial-gradient(110% 80% at 50% 100%, #17324a 0%, #070e1a 50%, #02050a 100%);}
+  .tint.c{background:
+     radial-gradient(100% 70% at 20% 30%, #2a2015 0%, #0d0f16 55%, #03050a 100%);}
+
+  /* 统一调色 + 噪点 + 暗角 */
+  #grade{position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(12,30,54,.55),rgba(6,14,26,.7));
+    mix-blend-mode:soft-light;}
+  #haze{position:absolute;inset:0;pointer-events:none;opacity:.16;
+    background:radial-gradient(120% 80% at 50% 40%,rgba(160,205,255,.35),transparent 70%);}
+  #vignette{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 45%,transparent 45%,rgba(0,0,0,.62) 100%);}
+  #grain{position:absolute;inset:0;pointer-events:none;opacity:.09;
+    background-image:radial-gradient(rgba(255,255,255,.55) .6px,transparent .6px);
+    background-size:3px 3px;}
+
+  /* ===== 雪花：纯白小圆点 ===== */
+  #snow{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+  .dot{position:absolute;top:-2vh;background:#fff;border-radius:50%;
+       animation:fall linear infinite;will-change:transform;}
+  @keyframes fall{
+    0%{transform:translate3d(0,-3vh,0);opacity:0;}
+    8%{opacity:1;}
+    92%{opacity:1;}
+    100%{transform:translate3d(var(--drift,3vw),103vh,0);opacity:0;}
+  }
+
+  /* ===== 章节标题卡 ===== */
+  #chapterCard{position:absolute;inset:0;display:flex;flex-direction:column;
+    justify-content:center;align-items:center;pointer-events:none;opacity:0;
+    transition:opacity .9s ease;z-index:30;
+    background:linear-gradient(180deg,rgba(3,6,12,.72),rgba(3,6,12,.5) 40%,rgba(3,6,12,.78));}
+  #chapterCard.show{opacity:1;}
+  #chapterCard .no{color:var(--ice-dim);font-size:12px;letter-spacing:.55em;
+    margin-bottom:22px;}
+  #chapterCard .cn{color:#fff;font-size:40px;font-weight:300;letter-spacing:.34em;
+    text-indent:.34em;opacity:0;transform:translateY(14px);transition:all 1s ease .15s;}
+  #chapterCard.show .cn{opacity:1;transform:none;}
+  #chapterCard .rule{width:0;height:1px;margin-top:30px;transition:width 1.2s ease .3s;
+    background:linear-gradient(90deg,transparent,rgba(143,211,255,.85),transparent);}
+  #chapterCard.show .rule{width:180px;}
+
+  /* ===== 顶部信息 ===== */
+  #meta{position:absolute;top:22px;left:26px;z-index:25;display:flex;align-items:center;gap:12px;}
+  #meta .idx{color:var(--ice-dim);font-size:11px;letter-spacing:.35em;}
+  #meta .chap{color:rgba(233,240,248,.72);font-size:12px;letter-spacing:.28em;}
+  #meta .sep{width:26px;height:1px;background:rgba(143,211,255,.35);}
+
+  /* ===== 控制条 ===== */
+  #hud{position:absolute;top:18px;right:22px;z-index:25;display:flex;gap:8px;}
+  .hud-btn{color:var(--ink-dim);background:rgba(8,14,24,.5);
+    border:1px solid rgba(143,211,255,.16);border-radius:20px;
+    padding:6px 15px;font-size:11px;letter-spacing:.22em;cursor:pointer;
+    transition:all .25s ease;backdrop-filter:blur(8px);}
+  .hud-btn:hover{color:#fff;border-color:rgba(143,211,255,.42);background:rgba(20,40,66,.6);}
+  .hud-btn.active{color:#04121f;background:var(--ice);border-color:var(--ice);}
+
+  /* ===== 进度条 ===== */
+  #bar{position:absolute;top:0;left:0;height:2px;width:0;z-index:26;
+    background:linear-gradient(90deg,rgba(143,211,255,.25),var(--ice));transition:width .5s ease;}
+
+  /* ===== 对话框 ===== */
+  #dialogue{position:absolute;left:50%;bottom:5vh;transform:translateX(-50%);
+    width:min(880px,90vw);z-index:20;cursor:pointer;user-select:none;}
+  #dlgBox{position:relative;background:var(--panel);
+    border:1px solid rgba(143,211,255,.14);border-radius:16px;
+    padding:26px 34px 30px;min-height:140px;
+    box-shadow:0 18px 50px rgba(0,0,0,.55),
+               inset 0 1px 0 rgba(255,255,255,.05);
+    backdrop-filter:blur(16px) saturate(1.1);overflow:hidden;}
+  #dlgBox::before{content:"";position:absolute;left:0;top:22px;bottom:22px;width:2px;
+    background:linear-gradient(180deg,transparent,rgba(143,211,255,.65),transparent);}
+  #dlgText{color:var(--ink);font-size:18px;line-height:2;letter-spacing:.045em;
+    min-height:72px;font-weight:300;text-shadow:0 1px 6px rgba(0,0,0,.6);}
+
+  /* ===== 场景提示（对话框右上，成就式滑入收回） ===== */
+  #toast{position:absolute;right:10px;bottom:calc(100% + 14px);
+    display:flex;align-items:center;gap:13px;padding:11px 20px 11px 15px;
+    border-radius:10px;background:rgba(9,17,30,.88);
+    border:1px solid rgba(143,211,255,.2);
+    box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05);
+    backdrop-filter:blur(12px);opacity:0;pointer-events:none;
+    transform:translateX(26px) translateY(6px);
+    transition:opacity .45s ease, transform .6s cubic-bezier(.2,.8,.2,1);}
+  #toast.on{opacity:1;transform:none;}
+  #toast .mark{width:6px;height:6px;border-radius:50%;background:var(--ice);
+    box-shadow:0 0 12px var(--ice);flex:none;}
+  #toast .t{color:#fff;font-size:13px;letter-spacing:.2em;font-weight:300;white-space:nowrap;}
+  #toast .s{color:var(--ice-dim);font-size:10px;letter-spacing:.3em;margin-top:4px;white-space:nowrap;}
+  #dlgText .em{color:var(--amber);}
+  #next{position:absolute;right:26px;bottom:18px;width:16px;height:16px;opacity:0;
+    transition:opacity .4s ease;}
+  #next.on{opacity:.85;animation:bob 1.4s ease-in-out infinite;}
+  #next::before,#next::after{content:"";position:absolute;left:0;top:7px;width:8px;height:1.5px;
+    background:var(--ice);border-radius:2px;}
+  #next::before{transform:rotate(45deg) translateX(2px);}
+  #next::after{transform:rotate(-45deg) translateX(2px);}
+  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(4px);}}
+
+  /* ===== 记录 ===== */
+  #logPanel{position:absolute;inset:0;z-index:60;background:rgba(3,6,12,.94);
+    display:none;flex-direction:column;padding:6vh 8vw;}
+  #logPanel.open{display:flex;}
+  #logPanel h2{color:var(--ice);font-size:12px;letter-spacing:.55em;font-weight:400;margin-bottom:24px;}
+  #logList{flex:1;overflow-y:auto;padding-right:14px;}
+  #logList p{color:rgba(233,240,248,.78);font-size:15px;line-height:2;font-weight:300;
+    margin-bottom:16px;padding-left:16px;border-left:1px solid rgba(143,211,255,.22);}
+  #logList p .who{color:var(--ice-dim);margin-right:12px;font-size:11px;letter-spacing:.2em;}
+  #logList::-webkit-scrollbar{width:4px;}
+  #logList::-webkit-scrollbar-thumb{background:rgba(143,211,255,.25);border-radius:4px;}
+
+  /* ===== 标题 ===== */
+  #title{position:absolute;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(120% 90% at 50% 20%,#16283f 0%,#070d18 50%,#02050a 100%);}
+  #title .tint2{position:absolute;inset:0;background:url('bg_tower.png') center/cover;
+    opacity:.18;filter:grayscale(.65) brightness(.55) saturate(.4) blur(2px);
+    animation:kb 60s ease-in-out infinite alternate;}
+  #title .veil{position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(2,5,10,.35),rgba(2,5,10,.9));}
+  #title .wrap{position:relative;text-align:center;animation:up 1.6s cubic-bezier(.2,.8,.2,1);}
+  @keyframes up{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:none;}}
+  #title .kicker{color:var(--ice-dim);font-size:11px;letter-spacing:.6em;margin-bottom:26px;}
+  #title h1{color:#fff;font-size:58px;font-weight:200;letter-spacing:.16em;text-indent:.16em;
+    text-shadow:0 0 46px rgba(143,211,255,.35);}
+  #title h2{color:rgba(255,255,255,.8);font-size:17px;font-weight:300;
+    letter-spacing:.9em;text-indent:.9em;margin-top:20px;}
+  #title .rule{width:0;height:1px;margin:38px auto;transition:width 1.4s ease .6s;
+    background:linear-gradient(90deg,transparent,rgba(143,211,255,.7),transparent);}
+  #title .rule.on{width:240px;}
+  #title .start{position:relative;margin-top:10px;padding:13px 62px;font-size:13px;letter-spacing:.45em;
+    text-indent:.45em;color:rgba(233,240,248,.9);background:transparent;
+    border:1px solid rgba(143,211,255,.32);border-radius:30px;cursor:pointer;transition:all .35s ease;}
+  #title .start:hover{color:#04121f;background:var(--ice);border-color:var(--ice);
+    box-shadow:0 0 34px rgba(143,211,255,.35);}
+  #title .hint{margin-top:26px;color:rgba(233,240,248,.28);font-size:11px;letter-spacing:.28em;}
+
+  /* ===== 结局 ===== */
+  #ending{position:absolute;inset:0;z-index:40;display:none;flex-direction:column;
+    justify-content:center;align-items:center;
+    background:radial-gradient(100% 80% at 50% 50%,rgba(16,32,52,.9),rgba(2,5,10,.97));}
+  #ending.show{display:flex;animation:up 1.4s ease;}
+  #ending .big{color:#fff;font-size:26px;font-weight:200;letter-spacing:.5em;text-indent:.5em;
+    text-shadow:0 0 40px rgba(143,211,255,.3);}
+  #ending .sub{color:var(--ink-dim);font-size:13px;letter-spacing:.24em;margin:26px 0 60px;font-weight:300;}
+  #ending button{padding:12px 44px;font-size:12px;letter-spacing:.4em;text-indent:.4em;color:var(--ink-dim);
+    background:transparent;border:1px solid rgba(143,211,255,.28);border-radius:30px;cursor:pointer;transition:all .3s;}
+  #ending button:hover{color:#04121f;background:var(--ice);border-color:var(--ice);}
+
+  @media (max-width:680px){
+    #title h1{font-size:34px;}
+    #chapterCard .cn{font-size:26px;}
+    #dlgText{font-size:16px;line-height:1.95;}
+    #dlgBox{padding:20px 24px 26px;}
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="tint a" id="tint"></div>
+  <div id="bgA" class="bg"></div>
+  <div id="bgB" class="bg"></div>
+  <div id="grade"></div>
+  <div id="haze"></div>
+  <div id="vignette"></div>
+  <div id="scrim"></div>
+  <div id="grain"></div>
+  <div id="snow"></div>
+
+  <div id="bar"></div>
+
+  <div id="meta"><span class="idx">CH.01</span><span class="sep"></span><span class="chap">初雪</span></div>
+  <div id="hud">
+    <button class="hud-btn" id="btnAuto">自动</button>
+    <button class="hud-btn" id="btnArt">画面</button>
+    <button class="hud-btn" id="btnLog">记录</button>
+  </div>
+
+  <div id="chapterCard">
+    <div class="no"></div><div class="cn"></div><div class="rule"></div>
+  </div>
+
+  <div id="dialogue" style="display:none">
+    <div id="toast"><span class="mark"></span>
+      <div><div class="t"></div><div class="s"></div></div>
+    </div>
+    <div id="dlgBox">
+      <div id="dlgText"></div>
+      <div id="next"></div>
+    </div>
+  </div>
+
+  <div id="logPanel">
+    <h2>记 录</h2>
+    <div id="logList"></div>
+  </div>
+
+  <div id="ending">
+    <div class="big">ReChapter0 · 起源 · 完</div>
+    <div class="sub">人类终究在夹缝里找到了自己的位置 —— 而像素塔，就屹立在江源基地之中</div>
+    <button id="btnRestart">重新开始</button>
+  </div>
+
+  <div id="title">
+    <div class="tint2"></div><div class="veil"></div>
+    <div class="wrap">
+      <div class="kicker">PHIGROS · VISUAL NOVEL</div>
+      <h1>ReChapter0</h1>
+      <h2>起源</h2>
+      <div class="rule"></div>
+      <button class="start" id="btnStart">开 始</button>
+      <div class="hint">点击 / 空格 / 回车 推进</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ 剧本 ============ */
+const S = (text)=>({text});
+const SCRIPT = [
+  { bg:"bg_first_snow.png", tint:"a", no:"RECHAPTER 0 — 01", cn:"起 源", meta:"初雪", card:true,
+    lines:[
+    S("2030年初，地球悄无声息地滑进了一个漫长的小冰期。"),
+    S("最初，那只是一片雪花，轻轻落在城市的屋檐上；只是一场寻常的雪，孩子们还在街头奔跑、嬉闹，堆起歪歪扭扭的雪人。"),
+    S("没有人意识到这意味着什么。科学家在论文里谨慎地讨论「气候异常」，新闻用三十秒播报「罕见降雪」，人们裹紧大衣，匆匆走过被白雪覆盖的街道。"),
+    S("直到第二场雪，没有停。"),
+    S("第三场，第四场……雪，再也没有停过。")]},
+
+  { bg:"bg_frozen.png", tint:"b", no:"02 — ICE AGE", cn:"冰 封 纪 元", meta:"长夜",
+    lines:[
+    S("冰川以肉眼可见的速度向低纬度推进。曾经温暖的南方城市在一夜之间被封进冰里，农作物枯死在冻土中，电网在极寒里一节一节地崩断，城市的灯一盏接一盏地熄灭。"),
+    S("恐慌终于漫上来了——货架被搬空，高速公路堵满逃亡的车流，而天空仍旧无声地落着雪，像一匹巨大的白布，缓缓裹住整个星球。"),
+    S("这段时期，后来被称作「冰封纪元」。")]},
+
+  { bg:"bg_refugees.png", tint:"c", no:"03 — AFTER THE STORM", cn:"天 灾 之 后", meta:"人祸",
+    lines:[
+    S("当冰雪吞噬北半球的大片土地，各国为不断缩小的生存面积争红了眼。外交辞令与和平协议在生存面前形同废纸，边境线在炮火里被反复重绘。"),
+    S("曾经富饶的北方只剩冰封的废墟与空城，而赤道两侧的亚热带与热带，成了人类最后的避难所——也成了最血腥的战场。"),
+    S("低端人力被彻底淘汰。严寒里，机器比人更耐寒、更高效、更不会背叛。工厂中，机械臂接管了流水线；战场上，无人机与钢铁军团取代了血肉之躯；连日常的巡逻与守卫，都交给了感觉不到冷的造物。"),
+    S("失业潮席卷全球，数以亿计的人在一夜之间失去了「被需要」的资格。达尔文主义重新抬头，「适者生存」不再是一句写在课本里的理论，而是赤裸裸的日常。"),
+    S("人口急剧下降——不是死于战争，而是死于「无用」。被遗弃的人在街头冻僵、饿倒，无人过问。")]},
+
+  { bg:"bg_refugees.png", tint:"c", no:"04 — 2040", cn:"第 三 次 世 界 大 战", meta:"2040",
+    lines:[
+    S("于是人们开始向南迁徙，朝着亚热带，朝着热带。"),
+    S("那是一场史无前例的大逃亡。北方人拖家带口，踩着齐膝深的积雪向南跋涉，身后是正在被冰雪吞没的家园。"),
+    S("高速公路成了难民的河道，边境检查站挤满了绝望的面孔。可目的地并不是天堂——那些本就温暖的国家早已不堪重负：资源告急，粮仓见底，住处告罄，本地人与外来者之间，只差一粒火星。"),
+    S("2040年，第三次世界大战的第一声炮响。没有宣战，没有预警。"),
+    S("某个资源枯竭的军事强国率先越境，履带碾过邻国的界碑，导弹撕开长空。紧接着是连锁反应——军事强国纷纷出动，抢占亚热带与热带的战略要地。"),
+    S("赤道附近几乎无一幸免，尽数沦为大国博弈的棋盘与战场。安理会形同虚设，国际秩序彻底塌方。北方的迁徙仍在继续，可他们抵达的，不再是避难所，而是战区。")]},
+
+  { bg:"bg_frozen.png", tint:"b", no:"05 — COLLAPSE", cn:"全 面 崩 坏", meta:"四成",
+    lines:[
+    S("基础设施全面废弃。北方城市变成鬼城：电网瘫痪，水管冻结，通信基站被冰雪压垮。南方则在人口洪流中超负荷运转：电力短缺，瘟疫横行，犯罪率飙升。"),
+    S("人与机器的矛盾终于炸开——被机器取代的人愤怒了。他们砸毁流水线上的机器人，焚烧自动化设备，高喊「把工作还给我们」。游行从发达国家开始，起初是和平示威，后来演变成暴动，再后来，军队出动了。"),
+    S("各国全面实行阶层隔离。富人与权贵占据最温暖、资源最充沛的核心区，高墙环绕，武装守卫；中产阶级被挤到边缘地带，勉强维持体面；而底层——那些「无用之人」——被驱逐到最危险的缓冲区，自生自灭。"),
+    S("身份芯片、生物识别、无人机监控……技术不再是解放人的工具，而是锁住人的枷锁。"),
+    S("此时，全球剩余人口，算上 AI，只剩四成。"),
+    S("六十年，地球失去了六十亿人。不是一场瘟疫，不是一次核爆，而是一场漫长的、无声的、系统性的淘汰。"),
+    S("冰封纪元冻住的不只是大地，还有人性。当最后一丝温情被严寒吞尽，人类终于明白：再这样内耗下去，只会一起走向灭亡。")]},
+
+  { bg:"bg_hive.png", tint:"a", no:"06 — 2060", cn:"蜂 巢 基 地", meta:"2060",
+    lines:[
+    S("2060年，残存的人类放下了武器。不是因为宽恕，也不是因为觉悟，而是因为——真的打不动了。"),
+    S("为了仅剩的栖息地，各国达成和解，成立世界联合政府。它算不上一个真正的「政府」，更像一个松散的协调机构：分配最后的资源，划定最后的生存区，维持最低限度的秩序。"),
+    S("而在民间，一批批互助组织像野草一样从废墟里长出来——那些被时代抛弃的人，那些在夹缝中挣扎的普通人，自发地抱成一团，在绝境里找一线生机。"),
+    S("雅鲁藏布大峡谷、科罗拉多大峡谷、西南极裂谷……这些曾经只存在于地理课本上的名字，如今成了人类最后的避难所。"),
+    S("在联合政府的默许与支持下，一座座栖息地被开凿出来，它们有一个共同的名字——「蜂巢」基地。"),
+    S("蜂巢基地像蜂巢一样紧凑、狭窄，立体多层结构层层叠叠，如一片倒置的钢铁森林。每一寸空间都被榨干：走廊窄得只容一人侧身通过，房间小得转身都难。但至少，这里能挡风，能御寒，能让人活下去。"),
+    S("在众多栖息地中，逐渐形成了三大基地群，被合称为「冰封纪元三大基地群」——人类文明最后的堡垒，也是最后的希望。")]},
+
+  { bg:"bg_tower.png", tint:"a", no:"07 — LAST REFUGE", cn:"江 源 基 地", meta:"像素塔",
+    lines:[
+    S("其中，江源基地最为特殊。"),
+    S("它不是一栋建筑，而是散布在雅鲁藏布江沿岸的聚落群。"),
+    S("本着可复制、可回收的工业理念，江源基地以成品拼接的方式快速建造——标准化的金属模块像积木一样被吊装、咬合、固定，层层向上生长，堆出多层竖构的街道。"),
+    S("这里没有宽阔的马路，也没有开阔的广场，只有密密麻麻的通道与楼梯，像迷宫一样蜿蜒交错。"),
+    S("居住条件极度拥挤：一家几口挤在十几平米的格子里是常态，隔壁的咳嗽、楼上的脚步、管道里的水声，构成了日常的背景音。"),
+    S("称不上体面，但勉强够活。"),
+    S("人类终究在大自然的威胁下，在夹缝里找到了自己的位置。"),
+    S("而像素塔，就屹立在江源基地之中。")]}
+];
+
+/* ============ 引擎 ============ */
+const $ = id => document.getElementById(id);
+let cur=0, lineIdx=0, typing=false, typeTimer=null, autoMode=false, autoTimer=null;
+let useArt=true, bgFlip=false;
+const TOTAL = SCRIPT.reduce((s,c)=>s+c.lines.length,0);
+const done  = () => { let n=0; for(let i=0;i<cur;i++) n+=SCRIPT[i].lines.length; return n+lineIdx; };
+
+/* 白色小圆点雪花（非 emoji） */
+(function snow(){
+  const box=$("snow");
+  for(let i=0;i<110;i++){
+    const d=document.createElement("div");
+    d.className="dot";
+    const r=1.2+Math.random()*3.4;
+    d.style.width=d.style.height=r+"px";
+    d.style.left=(Math.random()*100)+"vw";
+    d.style.opacity=(.25+Math.random()*.55).toFixed(2);
+    d.style.filter="blur("+(r>3?0.6:0)+"px)";
+    d.style.setProperty("--drift",(Math.random()*10-5).toFixed(2)+"vw");
+    const dur=8+Math.random()*14;
+    d.style.animationDuration=dur+"s";
+    d.style.animationDelay=(-Math.random()*dur)+"s";
+    box.appendChild(d);
+  }
+})();
+
+function setScene(sc){
+  if(useArt){
+    const a=$("bgA"), b=$("bgB");
+    const show=bgFlip?a:b, hide=bgFlip?b:a; bgFlip=!bgFlip;
+    show.style.backgroundImage="url('"+sc.bg+"')";
+    show.classList.add("show","zoom");
+    hide.classList.remove("show","zoom");
+  }
+  const t=$("tint");
+  t.className="tint "+sc.tint+(useArt?"":" show");
+  if(useArt) t.classList.remove("show");
+}
+
+function updateMeta(sc){
+  $("meta").querySelector(".idx").textContent="CH."+String(cur+1).padStart(2,"0");
+  $("meta").querySelector(".chap").textContent=sc.meta;
+}
+
+/* 章节开头：居中大字（仅开篇一次） */
+function showChapterCard(sc){
+  const c=$("chapterCard");
+  c.querySelector(".no").textContent=sc.no;
+  c.querySelector(".cn").textContent=sc.cn;
+  c.classList.add("show");
+  setTimeout(()=>c.classList.remove("show"),2600);
+}
+
+/* 场景切换：对话框右上角成就式提示，滑入后收回 */
+let toastTimer=null;
+function showToast(sc){
+  const t=$("toast");
+  t.querySelector(".t").textContent=sc.cn.replace(/\s/g,"");
+  t.querySelector(".s").textContent=sc.no;
+  t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove("on"),2600);
+}
+
+function enterScene(sc){
+  updateMeta(sc);
+  if(sc.card) showChapterCard(sc); else showToast(sc);
+}
+
+function typewrite(text){
+  clearInterval(typeTimer);
+  const el=$("dlgText"); el.innerHTML=""; typing=true;
+  $("next").classList.remove("on");
+  let i=0;
+  typeTimer=setInterval(()=>{
+    if(i>=text.length){ clearInterval(typeTimer); typing=false;
+      $("next").classList.add("on"); return; }
+    let ch=text[i];
+    if(ch==="「"){
+      const end=text.indexOf("」",i);
+      if(end>i){ el.innerHTML+="<span class=\"em\">"+text.slice(i,end+1)+"</span>"; i=end+1; return; }
+    }
+    el.innerHTML+=ch; i++;
+  },34);
+}
+
+function nextLine(){
+  const sc=SCRIPT[cur], L=sc.lines[lineIdx];
+  typewrite(L.text);
+  $("bar").style.width=(done()/TOTAL*100)+"%";
+  if(autoMode){ clearTimeout(autoTimer);
+    autoTimer=setTimeout(advance,1400+L.text.length*85); }
+}
+
+function advance(){
+  if($("logPanel").classList.contains("open")) return;
+  if(typing){
+    clearInterval(typeTimer); typing=false;
+    $("dlgText").innerHTML=SCRIPT[cur].lines[lineIdx].text
+      .replace(/「([^」]*)」/g,'<span class="em">「$1」</span>');
+    $("next").classList.add("on");
+    return;
+  }
+  lineIdx++;
+  if(lineIdx>=SCRIPT[cur].lines.length){
+    cur++; lineIdx=0;
+    if(cur>=SCRIPT.length){ endGame(); return; }
+    setScene(SCRIPT[cur]);
+    enterScene(SCRIPT[cur]);
+    setTimeout(nextLine,1100);
+    return;
+  }
+  nextLine();
+}
+
+function endGame(){
+  $("dialogue").style.display="none";
+  $("ending").classList.add("show");
+}
+
+function startGame(){
+  $("title").style.display="none";
+  $("ending").classList.remove("show");
+  $("dialogue").style.display="block";
+  cur=0; lineIdx=0; $("logList").innerHTML="";
+  clearTimeout(toastTimer); $("toast").classList.remove("on");
+  setScene(SCRIPT[0]); enterScene(SCRIPT[0]);
+  setTimeout(nextLine,1400);
+}
+
+/* 记录 */
+$("btnLog").addEventListener("click",()=>{
+  const list=$("logList"); list.innerHTML="";
+  let n=0;
+  for(let c=0;c<=cur && c<SCRIPT.length;c++){
+    const max=(c===cur)?lineIdx:SCRIPT[c].lines.length;
+    for(let l=0;l<max;l++){
+      n++;
+      const p=document.createElement("p");
+      p.innerHTML="<span class=\"who\">"+String(n).padStart(2,"0")+"</span>"+SCRIPT[c].lines[l].text;
+      list.appendChild(p);
+    }
+  }
+  list.scrollTop=list.scrollHeight;
+  $("logPanel").classList.add("open");
+});
+$("logPanel").addEventListener("click",()=>$("logPanel").classList.remove("open"));
+
+/* 自动 */
+$("btnAuto").addEventListener("click",function(){
+  autoMode=!autoMode; this.classList.toggle("active",autoMode);
+  if(autoMode && !typing) advance();
+  if(!autoMode) clearTimeout(autoTimer);
+});
+
+/* 画面模式：背景图 / 纯氛围色 */
+$("btnArt").addEventListener("click",function(){
+  useArt=!useArt;
+  this.classList.toggle("active",!useArt);
+  this.textContent = useArt ? "画面" : "纯色";
+  if(!useArt){
+    $("bgA").classList.remove("show"); $("bgB").classList.remove("show");
+  }
+  setScene(SCRIPT[cur]);
+});
+
+/* 输入 */
+$("dialogue").addEventListener("click",advance);
+document.addEventListener("keydown",e=>{
+  if($("title").style.display!=="none"){ if(e.code==="Space"||e.code==="Enter") startGame(); return; }
+  if($("logPanel").classList.contains("open")){
+    if(e.code==="Escape"||e.code==="Space") $("logPanel").classList.remove("open"); return; }
+  if($("ending").classList.contains("show")) return;
+  if(e.code==="Space"||e.code==="Enter"){ e.preventDefault(); advance(); }
+});
+$("btnStart").addEventListener("click",startGame);
+$("btnRestart").addEventListener("click",startGame);
+
+/* 标题线条动画 */
+window.addEventListener("load",()=>setTimeout(()=>{
+  document.querySelector("#title .rule").classList.add("on");
+},400));
+</script>
+</body>
+</html>
