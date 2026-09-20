@@ -2,212 +2,445 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PhigrOS：ReChapter0 - 起源</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PhigrOS：ReChapter0 - 起源 // 冰封纪元档案</title>
 <style>
-  /* 英文 / 数字 */
-  @font-face{
-    font-family:"Saira";
-    src:url('https://vancocn.github.io/saira-regular.ttf') format('truetype');
-    font-weight:100 900;
-    font-display:swap;
-    unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+2000-206F,
-                  U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215;
-  }
-  /* 中文 */
-  @font-face{
-    font-family:"Alfyt";
-    src:url('https://vancocn.github.io/alfyt.ttf') format('truetype');
-    font-weight:100 900;
-    font-display:swap;
-  }
-  :root{
-    --ice:#8fd3ff;
-    --ice-dim:rgba(143,211,255,.55);
-    --amber:#ffcf8a;
-    --ink:#e9f0f8;
-    --ink-dim:rgba(233,240,248,.62);
-    --panel:rgba(7,12,21,.74);
-  }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  html,body{width:100%;height:100%;overflow:hidden;background:#03060c;}
-  body{font-family:"Saira","Alfyt","PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
-       -webkit-font-smoothing:antialiased;}
-  button,input,select{font-family:inherit;}
-  #stage{position:relative;width:100vw;height:100vh;}
+/* =========================================================
+   字体：英文/数字 Saira，中文 Alfyt
+   ========================================================= */
+@font-face{
+  font-family:"Saira";
+  src:url('https://vancocn.github.io/saira-regular.ttf') format('truetype');
+  font-weight:100 900; font-display:swap;
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+2000-206F,
+                U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215;
+}
+@font-face{
+  font-family:"Alfyt";
+  src:url('https://vancocn.github.io/alfyt.ttf') format('truetype');
+  font-weight:100 900; font-display:swap;
+}
 
-  /* ===== 背景层 ===== */
-  .bg{position:absolute;inset:0;background-size:cover;background-position:center;
-      opacity:0;transition:opacity 1.5s ease;transform:scale(1.03);
-      filter:brightness(.46) saturate(.32) contrast(1.06) blur(1.6px);}
-  /* 底部压暗，保证文字区干净 */
-  #scrim{position:absolute;inset:0;pointer-events:none;
-    background:linear-gradient(180deg,rgba(3,6,12,.35) 0%,transparent 30%,
-               rgba(3,6,12,.45) 62%,rgba(3,6,12,.88) 100%);}
-  .bg.show{opacity:1;}
-  .bg.zoom{animation:kb 46s ease-in-out infinite alternate;}
-  @keyframes kb{from{transform:scale(1.03);}to{transform:scale(1.11);}}
+:root{
+  --ice:#8fd3ff;              /* 主色，随时代被 JS 覆写 */
+  --ice-dim:rgba(143,211,255,.55);
+  --amber:#ffcf8a;
+  --ink:#e9f0f8;
+  --ink-dim:rgba(233,240,248,.62);
+  --panel:rgba(7,12,21,.74);
+  --snowOp:.55;               /* 雪量，随交互增强 */
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:#03060c;}
+body{font-family:"Saira","Alfyt","PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+     -webkit-font-smoothing:antialiased;}
+button,input,select{font-family:inherit;}
+#stage{position:relative;width:100vw;height:100vh;color:var(--ink);}
 
-  /* 纯色氛围模式 */
-  .tint{position:absolute;inset:0;opacity:0;transition:opacity 1.5s ease;}
-  .tint.show{opacity:1;}
-  .tint.a{background:
-     radial-gradient(120% 90% at 50% 8%, #1b2c44 0%, #0a1220 45%, #03060c 100%);}
-  .tint.b{background:
-     radial-gradient(110% 80% at 50% 100%, #17324a 0%, #070e1a 50%, #02050a 100%);}
-  .tint.c{background:
-     radial-gradient(100% 70% at 20% 30%, #2a2015 0%, #0d0f16 55%, #03050a 100%);}
+/* ===== 背景层 ===== */
+.bg{position:absolute;inset:0;background-size:cover;background-position:center;
+    opacity:0;transition:opacity 1.5s ease;transform:scale(1.03);
+    filter:brightness(.46) saturate(.32) contrast(1.06) blur(1.6px);}
+.bg.show{opacity:1;}
+.bg.zoom{animation:kb 46s ease-in-out infinite alternate;}
+@keyframes kb{from{transform:scale(1.03);}to{transform:scale(1.11);}}
 
-  /* 统一调色 + 噪点 + 暗角 */
-  #grade{position:absolute;inset:0;pointer-events:none;
-    background:linear-gradient(180deg,rgba(12,30,54,.55),rgba(6,14,26,.7));
-    mix-blend-mode:soft-light;}
-  #haze{position:absolute;inset:0;pointer-events:none;opacity:.16;
-    background:radial-gradient(120% 80% at 50% 40%,rgba(160,205,255,.35),transparent 70%);}
-  #vignette{position:absolute;inset:0;pointer-events:none;
-    background:radial-gradient(ellipse at 50% 45%,transparent 45%,rgba(0,0,0,.62) 100%);}
-  #grain{position:absolute;inset:0;pointer-events:none;opacity:.09;
-    background-image:radial-gradient(rgba(255,255,255,.55) .6px,transparent .6px);
-    background-size:3px 3px;}
+/* 氛围色（纯色模式也用） */
+.tint{position:absolute;inset:0;opacity:0;transition:opacity 1.5s ease;}
+.tint.show{opacity:1;}
+.tint.a{background:radial-gradient(120% 90% at 50% 8%, #1b2c44 0%, #0a1220 45%, #03060c 100%);}
+.tint.b{background:radial-gradient(110% 80% at 50% 100%, #17324a 0%, #070e1a 50%, #02050a 100%);}
+.tint.c{background:radial-gradient(100% 70% at 20% 30%, #2a2015 0%, #0d0f16 55%, #03050a 100%);}
+.tint.d{background:radial-gradient(120% 80% at 70% 20%, #35180f 0%, #140a0b 45%, #03050a 100%);}
+.tint.e{background:radial-gradient(120% 90% at 50% 0%, #241a3d 0%, #0b0a1c 55%, #03050a 100%);}
 
-  /* ===== 雪花：纯白小圆点 ===== */
-  #snow{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
-  .dot{position:absolute;top:-2vh;background:#fff;border-radius:50%;
-       animation:fall linear infinite;will-change:transform;}
-  @keyframes fall{
-    0%{transform:translate3d(0,-3vh,0);opacity:0;}
-    8%{opacity:1;}
-    92%{opacity:1;}
-    100%{transform:translate3d(var(--drift,3vw),103vh,0);opacity:0;}
-  }
+/* 统一调色 / 噪点 / 暗角 / 底部压暗 */
+#grade{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(12,30,54,.55),rgba(6,14,26,.7));mix-blend-mode:soft-light;}
+#haze{position:absolute;inset:0;pointer-events:none;opacity:.16;
+  background:radial-gradient(120% 80% at 50% 40%,rgba(160,205,255,.35),transparent 70%);}
+#vignette{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 45%,transparent 45%,rgba(0,0,0,.62) 100%);}
+#scrim{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(3,6,12,.35) 0%,transparent 30%,
+             rgba(3,6,12,.45) 62%,rgba(3,6,12,.9) 100%);}
+#grain{position:absolute;inset:0;pointer-events:none;opacity:.09;
+  background-image:radial-gradient(rgba(255,255,255,.55) .6px,transparent .6px);
+  background-size:3px 3px;}
 
-  /* ===== 章节标题卡 ===== */
-  #chapterCard{position:absolute;inset:0;display:flex;flex-direction:column;
-    justify-content:center;align-items:center;pointer-events:none;opacity:0;
-    transition:opacity .9s ease;z-index:30;
-    background:linear-gradient(180deg,rgba(3,6,12,.72),rgba(3,6,12,.5) 40%,rgba(3,6,12,.78));}
-  #chapterCard.show{opacity:1;}
-  #chapterCard .no{color:var(--ice-dim);font-size:12px;letter-spacing:.55em;
-    margin-bottom:22px;}
-  #chapterCard .cn{color:#fff;font-size:40px;font-weight:300;letter-spacing:.34em;
-    text-indent:.34em;opacity:0;transform:translateY(14px);transition:all 1s ease .15s;}
-  #chapterCard.show .cn{opacity:1;transform:none;}
-  #chapterCard .rule{width:0;height:1px;margin-top:30px;transition:width 1.2s ease .3s;
-    background:linear-gradient(90deg,transparent,rgba(143,211,255,.85),transparent);}
-  #chapterCard.show .rule{width:180px;}
+/* ===== 时代附加层 ===== */
+#alert{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 1.2s ease;
+  background:radial-gradient(ellipse at 50% 50%,transparent 40%,rgba(120,20,10,.35) 100%);
+  animation:pulse 4.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{filter:brightness(.8);}50%{filter:brightness(1.25);}}
+#stage.st-war #alert{opacity:1;}
+#stage.st-war #scan{opacity:1;}
+#scan{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 1s ease;
+  background:repeating-linear-gradient(180deg,rgba(255,255,255,.05) 0 1px,transparent 1px 3px);}
+#grid,#static{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 1s ease;}
+#grid{background-image:linear-gradient(rgba(143,211,255,.06) 1px,transparent 1px),
+                      linear-gradient(90deg,rgba(143,211,255,.06) 1px,transparent 1px);
+      background-size:64px 64px;}
+#static{opacity:0;background-image:repeating-linear-gradient(90deg,
+      rgba(255,255,255,.045) 0 1px,transparent 1px 2px);animation:shift .6s steps(2) infinite;}
+@keyframes shift{0%{transform:translateX(0);}100%{transform:translateX(2px);}}
+#stage.st-hive #grid{opacity:1;}
+#stage.st-hive #static{opacity:1;}
+#stage.st-tower #glitchLayer{opacity:1;}
+#glitchLayer{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .8s ease;
+  background:repeating-linear-gradient(180deg,rgba(201,166,255,.05) 0 2px,transparent 2px 5px);}
 
-  /* ===== 顶部信息 ===== */
-  #meta{position:absolute;top:22px;left:26px;z-index:25;display:flex;align-items:center;gap:12px;}
-  #meta .idx{color:var(--ice-dim);font-size:11px;letter-spacing:.35em;}
-  #meta .chap{color:rgba(233,240,248,.72);font-size:12px;letter-spacing:.28em;}
-  #meta .sep{width:26px;height:1px;background:rgba(143,211,255,.35);}
+/* ===== 雪 ===== */
+#snow{position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:var(--snowOp);
+      transition:opacity 1.2s ease;}
+.dot{position:absolute;top:-2vh;background:#fff;border-radius:50%;
+     animation:fall linear infinite;will-change:transform;}
+@keyframes fall{
+  0%{transform:translate3d(0,-3vh,0);opacity:0;}
+  8%{opacity:1;} 92%{opacity:1;}
+  100%{transform:translate3d(var(--drift,3vw),103vh,0);opacity:0;}
+}
 
-  /* ===== 控制条 ===== */
-  #hud{position:absolute;top:18px;right:22px;z-index:25;display:flex;gap:8px;}
-  .hud-btn{color:var(--ink-dim);background:rgba(8,14,24,.5);
-    border:1px solid rgba(143,211,255,.16);border-radius:20px;
-    padding:6px 15px;font-size:11px;letter-spacing:.22em;cursor:pointer;
-    transition:all .25s ease;backdrop-filter:blur(8px);}
-  .hud-btn:hover{color:#fff;border-color:rgba(143,211,255,.42);background:rgba(20,40,66,.6);}
-  .hud-btn.active{color:#04121f;background:var(--ice);border-color:var(--ice);}
+/* ===== 系统外壳：左上状态 / 右上控制 / 底部状态条 ===== */
+#meta{position:absolute;top:20px;left:24px;z-index:25;display:flex;align-items:center;gap:12px;}
+#meta .idx{color:var(--ice-dim);font-size:11px;letter-spacing:.35em;}
+#meta .chap{color:rgba(233,240,248,.72);font-size:12px;letter-spacing:.28em;}
+#meta .sep{width:26px;height:1px;background:currentColor;opacity:.4;}
+#link{width:6px;height:6px;border-radius:50%;background:var(--ice);
+  box-shadow:0 0 8px var(--ice);animation:blink 2.2s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:.35;}50%{opacity:1;}}
 
-  /* ===== 进度条 ===== */
-  #bar{position:absolute;top:0;left:0;height:2px;width:0;z-index:26;
-    background:linear-gradient(90deg,rgba(143,211,255,.25),var(--ice));transition:width .5s ease;}
+#hud{position:absolute;top:16px;right:20px;z-index:25;display:flex;gap:7px;flex-wrap:wrap;
+     justify-content:flex-end;max-width:62vw;}
+.hud-btn{color:var(--ink-dim);background:rgba(8,14,24,.5);
+  border:1px solid currentColor;border-color:rgba(143,211,255,.16);border-radius:20px;
+  padding:6px 13px;font-size:11px;letter-spacing:.22em;cursor:pointer;
+  transition:all .25s ease;backdrop-filter:blur(8px);white-space:nowrap;}
+.hud-btn:hover{color:#fff;border-color:var(--ice);background:rgba(20,40,66,.6);}
+.hud-btn.active{color:#04121f;background:var(--ice);border-color:var(--ice);}
 
-  /* ===== 对话框 ===== */
-  #dialogue{position:absolute;left:50%;bottom:5vh;transform:translateX(-50%);
-    width:min(880px,90vw);z-index:20;cursor:pointer;user-select:none;}
-  #dlgBox{position:relative;background:var(--panel);
-    border:1px solid rgba(143,211,255,.14);border-radius:16px;
-    padding:26px 34px 30px;min-height:140px;
-    box-shadow:0 18px 50px rgba(0,0,0,.55),
-               inset 0 1px 0 rgba(255,255,255,.05);
-    backdrop-filter:blur(16px) saturate(1.1);overflow:hidden;}
-  #dlgBox::before{content:"";position:absolute;left:0;top:22px;bottom:22px;width:2px;
-    background:linear-gradient(180deg,transparent,rgba(143,211,255,.65),transparent);}
-  #dlgText{color:var(--ink);font-size:18px;line-height:2;letter-spacing:.045em;
-    min-height:72px;font-weight:300;text-shadow:0 1px 6px rgba(0,0,0,.6);}
+#sysbar{position:absolute;left:24px;bottom:12px;z-index:25;color:rgba(233,240,248,.3);
+  font-size:10px;letter-spacing:.22em;pointer-events:none;}
+#bar{position:absolute;top:0;left:0;height:2px;width:0;z-index:26;
+  background:linear-gradient(90deg,rgba(143,211,255,.25),var(--ice));transition:width .5s ease;}
 
-  /* ===== 场景提示（对话框右上，成就式滑入收回） ===== */
-  #toast{position:absolute;right:10px;bottom:calc(100% + 14px);
-    display:flex;align-items:center;gap:13px;padding:11px 20px 11px 15px;
-    border-radius:10px;background:rgba(9,17,30,.88);
-    border:1px solid rgba(143,211,255,.2);
-    box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05);
-    backdrop-filter:blur(12px);opacity:0;pointer-events:none;
-    transform:translateX(26px) translateY(6px);
-    transition:opacity .45s ease, transform .6s cubic-bezier(.2,.8,.2,1);}
-  #toast.on{opacity:1;transform:none;}
-  #toast .mark{width:6px;height:6px;border-radius:50%;background:var(--ice);
-    box-shadow:0 0 12px var(--ice);flex:none;}
-  #toast .t{color:#fff;font-size:13px;letter-spacing:.2em;font-weight:300;white-space:nowrap;}
-  #toast .s{color:var(--ice-dim);font-size:10px;letter-spacing:.3em;margin-top:4px;white-space:nowrap;}
-  #dlgText .em{color:var(--amber);}
-  #next{position:absolute;right:26px;bottom:18px;width:16px;height:16px;opacity:0;
-    transition:opacity .4s ease;}
-  #next.on{opacity:.85;animation:bob 1.4s ease-in-out infinite;}
-  #next::before,#next::after{content:"";position:absolute;left:0;top:7px;width:8px;height:1.5px;
-    background:var(--ice);border-radius:2px;}
-  #next::before{transform:rotate(45deg) translateX(2px);}
-  #next::after{transform:rotate(-45deg) translateX(2px);}
-  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(4px);}}
+/* ===== 对话框 ===== */
+#dialogue{position:absolute;left:50%;bottom:5vh;transform:translateX(-50%);
+  width:min(880px,90vw);z-index:20;cursor:pointer;user-select:none;transition:opacity .4s ease;}
+#dialogue.dim{opacity:.12;pointer-events:none;}
+#dlgBox{position:relative;background:var(--panel);
+  border:1px solid rgba(143,211,255,.14);border-radius:16px;
+  padding:26px 34px 30px;min-height:130px;
+  box-shadow:0 18px 50px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.05);
+  backdrop-filter:blur(16px) saturate(1.1);overflow:hidden;}
+#dlgBox::before{content:"";position:absolute;left:0;top:22px;bottom:22px;width:2px;
+  background:linear-gradient(180deg,transparent,var(--ice),transparent);opacity:.7;}
+#dlgText{color:var(--ink);font-size:18px;line-height:2;letter-spacing:.045em;
+  min-height:72px;font-weight:300;text-shadow:0 1px 6px rgba(0,0,0,.6);}
+#dlgText .em{color:var(--amber);}
+#next{position:absolute;right:26px;bottom:18px;width:16px;height:16px;opacity:0;
+  transition:opacity .4s ease;}
+#next.on{opacity:.85;animation:bob 1.4s ease-in-out infinite;}
+#next::before,#next::after{content:"";position:absolute;left:0;top:7px;width:8px;height:1.5px;
+  background:var(--ice);border-radius:2px;}
+#next::before{transform:rotate(45deg) translateX(2px);}
+#next::after{transform:rotate(-45deg) translateX(2px);}
+@keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(4px);}}
 
-  /* ===== 记录 ===== */
-  #logPanel{position:absolute;inset:0;z-index:60;background:rgba(3,6,12,.94);
-    display:none;flex-direction:column;padding:6vh 8vw;}
-  #logPanel.open{display:flex;}
-  #logPanel h2{color:var(--ice);font-size:12px;letter-spacing:.55em;font-weight:400;margin-bottom:24px;}
-  #logList{flex:1;overflow-y:auto;padding-right:14px;}
-  #logList p{color:rgba(233,240,248,.78);font-size:15px;line-height:2;font-weight:300;
-    margin-bottom:16px;padding-left:16px;border-left:1px solid rgba(143,211,255,.22);}
-  #logList p .who{color:var(--ice-dim);margin-right:12px;font-size:11px;letter-spacing:.2em;}
-  #logList::-webkit-scrollbar{width:4px;}
-  #logList::-webkit-scrollbar-thumb{background:rgba(143,211,255,.25);border-radius:4px;}
+/* 场景提示 toast（对话框右上，成就式） */
+#toast{position:absolute;right:10px;bottom:calc(100% + 14px);
+  display:flex;align-items:center;gap:13px;padding:11px 20px 11px 15px;
+  border-radius:10px;background:rgba(9,17,30,.88);border:1px solid rgba(143,211,255,.2);
+  box-shadow:0 10px 30px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);
+  backdrop-filter:blur(12px);opacity:0;pointer-events:none;
+  transform:translateX(26px) translateY(6px);
+  transition:opacity .45s ease,transform .6s cubic-bezier(.2,.8,.2,1);}
+#toast.on{opacity:1;transform:none;}
+#toast .mark{width:6px;height:6px;border-radius:50%;background:var(--ice);
+  box-shadow:0 0 12px var(--ice);flex:none;}
+#toast .t{color:#fff;font-size:13px;letter-spacing:.2em;font-weight:300;white-space:nowrap;}
+#toast .s{color:var(--ice-dim);font-size:10px;letter-spacing:.3em;margin-top:4px;white-space:nowrap;}
 
-  /* ===== 标题 ===== */
-  #title{position:absolute;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
-    background:radial-gradient(120% 90% at 50% 20%,#16283f 0%,#070d18 50%,#02050a 100%);}
-  #title .tint2{position:absolute;inset:0;background:url('bg_tower.png') center/cover;
-    opacity:.18;filter:grayscale(.65) brightness(.55) saturate(.4) blur(2px);
-    animation:kb 60s ease-in-out infinite alternate;}
-  #title .veil{position:absolute;inset:0;
-    background:linear-gradient(180deg,rgba(2,5,10,.35),rgba(2,5,10,.9));}
-  #title .wrap{position:relative;text-align:center;animation:up 1.6s cubic-bezier(.2,.8,.2,1);}
-  @keyframes up{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:none;}}
-  #title .kicker{color:var(--ice-dim);font-size:11px;letter-spacing:.6em;margin-bottom:26px;}
-  #title h1{color:#fff;font-size:58px;font-weight:200;letter-spacing:.16em;text-indent:.16em;
-    text-shadow:0 0 46px rgba(143,211,255,.35);}
-  #title h2{color:rgba(255,255,255,.8);font-size:17px;font-weight:300;
-    letter-spacing:.9em;text-indent:.9em;margin-top:20px;}
-  #title .rule{width:0;height:1px;margin:38px auto;transition:width 1.4s ease .6s;
-    background:linear-gradient(90deg,transparent,rgba(143,211,255,.7),transparent);}
-  #title .rule.on{width:240px;}
-  #title .start{position:relative;margin-top:10px;padding:13px 62px;font-size:13px;letter-spacing:.45em;
-    text-indent:.45em;color:rgba(233,240,248,.9);background:transparent;
-    border:1px solid rgba(143,211,255,.32);border-radius:30px;cursor:pointer;transition:all .35s ease;}
-  #title .start:hover{color:#04121f;background:var(--ice);border-color:var(--ice);
-    box-shadow:0 0 34px rgba(143,211,255,.35);}
-  #title .hint{margin-top:26px;color:rgba(233,240,248,.28);font-size:11px;letter-spacing:.28em;}
+/* ===== 章节大字卡（仅开篇） ===== */
+#chapterCard{position:absolute;inset:0;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;pointer-events:none;opacity:0;
+  transition:opacity .9s ease;z-index:30;
+  background:linear-gradient(180deg,rgba(3,6,12,.72),rgba(3,6,12,.5) 40%,rgba(3,6,12,.78));}
+#chapterCard.show{opacity:1;}
+#chapterCard .no{color:var(--ice-dim);font-size:12px;letter-spacing:.55em;margin-bottom:22px;}
+#chapterCard .cn{color:#fff;font-size:40px;font-weight:300;letter-spacing:.34em;
+  text-indent:.34em;opacity:0;transform:translateY(14px);transition:all 1s ease .15s;}
+#chapterCard.show .cn{opacity:1;transform:none;}
+#chapterCard .rule{width:0;height:1px;margin-top:30px;transition:width 1.2s ease .3s;
+  background:linear-gradient(90deg,transparent,var(--ice),transparent);}
+#chapterCard.show .rule{width:180px;}
 
-  /* ===== 结局 ===== */
-  #ending{position:absolute;inset:0;z-index:40;display:none;flex-direction:column;
-    justify-content:center;align-items:center;
-    background:radial-gradient(100% 80% at 50% 50%,rgba(16,32,52,.9),rgba(2,5,10,.97));}
-  #ending.show{display:flex;animation:up 1.4s ease;}
-  #ending .big{color:#fff;font-size:26px;font-weight:200;letter-spacing:.5em;text-indent:.5em;
-    text-shadow:0 0 40px rgba(143,211,255,.3);}
-  #ending .sub{color:var(--ink-dim);font-size:13px;letter-spacing:.24em;margin:26px 0 60px;font-weight:300;}
-  #ending button{padding:12px 44px;font-size:12px;letter-spacing:.4em;text-indent:.4em;color:var(--ink-dim);
-    background:transparent;border:1px solid rgba(143,211,255,.28);border-radius:30px;cursor:pointer;transition:all .3s;}
-  #ending button:hover{color:#04121f;background:var(--ice);border-color:var(--ice);}
+/* =========================================================
+   交互层：所有小游戏共用外壳
+   ========================================================= */
+#ixWrap{position:absolute;inset:0;z-index:45;display:none;
+  background:rgba(2,5,10,.72);backdrop-filter:blur(3px);
+  align-items:center;justify-content:center;padding:6vh 4vw;}
+#ixWrap.open{display:flex;animation:fade .5s ease;}
+@keyframes fade{from{opacity:0;}to{opacity:1;}}
+.ix{width:min(920px,94vw);max-height:84vh;display:flex;flex-direction:column;
+  background:rgba(6,11,20,.9);border:1px solid rgba(143,211,255,.18);border-radius:14px;
+  box-shadow:0 24px 70px rgba(0,0,0,.6);overflow:hidden;}
+.ix-head{display:flex;align-items:center;gap:12px;padding:14px 20px;
+  border-bottom:1px solid rgba(143,211,255,.14);background:rgba(10,18,30,.6);}
+.ix-head .tag{color:var(--ice);font-size:10px;letter-spacing:.34em;}
+.ix-head .nm{color:rgba(233,240,248,.8);font-size:12px;letter-spacing:.24em;}
+.ix-head .sp{margin-left:auto;color:var(--ice-dim);font-size:10px;letter-spacing:.2em;}
+.ix-body{padding:18px 20px;overflow-y:auto;flex:1;}
+.ix-body::-webkit-scrollbar{width:4px;}
+.ix-body::-webkit-scrollbar-thumb{background:rgba(143,211,255,.25);border-radius:4px;}
+.ix-foot{display:flex;align-items:center;gap:14px;padding:12px 20px;
+  border-top:1px solid rgba(143,211,255,.14);background:rgba(8,14,25,.6);}
+.ix-hint{flex:1;color:rgba(233,240,248,.5);font-size:11px;letter-spacing:.16em;line-height:1.7;}
+.ix-cont{padding:9px 24px;font-size:12px;letter-spacing:.3em;color:var(--ink-dim);
+  background:transparent;border:1px solid rgba(143,211,255,.28);border-radius:30px;
+  cursor:pointer;transition:all .3s;white-space:nowrap;}
+.ix-cont:not(:disabled):hover{color:#04121f;background:var(--ice);border-color:var(--ice);}
+.ix-cont:disabled{opacity:.28;cursor:not-allowed;}
+.mini{color:var(--ice-dim);font-size:10px;letter-spacing:.2em;}
 
-  @media (max-width:680px){
-    #title h1{font-size:34px;}
-    #chapterCard .cn{font-size:26px;}
-    #dlgText{font-size:16px;line-height:1.95;}
-    #dlgBox{padding:20px 24px 26px;}
-  }
+/* --- 交互1：新闻终端 --- */
+.news{display:grid;grid-template-columns:1fr 1.15fr;gap:18px;}
+.news-list{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow-y:auto;padding-right:6px;}
+.news-item{text-align:left;background:rgba(12,20,33,.7);border:1px solid rgba(143,211,255,.12);
+  border-radius:8px;padding:10px 12px;cursor:pointer;transition:all .25s;}
+.news-item:hover{border-color:var(--ice);background:rgba(20,36,58,.8);}
+.news-item.sel{border-color:var(--ice);background:rgba(24,44,70,.9);}
+.news-item.read{opacity:.45;}
+.news-item .d{display:block;color:var(--ice-dim);font-size:10px;letter-spacing:.2em;}
+.news-item .t{display:block;color:var(--ink);font-size:13px;margin-top:5px;letter-spacing:.04em;}
+.news-detail{background:rgba(10,17,29,.8);border:1px solid rgba(143,211,255,.12);
+  border-radius:8px;padding:16px;min-height:200px;}
+.news-detail .tg{display:inline-block;color:#04121f;background:var(--ice);
+  font-size:10px;letter-spacing:.24em;padding:2px 8px;border-radius:3px;}
+.news-detail .ti{color:#fff;font-size:17px;margin:12px 0 10px;font-weight:300;letter-spacing:.04em;}
+.news-detail .bd{color:rgba(233,240,248,.75);font-size:14px;line-height:2;font-weight:300;}
+.news-detail .hot{margin-top:14px;color:#ff8f6a;font-size:11px;letter-spacing:.16em;display:none;}
+
+/* --- 交互2：气温时间轴 --- */
+.tl-read{display:flex;gap:22px;align-items:baseline;margin-bottom:8px;}
+.tl-read .big{color:#fff;font-size:30px;letter-spacing:.06em;font-weight:200;}
+.tl-read .lb{color:var(--ice-dim);font-size:10px;letter-spacing:.24em;}
+.tl-svg{width:100%;height:190px;display:block;}
+.tl-track{position:relative;height:44px;margin-top:4px;cursor:grab;touch-action:none;}
+.tl-track .rail{position:absolute;left:0;right:0;top:20px;height:2px;
+  background:rgba(143,211,255,.2);border-radius:2px;}
+.tl-track .fill{position:absolute;left:0;top:20px;height:2px;width:0;
+  background:var(--ice);box-shadow:0 0 10px var(--ice);}
+.tl-track .knob{position:absolute;top:11px;width:20px;height:20px;border-radius:50%;
+  background:var(--ice);box-shadow:0 0 14px var(--ice);transform:translateX(-10px);}
+.tl-cities{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+.city{background:rgba(12,20,33,.75);border:1px solid rgba(143,211,255,.14);border-radius:20px;
+  padding:6px 14px;font-size:11px;letter-spacing:.16em;color:var(--ink-dim);cursor:pointer;transition:all .25s;}
+.city.on{color:#fff;border-color:var(--ice);background:rgba(24,44,70,.85);}
+.city.viewed::after{content:" · 已阅";color:var(--ice-dim);font-size:9px;}
+.rec{margin-top:14px;border-left:2px solid var(--ice);padding:12px 16px;
+  background:rgba(12,20,33,.6);color:rgba(233,240,248,.82);font-size:13px;line-height:2;font-weight:300;}
+.rec .h{color:var(--ice);font-size:10px;letter-spacing:.24em;margin-bottom:6px;display:block;}
+
+/* --- 交互3：核心区 / 缓冲区 左右滑动 --- */
+.zone-view{overflow:hidden;touch-action:pan-y;}
+.zone-track{display:flex;width:200%;transition:transform .55s cubic-bezier(.2,.8,.2,1);}
+.zone-pane{width:50%;padding:4px 10px;}
+.zone-pane h3{font-size:14px;letter-spacing:.3em;font-weight:300;margin-bottom:4px;}
+.zone-pane.core h3{color:var(--ice);}
+.zone-pane.buffer h3{color:#ff8f6a;}
+.zone-pane .desc{color:rgba(233,240,248,.45);font-size:11px;letter-spacing:.16em;margin-bottom:14px;}
+.zone-list{display:flex;flex-direction:column;gap:9px;}
+.zone-item{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.8;
+  color:rgba(233,240,248,.8);font-weight:300;padding-bottom:9px;
+  border-bottom:1px dashed rgba(143,211,255,.12);}
+.zone-item i{font-style:normal;color:var(--ice);font-size:10px;letter-spacing:.2em;padding-top:5px;}
+.zone-pane.buffer .zone-item i{color:#ff8f6a;}
+.zone-tabs{display:flex;gap:8px;margin-bottom:14px;}
+.zone-tabs button{flex:1;padding:8px;font-size:11px;letter-spacing:.24em;color:var(--ink-dim);
+  background:transparent;border:1px solid rgba(143,211,255,.16);border-radius:6px;cursor:pointer;transition:all .25s;}
+.zone-tabs button.on{color:#04121f;background:var(--ice);border-color:var(--ice);}
+
+/* --- 交互4：岗位替代 --- */
+.arm-wrap{position:relative;padding-top:64px;}
+.arm{position:absolute;top:0;left:0;width:46px;height:58px;transition:left .45s cubic-bezier(.2,.8,.2,1);}
+.arm svg{width:100%;height:100%;}
+.arm.strike{animation:strike .45s ease;}
+@keyframes strike{0%{transform:rotate(0);}35%{transform:rotate(38deg) translateY(10px);}100%{transform:rotate(0);}}
+.workers{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
+.worker{position:relative;aspect-ratio:3/4;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(14,22,36,.8);border:1px solid rgba(143,211,255,.12);border-radius:6px;
+  cursor:pointer;transition:all .35s;overflow:hidden;}
+.worker svg{width:60%;opacity:.7;}
+.worker:hover{border-color:var(--ice);background:rgba(24,44,70,.9);}
+.worker .no{position:absolute;top:4px;left:5px;font-size:9px;letter-spacing:.1em;color:var(--ice-dim);}
+.worker.out{opacity:.25;border-color:rgba(255,143,106,.35);background:rgba(30,14,10,.7);cursor:default;}
+.worker.out svg{opacity:.2;}
+.worker.out::after{content:"";position:absolute;left:8%;right:8%;top:50%;height:1.5px;
+  background:#ff8f6a;transform:rotate(-14deg);box-shadow:0 0 8px rgba(255,143,106,.6);}
+.worker.me{border-color:var(--ice);box-shadow:0 0 0 1px var(--ice) inset;}
+.worker.me .no{color:var(--ice);}
+.purge{display:flex;justify-content:space-between;align-items:center;margin-top:14px;
+  color:var(--ice-dim);font-size:11px;letter-spacing:.2em;}
+.purge b{color:#ff8f6a;font-weight:400;}
+
+/* --- 交互5：蜂巢剖面 --- */
+.hive{display:flex;flex-direction:column-reverse;gap:6px;}
+.floor{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:6px;
+  background:rgba(12,20,33,.75);border:1px solid rgba(143,211,255,.12);cursor:pointer;transition:all .25s;}
+.floor:hover{border-color:var(--ice);background:rgba(24,44,70,.85);}
+.floor.on{border-color:var(--ice);}
+.floor .lv{color:var(--ice);font-size:11px;letter-spacing:.18em;width:56px;flex:none;}
+.floor .nm{color:rgba(233,240,248,.85);font-size:13px;letter-spacing:.1em;}
+.floor .lock{margin-left:auto;color:#ff8f6a;font-size:10px;letter-spacing:.2em;}
+/* 映射层：意识层入口，视觉上不属于这套物理剖面 */
+.floor.virt{border-color:rgba(201,166,255,.4);background:rgba(26,20,45,.75);
+  border-style:dashed;animation:virtpulse 3.4s ease-in-out infinite;}
+.floor.virt .lv{color:#c9a6ff;}
+.floor.virt:hover{border-color:#c9a6ff;background:rgba(38,28,66,.9);}
+@keyframes virtpulse{0%,100%{box-shadow:none;}50%{box-shadow:0 0 18px rgba(201,166,255,.25);}}
+.mute{margin-top:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.mute button{padding:8px 20px;font-size:11px;letter-spacing:.24em;color:var(--ink-dim);
+  background:transparent;border:1px solid rgba(143,211,255,.2);border-radius:20px;cursor:pointer;transition:all .25s;}
+.mute button:hover:not(:disabled){color:#fff;border-color:var(--ice);}
+.mute button:disabled{opacity:.3;cursor:not-allowed;}
+.mute-msg{color:#ff8f6a;font-size:11px;letter-spacing:.14em;}
+
+/* --- 交互6：江源建造 --- */
+.build-btn{padding:10px 26px;font-size:12px;letter-spacing:.28em;color:var(--ice);
+  background:transparent;border:1px solid var(--ice);border-radius:24px;cursor:pointer;transition:all .3s;}
+.build-btn:hover:not(:disabled){color:#04121f;background:var(--ice);}
+.build-btn:disabled{opacity:.3;cursor:not-allowed;}
+.build-stage{margin-top:14px;height:230px;position:relative;overflow:hidden;
+  display:flex;align-items:flex-end;justify-content:center;transition:transform 2.4s cubic-bezier(.3,.7,.2,1),filter 2s;}
+.build-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;width:min(360px,70%);}
+.mod{aspect-ratio:1;background:rgba(12,20,33,.5);border:1px solid rgba(143,211,255,.08);
+  border-radius:2px;transform:translateY(-40px) scale(.6);opacity:0;transition:all .45s cubic-bezier(.2,.8,.2,1);}
+.mod.placed{transform:none;opacity:1;background:rgba(30,52,80,.85);border-color:rgba(143,211,255,.35);}
+.tower-sil{position:absolute;bottom:0;left:50%;transform:translateX(-50%) scale(.9);
+  opacity:0;transition:opacity 1.6s ease,transform 2.4s ease;}
+.tower-sil.on{opacity:.9;transform:translateX(-50%) scale(1);}
+.glitch-text{color:#fff;font-size:22px;letter-spacing:.4em;text-align:center;
+  animation:glitch .35s steps(2) infinite;}
+@keyframes glitch{
+  0%{text-shadow:2px 0 #ff5a5a,-2px 0 #5af;transform:translate(0);}
+  50%{text-shadow:-3px 0 #ff5a5a,3px 0 #5af;transform:translate(-2px,1px);}
+  100%{text-shadow:1px 0 #ff5a5a,-1px 0 #5af;transform:translate(1px,-1px);}
+}
+
+/* =========================================================
+   伪系统面板：标题 / 参数 / 锚点 / 断开连接
+   ========================================================= */
+#title{position:absolute;inset:0;z-index:55;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(120% 90% at 50% 20%,#16283f 0%,#070d18 50%,#02050a 100%);}
+#title .tint2{position:absolute;inset:0;background:url('bg_tower.png') center/cover;
+  opacity:.18;filter:grayscale(.65) brightness(.55) saturate(.4) blur(2px);
+  animation:kb 60s ease-in-out infinite alternate;}
+#title .veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(2,5,10,.35),rgba(2,5,10,.9));}
+#title .wrap{position:relative;text-align:center;width:min(760px,92vw);}
+#title .kicker{color:var(--ice-dim);font-size:11px;letter-spacing:.6em;margin-bottom:22px;}
+#title h1{color:#fff;font-size:clamp(30px,6vw,52px);font-weight:200;letter-spacing:.16em;
+  text-indent:.16em;text-shadow:0 0 46px rgba(143,211,255,.35);}
+#title h2{color:rgba(255,255,255,.8);font-size:16px;font-weight:300;letter-spacing:.9em;
+  text-indent:.9em;margin-top:16px;}
+#boot{margin:30px auto 0;width:min(560px,90vw);text-align:left;min-height:132px;}
+#boot p{color:rgba(233,240,248,.55);font-size:12px;letter-spacing:.14em;line-height:2.1;opacity:0;
+  animation:bootin .4s ease forwards;}
+@keyframes bootin{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:none;}}
+#boot .warn{color:#ff8f6a;}
+#boot .ok{color:var(--ice);}
+.tmenu{display:flex;gap:12px;justify-content:center;margin-top:26px;flex-wrap:wrap;}
+.tbtn{padding:12px 30px;font-size:12px;letter-spacing:.34em;text-indent:.34em;color:rgba(233,240,248,.85);
+  background:transparent;border:1px solid rgba(143,211,255,.28);border-radius:30px;cursor:pointer;
+  transition:all .35s ease;opacity:0;animation:up 1s ease forwards;}
+.tbtn:hover{color:#04121f;background:var(--ice);border-color:var(--ice);box-shadow:0 0 34px rgba(143,211,255,.3);}
+.tbtn.ghost{border-color:rgba(143,211,255,.14);color:var(--ink-dim);font-size:11px;padding:10px 22px;}
+@keyframes up{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:none;}}
+
+.syspanel{position:absolute;inset:0;z-index:70;display:none;align-items:center;justify-content:center;
+  background:rgba(2,5,10,.9);backdrop-filter:blur(6px);padding:6vh 5vw;}
+.syspanel.open{display:flex;}
+.syspanel .card{width:min(560px,94vw);max-height:86vh;overflow-y:auto;
+  background:rgba(7,12,21,.94);border:1px solid rgba(143,211,255,.2);border-radius:14px;padding:26px 28px;}
+.syspanel h3{color:var(--ice);font-size:12px;letter-spacing:.44em;font-weight:400;margin-bottom:6px;}
+.syspanel .sub{color:rgba(233,240,248,.4);font-size:11px;letter-spacing:.18em;margin-bottom:22px;}
+.row{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid rgba(143,211,255,.1);}
+.row label{flex:none;width:110px;color:rgba(233,240,248,.72);font-size:12px;letter-spacing:.18em;}
+.row input[type=range]{flex:1;accent-color:var(--ice);}
+.row .val{width:52px;text-align:right;color:var(--ice);font-size:11px;letter-spacing:.1em;}
+.slots{display:flex;flex-direction:column;gap:10px;}
+.slot{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:8px;
+  background:rgba(12,20,33,.8);border:1px solid rgba(143,211,255,.14);}
+.slot .nm{color:#fff;font-size:12px;letter-spacing:.2em;}
+.slot .inf{color:rgba(233,240,248,.42);font-size:10px;letter-spacing:.16em;margin-top:4px;}
+.slot .ops{margin-left:auto;display:flex;gap:8px;}
+.slot button{padding:6px 14px;font-size:10px;letter-spacing:.2em;color:var(--ink-dim);
+  background:transparent;border:1px solid rgba(143,211,255,.2);border-radius:16px;cursor:pointer;transition:all .25s;}
+.slot button:hover{color:#04121f;background:var(--ice);border-color:var(--ice);}
+.pfoot{display:flex;justify-content:space-between;gap:10px;margin-top:22px;flex-wrap:wrap;}
+.pfoot .danger{color:#ff8f6a;border-color:rgba(255,143,106,.35);}
+.pfoot .danger:hover{color:#1a0703;background:#ff8f6a;border-color:#ff8f6a;}
+
+/* ===== 记录 ===== */
+#logPanel{position:absolute;inset:0;z-index:65;background:rgba(3,6,12,.94);
+  display:none;flex-direction:column;padding:6vh 8vw;cursor:pointer;}
+#logPanel.open{display:flex;}
+#logPanel h2{color:var(--ice);font-size:12px;letter-spacing:.55em;font-weight:400;margin-bottom:24px;}
+#logList{flex:1;overflow-y:auto;padding-right:14px;}
+#logList p{color:rgba(233,240,248,.78);font-size:15px;line-height:2;font-weight:300;
+  margin-bottom:16px;padding-left:16px;border-left:1px solid rgba(143,211,255,.22);}
+#logList p.syslog{color:var(--ice-dim);font-size:12px;letter-spacing:.14em;}
+#logList::-webkit-scrollbar{width:4px;}
+#logList::-webkit-scrollbar-thumb{background:rgba(143,211,255,.25);border-radius:4px;}
+
+/* ===== 尾声：异常片段 ===== */
+#epi{position:absolute;inset:0;z-index:80;display:none;flex-direction:column;
+  align-items:center;justify-content:center;background:#000;}
+#epi.show{display:flex;}
+#epi .ln{opacity:0;transition:opacity 1.4s ease;text-align:center;}
+#epi .ln.on{opacity:1;}
+#epi .l1{color:rgba(233,240,248,.85);font-size:17px;letter-spacing:.34em;text-indent:.34em;font-weight:300;}
+#epi .l2{margin-top:34px;color:#fff;font-size:26px;letter-spacing:.22em;font-weight:300;
+        font-family:"Segoe Script","Bradley Hand","Kaiti SC","STKaiti",cursive,serif;
+        font-style:italic;transform:rotate(-1.5deg);}
+#epi .cur{width:8px;height:16px;background:var(--ice);margin-top:26px;animation:blink 1s steps(2) infinite;}
+#flash{position:absolute;inset:0;z-index:85;background:#fff;opacity:0;pointer-events:none;}
+#flash.on{animation:flash .5s ease;}
+@keyframes flash{0%{opacity:0;}12%{opacity:1;}30%{opacity:.2;}45%{opacity:.85;}100%{opacity:0;}}
+
+#chapOne{position:absolute;inset:0;z-index:82;display:none;flex-direction:column;
+  align-items:center;justify-content:center;background:radial-gradient(100% 80% at 50% 40%,#12253c,#02050a 70%);}
+#chapOne.show{display:flex;animation:fade 1s ease;}
+#chapOne .c1{color:var(--ice-dim);font-size:12px;letter-spacing:.6em;}
+#chapOne .c2{color:#fff;font-size:44px;font-weight:200;letter-spacing:.3em;text-indent:.3em;margin-top:18px;
+  text-shadow:0 0 40px rgba(143,211,255,.35);}
+#chapOne .c3{color:rgba(233,240,248,.4);font-size:11px;letter-spacing:.34em;margin-top:22px;}
+#chapOne button{margin-top:48px;}
+
+/* ===== 档案末端 ===== */
+#ending{position:absolute;inset:0;z-index:40;display:none;flex-direction:column;
+  justify-content:center;align-items:center;
+  background:radial-gradient(100% 80% at 50% 50%,rgba(16,32,52,.9),rgba(2,5,10,.97));}
+#ending.show{display:flex;animation:up 1.4s ease;}
+#ending .big{color:#fff;font-size:26px;font-weight:200;letter-spacing:.5em;text-indent:.5em;
+  text-shadow:0 0 40px rgba(143,211,255,.3);}
+#ending .sub{color:var(--ink-dim);font-size:13px;letter-spacing:.24em;margin:26px 0 54px;font-weight:300;}
+
+@media (max-width:680px){
+  #meta{left:14px;top:14px;gap:8px;}
+  #hud{right:12px;top:12px;gap:6px;}
+  .hud-btn{padding:5px 10px;font-size:10px;letter-spacing:.16em;}
+  #sysbar{display:none;}
+  .news{grid-template-columns:1fr;}
+  .news-list{max-height:26vh;}
+  .workers{grid-template-columns:repeat(4,1fr);}
+  .row label{width:86px;font-size:11px;}
+  #dlgText{font-size:16px;line-height:1.95;}
+  #dlgBox{padding:20px 24px 26px;}
+  #chapOne .c2{font-size:28px;}
+  .build-grid{width:86%;}
+}
 </style>
 </head>
 <body>
@@ -217,19 +450,27 @@
   <div id="bgB" class="bg"></div>
   <div id="grade"></div>
   <div id="haze"></div>
+  <div id="scan"></div>
+  <div id="grid"></div>
+  <div id="static"></div>
+  <div id="glitchLayer"></div>
+  <div id="alert"></div>
   <div id="vignette"></div>
   <div id="scrim"></div>
   <div id="grain"></div>
   <div id="snow"></div>
 
   <div id="bar"></div>
-
-  <div id="meta"><span class="idx">CH.01</span><span class="sep"></span><span class="chap">初雪</span></div>
+  <div id="meta">
+    <span id="link"></span><span class="idx">ERA.01</span><span class="sep"></span><span class="chap">初雪</span>
+  </div>
   <div id="hud">
     <button class="hud-btn" id="btnAuto">自动</button>
-    <button class="hud-btn" id="btnArt">画面</button>
     <button class="hud-btn" id="btnLog">记录</button>
+    <button class="hud-btn" id="btnSave">锚点</button>
+    <button class="hud-btn" id="btnCfg">参数</button>
   </div>
+  <div id="sysbar">PIXELTOWER//ARCHIVE v0.9.3 · SESSION A7-13 · <span id="sysState">LINK STABLE</span></div>
 
   <div id="chapterCard">
     <div class="no"></div><div class="cn"></div><div class="rule"></div>
@@ -245,105 +486,310 @@
     </div>
   </div>
 
-  <div id="logPanel">
-    <h2>记 录</h2>
-    <div id="logList"></div>
+  <!-- 交互层容器（内容由 JS 生成） -->
+  <div id="ixWrap">
+    <div class="ix">
+      <div class="ix-head"><span class="tag">INTERACTIVE ARCHIVE</span><span class="nm"></span><span class="sp"></span></div>
+      <div class="ix-body" id="ixBody"></div>
+      <div class="ix-foot">
+        <span class="ix-hint" id="ixHint"></span>
+        <button class="ix-cont" id="ixCont" disabled>继续 ▸</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="logPanel"><h2>记录 · ARCHIVE LOG</h2><div id="logList"></div></div>
+
+  <!-- 系统参数 -->
+  <div class="syspanel" id="cfgPanel">
+    <div class="card">
+      <h3>系统参数</h3>
+      <div class="sub">SYSTEM PARAMETERS · 调整后即时生效</div>
+      <div class="row"><label>文字速度</label><input type="range" id="rgSpeed" min="10" max="80" step="2"><span class="val" id="vSpeed"></span></div>
+      <div class="row"><label>环境音量</label><input type="range" id="rgVol" min="0" max="100" step="1"><span class="val" id="vVol"></span></div>
+      <div class="row"><label>背景图层</label><input type="range" id="rgArt" min="0" max="1" step="1"><span class="val" id="vArt"></span></div>
+      <div class="pfoot">
+        <button class="tbtn ghost" id="cfgClose">返回对话</button>
+        <button class="tbtn ghost danger" id="btnOff">断开连接</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 记忆锚点 -->
+  <div class="syspanel" id="savePanel">
+    <div class="card">
+      <h3>记忆锚点</h3>
+      <div class="sub">MEMORY ANCHOR · 写入林泊数据库</div>
+      <div class="slots" id="slotList"></div>
+      <div class="pfoot"><button class="tbtn ghost" id="saveClose">返回对话</button></div>
+    </div>
+  </div>
+
+  <!-- 断开连接确认 -->
+  <div class="syspanel" id="offPanel">
+    <div class="card" style="text-align:center">
+      <h3>断开连接</h3>
+      <div class="sub">DISCONNECT</div>
+      <p style="color:#fff;font-size:17px;letter-spacing:.2em;font-weight:300;line-height:2.2;margin:22px 0 8px;">
+        你确定要离开像素塔吗？</p>
+      <p style="color:rgba(233,240,248,.4);font-size:11px;letter-spacing:.18em;">断开后，本次会话读取的档案将不会被写入。</p>
+      <div class="pfoot" style="justify-content:center">
+        <button class="tbtn ghost" id="offNo">继续留在塔里</button>
+        <button class="tbtn ghost danger" id="offYes">确认断开</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 尾声 -->
+  <div id="epi">
+    <div class="ln l1">档案读取完毕。</div>
+    <div class="ln l2">……鸠？</div>
+    <div class="cur"></div>
+  </div>
+  <div id="flash"></div>
+  <div id="chapOne">
+    <div class="c1">CHAPTER 1</div>
+    <div class="c2">冰封世界</div>
+    <div class="c3">THE FROZEN WORLD · 待续</div>
+    <div class="tmenu" style="margin-top:8px">
+      <button class="tbtn" id="btnAgain">重新接入</button>
+      <button class="tbtn ghost" id="btnEOF">档案末端 ▸</button>
+    </div>
   </div>
 
   <div id="ending">
-    <div class="big">ReChapter0 · 起源 · 完</div>
-    <div class="sub">人类终究在夹缝里找到了自己的位置 —— 而像素塔，就屹立在江源基地之中</div>
-    <button id="btnRestart">重新开始</button>
+    <div class="big">档案末端</div>
+    <div class="sub">EOF · RECHAPTER 0 · 起源</div>
+    <div class="tmenu"><button class="tbtn" id="btnRestart">重新接入</button></div>
   </div>
 
+  <!-- 标题：伪系统启动 -->
   <div id="title">
     <div class="tint2"></div><div class="veil"></div>
     <div class="wrap">
-      <div class="kicker">PHIGROS · VISUAL NOVEL</div>
+      <div class="kicker">PHIGROS · ARCHIVE TERMINAL</div>
       <h1>ReChapter0</h1>
       <h2>起源</h2>
-      <div class="rule"></div>
-      <button class="start" id="btnStart">开 始</button>
-      <div class="hint">点击 / 空格 / 回车 推进</div>
+      <div id="boot"></div>
+      <div class="tmenu" id="tmenu"></div>
     </div>
   </div>
 </div>
 
 <script>
-/* ============ 剧本 ============ */
-const S = (text)=>({text});
-const SCRIPT = [
-  { bg:"bg_first_snow.png", tint:"a", no:"RECHAPTER 0 — 01", cn:"起 源", meta:"初雪", card:true,
-    lines:[
-    S("2030年初，地球悄无声息地滑进了一个漫长的小冰期。"),
-    S("最初，那只是一片雪花，轻轻落在城市的屋檐上；只是一场寻常的雪，孩子们还在街头奔跑、嬉闹，堆起歪歪扭扭的雪人。"),
-    S("没有人意识到这意味着什么。科学家在论文里谨慎地讨论「气候异常」，新闻用三十秒播报「罕见降雪」，人们裹紧大衣，匆匆走过被白雪覆盖的街道。"),
-    S("直到第二场雪，没有停。"),
-    S("第三场，第四场……雪，再也没有停过。")]},
+/* =========================================================================
+   《PhigrOS：ReChapter0 - 起源》
+   结构：标题（伪系统启动） → 五个时代切片（各含专属交互） → 尾声异常片段 → 第一章
+   ========================================================================= */
 
-  { bg:"bg_frozen.png", tint:"b", no:"02 — ICE AGE", cn:"冰 封 纪 元", meta:"长夜",
-    lines:[
-    S("冰川以肉眼可见的速度向低纬度推进。曾经温暖的南方城市在一夜之间被封进冰里，农作物枯死在冻土中，电网在极寒里一节一节地崩断，城市的灯一盏接一盏地熄灭。"),
-    S("恐慌终于漫上来了——货架被搬空，高速公路堵满逃亡的车流，而天空仍旧无声地落着雪，像一匹巨大的白布，缓缓裹住整个星球。"),
-    S("这段时期，后来被称作「冰封纪元」。")]},
+/* =========================== 数据：时代切片 =========================== */
+/* text：正文；可选 act：到达该行时打开的交互模块 */
+const S = (t, o) => Object.assign({text:t}, o || {});
 
-  { bg:"bg_refugees.png", tint:"c", no:"03 — AFTER THE STORM", cn:"天 灾 之 后", meta:"人祸",
-    lines:[
-    S("当冰雪吞噬北半球的大片土地，各国为不断缩小的生存面积争红了眼。外交辞令与和平协议在生存面前形同废纸，边境线在炮火里被反复重绘。"),
-    S("曾经富饶的北方只剩冰封的废墟与空城，而赤道两侧的亚热带与热带，成了人类最后的避难所——也成了最血腥的战场。"),
-    S("低端人力被彻底淘汰。严寒里，机器比人更耐寒、更高效、更不会背叛。工厂中，机械臂接管了流水线；战场上，无人机与钢铁军团取代了血肉之躯；连日常的巡逻与守卫，都交给了感觉不到冷的造物。"),
-    S("失业潮席卷全球，数以亿计的人在一夜之间失去了「被需要」的资格。达尔文主义重新抬头，「适者生存」不再是一句写在课本里的理论，而是赤裸裸的日常。"),
-    S("人口急剧下降——不是死于战争，而是死于「无用」。被遗弃的人在街头冻僵、饿倒，无人过问。")]},
-
-  { bg:"bg_refugees.png", tint:"c", no:"04 — 2040", cn:"第 三 次 世 界 大 战", meta:"2040",
-    lines:[
-    S("于是人们开始向南迁徙，朝着亚热带，朝着热带。"),
-    S("那是一场史无前例的大逃亡。北方人拖家带口，踩着齐膝深的积雪向南跋涉，身后是正在被冰雪吞没的家园。"),
-    S("高速公路成了难民的河道，边境检查站挤满了绝望的面孔。可目的地并不是天堂——那些本就温暖的国家早已不堪重负：资源告急，粮仓见底，住处告罄，本地人与外来者之间，只差一粒火星。"),
-    S("2040年，第三次世界大战的第一声炮响。没有宣战，没有预警。"),
-    S("某个资源枯竭的军事强国率先越境，履带碾过邻国的界碑，导弹撕开长空。紧接着是连锁反应——军事强国纷纷出动，抢占亚热带与热带的战略要地。"),
-    S("赤道附近几乎无一幸免，尽数沦为大国博弈的棋盘与战场。安理会形同虚设，国际秩序彻底塌方。北方的迁徙仍在继续，可他们抵达的，不再是避难所，而是战区。")]},
-
-  { bg:"bg_frozen.png", tint:"b", no:"05 — COLLAPSE", cn:"全 面 崩 坏", meta:"四成",
-    lines:[
-    S("基础设施全面废弃。北方城市变成鬼城：电网瘫痪，水管冻结，通信基站被冰雪压垮。南方则在人口洪流中超负荷运转：电力短缺，瘟疫横行，犯罪率飙升。"),
-    S("人与机器的矛盾终于炸开——被机器取代的人愤怒了。他们砸毁流水线上的机器人，焚烧自动化设备，高喊「把工作还给我们」。游行从发达国家开始，起初是和平示威，后来演变成暴动，再后来，军队出动了。"),
-    S("各国全面实行阶层隔离。富人与权贵占据最温暖、资源最充沛的核心区，高墙环绕，武装守卫；中产阶级被挤到边缘地带，勉强维持体面；而底层——那些「无用之人」——被驱逐到最危险的缓冲区，自生自灭。"),
-    S("身份芯片、生物识别、无人机监控……技术不再是解放人的工具，而是锁住人的枷锁。"),
-    S("此时，全球剩余人口，算上 AI，只剩四成。"),
-    S("六十年，地球失去了六十亿人。不是一场瘟疫，不是一次核爆，而是一场漫长的、无声的、系统性的淘汰。"),
-    S("冰封纪元冻住的不只是大地，还有人性。当最后一丝温情被严寒吞尽，人类终于明白：再这样内耗下去，只会一起走向灭亡。")]},
-
-  { bg:"bg_hive.png", tint:"a", no:"06 — 2060", cn:"蜂 巢 基 地", meta:"2060",
-    lines:[
-    S("2060年，残存的人类放下了武器。不是因为宽恕，也不是因为觉悟，而是因为——真的打不动了。"),
-    S("为了仅剩的栖息地，各国达成和解，成立世界联合政府。它算不上一个真正的「政府」，更像一个松散的协调机构：分配最后的资源，划定最后的生存区，维持最低限度的秩序。"),
-    S("而在民间，一批批互助组织像野草一样从废墟里长出来——那些被时代抛弃的人，那些在夹缝中挣扎的普通人，自发地抱成一团，在绝境里找一线生机。"),
-    S("雅鲁藏布大峡谷、科罗拉多大峡谷、西南极裂谷……这些曾经只存在于地理课本上的名字，如今成了人类最后的避难所。"),
-    S("在联合政府的默许与支持下，一座座栖息地被开凿出来，它们有一个共同的名字——「蜂巢」基地。"),
-    S("蜂巢基地像蜂巢一样紧凑、狭窄，立体多层结构层层叠叠，如一片倒置的钢铁森林。每一寸空间都被榨干：走廊窄得只容一人侧身通过，房间小得转身都难。但至少，这里能挡风，能御寒，能让人活下去。"),
-    S("在众多栖息地中，逐渐形成了三大基地群，被合称为「冰封纪元三大基地群」——人类文明最后的堡垒，也是最后的希望。")]},
-
-  { bg:"bg_tower.png", tint:"a", no:"07 — LAST REFUGE", cn:"江 源 基 地", meta:"像素塔",
-    lines:[
-    S("其中，江源基地最为特殊。"),
-    S("它不是一栋建筑，而是散布在雅鲁藏布江沿岸的聚落群。"),
-    S("本着可复制、可回收的工业理念，江源基地以成品拼接的方式快速建造——标准化的金属模块像积木一样被吊装、咬合、固定，层层向上生长，堆出多层竖构的街道。"),
-    S("这里没有宽阔的马路，也没有开阔的广场，只有密密麻麻的通道与楼梯，像迷宫一样蜿蜒交错。"),
-    S("居住条件极度拥挤：一家几口挤在十几平米的格子里是常态，隔壁的咳嗽、楼上的脚步、管道里的水声，构成了日常的背景音。"),
-    S("称不上体面，但勉强够活。"),
-    S("人类终究在大自然的威胁下，在夹缝里找到了自己的位置。"),
-    S("而像素塔，就屹立在江源基地之中。")]}
+/* 交互用到的原料数据 */
+const NEWS = [
+  {d:"2030.01.08", t:"本市迎来十年来最大降雪", g:"民生",
+   b:"市民纷纷走上街头拍照留念。市政部门提醒：注意保暖，出行小心路滑。"},
+  {d:"2030.02.14", t:"雪夜求婚：一场迟到了三天的浪漫", g:"社会",
+   b:"因为暴雪，航班延误；因为延误，他们相遇。当事人说，这是雪送给她的礼物。"},
+  {d:"2030.03.21", t:"农业部：低温对冬小麦影响有限", g:"农业",
+   b:"专家建议农户保持耐心，等待春耕窗口期。"},
+  {d:"2030.05.09", t:"气象局：连续降雪属“罕见气候异常”", g:"气象",
+   b:"发言人重申：目前无证据表明该现象将持续，无需恐慌。"},
+  {d:"2030.08.02", t:"北极科考站失联 72 小时", g:"国际",
+   b:"救援因持续恶劣天气无限期推迟。站内最后一条回传：“雪没有停。”"},
+  {d:"2030.11.30", t:"北纬 45° 以北进入无限期冬季", g:"紧急",
+   b:"自即日起，上述区域停止发布春季预报。"}
+];
+const CITIES = [
+  {n:"哈尔滨", y:2031, p:.07, t:-19, h:"注销记录 · 刘，52 岁，供暖工程师",
+   r:"最后一次出勤：2031.01.19。备注：他留守到管网彻底冻结的那一刻。"},
+  {n:"莫斯科", y:2034, p:.22, t:-24, h:"撤离名单编号 77413",
+   r:"А.沃尔科娃，39 岁，地铁调度。状态：未登车。行李已托运。"},
+  {n:"伦敦", y:2038, p:.40, t:-27, h:"居民上传 · E-2291（部分损坏）",
+   r:"“泰晤士河冻住了。有人在冰面上卖鱼，用不了多久就能走过去。”"},
+  {n:"东京", y:2041, p:.55, t:-29, h:"港区分发点日志",
+   r:"今日热量配额：1/3。排队人数：不可计。队伍末端在第三个路口。"},
+  {n:"上海", y:2045, p:.72, t:-31, h:"中央电网 · 并网日志",
+   r:"最后一次并网尝试失败。值班签名：空白。"},
+  {n:"广州", y:2049, p:.92, t:-33, h:"南迁检查站 · 通行记录",
+   r:"今日通过：0 人。备注：南方也不再是南方。"}
+];
+const HIVE_FLOORS = [
+  {lv:"L-12", nm:"管道区", lock:false, h:"居民记录 · 编号 K-1183",
+   r:"管道里一直在响。前几天有人说那是水，后来我们再也不提这件事了。"},
+  {lv:"L-08", nm:"公共区", lock:false, h:"互助组日志 · 第 41 次",
+   r:"配给窗口今天开了 12 分钟。有人在教孩子认字，用的是旧包装纸。"},
+  {lv:"L-05", nm:"居住区", lock:false, h:"居住记录 · 格子 C-227",
+   r:"格子里 7 个人。夜里翻身要一起翻，不然就撞墙。我们学会了数拍子。"},
+  {lv:"L-02", nm:"缓冲区", lock:false, h:"临时收容记录（残缺）",
+   r:"新来的人先住这里。三个月后有了编号，才算住进上面的格子。有人没等到。"},
+  {lv:"L-01", nm:"核心区", lock:true, h:"权限不足",
+   r:"调取该层记录需要 A 级通行。你的身份芯片等级：D。（该层水温恒定 22.4°C）"},
+  /* 未登记层：现实结构在意识层的映射，先民留下的入口 */
+  {lv:"L-τ", nm:"映射层（未登记）", virt:true, h:"该层不存在物理实体",
+   r:"检测到同步信号 × 1,208,441。信号源：意识层副本。塔外无坐标，塔内无寒暑。<br>——先民把它叫作「避难所」的另一半。"}
 ];
 
-/* ============ 引擎 ============ */
-const $ = id => document.getElementById(id);
-let cur=0, lineIdx=0, typing=false, typeTimer=null, autoMode=false, autoTimer=null;
-let useArt=true, bgFlip=false;
-const TOTAL = SCRIPT.reduce((s,c)=>s+c.lines.length,0);
-const done  = () => { let n=0; for(let i=0;i<cur;i++) n+=SCRIPT[i].lines.length; return n+lineIdx; };
+/* 五个时代切片 */
+const ERAS = [
+{
+  id:"era_2030", no:"ERA 01 // 2030", title:"初雪", meta:"初雪",
+  bg:"bg_first_snow.png", tint:"a", accent:"#8fd3ff", style:"st-snow", card:true,
+  interactions:["news"],
+  lines:[
+    S("2030年初，地球悄无声息地滑进了一个漫长的小冰期。"),
+    S("最初，那只是一片雪花，轻轻落在城市的屋檐上；孩子们还在街头奔跑、嬉闹，堆起歪歪扭扭的雪人。"),
+    S("所有人都握着同一块屏幕。那年的冬天，是这么被讲出来的。",
+      {act:"news", nm:"新闻推送终端 · 2030", hint:"点击左侧推送，逐条阅读；注意窗外的雪。"}),
+    S("科学家在论文里谨慎地讨论「气候异常」，新闻用三十秒播报「罕见降雪」。"),
+    S("人们裹紧大衣，匆匆走过被白雪覆盖的街道。没有人回头看第二眼。"),
+    S("直到第二场雪，没有停。")
+  ]
+},
+{
+  id:"era_ice", no:"ERA 02 // ICE AGE", title:"冰封纪元", meta:"长夜",
+  bg:"bg_frozen.png", tint:"b", accent:"#a9dcff", style:"st-ice",
+  interactions:["temp"],
+  lines:[
+    S("第三场，第四场……雪，再也没有停过。"),
+    S("冰川以肉眼可见的速度向低纬度推进。城市的灯，一盏接一盏地熄灭。"),
+    S("系统恢复出一段温度记录。拖动时间轴，看看城市是在哪一格停下的。",
+      {act:"temp", nm:"全球气温重建 · 2030—2060", hint:"拖动下方时间轴；点亮城市后可点击查看个人记录。"}),
+    S("农作物枯死在冻土中。电网在极寒里一节一节崩断。"),
+    S("恐慌终于漫上来了——货架被搬空，高速公路堵满逃亡的车流。"),
+    S("天空仍旧无声地落着雪，像一匹巨大的白布，缓缓裹住整个星球。"),
+    S("这段时期，后来被称作「冰封纪元」。")
+  ]
+},
+{
+  id:"era_war", no:"ERA 03 // PURGE", title:"三战与淘汰", meta:"淘汰",
+  bg:"bg_refugees.png", tint:"d", accent:"#ff8f6a", style:"st-war",
+  interactions:["zone","arm"],
+  lines:[
+    S("天灾之后，必有人祸。"),
+    S("2040年，第三次世界大战的第一声炮响。没有宣战，没有预警。"),
+    S("赤道附近几乎无一幸免。北方的人向南迁徙，可他们抵达的不再是避难所，而是战区。"),
+    S("而更早崩塌的，是「被需要」这件事。"),
+    S("系统允许查看两个区域的同时状况。左右拖动切换。",
+      {act:"zone", nm:"阶层视图 · 核心区 / 缓冲区", hint:"滑动或用上方标签切换视角，两边都看过才能离开。"}),
+    S("严寒里，机器比人更耐寒、更高效、更不会背叛。"),
+    S("工厂不再需要挡风的手套，流水线也不再需要怕冷的人。"),
+    S("执行一次岗位替代。点一次，替代一个人。",
+      {act:"arm", nm:"自动化改造执行终端", hint:"点击任意工位，机械臂将完成替代。请执行到底。"}),
+    S("岗位替代完成。这个车间从此不需要照明。"),
+    S("失业潮席卷全球。数以亿计的人在一夜之间失去了「被需要」的资格。"),
+    S("人口急剧下降——不是死于战争，而是死于「无用」。被遗弃的人在街头冻僵、饿倒，无人过问。")
+  ]
+},
+{
+  id:"era_hive", no:"ERA 04 // HIVE", title:"蜂巢基地", meta:"蜂巢",
+  bg:"bg_hive.png", tint:"a", accent:"#ffcf8a", style:"st-hive",
+  interactions:["hive"],
+  lines:[
+    S("2060年，残存的人类放下了武器。不是因为宽恕，而是因为——真的打不动了。"),
+    S("为了仅剩的栖息地，各国达成和解，成立世界联合政府。"),
+    S("雅鲁藏布大峡谷、科罗拉多大峡谷、西南极裂谷……地理课本上的名字，成了最后的避难所。"),
+    S("在联合政府的默许下，一座座栖息地被开凿出来，它们有一个共同的名字——「蜂巢」基地。"),
+    S("蜂巢剖面图已挂载。你可以点开每一层；背景噪声一直在，你也可以试着关掉它。",
+      {act:"hive", nm:"蜂巢基地 · 纵向剖面", hint:"点击楼层调取居民记录（至少 3 层）。右下可尝试静音。"}),
+    S("每一寸空间都被榨干：走廊窄得只容一人侧身通过，房间小得转身都难。"),
+    S("称不上体面，但勉强够活。至少，这里能挡风，能御寒，能让肉体活下来。"),
+    S("可物理避难所从来只是一半。另一半，没有出现在任何一张图纸上。")
+  ]
+},
+{
+  id:"era_tower", no:"ERA 05 // PIXEL TOWER", title:"江源基地与像素塔", meta:"像素塔",
+  bg:"bg_tower.png", tint:"e", accent:"#c9a6ff", style:"st-tower",
+  interactions:["build"],
+  lines:[
+    S("三大基地群之中，江源基地最为特殊。"),
+    S("它不是一栋建筑，而是散布在雅鲁藏布江沿岸的聚落群。"),
+    S("标准化的金属模块像积木一样被吊装、咬合、固定，层层向上生长。"),
+    S("下达建造指令，看看它是如何一寸一寸长出来的。",
+      {act:"build", nm:"江源基地 · 模块化施工 / 镜像同步", hint:"反复点击「吊装」，或按住 Alt 自动施工。注意施工同步的那一列数字。"}),
+    S("多层竖构的街道像迷宫一样蜿蜒交错，一家几口挤在十几平米的格子里是常态。"),
+    S("可这只完成了现实那一半。"),
+    S("每一个落地的模块，都会在另一个坐标系里同时生成一份副本。它不是图纸，是同一份结构的意识层映射。"),
+    S("最早主动走进那份映射的人，后来被称作「先民」。他们把正在冻僵的意识连同记忆一起传了上去，没有回来，也没有再出去过。"),
+    S("那里不需要供暖，不会有极夜——人类的肉体在地面上挨冻，意识却在塔里避寒。"),
+    S("人类终究在大自然的威胁下，在夹缝里找到了自己的位置。"),
+    S("而像素塔，就屹立在江源基地之中——以没有人亲眼见过的方式。")
+  ]
+}
+];
 
-/* 白色小圆点雪花（非 emoji） */
+/* =========================== 引擎状态 =========================== */
+const $ = id => document.getElementById(id);
+let cur=0, lineIdx=0, typing=false, typeTimer=null;
+let autoMode=false, autoTimer=null, toastTimer=null;
+let useArt=true, bgFlip=false, overlay=false, busy=false;
+
+/* 存储安全包装：部分浏览器在受限上下文中会禁用 localStorage */
+const LS = {
+  get(k,d){ try{ const v=localStorage.getItem(k); return v===null?d:v; }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+};
+
+/* 系统参数（持久化） */
+const Settings = {
+  speed: +LS.get('pgr_speed', 34),
+  vol:   +LS.get('pgr_vol',   55),
+  get delay(){ return 84 - this.speed; }   /* 滑杆越大越快 */
+};
+
+const TOTAL = ERAS.reduce((s,e)=>s+e.lines.length,0);
+const done  = () => { let n=0; for(let i=0;i<cur;i++) n+=ERAS[i].lines.length; return n+lineIdx; };
+
+/* =========================== 音频：伪系统环境声 =========================== */
+const Sound = (()=>{
+  let ctx=null, master=null, noiseG=null, humG=null, ok=false;
+  function boot(){
+    if(ok) return;
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      ctx = new AC();
+      master = ctx.createGain(); master.gain.value = Settings.vol/100; master.connect(ctx.destination);
+      /* 结构噪声 */
+      const len = ctx.sampleRate*2, buf = ctx.createBuffer(1,len,ctx.sampleRate), d = buf.getChannelData(0);
+      for(let i=0;i<len;i++) d[i] = (Math.random()*2-1)*.4;
+      const src = ctx.createBufferSource(); src.buffer=buf; src.loop=true;
+      const lp = ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1100;
+      noiseG = ctx.createGain(); noiseG.gain.value=0;
+      src.connect(lp); lp.connect(noiseG); noiseG.connect(master); src.start();
+      /* 低频嗡鸣 */
+      humG = ctx.createGain(); humG.gain.value=0;
+      [47.5,48.3,96].forEach((f,i)=>{
+        const o=ctx.createOscillator(); o.type='sine'; o.frequency.value=f;
+        const g=ctx.createGain(); g.gain.value=i===2?.25:.6;
+        o.connect(g); g.connect(humG); o.start();
+      });
+      humG.connect(master);
+      ok=true;
+    }catch(e){ ok=false; }
+  }
+  const ramp = (node,v,t=1.2)=>{ if(node&&ctx) node.gain.cancelScheduledValues(ctx.currentTime),
+      node.gain.linearRampToValueAtTime(v, ctx.currentTime+t); };
+  return {
+    boot,
+    vol(v){ if(master) master.gain.value = v/100; },
+    scene(n,h){ boot(); ramp(noiseG,n*0.09); ramp(humG,h*0.16); },
+    glitch(){ if(!ok||!noiseG) return; const g=noiseG.gain, t=ctx.currentTime;
+      g.cancelScheduledValues(t); g.setValueAtTime(g.value,t);
+      g.linearRampToValueAtTime(.22,t+.05); g.linearRampToValueAtTime(.02,t+.28); },
+    ping(){ if(!ok) return; const t=ctx.currentTime, o=ctx.createOscillator(), g=ctx.createGain();
+      o.type='square'; o.frequency.value=880; g.gain.value=0;
+      o.connect(g); g.connect(master); o.start();
+      g.gain.linearRampToValueAtTime(.05,t+.01); g.gain.linearRampToValueAtTime(0,t+.16); o.stop(t+.2); },
+    stop(){ boot(); ramp(noiseG,0,.6); ramp(humG,0,.6); }
+  };
+})();
+
+/* 各时代的声音配置 */
+const ERA_SOUND = { era_2030:[.1,.05], era_ice:[.2,.12], era_war:[.3,.2], era_hive:[1,.35], era_tower:[.45,.8] };
+
+/* =========================== 雪 =========================== */
 (function snow(){
   const box=$("snow");
   for(let i=0;i<110;i++){
@@ -361,163 +807,665 @@ const done  = () => { let n=0; for(let i=0;i<cur;i++) n+=SCRIPT[i].lines.length;
     box.appendChild(d);
   }
 })();
+function setSnow(v){ document.documentElement.style.setProperty('--snowOp', v.toFixed(2)); }
 
-function setScene(sc){
+/* =========================== 场景 / 氛围 =========================== */
+function setScene(er){
+  document.documentElement.style.setProperty('--ice', er.accent);
+  document.documentElement.style.setProperty('--ice-dim', hexA(er.accent,.55));
+  $("stage").className = er.style;
   if(useArt){
     const a=$("bgA"), b=$("bgB");
     const show=bgFlip?a:b, hide=bgFlip?b:a; bgFlip=!bgFlip;
-    show.style.backgroundImage="url('"+sc.bg+"')";
+    show.style.backgroundImage="url('"+er.bg+"')";
     show.classList.add("show","zoom");
     hide.classList.remove("show","zoom");
+  }else{
+    $("bgA").classList.remove("show"); $("bgB").classList.remove("show");
   }
   const t=$("tint");
-  t.className="tint "+sc.tint+(useArt?"":" show");
-  if(useArt) t.classList.remove("show");
+  t.className = "tint "+er.tint+" show";
+  /* 每个时代的雪量不同 */
+  setSnow(er.id==="era_2030"?.5 : er.id==="era_ice"?1 : er.id==="era_war"?.75 : .35);
+  const sd = ERA_SOUND[er.id]||[.1,.05]; Sound.scene(sd[0],sd[1]);
+  /* 底部状态条：随时代变化，暗示"这到底是哪一层现实" */
+  const st={ era_2030:"LINK STABLE", era_ice:"LINK STABLE",
+             era_war:"SIGNAL DEGRADED", era_hive:"NOISE LOCKED · PHYSICAL LAYER",
+             era_tower:"LAYER: MIRROR · SYNC UNSTABLE" };
+  $("sysState").textContent = st[er.id] || "LINK STABLE";
+}
+function hexA(hex,a){
+  const n=parseInt(hex.slice(1),16);
+  return "rgba("+[(n>>16)&255,(n>>8)&255,n&255].join(",")+","+a+")";
 }
 
-function updateMeta(sc){
-  $("meta").querySelector(".idx").textContent="CH."+String(cur+1).padStart(2,"0");
-  $("meta").querySelector(".chap").textContent=sc.meta;
+function updateMeta(er){
+  $("meta").querySelector(".idx").textContent="ERA."+String(cur+1).padStart(2,"0");
+  $("meta").querySelector(".chap").textContent=er.title;
 }
-
-/* 章节开头：居中大字（仅开篇一次） */
-function showChapterCard(sc){
+/* 开篇大字卡（仅序章开头一次） */
+function showChapterCard(er){
   const c=$("chapterCard");
-  c.querySelector(".no").textContent=sc.no;
-  c.querySelector(".cn").textContent=sc.cn;
+  c.querySelector(".no").textContent=er.no;
+  c.querySelector(".cn").textContent=er.title;
   c.classList.add("show");
   setTimeout(()=>c.classList.remove("show"),2600);
 }
-
-/* 场景切换：对话框右上角成就式提示，滑入后收回 */
-let toastTimer=null;
-function showToast(sc){
+/* 场景提示：对话框右上，滑入收回 */
+function showToast(er){
   const t=$("toast");
-  t.querySelector(".t").textContent=sc.cn.replace(/\s/g,"");
-  t.querySelector(".s").textContent=sc.no;
+  t.querySelector(".t").textContent=er.title;
+  t.querySelector(".s").textContent=er.no;
   t.classList.add("on");
   clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>t.classList.remove("on"),2600);
+  toastTimer=setTimeout(()=>t.classList.remove("on"),2800);
+}
+function enterEra(er){
+  updateMeta(er);
+  if(er.card) showChapterCard(er); else showToast(er);
 }
 
-function enterScene(sc){
-  updateMeta(sc);
-  if(sc.card) showChapterCard(sc); else showToast(sc);
-}
-
+/* =========================== 打字机 =========================== */
 function typewrite(text){
   clearInterval(typeTimer);
   const el=$("dlgText"); el.innerHTML=""; typing=true;
   $("next").classList.remove("on");
   let i=0;
   typeTimer=setInterval(()=>{
-    if(i>=text.length){ clearInterval(typeTimer); typing=false;
-      $("next").classList.add("on"); return; }
-    let ch=text[i];
-    if(ch==="「"){
-      const end=text.indexOf("」",i);
-      if(end>i){ el.innerHTML+="<span class=\"em\">"+text.slice(i,end+1)+"</span>"; i=end+1; return; }
-    }
+    if(i>=text.length){ clearInterval(typeTimer); typing=false; $("next").classList.add("on"); return; }
+    const ch=text[i];
+    if(ch==="「"){ const end=text.indexOf("」",i);
+      if(end>i){ el.innerHTML+="<span class=\"em\">"+text.slice(i,end+1)+"</span>"; i=end+1; return; } }
     el.innerHTML+=ch; i++;
-  },34);
+    if(i%3===0) Sound.ping();
+  }, Math.max(6, Settings.delay));
+}
+function pushLog(html, isSys){
+  const p=document.createElement("p");
+  if(isSys) p.className="syslog";
+  p.innerHTML=html; $("logList").appendChild(p);
 }
 
+/* =========================== 推进 =========================== */
 function nextLine(){
-  const sc=SCRIPT[cur], L=sc.lines[lineIdx];
+  const er=ERAS[cur], L=er.lines[lineIdx];
   typewrite(L.text);
   $("bar").style.width=(done()/TOTAL*100)+"%";
-  if(autoMode){ clearTimeout(autoTimer);
-    autoTimer=setTimeout(advance,1400+L.text.length*85); }
+  if(L.act){ /* 带交互的行：读完后提示可进入 */ }
+  if(autoMode && !L.act){ clearTimeout(autoTimer);
+    autoTimer=setTimeout(advance, 1500+L.text.length*Math.max(30,Settings.delay*2.6)); }
 }
-
 function advance(){
-  if($("logPanel").classList.contains("open")) return;
+  if(overlay||busy) return;
+  if($("logPanel").classList.contains("open") ||
+     $("cfgPanel").classList.contains("open") ||
+     $("savePanel").classList.contains("open") ||
+     $("offPanel").classList.contains("open")) return;
   if(typing){
     clearInterval(typeTimer); typing=false;
-    $("dlgText").innerHTML=SCRIPT[cur].lines[lineIdx].text
+    $("dlgText").innerHTML=ERAS[cur].lines[lineIdx].text
       .replace(/「([^」]*)」/g,'<span class="em">「$1」</span>');
     $("next").classList.add("on");
     return;
   }
+  const L=ERAS[cur].lines[lineIdx];
+  pushLog(L.text);
+  if(L.act){ openInteraction(L.act, L.nm, L.hint); return; }
+  step();
+}
+/* 真正走到下一行；交互结束后从外部调用 */
+function step(){
   lineIdx++;
-  if(lineIdx>=SCRIPT[cur].lines.length){
+  if(lineIdx>=ERAS[cur].lines.length){
     cur++; lineIdx=0;
-    if(cur>=SCRIPT.length){ endGame(); return; }
-    setScene(SCRIPT[cur]);
-    enterScene(SCRIPT[cur]);
-    setTimeout(nextLine,1100);
+    if(cur>=ERAS.length){ runEpilogue(); return; }
+    setScene(ERAS[cur]); enterEra(ERAS[cur]);
+    setTimeout(nextLine, ERAS[cur].card?1200:1000);
     return;
   }
   nextLine();
 }
 
-function endGame(){
+/* =========================================================================
+   交互层
+   每个 builder(box, api) 负责：渲染 → 调用 api.unlock(提示) 解锁「继续」
+   ========================================================================= */
+const IX = {};
+
+/* --- 交互 1：新闻推送终端（雪随阅读量增大） --- */
+IX.news = (box, api)=>{
+  let read=0;
+  box.innerHTML =
+    '<div class="news"><div class="news-list" id="nl"></div>'+
+    '<div class="news-detail"><span class="tg" id="dt_g"></span>'+
+    '<div class="ti" id="dt_t"></div><div class="bd" id="dt_b"></div>'+
+    '<div class="hot" id="dt_h">⚠ 该条推送已被后续公告覆盖</div></div></div>';
+  const nl=box.querySelector("#nl");
+  NEWS.forEach((n,i)=>{
+    const b=document.createElement("button");
+    b.className="news-item"; b.dataset.i=i;
+    b.innerHTML='<span class="d">'+n.d+' · '+n.g+'</span><span class="t">'+n.t+'</span>';
+    b.onclick=()=>open(i);
+    nl.appendChild(b);
+  });
+  function open(i){
+    const n=NEWS[i], it=nl.children[i];
+    nl.querySelectorAll(".news-item").forEach(e=>e.classList.remove("sel"));
+    it.classList.add("sel");
+    if(!it.classList.contains("read")){
+      it.classList.add("read"); read++;
+      setSnow(.5 + read/NEWS.length*0.5);          /* 窗外雪随 Narrative 加压 */
+      const tg=box.querySelector("#dt_g");
+      tg.textContent=n.d+" · "+n.g;
+      tg.style.background = n.g==="紧急" ? "#ff8f6a" : "var(--ice)";
+      box.querySelector("#dt_t").textContent=n.t;
+      box.querySelector("#dt_b").textContent=n.b;
+      box.querySelector("#dt_h").style.display = i>=4 ? "block":"none";
+      Sound.ping();
+      pushLog("[系统] 读取推送 "+n.d+"《"+n.t+"》", true);
+      api.unlock(read>=NEWS.length
+        ? "已读取全部 "+NEWS.length+" 条推送。2030 年的冬天不会再更新了。"
+        : "已读 "+read+" / "+NEWS.length+" 条。继续读下去。", read>=NEWS.length);
+    }
+  }
+  api.unlock("点击左侧推送，逐条阅读；注意窗外的雪。", false);
+  open(0);
+};
+
+/* --- 交互 2：气温时间轴 --- */
+IX.temp = (box, api)=>{
+  box.innerHTML =
+    '<div class="tl-read"><span class="big" id="tl_y">2030</span>'+
+    '<span class="lb">年均温 <b id="tl_t" style="color:#fff;font-weight:300">-6.4°C</b></span>'+
+    '<span class="lb">已封冻 <b id="tl_c" style="color:#fff;font-weight:300">0 / 6</b> 座城市</span></div>'+
+    '<svg class="tl-svg" viewBox="0 0 600 170" preserveAspectRatio="none">'+
+      '<polyline id="tl_line" fill="none" stroke="var(--ice)" stroke-width="1.6" opacity=".85"/>'+
+      '<line id="tl_ind" x1="0" y1="0" x2="0" y2="170" stroke="var(--ice)" stroke-width="1" opacity=".7"/>'+
+      '<g id="tl_nodes"></g></svg>'+
+    '<div class="tl-track" id="tl_track"><div class="rail"></div><div class="fill" id="tl_fill"></div>'+
+      '<div class="knob" id="tl_knob"></div></div>'+
+    '<div class="tl-cities" id="tl_cities"></div><div id="tl_rec"></div>';
+
+  const W=600,H=170;
+  const base=[-6.4,-9,-13,-17,-20,-23,-25.5,-27,-28.5,-29.5,-30,-30.6,-31,-31.5,-32,-32.3,-32.6,-32.8,-33];
+  const pts=base.map((v,i)=>[i/(base.length-1)*W, 20 + (v+34)/28*(H-40)]);
+  $("tl_line").setAttribute("points", pts.map(p=>p.join(",")).join(" "));
+
+  let pct=0, revealed=0, viewed=0;
+  const nodes=$("tl_nodes"), citiesBox=$("tl_cities");
+  const cityBtns=[];
+  CITIES.forEach((c,i)=>{
+    const g=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    g.setAttribute("cx", c.p*W); g.setAttribute("cy", 20+(c.t+34)/28*(H-40));
+    g.setAttribute("r","3.2"); g.setAttribute("fill","#fff"); g.setAttribute("opacity","0");
+    nodes.appendChild(g);
+    const b=document.createElement("button");
+    b.className="city"; b.textContent=c.n; b.dataset.i=i;
+    b.onclick=()=>{
+      if(!b.classList.contains("on")) return;
+      viewed++;
+      if(!b.classList.contains("viewed")) b.classList.add("viewed");
+      $("tl_rec").innerHTML='<div class="rec"><span class="h">'+c.h+' · '+c.y+'</span>'+c.r+'</div>';
+      Sound.ping();
+      maybe();
+    };
+    citiesBox.appendChild(b); cityBtns.push({b,g,c});
+  });
+
+  function maybe(){ api.unlock(revealed>=CITIES.length
+      ? "6 座城市全部停止运行。点击查看居民记录，或直接离开。"
+      : "继续向右拖动时间轴（已封冻 "+revealed+" / 6）。", revealed>=CITIES.length); }
+
+  function apply(p){
+    pct=Math.max(0,Math.min(1,p));
+    const year=Math.round(2030+pct*30);
+    const idx=Math.round(pct*(base.length-1));
+    $("tl_y").textContent=year;
+    $("tl_t").textContent=base[idx].toFixed(1)+"°C";
+    $("tl_fill").style.width=(pct*100)+"%";
+    $("tl_knob").style.left=(pct*100)+"%";
+    $("tl_ind").setAttribute("x1", pct*W); $("tl_ind").setAttribute("x2", pct*W);
+    revealed=0;
+    cityBtns.forEach(o=>{
+      const on = pct >= o.c.p - .001;
+      o.g.setAttribute("opacity", on? ".95":"0");
+      o.b.classList.toggle("on", on);
+      if(on) revealed++;
+    });
+    $("tl_c").textContent=revealed+" / 6";
+    maybe();
+  }
+
+  /* 拖动（鼠标 + 触摸） */
+  const tr=$("tl_track");
+  let dragging=false;
+  const px=e=>{ const r=tr.getBoundingClientRect(); const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left; apply(x/r.width); };
+  tr.addEventListener("pointerdown",e=>{ dragging=true; tr.setPointerCapture(e.pointerId); px(e); });
+  tr.addEventListener("pointermove",e=>{ if(dragging) px(e); });
+  tr.addEventListener("pointerup",e=>{ dragging=false; });
+  tr.addEventListener("pointercancel",()=>dragging=false);
+  apply(0);
+};
+
+/* --- 交互 3：核心区 / 缓冲区 视角滑动 --- */
+IX.zone = (box, api)=>{
+  const core=[
+    ["TMP","恒温 22.4°C · 空气过滤等级 A"],
+    ["RATE","每日热量配额 2400 kcal（含蛋白质）"],
+    ["MED","医疗响应 4 分钟 · 供暖不间断"],
+    ["SEC","无人机巡逻 × 常驻武装"],
+    ["—","墙内不需要报纸。"]
+  ], buf=[
+    ["TMP","无固定供暖 · 夜间 −18°C"],
+    ["RATE","热量配额 900 kcal（每周发放一次）"],
+    ["MED","医疗响应：不适用 · 供水限时 3 小时"],
+    ["SEC","身份芯片扫描点：每 200 米一处"],
+    ["—","这里的时间不被记录。"]
+  ];
+  const li=a=>a.map(x=>'<div class="zone-item"><i>'+x[0]+'</i><span>'+x[1]+'</span></div>').join("");
+  box.innerHTML=
+    '<div class="zone-tabs"><button id="zA" class="on">核心区 CORE</button><button id="zB">缓冲区 BUFFER</button></div>'+
+    '<div class="zone-view"><div class="zone-track" id="zt">'+
+      '<div class="zone-pane core"><h3>核心区 · CORE</h3><div class="desc">权限等级 A ·  resident 41,208</div><div class="zone-list">'+li(core)+'</div></div>'+
+      '<div class="zone-pane buffer"><h3>缓冲区 · BUFFER</h3><div class="desc">身份等级 D · resident 未统计</div><div class="zone-list">'+li(buf)+'</div></div>'+
+    '</div></div><div class="mini" style="margin-top:12px">← 左右拖动 / 点击标签切换视角 →</div>';
+
+  const zt=$("zt"), seen=new Set();
+  function go(i){
+    zt.style.transform="translateX("+(-i*50)+"%)";
+    $("zA").classList.toggle("on",i===0); $("zB").classList.toggle("on",i===1);
+    seen.add(i); Sound.ping();
+    $("sysState").textContent = i? "SIGNAL DEGRADED":"LINK STABLE";
+    api.unlock(seen.size>=2
+      ? "两个区域同时存在。它们之间的距离，只有一道墙。"
+      : "查看另一侧的区域（已看 "+seen.size+" / 2）。", seen.size>=2);
+  }
+  $("zA").onclick=()=>go(0); $("zB").onclick=()=>go(1);
+  let sx=null;
+  zt.addEventListener("pointerdown",e=>{ sx=e.clientX; });
+  zt.addEventListener("pointerup",e=>{ if(sx===null) return; const dx=e.clientX-sx; sx=null;
+    if(Math.abs(dx)>40) go(dx<0?1:0); });
+  go(0);
+};
+
+/* --- 交互 4：岗位替代 --- */
+IX.arm = (box, api)=>{
+  const N=12;
+  const person='<svg viewBox="0 0 40 70"><circle cx="20" cy="14" r="9" fill="currentColor"/>'+
+    '<path d="M6 70c0-16 6-24 14-24s14 8 14 24z" fill="currentColor"/></svg>';
+  box.innerHTML=
+    '<div class="arm-wrap"><div class="arm" id="arm">'+
+      '<svg viewBox="0 0 46 58"><path d="M8 6h30v10H8z" fill="var(--ice)" opacity=".85"/>'+
+      '<path d="M21 16h4v30h-4z" fill="var(--ice)" opacity=".7"/>'+
+      '<path d="M14 46h18v6H14z" fill="var(--ice)"/></svg></div>'+
+      '<div class="workers" id="wks"></div></div>'+
+    '<div class="purge"><span>本轮自动化改造 · 剩余人力 <b id="p_left">12</b> / 12</span>'+
+    '<span id="p_msg" class="mini">点击工位执行替代</span></div>';
+
+  const wks=$("wks"), arm=$("arm");
+  let left=N, fired=0;
+  for(let i=0;i<N;i++){
+    const d=document.createElement("div");
+    const me = i===N-1;
+    d.className="worker"+(me?" me":"");
+    d.innerHTML=person+'<span class="no">'+(me?"你":"W-"+String(i+1).padStart(2,"0"))+'</span>';
+    d.onclick=()=>{
+      if(d.classList.contains("out")) return;
+      const r=wks.getBoundingClientRect(), rd=d.getBoundingClientRect();
+      arm.style.left=(rd.left-r.left+rd.width/2-23)+"px";
+      arm.classList.remove("strike"); void arm.offsetWidth; arm.classList.add("strike");
+      setTimeout(()=>{ d.classList.add("out"); }, 260);
+      left--; fired++;
+      $("p_left").textContent=left;
+      $("p_msg").textContent = left>0 ? "替代已完成 · "+fired+" 人"
+        : "岗位替代完成。剩余人力：0";
+      Sound.ping(); Sound.glitch();
+      pushLog("[系统] 岗位替代 W-"+String(i+1).padStart(2,"0")+(!me?" 完成":"（你）完成"), true);
+      if(left<=0){
+        api.unlock("车间清空。没有人被杀死，他们只是不再被需要。", true);
+      }
+    };
+    wks.appendChild(d);
+  }
+  api.unlock("点击任意工位，机械臂将完成替代。请执行到底。", false);
+};
+
+/* --- 交互 5：蜂巢剖面 + 无法关闭的噪声 --- */
+IX.hive = (box, api)=>{
+  box.innerHTML=
+    '<div class="hive" id="hf"></div><div id="hrec"></div>'+
+    '<div class="mute"><button id="muteBtn">静音 ▸ STOP NOISE</button>'+
+    '<span class="mute-msg" id="muteMsg"></span></div>';
+
+  const hf=$("hf"); let opened=0;
+  HIVE_FLOORS.forEach((f,i)=>{
+    const d=document.createElement("div");
+    d.className="floor"+(f.virt?" virt":"");
+    d.innerHTML='<span class="lv">'+f.lv+'</span><span class="nm">'+f.nm+'</span>'+
+                (f.virt?'<span class="lock" style="color:#c9a6ff">非物理</span>'
+                       :(f.lock?'<span class="lock">A 级权限</span>':''));
+    d.onclick=()=>{
+      if(f.virt){
+        /* 映射层：意识层的入口，只呈现，不解释 */
+        Sound.glitch();
+        $("hrec").innerHTML='<div class="rec" style="border-color:#c9a6ff">'+
+          '<span class="h" style="color:#c9a6ff">'+f.h+'</span>'+f.r+'</div>';
+        pushLog("[异常] L-τ 映射层：同步信号 × 1,208,441 · 坐标之外", true);
+        return;
+      }
+      Sound.ping();
+      $("hrec").innerHTML='<div class="rec"><span class="h">'+f.h+'</span>'+f.r+'</div>';
+      if(f.lock){ api.unlock("权限不足。这一层你进不去，也不需要知道里面有什么。", opened>=3); return; }
+      if(!d.dataset.d){ d.dataset.d=1; opened++; }
+      pushLog("[系统] 调取 "+f.lv+" "+f.nm+" 记录", true);
+      api.unlock(opened>=3
+        ? "至少三层记录已调取。噪声仍在继续。"
+        : "继续点开其他楼层（"+opened+" / 3）。", opened>=3);
+    };
+    hf.appendChild(d);
+  });
+
+  let tries=0;
+  const msgs=[
+    "静音失败 · 噪声源不在音频通道内",
+    "重试失败 · 结构共振，非可广播声源",
+    "再次失败 · 请接受它。"
+  ];
+  $("muteBtn").onclick=()=>{
+    Sound.glitch();
+    if(tries<msgs.length){
+      $("muteMsg").textContent=msgs[tries]; tries++;
+      if(tries>=msgs.length){
+        $("muteBtn").disabled=true;
+        $("hrec").innerHTML='<div class="rec"><span class="h">环境反馈 · 自建结构传导</span>'+
+          '你放弃了。于是你开始听见更多细节：有人在第九层哭，很轻，像怕吵醒谁。</div>';
+        pushLog("[系统] 静音指令被拒绝 ×"+tries, true);
+      }
+    }
+  };
+  api.unlock("点击楼层调取居民记录（至少 3 层）。右下可尝试静音。", false);
+};
+
+/* --- 交互 6：江源建造 + 像素塔 glitch --- */
+IX.build = (box, api)=>{
+  const N=30;
+  box.innerHTML=
+    '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">'+
+    '<button class="build-btn" id="bld">吊装 ▸ PLACE MODULE</button>'+
+    '<span class="mini" id="bcnt">物理层 · 已拼接 0 / '+N+' 模块</span>'+
+    '<span class="mini" id="bsync" style="color:#c9a6ff">镜像层 · 已映射 0 / '+N+'</span></div>'+
+    '<div class="build-stage" id="bstage"><div class="build-grid" id="bgrid"></div>'+
+    '<svg class="tower-sil" id="tsil" width="120" height="230" viewBox="0 0 120 230">'+
+      '<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">'+
+      '<stop offset="0" stop-color="rgba(201,166,255,.9)"/><stop offset="1" stop-color="rgba(201,166,255,.15)"/>'+
+      '</linearGradient></defs>'+
+      '<path d="M50 230 L50 60 L60 10 L70 60 L70 230 Z" fill="url(#tg)"/>'+
+      '<rect x="46" y="52" width="28" height="4" fill="rgba(255,255,255,.7)"/>'+
+      '<rect x="44" y="96" width="32" height="3" fill="rgba(255,255,255,.4)"/>'+
+      '<rect x="42" y="150" width="36" height="3" fill="rgba(255,255,255,.3)"/></svg></div>'+
+    '<div id="bmsg"></div>';
+
+  const grid=$("bgrid");
+  const cells=[];
+  for(let i=0;i<N;i++){ const d=document.createElement("div"); d.className="mod"; grid.appendChild(d); cells.push(d); }
+  let n=0, done=false;
+  function place(){
+    if(n>=N) return;
+    cells[n].classList.add("placed"); n++;
+    $("bcnt").textContent="物理层 · 已拼接 "+n+" / "+N+" 模块";
+    Sound.ping();
+    /* 镜像层几乎同时完成映射——它从来不需要工期 */
+    const m = Math.min(N, n + (Math.random()<.5?0:1));
+    $("bsync").textContent="镜像层 · 已映射 "+m+" / "+N;
+    if(n>=N && !done){ done=true; $("bld").disabled=true; finish(); }
+  }
+  $("bld").onclick=place;
+  $("bld").addEventListener("mousedown",e=>{ if(e.altKey){ const t=setInterval(()=>{ if(n>=N) return clearInterval(t); place(); },120);} });
+
+  function finish(){
+    /* 物理层完工 → 镜头退开 → 意识层（像素塔）现身 → 故障艺术 */
+    const stage=$("bstage");
+    stage.style.transform="scale(1.35) translateY(18px)";
+    $("bsync").textContent="镜像层 · 已映射 "+N+" / "+N+"（早于施工指令 0.4 秒）";
+    setTimeout(()=>{
+      $("tsil").classList.add("on"); Sound.glitch();
+      $("bmsg").innerHTML='<div class="glitch-text" style="margin-top:10px">PIXEL TOWER</div>'+
+        '<div class="mini" style="text-align:center;margin-top:10px;line-height:2.1">'+
+        '坐标矛盾 · 该结构不存在于任何地理坐标内<br>'+
+        '建造者：先民（未核实） · 用途标注：升天装置 · 容量：1,208,441 份意识<br>'+
+        '不予解释</div>';
+      let k=0; const gi=setInterval(()=>{ Sound.glitch();
+        document.body.style.filter = (k++%2)? "hue-rotate(6deg) contrast(1.1)":"none"; },420);
+      setTimeout(()=>{ clearInterval(gi); document.body.style.filter="none";
+        api.unlock("现实的江源基地完工了。而它从未完工——另一份它，比它更早存在。", true); },2800);
+      pushLog("[系统] 检测到意识层副本 · ID：PIXEL_TOWER · 同步信号 1,208,441", true);
+      pushLog("[异常] 建议问问：你正在读取这份档案的位置，是现实吗？", true);
+    },1600);
+  }
+  api.unlock("反复点击「吊装」，把基地一寸一寸拼起来。留意镜像层那一列。", false);
+};
+
+/* ---- 交互层调度 ---- */
+function openInteraction(act, nm, hint){
+  if(!IX[act]){ step(); return; }
+  overlay=true;
+  const box=$("ixBody");
+  box.innerHTML=""; $("ixHint").textContent=hint||"";
+  const cont=$("ixCont");
+  cont.disabled=true; cont.textContent="继续 ▸";
+  cont.onclick=null;
+  document.querySelector("#ixWrap .nm").textContent=nm||"";
+  document.querySelector("#ixWrap .sp").textContent="ERA."+String(cur+1).padStart(2,"0")+" · "+ERAS[cur].title;
+  $("ixWrap").classList.add("open");
+  $("dialogue").classList.add("dim");
+  if(autoMode){ clearTimeout(autoTimer); autoMode=false; $("btnAuto").classList.remove("active"); }
+  IX[act](box, {
+    unlock(msg,ok){
+      $("ixHint").textContent=msg;
+      cont.disabled=!ok;
+      if(ok) cont.onclick=()=>{
+        $("ixWrap").classList.remove("open");
+        $("dialogue").classList.remove("dim");
+        overlay=false;
+        pushLog("[系统] 交互模块关闭 · "+nm, true);
+        step();
+      };
+    }
+  });
+}
+
+/* =========================================================================
+   尾声：异常片段 → 第一章
+   ========================================================================= */
+function runEpilogue(){
   $("dialogue").style.display="none";
+  setSnow(0); Sound.stop();
+  Sound.scene(0,0);
+  const epi=$("epi");
+  epi.classList.add("show");
+  setTimeout(()=> Sound.scene(.6,.9), 200);
+
+  setTimeout(()=>document.querySelector("#epi .l1").classList.add("on"), 1200);
+  setTimeout(()=>{ document.querySelector("#epi .l2").classList.add("on"); Sound.glitch(); }, 3400);
+  setTimeout(()=>{
+    const f=$("flash"); f.classList.add("on");
+    for(let i=0;i<5;i++) setTimeout(Sound.glitch, i*120);
+  }, 5200);
+  setTimeout(()=>{
+    epi.classList.remove("show");
+    document.querySelector("#epi .l1").classList.remove("on");
+    document.querySelector("#epi .l2").classList.remove("on");
+    pushLog("[异常] ……鸠？", true);
+    const c=$("chapOne"); c.classList.add("show");
+    Sound.scene(.2,.4);
+  }, 6000);
+}
+function showEOF(){
+  $("chapOne").classList.remove("show");
   $("ending").classList.add("show");
 }
 
-function startGame(){
-  $("title").style.display="none";
-  $("ending").classList.remove("show");
-  $("dialogue").style.display="block";
-  cur=0; lineIdx=0; $("logList").innerHTML="";
-  clearTimeout(toastTimer); $("toast").classList.remove("on");
-  setScene(SCRIPT[0]); enterScene(SCRIPT[0]);
-  setTimeout(nextLine,1400);
+/* =========================================================================
+   启动 / 存档 / 参数 / 断开连接
+   ========================================================================= */
+function bootSequence(){
+  const lines=[
+    ["[SYS] 正在连接 PIXELTOWER 节点 …","" ],
+    ["[SYS] 握手成功 · 延迟 37ms","ok"],
+    ["[SYS] 正在读取 冰封纪元 档案 …","" ],
+    ["[SYS] 接入点：PIXELTOWER · 镜像层 · 林泊数据库","" ],
+    ["[SYS] 校验完成 · 5 个时代切片 / 6 个交互模块","ok"],
+    ["[WARN] 部分记录存在不可逆损坏","warn"],
+    ["[SYS] 等待操作员接入 …",""]
+  ];
+  const boot=$("boot");
+  lines.forEach((l,i)=>{
+    setTimeout(()=>{
+      const p=document.createElement("p");
+      p.className=l[1]; p.textContent=l[0];
+      p.style.animationDelay="0s";
+      boot.appendChild(p);
+      Sound.ping();
+    }, 420*i);
+  });
+  setTimeout(()=>{
+    const m=$("tmenu");
+    [["接入档案",startGame],["记忆锚点",()=>$("savePanel").classList.add("open")],
+     ["系统参数",()=>$("cfgPanel").classList.add("open")]]
+    .forEach((b,i)=>{
+      const el=document.createElement("button");
+      el.className="tbtn"; el.textContent=b[0];
+      el.style.animationDelay=(i*.12)+"s";
+      el.onclick=()=>{ Sound.boot(); b[1](); };
+      m.appendChild(el);
+    });
+  }, 420*lines.length+300);
 }
 
-/* 记录 */
-$("btnLog").addEventListener("click",()=>{
-  const list=$("logList"); list.innerHTML="";
-  let n=0;
-  for(let c=0;c<=cur && c<SCRIPT.length;c++){
-    const max=(c===cur)?lineIdx:SCRIPT[c].lines.length;
-    for(let l=0;l<max;l++){
-      n++;
-      const p=document.createElement("p");
-      p.innerHTML="<span class=\"who\">"+String(n).padStart(2,"0")+"</span>"+SCRIPT[c].lines[l].text;
-      list.appendChild(p);
-    }
+function startGame(){
+  Sound.boot();
+  $("title").style.display="none";
+  $("ending").classList.remove("show");
+  $("chapOne").classList.remove("show");
+  $("epi").classList.remove("show");
+  $("dialogue").style.display="block";
+  $("dialogue").classList.remove("dim");
+  overlay=false; busy=false;
+  clearTimeout(toastTimer); $("toast").classList.remove("on");
+  gotoEra(0,0,true);
+}
+function gotoEra(i,l,resetLog){
+  cur=i; lineIdx=l;
+  if(resetLog) $("logList").innerHTML="";
+  setScene(ERAS[cur]); enterEra(ERAS[cur]);
+  clearInterval(typeTimer);
+  $("dlgText").innerHTML="";
+  $("bar").style.width=(done()/TOTAL*100)+"%";
+  setTimeout(nextLine, ERAS[cur].card?1300:1000);
+}
+
+/* ---- 记忆锚点（存档） ---- */
+const SKEY='pgr_anchor_';
+function renderSlots(){
+  const wrap=$("slotList"); wrap.innerHTML="";
+  for(let i=1;i<=3;i++){
+    const raw=LS.get(SKEY+i,null);
+    const d=raw?JSON.parse(raw):null;
+    const el=document.createElement("div");
+    el.className="slot";
+    el.innerHTML='<div><div class="nm">记忆锚点 0'+i+'</div><div class="inf">'+
+      (d? (d.t+" · 第 "+(d.l+1)+" 行 · "+new Date(d.ts).toLocaleString('zh-CN',{hour12:false}))
+         : "空 · EMPTY")+'</div></div>'+
+      '<div class="ops"><button data-a="w" data-i="'+i+'">写入</button>'+
+      '<button data-a="r" data-i="'+i+'"'+(d?"":" disabled")+'>读取</button></div>';
+    wrap.appendChild(el);
   }
-  list.scrollTop=list.scrollHeight;
-  $("logPanel").classList.add("open");
-});
-$("logPanel").addEventListener("click",()=>$("logPanel").classList.remove("open"));
+  wrap.querySelectorAll("button").forEach(b=>{
+    b.onclick=()=>{
+      const i=b.dataset.i, a=b.dataset.a;
+      if(a==="w"){
+        LS.set(SKEY+i, JSON.stringify({e:cur,l:lineIdx,t:ERAS[cur].title,ts:Date.now()}));
+        pushLog("[系统] 已写入林泊数据库 · 锚点 0"+i, true);
+        showToastText("写入完成","已写入林泊数据库"); Sound.ping();
+      }else{
+        const d=JSON.parse(LS.get(SKEY+i,"{}"));
+        $("savePanel").classList.remove("open");
+        if(d) gotoEra(d.e,d.l,false);
+      }
+      renderSlots();
+    };
+  });
+}
+function showToastText(a,b){
+  const t=$("toast");
+  t.querySelector(".t").textContent=a; t.querySelector(".s").textContent=b;
+  t.classList.add("on"); clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove("on"),2400);
+}
 
-/* 自动 */
-$("btnAuto").addEventListener("click",function(){
-  autoMode=!autoMode; this.classList.toggle("active",autoMode);
-  if(autoMode && !typing) advance();
-  if(!autoMode) clearTimeout(autoTimer);
-});
+/* ---- 系统参数 ---- */
+function initCfg(){
+  const rs=$("rgSpeed"), rv=$("rgVol"), ra=$("rgArt");
+  rs.value=Settings.speed; rv.value=Settings.vol; ra.value=useArt?1:0;
+  const sync=()=>{ $("vSpeed").textContent=Settings.speed;
+                   $("vVol").textContent=Settings.vol+"%";
+                   $("vArt").textContent=useArt?"图层":"纯色"; };
+  rs.oninput=()=>{ Settings.speed=+rs.value; LS.set('pgr_speed',rs.value); sync(); };
+  rv.oninput=()=>{ Settings.vol=+rv.value; LS.set('pgr_vol',rv.value); Sound.vol(Settings.vol); sync(); };
+  ra.oninput=()=>{ useArt=ra.value==="1"; setScene(ERAS[cur]); sync(); };
+  sync();
+}
 
-/* 画面模式：背景图 / 纯氛围色 */
-$("btnArt").addEventListener("click",function(){
-  useArt=!useArt;
-  this.classList.toggle("active",!useArt);
-  this.textContent = useArt ? "画面" : "纯色";
-  if(!useArt){
-    $("bgA").classList.remove("show"); $("bgB").classList.remove("show");
-  }
-  setScene(SCRIPT[cur]);
-});
+/* ---- 断开连接 ---- */
+function doDisconnect(){
+  Sound.stop();
+  document.querySelectorAll('.syspanel').forEach(p=>p.classList.remove("open"));
+  $("title").style.display="none";
+  $("offPanel").classList.add("open");
+}
+$("offYes").onclick=()=>{
+  $("offPanel").classList.remove("open");
+  $("dialogue").style.display="none";
+  $("ending").classList.add("show");
+  $("ending").querySelector(".big").textContent="连接已断开";
+  $("ending").querySelector(".sub").textContent="LINK CLOSED · 本次会话未被写入林泊数据库";
+  pushLog("[系统] 连接已断开", true);
+};
+$("offNo").onclick=()=>$("offPanel").classList.remove("open");
 
-/* 输入 */
+/* =========================== 事件绑定 =========================== */
 $("dialogue").addEventListener("click",advance);
 document.addEventListener("keydown",e=>{
+  const sysOpen=[...document.querySelectorAll('.syspanel')].some(p=>p.classList.contains("open"));
   if($("title").style.display!=="none"){ if(e.code==="Space"||e.code==="Enter") startGame(); return; }
   if($("logPanel").classList.contains("open")){
     if(e.code==="Escape"||e.code==="Space") $("logPanel").classList.remove("open"); return; }
-  if($("ending").classList.contains("show")) return;
+  if(sysOpen){ if(e.code==="Escape") document.querySelectorAll('.syspanel').forEach(p=>p.classList.remove("open")); return; }
+  if($("chapOne").classList.contains("show")){ showEOF(); return; }
+  if($("ending").classList.contains("show")||$("epi").classList.contains("show")) return;
   if(e.code==="Space"||e.code==="Enter"){ e.preventDefault(); advance(); }
 });
-$("btnStart").addEventListener("click",startGame);
-$("btnRestart").addEventListener("click",startGame);
 
-/* 标题线条动画 */
-window.addEventListener("load",()=>setTimeout(()=>{
-  document.querySelector("#title .rule").classList.add("on");
-},400));
+$("btnLog").onclick=()=>{ $("logList").scrollTop=$("logList").scrollHeight; $("logPanel").classList.add("open"); };
+$("logPanel").onclick=()=>$("logPanel").classList.remove("open");
+$("btnSave").onclick=()=>{ renderSlots(); $("savePanel").classList.add("open"); };
+$("saveClose").onclick=()=>$("savePanel").classList.remove("open");
+$("btnCfg").onclick=()=>{ initCfg(); $("cfgPanel").classList.add("open"); };
+$("cfgClose").onclick=()=>$("cfgPanel").classList.remove("open");
+$("btnOff").onclick=doDisconnect;
+$("btnAuto").onclick=function(){
+  autoMode=!autoMode; this.classList.toggle("active",autoMode);
+  if(autoMode && !typing && !overlay) advance();
+  if(!autoMode) clearTimeout(autoTimer);
+};
+$("btnRestart").onclick=startGame;
+$("btnAgain").onclick=startGame;
+$("btnEOF").onclick=e=>{ e.stopPropagation(); showEOF(); };
+
+/* =========================== 启动 =========================== */
+initCfg();
+Sound.vol(Settings.vol);
+window.addEventListener("load",bootSequence);
 </script>
 </body>
 </html>
