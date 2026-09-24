@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html data-page-node-id="kWD3VQ0ejjyeHK7SAl7uke">
-<head data-page-node-id="OFQODcTA4XggWERXkDO6dd">
-<meta charset='utf-8' data-page-node-id="HJb1doXZzPTu8f5rLl0I1b"/>
+<html>
+<head>
+<meta charset='utf-8'/>
 <title>格斗战机 - Vanco修改版</title>
-<meta name='renderer' content='webkit' data-page-node-id="CvSxaA1OXNHfm4LflCV77n">
-<meta name='viewport' content='width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no' data-page-node-id="q7DKDSIBdKmJ5jUp2GTlgm"/>
-<meta name='laya' screenorientation='landscape' data-page-node-id="x5OzgBuy1sGR2V58EkeLxY" />
-<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1' data-page-node-id="bxynqOT74Lx4wUAmP2xgWV">
-<link rel='icon' href='data:,' data-page-node-id="lu7gq6uLZfQdgaFqOBqGrc">
+<meta name='renderer' content='webkit'>
+<meta name='viewport' content='width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no'/>
+<meta name='laya' screenorientation='landscape' />
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<link rel='icon' href='data:,'>
 <style>html,body{margin:0;padding:0;background:#000;overflow:hidden;width:100%;height:100%}</style>
 </head>
-<body style='margin:0;overflow:hidden;overflow-x:hidden;overflow-y:hidden;background-color:#000;' data-page-node-id="rtyVcUHL2JGiwSdgHJKAM2">
+<body style='margin:0;overflow:hidden;overflow-x:hidden;overflow-y:hidden;background-color:#000;'>
 <script>
 // ===== 4399 h5api 本地桩 =====
 // 原版由 //h.api.4399.com/h5mini-2.0/h5api-interface.php 提供（广告/分享/排行榜）。
@@ -11730,13 +11730,14 @@ var Laya = window.Laya = function(t) {
           r.on("dead", this, this.onObjectDead), this.gScene.addGameObject(r)
         }
         this.gScene.addGameObject(this.role), this.battleUI.init(this), this.battleUI.alpha = 1, this.showTaskInfo();
-        var a = Math.floor(parseInt(t.id) / 12) >= 6 ? 4 : Math.ceil(3 * Math.random());
+        var a = Math.floor((parseInt(t.id) - 1) / 12) >= 6 ? 4 : Math.ceil(3 * Math.random());
         this.loopChannel = Z.playMusic("res/sound/bgMusic" + a + ".mp3"), Z.setMusicVolume(1), i.timer.frameLoop(1, this, this.onUpdate), i.stage.on("keydown", this, this.onKeyDown), i.stage.on("keyup", this, this.onKeyUp), this.showIntro()
       }, s.showIntro = function() {
         var t = this.missionCfg,
-          e = parseInt(t.id) || 0,
-          n = Math.floor(e / 12),
-          r = e % 12 + 1,
+          e = parseInt(t.id) || 1;
+        1 > e && (e = 1);
+        var n = Math.floor((e - 1) / 12),
+          r = (e - 1) % 12 + 1,
           a = ["第一章 重燃战火", "第二章 闪电战", "第三章 海狮计划", "第四章 不列颠之鹰", "第五章 北非空战", "第六章 西线反击", "第七章 条顿悲歌", "第八章 消灭残敌"][n] || "第" + (n + 1) + "章";
         this.bCutscene = !0, this.pause = !0;
         var h = new Gi;
@@ -21128,8 +21129,21 @@ var Laya = window.Laya = function(t) {
       return s.onTimer = function() {
         this.count--, this.timeTxt.text = this.count + "秒后退出场景"
       }, s.onTimerComplete = function(t) {
-        var e = b.showWindow(ir);
-        e.refresh(), i.timer.clearAll(this), this.removeSelf(), t.dispose()
+        if (!this.bFading) {
+          this.bFading = !0;
+          var e = this,
+            n = new Gi;
+          n.mouseEnabled = !0, n.zOrder = 1e6, n.graphics.drawRect(-600, -600, i.stage.width + 1200, i.stage.height + 1200, "#000000"), n.alpha = 0, i.stage.addChild(n), Se.to(n, {
+            alpha: 1
+          }, 500, null, _.create(n, function() {
+            var s = b.showWindow(ir);
+            s.refresh(), i.timer.clearAll(e), e.removeSelf(), t.dispose(), Se.to(n, {
+              alpha: 0
+            }, 450, null, _.create(n, function() {
+              n.removeSelf()
+            }))
+          }))
+        }
       }, e
     }(rr);
   i.__init([bi, u, _e, as, si, se, hs, Q, Zs, ki, P, Te, fn, Ee]), new w
