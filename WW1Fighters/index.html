@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset='utf-8'/>
-<title>格斗战机 - Vanco修改版</title>
+<title>格斗战机大作战 - 本地离线版</title>
 <meta name='renderer' content='webkit'>
 <meta name='viewport' content='width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no'/>
 <meta name='laya' screenorientation='landscape' />
@@ -494,6 +494,9 @@ var Laya = window.Laya = function(t) {
           state: 0,
           curGate: 1
         }, {
+          state: 0,
+          curGate: 1
+        }, {
           state: 1,
           curGate: 1
         }, {
@@ -950,7 +953,10 @@ var Laya = window.Laya = function(t) {
           id: "plane53",
           state: 2,
           __wbTest: !0
-        }]), t.storage.missionCfg && t.storage.missionCfg[7] && t.storage.missionCfg[7].curGate >= 12 && (t.storage.__wb_testUnlocked = !0);
+        }]), t.storage.missionCfg && 9 > t.storage.missionCfg.length && t.storage.missionCfg.unshift({
+          state: 0,
+          curGate: 1
+        }), t.storage.missionCfg && t.storage.missionCfg[8] && t.storage.missionCfg[8].curGate >= 12 && (t.storage.__wb_testUnlocked = !0);
         var e = i.loader.getRes("res/cfg/GunCfg.json");
         com.ocean.ui.DataManager.setJsonData("gunCfg", e);
         var s = i.loader.getRes("res/cfg/MissionCfg.json");
@@ -11715,12 +11721,12 @@ var Laya = window.Laya = function(t) {
     }(Gi),
     cs = function(t) {
       function e() {
-        this.role = null, this.gScene = null, this.bPause = !1, this.loopChannel = null, this.bShoot = !1, this.bBomb = !1, this.bJoystick = !1, this.limitTime = 0 / 0, this.taskType = null, this.taskDesc = null, this.taskObjID = null, this.taskNum = 0, this.curTaskNum = 0, this.destination = null, this.prize = 0, this.honor = 0, this.gateIndex = 1, this.miniMap = null, this.battleUI = null, this.bGameOver = !1, this.pauseDlg = null, this.dlgPanel = null, this.missionCfg = null, this.introMc = null, this.bCutscene = !1, e.__super.call(this), this.gScene = new rs, this.gScene.mouseEnabled = !1, this.gScene.scaleRatio = e.scaleRatio, this.addChild(this.gScene), this.battleUI = new Gn, this.addChild(this.battleUI), this.gScene.on("complete", this.battleUI, this.battleUI.readjustFrameSize)
+        this.role = null, this.gScene = null, this.bPause = !1, this.loopChannel = null, this.bShoot = !1, this.bBomb = !1, this.bJoystick = !1, this.limitTime = 0 / 0, this.taskType = null, this.taskDesc = null, this.taskObjID = null, this.taskNum = 0, this.curTaskNum = 0, this.destination = null, this.prize = 0, this.honor = 0, this.gateIndex = 1, this.miniMap = null, this.battleUI = null, this.bGameOver = !1, this.pauseDlg = null, this.dlgPanel = null, this.missionCfg = null, this.introMc = null, this.bCutscene = !1, this.bgmIndex = 1, this.teachStep = null, this.teachBar = null, this.teachTxt = null, e.__super.call(this), this.gScene = new rs, this.gScene.mouseEnabled = !1, this.gScene.scaleRatio = e.scaleRatio, this.addChild(this.gScene), this.battleUI = new Gn, this.addChild(this.battleUI), this.gScene.on("complete", this.battleUI, this.battleUI.readjustFrameSize)
       }
       n(e, "com.ocean.ui.Mission", t);
       var s = e.prototype;
       return       s.init = function(t) {
-        this.bGameOver = !1, this.bShoot = !1, this.bBomb = !1, this.curTaskNum = 0, this.missionCfg = t, this.miniMap = "res/map/" + t.src + ".png", this.gScene.loadMap("res/map/" + t.src + ".json"), this.gScene.produceClound(t.cloudNum), this.limitTime = Number(t.limitTime), this.limitTime > 0 && i.timer.once(1e3 * this.limitTime, this, this.onTimeOut), this.gateIndex = parseInt(t.id), this.taskType = t.taskType, this.taskDesc = t.goal, this.taskObjID = t.param1, this.taskNum = parseInt(t.param2), this.destination = g.parsePointsString(t.param3)[0], this.prize = parseInt(t.prize), this.honor = parseInt(t.honor);
+        this.bGameOver = !1, this.bShoot = !1, this.bBomb = !1, this.curTaskNum = 0, this.teachStep = null, this.missionCfg = t, this.miniMap = "res/map/" + t.src + ".png", this.gScene.loadMap("res/map/" + t.src + ".json"), this.gScene.produceClound(t.cloudNum), this.limitTime = Number(t.limitTime), this.limitTime > 0 && i.timer.once(1e3 * this.limitTime, this, this.onTimeOut), this.gateIndex = parseInt(t.id), this.taskType = t.taskType, this.taskDesc = t.goal, this.taskObjID = t.param1, this.taskNum = parseInt(t.param2), this.destination = g.parsePointsString(t.param3)[0], this.prize = parseInt(t.prize), this.honor = parseInt(t.honor);
         var e = $n.instance.curPlaneCfg;
         this.role = this.parseObject(e, !0), this.role.loc = g.parsePointsString(t.bornPos)[0], this.role.rotation = g.deg2rad(Number(t.bornDir)), this.role.on("dead", this, this.onObjectDead), this.role.setMainRole(), this.role.bEnemy = !1;
         var s;
@@ -11731,14 +11737,13 @@ var Laya = window.Laya = function(t) {
         }
         this.gScene.addGameObject(this.role), this.battleUI.init(this), this.battleUI.alpha = 1, this.showTaskInfo();
         var a = Math.floor((parseInt(t.id) - 1) / 12) >= 6 ? 4 : Math.ceil(3 * Math.random());
-        this.loopChannel = Z.playMusic("res/sound/bgMusic" + a + ".mp3"), Z.setMusicVolume(1), i.timer.frameLoop(1, this, this.onUpdate), i.stage.on("keydown", this, this.onKeyDown), i.stage.on("keyup", this, this.onKeyUp), this.showIntro()
+        this.bgmIndex = a, i.timer.frameLoop(1, this, this.onUpdate), i.stage.on("keydown", this, this.onKeyDown), i.stage.on("keyup", this, this.onKeyUp), this.showIntro()
       }, s.showIntro = function() {
         var t = this.missionCfg,
-          e = parseInt(t.id) || 1;
-        1 > e && (e = 1);
-        var n = Math.floor((e - 1) / 12),
-          r = (e - 1) % 12 + 1,
-          a = ["第一章 重燃战火", "第二章 闪电战", "第三章 海狮计划", "第四章 不列颠之鹰", "第五章 北非空战", "第六章 西线反击", "第七章 条顿悲歌", "第八章 消灭残敌"][n] || "第" + (n + 1) + "章";
+          e = parseInt(t.id) || 0,
+          n = 0 >= e ? 0 : Math.floor((e - 1) / 12) + 1,
+          r = 0 >= e ? 1 : (e - 1) % 12 + 1,
+          a = ["第零章 训练场", "第一章 重燃战火", "第二章 闪电战", "第三章 海狮计划", "第四章 不列颠之鹰", "第五章 北非空战", "第六章 西线反击", "第七章 条顿悲歌", "第八章 消灭残敌"][n] || "第" + n + "章";
         this.bCutscene = !0, this.pause = !0;
         var h = new Gi;
         h.mouseEnabled = !0;
@@ -11749,7 +11754,7 @@ var Laya = window.Laya = function(t) {
         var c = new us;
         c.text = a, c.font = "SimHei", c.fontSize = 22, c.color = "#9fb4c7", c.width = 700, c.align = "center", c.x = -350, c.y = -150, l.addChild(c);
         var d = new us;
-        d.text = n + 1 + "-" + r, d.font = "SimHei", d.fontSize = 76, d.bold = !0, d.color = "#ffffff", d.width = 700, d.align = "center", d.x = -350, d.y = -95, l.addChild(d);
+        d.text = n + "-" + r, d.font = "SimHei", d.fontSize = 76, d.bold = !0, d.color = "#ffffff", d.width = 700, d.align = "center", d.x = -350, d.y = -95, l.addChild(d);
         var g2 = new us;
         g2.text = t.name || "", g2.font = "SimHei", g2.fontSize = 42, g2.color = "#ffd75e", g2.width = 700, g2.align = "center", g2.x = -350, g2.y = 25, l.addChild(g2);
         var p = new us;
@@ -11758,11 +11763,15 @@ var Laya = window.Laya = function(t) {
           alpha: 1
         }, 280), h.on("click", this, this.skipIntro), Z.playSound("res/sound/missionStart.wav"), i.timer.once(2600, this, this.onIntroEnd)
       }, s.skipIntro = function() {
-        this.bCutscene && (i.timer.clear(this, this.onIntroEnd), this.onIntroDone())
+        this.bCutscene && (i.timer.clear(this, this.onIntroEnd), this.onIntroEnd())
       }, s.onIntroEnd = function() {
-        this.bCutscene && Se.to(this.introMc, {
-          alpha: 0
-        }, 380, null, _.create(this, this.onIntroDone))
+        if (this.bCutscene) {
+          // 淡出一开始就解除暂停并起战斗 BGM：让地图/场景在黑幕淡出期间已经跑起来，
+          // 避免淡出结束后场景才第一帧渲染造成的"卡一下"。
+          this.pause = !1, this.loopChannel = Z.playMusic("res/sound/bgMusic" + this.bgmIndex + ".mp3"), Z.setMusicVolume(1), Se.to(this.introMc, {
+            alpha: 0
+          }, 380, null, _.create(this, this.onIntroDone))
+        }
       }, s.onIntroDone = function() {
         this.introMc && (this.introMc.removeSelf(), this.introMc = null), this.bCutscene = !1, this.pause = !1
       }, s.parseObject = function(t, e) {
@@ -11805,6 +11814,10 @@ var Laya = window.Laya = function(t) {
         if (this.bCutscene) return this.skipIntro(), void 0;
         if (27 == t.keyCode) return this.togglePause(), void 0;
         if (this.bPause) return void 0;
+        if ("teach" == this.taskType && null != this.teachStep) {
+          var te = e.TEACH[this.teachStep];
+          te && -1 != te.keys.indexOf(t.keyCode) && (this.teachStep++, this.teachStep >= e.TEACH.length ? this.spawnTeachTarget() : this.showTaskInfo())
+        }
         if (!this.bJoystick) switch (t.keyCode) {
           case 87:
           case 38:
@@ -11890,19 +11903,44 @@ var Laya = window.Laya = function(t) {
             this.role.onRollKey(0)
         }
       }, s.onUpdate = function() {
-        if (!this.bPause) {
+        if (!this.bPause && this.role) {
           if (this.gScene.update(i.timer.delta), this.gScene.setViewPortCenter(this.role.x, this.role.y), this.battleUI.update(i.timer.delta), this.bShoot) {
             var t = this.role.getGun(0);
-            t.isChamberEmpty ? this.battleUI.showWarning("主武器没弹药啦！") : t.shoot()
+            t && (t.isChamberEmpty ? this.battleUI.showWarning("主武器没弹药啦！") : t.shoot())
           }
-          if (this.bBomb && this.role.gunArr.length > 1 && (t = this.role.getGun(1), t.isChamberEmpty ? this.battleUI.showWarning("副武器没弹药啦！") : t.shoot()), this.destination) {
+          if (this.bBomb && this.role.gunArr.length > 1 && (t = this.role.getGun(1), t && (t.isChamberEmpty ? this.battleUI.showWarning("副武器没弹药啦！") : t.shoot())), this.destination) {
             var e, s = this.gScene.getObjectsInCircle(this.destination.x, this.destination.y, 160);
             for (var n in s) e = s[n], e.id == this.taskObjID && this.gameOver("kill" != this.taskType)
           }
         }
       }, s.showTaskInfo = function() {
+        if ("teach" == this.taskType) {
+          null == this.teachStep && (this.teachStep = 0, this.destination = null, this.buildTeachBar());
+          var t = e.TEACH[this.teachStep];
+          return this.teachTxt.text = t ? "教学 " + (this.teachStep + 1) + "/" + e.TEACH.length + "：" + t.text : "最后一步：击落前方出现的靶机！", this.battleUI.setTaskInfo("教学：" + (t ? t.text : "击落靶机")), void 0
+        }
         var t = "kill" == this.taskType ? this.curTaskNum : this.taskNum - this.curTaskNum;
         this.battleUI.setTaskInfo("任务：" + this.taskDesc + " " + t + "/" + this.taskNum)
+      }, s.buildTeachBar = function() {
+        this.teachBar && (this.teachBar.removeSelf(), this.teachBar = null);
+        var t = new Gi;
+        t.mouseEnabled = !1, t.x = i.stage.width / 2 - 260, t.y = 96;
+        var n = new Gi;
+        n.graphics.drawRect(0, 0, 520, 62, "#000000"), n.alpha = .55, t.addChild(n);
+        var r = new us;
+        r.font = "SimHei", r.fontSize = 24, r.color = "#ffe08a", r.width = 520, r.align = "center", r.y = 17, t.addChild(r), this.teachTxt = r, this.teachBar = t, this.addChild(t)
+      }, s.spawnTeachTarget = function() {
+        this.teachStep = null, this.teachTxt && (this.teachTxt.text = "最后一步：击落前方出现的靶机！");
+        var t = {
+            typeId: this.taskObjID || "plane19",
+            bEnemy: "true",
+            hp: "160",
+            ai: "cruise",
+            x: String(this.role.x + 700),
+            y: String(this.role.y)
+          },
+          n = this.parseObject(t);
+        n.id = "teachTarget", n.on("dead", this, this.onObjectDead), this.gScene.addGameObject(n), this.taskType = "kill", this.taskObjID = "teachTarget", this.taskNum = 1, this.curTaskNum = 0, this.taskDesc = "击落靶机", this.showTaskInfo()
       }, s.togglePause = function() {
         this.bGameOver || this.role && (this.pause = !this.pause, this.pause ? (null == this.pauseDlg && this.buildPauseDlg(), this.pauseDlg.visible = !0, this.onPauseResize()) : this.pauseDlg && (this.pauseDlg.visible = !1))
       }, s.buildPauseDlg = function() {
@@ -11936,7 +11974,7 @@ var Laya = window.Laya = function(t) {
       }, s.onQuitClick = function() {
         this.pause = !1, this.pauseDlg && (this.pauseDlg.visible = !1), i.timer.clear(this, this.onTimeOut), this.dispose(), b.showWindow(cr)
       }, s.dispose = function() {
-        i.timer.clear(this, this.onIntroEnd), this.introMc && (this.introMc.removeSelf(), this.introMc = null), this.bCutscene = !1, this.pause = !1, this.gScene.clear(), this.role = null, Se.to(this.loopChannel, {
+        i.timer.clear(this, this.onIntroEnd), this.introMc && (this.introMc.removeSelf(), this.introMc = null), this.teachBar && (this.teachBar.removeSelf(), this.teachBar = null, this.teachTxt = null), this.bCutscene = !1, this.pause = !1, this.gScene.clear(), this.role = null, this.loopChannel && Se.to(this.loopChannel, {
           volume: 0
         }, 1e3), Z.playMusic("res/sound/bgMusic0.mp3"), i.stage.off("keydown", this, this.onKeyDown), i.stage.off("keyup", this, this.onKeyUp), i.timer.clear(this, this.onUpdate);
         var t;
@@ -11949,7 +11987,28 @@ var Laya = window.Laya = function(t) {
         return this.bPause
       }, function(t) {
         this.bPause = t
-      }), e.scaleRatio = 1, e
+      }), e.scaleRatio = 1, e.TEACH = [{
+        keys: [87, 38],
+        text: "按 W 加速前进"
+      }, {
+        keys: [83, 40],
+        text: "按 S 减速"
+      }, {
+        keys: [65, 37, 68, 39],
+        text: "按 A / D 左右偏转"
+      }, {
+        keys: [81, 69],
+        text: "按 Q / E 左右急转"
+      }, {
+        keys: [32],
+        text: "按 空格 拉起爬升"
+      }, {
+        keys: [16],
+        text: "按 Shift 翻滚"
+      }, {
+        keys: [74, 13],
+        text: "按 J 使用主武器开火"
+      }], e
     }(Gi),
     us = function(t) {
       function e() {
@@ -13376,7 +13435,9 @@ var Laya = window.Laya = function(t) {
       }), r(0, a, "notAttacked", function() {
         return this.pitchDeg > .5
       }), r(0, a, "isChamberEmpty", function() {
-        return this.gunArr[0].isChamberEmpty
+        // 没有武器的单位（例如教学关刷出的靶机）不能让 gunArr[0] 抛异常，
+        // 否则 AI 状态机每帧抛错会中断 Laya 的定时器链，连结算回调都跑不到。
+        return this.gunArr && this.gunArr.length ? this.gunArr[0].isChamberEmpty : !1
       }), r(0, a, "turnSide", function() {
         return this.yawSide
       }), s(e, ["A2PI", function() {
@@ -20175,6 +20236,10 @@ var Laya = window.Laya = function(t) {
             type: "atlas"
           }), r[c] = !0)
         }
+        "teach" == t.taskType && (h = y.getObjectByID(t.param1 || "plane19")) && h.src && !r[h.src] && (e.resArr.push({
+          url: "res/atlas/" + h.src + ".json",
+          type: "atlas"
+        }), r[h.src] = !0);
         e.resArr.push({
           url: "res/map/" + t.src + ".png",
           type: "image"
@@ -20325,7 +20390,7 @@ var Laya = window.Laya = function(t) {
     ir = function(t) {
       function e() {
         this.lastSel = null, this.itemArr = null, this.curChapter = null, this.mapIdx = 0, e.__super.call(this), this.startBtn.on("click", this, this.loadGame), this.startBtn.visible = !1;
-        for (var t = [new l("第一章：重燃战火", 0, 0, 0, !1, !0, this), new l("第二章： 闪电战", 1, 12e3, 1, !1, !1, this), new l("第三章： 海狮计划", 2, 28e3, 1, !1, !1, this), new l("第四章： 不列颠之鹰", 3, 52e3, 1, !1, !1, this), new l("第五章： 北非空战", 4, 98e3, 1, !1, !1, this), new l("第六章： 西线反击", 5, 240, 2, !0, !1, this), new l("第七章： 条顿悲歌", 6, 550, 2, !0, !1, this), new l("第八章： 消灭残敌", 7, 960, 2, !0, !1, this)], s = 0; s < t.length; s++) {
+        for (var t = [new l("第零章：训练场", 0, 0, 0, !1, !1, this), new l("第一章：重燃战火", 1, 0, 0, !1, !0, this), new l("第二章： 闪电战", 2, 12e3, 1, !1, !1, this), new l("第三章： 海狮计划", 3, 28e3, 1, !1, !1, this), new l("第四章： 不列颠之鹰", 4, 52e3, 1, !1, !1, this), new l("第五章： 北非空战", 5, 98e3, 1, !1, !1, this), new l("第六章： 西线反击", 6, 240, 2, !0, !1, this), new l("第七章： 条顿悲歌", 7, 550, 2, !0, !1, this), new l("第八章： 消灭残敌", 8, 960, 2, !0, !1, this)], s = 0; s < t.length; s++) {
           var n = t[s];
           n.state = y.storage.missionCfg[s].state
         }
@@ -20334,12 +20399,13 @@ var Laya = window.Laya = function(t) {
           var a = this.itemArr[r];
           a.init(r), a.on("click", this, this.onGameStart), a.on("mouseover", this, this.onItemOver)
         }
-        this.setSelectChapter(t[0]), this.backBtn.on("click", this, this.onBackBtnClick), this.on("click", this, this.onMouseClick), i.stage.on("resize", this, this.onResize), this.onResize()
+        for (var u = 0; u < t.length; u++) t[u].selected = !1;
+        this.setSelectChapter(t[0]), this.backBtn.on("click", this, this.onBackBtnClick), this.on("click", this, this.onMouseClick), i.stage.on("mousewheel", this, this.onWheel), i.stage.on("resize", this, this.onResize), this.onResize()
       }
       n(e, "com.ocean.ui.MissionUI", t);
       var s = e.prototype;
-      return s.onResize = function() {
-        this.bkImg.width = i.stage.width, this.maskImg.width = i.stage.width, this.moneyBar.x = i.stage.width - 614, this.itemBox.x = i.stage.width / 2 + 40, this.infoPanel.x = i.stage.width - 290, this.y = (i.stage.height - 750) / 2
+      return       s.onResize = function() {
+        this.bkImg.width = i.stage.width, this.maskImg.width = i.stage.width, this.moneyBar.x = i.stage.width - 614, this.itemBox.x = i.stage.width / 2 + 40, this.infoPanel.x = i.stage.width - 290, this.y = (i.stage.height - 750) / 2, this.itemBox.width = this.map12.x + this.map12.width, this.itemBox.height = this.map12.y + this.map12.height
       }, s.onSelectChapter = function(t) {
         this.setSelectChapter(t)
       }, s.onChangeChapter = function() {
@@ -20361,35 +20427,51 @@ var Laya = window.Laya = function(t) {
         this.setSelectChapter(this.lastSel)
       }, s.setSelectChapter = function(t) {
         e.chapterIndex = t.index, null != this.lastSel && (this.lastSel.selected = !1), this.lastSel = t, this.lastSel.selected = !0, this.chapterList.refresh();
-        for (var i = y.storage.missionCfg[e.chapterIndex], s = 0; 12 > s; s++) {
-          var n = this.itemArr[s];
-          n.lock = s < i.curGate ? !1 : !0
+        for (var i = y.storage.missionCfg[e.chapterIndex], s = e.gateCount(e.chapterIndex), n = 0; n < this.itemArr.length; n++) {
+          var r = this.itemArr[n];
+          n < s ? (r.visible = !0, r.lock = n < i.curGate ? !1 : !0) : r.visible = !1
         }
-        var r = i.curGate + 12 * e.chapterIndex;
-        this.showGateInfo(r)
+        this.showGateInfo(e.getGateId(e.chapterIndex, i.curGate > s ? s : i.curGate))
       }, s.showGateInfo = function(t) {
         var e = y.getMissionByID(t);
-        this.mapMc.skin = "res/map/" + e.src + ".png", this.nameTxt.text = e.name, this.descTxt.text = "目标: " + e.goal, this.infoTxt.text = "    " + e.desc, this.prizeTxt.text = "任务奖励: " + e.prize + "银币";
-        var i = this.itemArr[(t - 1) % 12];
-        i.getLock() ? (this.suggestTxt.text = "尚未解锁", this.suggestTxt.color = "#ff0000") : (this.suggestTxt.text = "建议使用: " + e.suggest, this.suggestTxt.color = "#DDDDDD")
+        if (e) {
+          this.mapMc.skin = "res/map/" + e.src + ".png", this.nameTxt.text = e.name, this.descTxt.text = "目标: " + e.goal, this.infoTxt.text = "    " + e.desc, this.prizeTxt.text = "任务奖励: " + e.prize + "银币";
+          var i = this.itemArr[0 >= t ? 0 : (t - 1) % 12];
+          i && (i.getLock() ? (this.suggestTxt.text = "尚未解锁", this.suggestTxt.color = "#ff0000") : (this.suggestTxt.text = "建议使用: " + e.suggest, this.suggestTxt.color = "#DDDDDD"))
+        }
+      }, s.onWheel = function(t) {
+        if (b.layer._childs[0] === this) {
+          var e = this.chapterList;
+          if (e && e.array) {
+            // 滚动后 getCell(0) 会变 null（首项已滚出可视区），所以优先取当前首个可见项
+            var n = e.getCell(e.startIndex) || e.getCell(0),
+              r = n && n.height ? n.height : 48,
+              s = Math.max(1, Math.floor(e.height / r)),
+              a = Math.max(0, e.array.length - s),
+              h = e.startIndex + (t.delta > 0 ? -1 : 1);
+            e.startIndex = 0 > h ? 0 : h > a ? a : h
+          }
+        }
       }, s.onBackBtnClick = function() {
         b.showWindow(cr)
       }, s.onMouseClick = function() {
         this.startBtn.visible = !1
       }, s.onItemOver = function(t) {
-        var i = t.currentTarget,
-          s = 12 * e.chapterIndex + i.index;
-        this.showGateInfo(s)
+        this.showGateInfo(e.getGateId(e.chapterIndex, t.currentTarget.index))
       }, s.onGameStart = function(t) {
         if (null == $n.instance.selItem) return b.showMessage("没有战机可出战，请先购买战机！"), void 0;
         var e = t.currentTarget;
         return e.getLock() ? (b.showMessage("需要开启前面的章节！"), void 0) : (this.mapIdx = e.index, _e.onMobile ? (t.stopPropagation(), this.startBtn.visible = !0, this.startBtn.x = e.x + 61, this.startBtn.y = e.y + 62, void 0) : (this.loadGame(t), void 0))
       }, s.loadGame = function() {
-        var t = 12 * e.chapterIndex + this.mapIdx,
+        var t = e.getGateId(e.chapterIndex, this.mapIdx),
           i = y.getMissionByID(t),
           s = b.showWindow(Qn);
         s.init(i)
-      }, e.chapterIndex = 0, e
+      }, e.chapterIndex = 0, e.gateCount = function(t) {
+        return 0 >= t ? 1 : 12
+      }, e.getGateId = function(t, e) {
+        return 0 >= t ? 0 : 12 * (t - 1) + e
+      }, e
     }(Rn),
     sr = function(t) {
       function e() {
@@ -21113,7 +21195,7 @@ var Laya = window.Laya = function(t) {
           n = a ? a.bDouble : !1, a && (a.bDouble = !1);
           var h = y.storage.missionCfg[ir.chapterIndex],
             o = t.gateIndex % 12;
-          o == h.curGate && h.curGate < 12 && (h.curGate += 1), s && 7 == ir.chapterIndex && h.curGate >= 12 && !y.storage.__wb_testUnlocked && (y.storage.__wb_testUnlocked = !0, y.saveData(), b.showMessage("恭喜通关全部章节！测试飞机已解锁，快去科技树查看吧！"))
+          o == h.curGate && h.curGate < 12 && (h.curGate += 1), s && 8 == ir.chapterIndex && h.curGate >= 12 && !y.storage.__wb_testUnlocked && (y.storage.__wb_testUnlocked = !0, y.saveData(), b.showMessage("恭喜通关全部章节！测试飞机已解锁，快去科技树查看吧！"))
         }
         var l = s ? t.prize : 0;
         n ? l *= 2 : 0, y.storage.silver += l;
