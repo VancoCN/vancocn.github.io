@@ -20437,7 +20437,8 @@ var Laya = window.Laya = function(t) {
         var o = 0 === e.chapterIndex && y.storage.missionCfg[8] && y.storage.missionCfg[8].curGate >= 12;
         for (var i = y.storage.missionCfg[e.chapterIndex], s = e.gateCount(e.chapterIndex), n = 0; n < this.itemArr.length; n++) {
           var r = this.itemArr[n];
-          if (0 === e.chapterIndex && 1 === n) r.visible = !0, r.lock = o ? !1 : !0;
+          // 第零章：gate1（教学）免费；gate2/gate3（阅兵关）需通关第8章第12关；超出本章关数的按钮隐藏
+          if (0 === e.chapterIndex && n >= 1 && n < s) r.visible = !0, r.lock = o ? !1 : !0;
           else {
             n < s ? (r.visible = !0, r.lock = n < i.curGate ? !1 : !0) : r.visible = !1
           }
@@ -20472,16 +20473,16 @@ var Laya = window.Laya = function(t) {
       }, s.onGameStart = function(t) {
         if (null == $n.instance.selItem) return b.showMessage("没有战机可出战，请先购买战机！"), void 0;
         var e = t.currentTarget;
-        return e.getLock() ? (0 === this.constructor.chapterIndex && 2 === e.index ? b.showMessage("通关第8章第12关后解锁该关卡！") : b.showMessage("需要开启前面的章节！"), void 0) : (this.mapIdx = e.index, _e.onMobile ? (t.stopPropagation(), this.startBtn.visible = !0, this.startBtn.x = e.x + 61, this.startBtn.y = e.y + 62, void 0) : (this.loadGame(t), void 0))
+        return e.getLock() ? (0 === this.constructor.chapterIndex && e.index >= 2 ? b.showMessage("通关第8章第12关后解锁该关卡！") : b.showMessage("需要开启前面的章节！"), void 0) : (this.mapIdx = e.index, _e.onMobile ? (t.stopPropagation(), this.startBtn.visible = !0, this.startBtn.x = e.x + 61, this.startBtn.y = e.y + 62, void 0) : (this.loadGame(t), void 0))
       }, s.loadGame = function() {
         var t = e.getGateId(e.chapterIndex, this.mapIdx),
           i = y.getMissionByID(t),
           s = b.showWindow(Qn);
         s.init(i)
       }, e.chapterIndex = 0, e.gateCount = function(t) {
-        return 0 >= t ? 2 : 12
+        return 0 >= t ? 3 : 12
       }, e.getGateId = function(t, e) {
-        if (0 >= t) return 1 === e ? 0 : 98;
+        if (0 >= t) return 1 === e ? 0 : 2 === e ? 98 : 99;
         return 12 * (t - 1) + e
       }, e
     }(Rn),
