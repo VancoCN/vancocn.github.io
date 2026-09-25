@@ -11730,7 +11730,9 @@ var Laya = window.Laya = function(t) {
     }(Gi),
     cs = function(t) {
       function e() {
-        this.role = null, this.gScene = null, this.bPause = !1, this.loopChannel = null, this.bShoot = !1, this.bBomb = !1, this.bJoystick = !1, this.limitTime = 0 / 0, this.taskType = null, this.taskDesc = null, this.taskObjID = null, this.taskNum = 0, this.curTaskNum = 0, this.destination = null, this.prize = 0, this.honor = 0, this.gateIndex = 1, this.miniMap = null, this.battleUI = null, this.bGameOver = !1, this.pauseDlg = null, this.dlgPanel = null, this.missionCfg = null, this.introMc = null, this.bCutscene = !1, this.bgmIndex = 1, this.teachStep = null, this.teachBar = null, this.teachTxt = null,
+        this.role = null, this.gScene = null, this.bPause = !1, this.loopChannel = null, this.bShoot = !1, this.bBomb = !1, this.bJoystick = !1, this.limitTime = 0 / 0, this.taskType = null, this.taskDesc = null, this.taskObjID = null, this.taskNum = 0, this.curTaskNum = 0, this.destination = null, this.prize = 0, this.honor = 0, this.gateIndex = 1, this.miniMap = null, this.battleUI = null, this.bGameOver = !1, this.pauseDlg = null, this.dlgPanel = null, this.missionCfg = null, this.introMc = null, this.bCutscene = !1,         this.bgmIndex = 1, this.teachStep = null, this.teachBar = null, this.teachTxt = null,
+        // 双人教学：两侧各一份进度与提示条
+        this.teachP1 = 0, this.teachP2 = 0, this.teachBar1 = null, this.teachTxt1 = null, this.teachBar2 = null, this.teachTxt2 = null, this._wbTeachP2Keys = [38, 40, 37, 39, 78, 77, 13],
         // 双人协同：P2 友军机（同一场战斗），及 P2 输入标志与状态
         this.role2 = null, this.bShoot2 = !1, this.bBomb2 = !1, this.p1Dead = !1, this.p2Dead = !1, this.p2TypeCode = 1, this.p2Top = null, this.p2Map = null, this.p2Dash = null, this.p2DashItems = null, this._p2CMap = null,
         // 双人分屏：P2 镜像视图（wbMirror）+ 分割线
@@ -11739,7 +11741,7 @@ var Laya = window.Laya = function(t) {
       n(e, "com.ocean.ui.Mission", t);
       var s = e.prototype;
       return       s.init = function(t) {
-        this.bGameOver = !1, this.bShoot = !1, this.bBomb = !1, this.curTaskNum = 0, this.teachStep = null, this.missionCfg = t, this.miniMap = "res/map/" + t.src + ".png", this.gScene.loadMap("res/map/" + t.src + ".json"), this.gScene.produceClound(t.cloudNum), this.limitTime = Number(t.limitTime), this.limitTime > 0 && i.timer.once(1e3 * this.limitTime, this, this.onTimeOut), this.gateIndex = parseInt(t.id), this.taskType = t.taskType, this.taskDesc = t.goal, this.taskObjID = t.param1, this.taskNum = parseInt(t.param2), this.destination = g.parsePointsString(t.param3)[0], this.prize = parseInt(t.prize), this.honor = parseInt(t.honor);
+        this.bGameOver = !1, this.bShoot = !1, this.bBomb = !1, this.curTaskNum = 0, this.teachStep = null, this.teachP1 = 0, this.teachP2 = 0, this.missionCfg = t, this.miniMap = "res/map/" + t.src + ".png", this.gScene.loadMap("res/map/" + t.src + ".json"), this.gScene.produceClound(t.cloudNum), this.limitTime = Number(t.limitTime), this.limitTime > 0 && i.timer.once(1e3 * this.limitTime, this, this.onTimeOut), this.gateIndex = parseInt(t.id), this.taskType = t.taskType, this.taskDesc = t.goal, this.taskObjID = t.param1, this.taskNum = parseInt(t.param2), this.destination = g.parsePointsString(t.param3)[0], this.prize = parseInt(t.prize), this.honor = parseInt(t.honor);
         var e = $n.instance.curPlaneCfg;
         // 双人模式：P1 用选关界面左键选的机型（未选则回退车库当前机）
         y.storage.__wb_twoPlayer && y.storage.__wb_p1Plane && (e = y.getObjectByID(y.storage.__wb_p1Plane) || e);
@@ -11773,6 +11775,8 @@ var Laya = window.Laya = function(t) {
           this.p2Map && (this.p2Map.removeSelf(), this.p2Map = null),
           this.p2Dash && (this.p2Dash.removeSelf(), this.p2Dash = null)
         }
+        // 教学关：showTaskInfo 在双人分支之前就跑过一次（当时 role2 还没生成），这里进分屏后重建两侧教学条
+        "teach" == this.taskType && (this.buildTeachBar(), this.showTaskInfo());
         var a = null != t.chapter ? parseInt(t.chapter) >= 6 ? 4 : Math.ceil(3 * Math.random()) : Math.floor((parseInt(t.id) - 1) / 12) >= 6 ? 4 : Math.ceil(3 * Math.random());
         this.bgmIndex = a, i.timer.frameLoop(1, this, this.onUpdate), i.stage.on("keydown", this, this.onKeyDown), i.stage.on("keyup", this, this.onKeyUp), this.showIntro()
       }, s.showIntro = function() {
@@ -11933,7 +11937,10 @@ var Laya = window.Laya = function(t) {
           var od = bu.destFrame, cd = M.get(bu.destFrame);
           cd && (cd.visible = od.visible, od.visible && od.skin && cd.skin != od.skin && (cd.skin = od.skin), od.visible && cd.pos(od.x, od.y))
         }
-      }, s.updateSplitView = function() {
+      },       s.updateSplitView = function() {
+        // 教学提示条：随屏幕宽度每帧校正（双人时左右各一条，单人居中一条）
+        var W0 = i.stage.width;
+        this.teachBar && (this.teachBar.x = W0 / 2 - 260), this.teachBar1 && (this.teachBar1.x = W0 / 4 - 260), this.teachBar2 && (this.teachBar2.x = 3 * W0 / 4 - 260);
         // 双人分屏：左半=P1(真实场景)，右半=P2(镜像视图)；每帧校正布局并同步
         if (this.mirror && this.role2) {
           var W = i.stage.width, H = i.stage.height, sr = this.gScene.scaleRatio;
@@ -11980,10 +11987,7 @@ var Laya = window.Laya = function(t) {
         if (this.bCutscene) return this.skipIntro(), void 0;
         if (27 == t.keyCode) return this.togglePause(), void 0;
         if (this.bPause) return void 0;
-        if ("teach" == this.taskType && null != this.teachStep) {
-          var te = e.TEACH[this.teachStep];
-          te && -1 != te.keys.indexOf(t.keyCode) && (this.teachStep++, this.teachStep >= e.TEACH.length ? this.spawnTeachTarget() : this.showTaskInfo())
-        }
+        if ("teach" == this.taskType && null != this.teachStep) this.wbTeachNext(t)
         if (!this.bJoystick) switch (t.keyCode) {
           case 87:
             this.role.bOverHeat ? (this.battleUI.showWarning("发动机过热！"), this.role.speedUp(0)) : this.role.speedUp(1);
@@ -12018,8 +12022,12 @@ var Laya = window.Laya = function(t) {
             this.role2 && (this.bBomb2 = !0);
             break;
           case 74:
-          case 13:
             this.bShoot = !0;
+            break;
+          case 13:
+            // 多人：Enter = P2 拉起爬升（P2 用方向键，没有空格键位，用 Enter 代替拉升）；单人保持原版（Enter = P1 开火）
+            if (this.role2 && !this.p2Dead) this.role2.bOverHeat ? (this.battleUI.showWarning("P2 发动机过热！"), this.role2.onPitchKey(0)) : this.role2.onPitchKey(1);
+            else this.bShoot = !0;
             break;
           case 75:
             this.bBomb = !0;
@@ -12038,7 +12046,8 @@ var Laya = window.Laya = function(t) {
             } else i = this.role.getGun(0), i.reload();
             break;
           case 16:
-            this.role.onRollKey(1);
+            // 双人：左Shift = P1 翻滚，右Shift = P2 翻滚（单人保持原版：Shift = P1 翻滚）
+            this.wbIsRightShift(t) ? (this.role2 && !this.p2Dead) && this.role2.onRollKey(1) : this.role.onRollKey(1);
             break;
           case 85:
             e.scaleRatio > .75 && (this.gScene.scaleRatio -= .25, e.scaleRatio = this.gScene.scaleRatio, this.battleUI.readjustFrameSize());
@@ -12075,8 +12084,10 @@ var Laya = window.Laya = function(t) {
             this.bBomb2 = !1;
             break;
           case 74:
-          case 13:
             this.bShoot = !1;
+            break;
+          case 13:
+            this.role2 && !this.p2Dead ? this.role2.onPitchKey(0) : this.bShoot = !1;
             break;
           case 75:
             this.bBomb = !1;
@@ -12086,8 +12097,12 @@ var Laya = window.Laya = function(t) {
             this.role.onPitchKey(0);
             break;
           case 16:
-            this.role.onRollKey(0)
+            this.wbIsRightShift(t) ? (this.role2 && !this.p2Dead) && this.role2.onRollKey(0) : this.role.onRollKey(0)
         }
+      }, s.wbIsRightShift = function(t) {
+        // 区分左/右 Shift：Laya 的键盘事件带 nativeEvent（原生 DOM 事件），可拿到 location/code
+        var n = t && t.nativeEvent;
+        return !!(n && (2 === n.location || "ShiftRight" === n.code))
       }, s.onUpdate = function() {
         if (!this.bPause && this.role) {
           // 飞行员档案：按出击机型累计驾驶时长（idx 0=战斗机 1=攻击机 2=轰炸机 3=运输/侦察）
@@ -12112,31 +12127,61 @@ var Laya = window.Laya = function(t) {
             for (var n in s) e = s[n], e.id == this.taskObjID && this.gameOver("kill" != this.taskType)
           }
         }
+      }, s.wbTeachNext = function(t) {
+        // 教学推进：多人模式下两侧各记一份进度，必须双方都完成当前步骤才进入下一步
+        var k = t.keyCode, te = e.TEACH[this.teachStep];
+        if (!te || -1 == te.keys.indexOf(k)) return;
+        if (!this.role2) return this.teachP1++, this.teachStep++, this.teachStep >= e.TEACH.length ? this.spawnTeachTarget() : this.showTaskInfo(), void 0;
+        var who = 2 == this.wbTeachOwner(t, k) ? 2 : 1;
+        if (2 == who) {
+          if (!this.role2 || this.p2Dead) return;
+          this.teachP2++;
+        } else {
+          if (this.p1Dead) return;
+          this.teachP1++;
+        }
+        if (this.teachP1 >= this.teachStep + 1 && this.teachP2 >= this.teachStep + 1) this.teachStep++, this.teachP1 = this.teachP2 = this.teachStep, this.teachStep >= e.TEACH.length ? this.spawnTeachTarget() : this.showTaskInfo();
+        else this.showTaskInfo()
+      }, s.wbTeachOwner = function(t, k) {
+        // 判断这个按键属于 P1 还是 P2（Shift 按左右区分，其余按键位归属）
+        if (16 == k) return this.wbIsRightShift(t) ? 2 : 1;
+        return -1 != this._wbTeachP2Keys.indexOf(k) ? 2 : 1
       }, s.showTaskInfo = function() {
         if ("teach" == this.taskType) {
           null == this.teachStep && (this.teachStep = 0, this.destination = null, this.buildTeachBar());
-          var t = e.TEACH[this.teachStep];
-          return this.teachTxt.text = t ? "教学 " + (this.teachStep + 1) + "/" + e.TEACH.length + "：" + t.text : "最后一步：击落前方出现的靶机！", this.battleUI.setTaskInfo("教学：" + (t ? t.text : "击落靶机")), void 0
+          var t = e.TEACH[this.teachStep], two = !!this.role2,
+            s1 = t ? "P1 教学 " + (this.teachStep + 1) + "/" + e.TEACH.length + "：" + t.t1 : "最后一步：击落前方出现的靶机！",
+            s2 = t ? "P2 教学 " + (this.teachStep + 1) + "/" + e.TEACH.length + "：" + t.t2 : "最后一步：击落前方出现的靶机！";
+          if (two && t) this.teachP1 > this.teachStep && (s1 += " 完成 ✓"), this.teachP2 > this.teachStep && (s2 += " 完成 ✓");
+          this.teachTxt && (this.teachTxt.text = s1), this.teachTxt1 && (this.teachTxt1.text = s1), this.teachTxt2 && (this.teachTxt2.text = s2);
+          return this.battleUI.setTaskInfo("教学：" + (t ? two ? t.t1 + " ｜ P2：" + t.t2 : t.t1 : "击落靶机")), void 0
         }
         var t = "kill" == this.taskType ? this.curTaskNum : this.taskNum - this.curTaskNum;
         this.battleUI.setTaskInfo("任务：" + this.taskDesc + " " + t + "/" + this.taskNum)
       }, s.buildTeachBar = function() {
-        this.teachBar && (this.teachBar.removeSelf(), this.teachBar = null);
-        var t = new Gi;
-        t.mouseEnabled = !1, t.x = i.stage.width / 2 - 260, t.y = 96;
-        var n = new Gi;
-        n.graphics.drawRect(0, 0, 520, 62, "#000000"), n.alpha = .55, t.addChild(n);
-        var r = new us;
-        r.font = "SimHei", r.fontSize = 24, r.color = "#ffe08a", r.width = 520, r.align = "center", r.y = 17, t.addChild(r), this.teachTxt = r, this.teachBar = t, this.addChild(t)
+        this.teachBar && (this.teachBar.removeSelf(), this.teachBar = null, this.teachTxt = null, this.teachBar1 = null, this.teachTxt1 = null, this.teachBar2 = null, this.teachTxt2 = null);
+        var t = function(x, y) {
+          var t = new Gi;
+          t.mouseEnabled = !1;
+          var n = new Gi;
+          n.graphics.drawRect(0, 0, 520, 62, "#000000"), n.alpha = .55, t.addChild(n);
+          var r = new us;
+          return r.font = "SimHei", r.fontSize = 22, r.color = "#ffe08a", r.width = 500, r.align = "center", r.y = 17, t.addChild(r), t.pos(x, y), t
+        }, W = i.stage.width, y = 96;
+        this.role2 ? (this.teachBar1 = t(W / 4 - 260, y), this.teachTxt1 = this.teachBar1.getChildAt(1), this.addChild(this.teachBar1), this.teachBar2 = t(3 * W / 4 - 260, y), this.teachTxt2 = this.teachBar2.getChildAt(1), this.addChild(this.teachBar2)) : (this.teachBar = t(W / 2 - 260, y), this.teachTxt = this.teachBar.getChildAt(1), this.addChild(this.teachBar))
       }, s.spawnTeachTarget = function() {
-        this.teachStep = null, this.teachTxt && (this.teachTxt.text = "最后一步：击落前方出现的靶机！");
+        this.teachStep = null, this.teachP1 = 0, this.teachP2 = 0;
+        var s = "最后一步：击落前方出现的靶机！";
+        this.teachTxt && (this.teachTxt.text = s), this.teachTxt1 && (this.teachTxt1.text = s), this.teachTxt2 && (this.teachTxt2.text = s);
+        var bx = this.role.x, by = this.role.y;
+        this.role2 && !this.p2Dead && !this.p1Dead && (bx = (bx + this.role2.x) / 2, by = (by + this.role2.y) / 2);
         var t = {
             typeId: this.taskObjID || "plane19",
             bEnemy: "true",
             hp: "160",
             ai: "cruise",
-            x: String(this.role.x + 700),
-            y: String(this.role.y)
+            x: String(bx + 700),
+            y: String(by)
           },
           n = this.parseObject(t);
         n.id = "teachTarget", n.on("dead", this, this.onObjectDead), this.gScene.addGameObject(n), this.taskType = "kill", this.taskObjID = "teachTarget", this.taskNum = 1, this.curTaskNum = 0, this.taskDesc = "击落靶机", this.showTaskInfo()
@@ -12174,7 +12219,9 @@ var Laya = window.Laya = function(t) {
       }, s.onQuitClick = function() {
         this.pause = !1, this.pauseDlg && (this.pauseDlg.visible = !1), i.timer.clear(this, this.onTimeOut), this.dispose(), b.showWindow(cr)
       }, s.dispose = function() {
-        y.saveData(), i.timer.clear(this, this.onIntroEnd), this.introMc && (this.introMc.removeSelf(), this.introMc = null), this.teachBar && (this.teachBar.removeSelf(), this.teachBar = null, this.teachTxt = null), this.bCutscene = !1, this.pause = !1, this.mirror && (this.mirror.dispose(), this.mirror = null), this._wbDivider && (this._wbDivider.removeSelf(), this._wbDivider = null), this._wbSW = 0, this._wbSH = 0, this.gScene.clear(), this.role = null, this.role2 = null,
+        y.saveData(), i.timer.clear(this, this.onIntroEnd), this.introMc && (this.introMc.removeSelf(), this.introMc = null), this.teachBar && (this.teachBar.removeSelf(), this.teachBar = null, this.teachTxt = null), this.bCutscene = !1,
+        // 双人教学提示条（两侧各一条，dispose 时一并清理）
+        this.teachBar1 && (this.teachBar1.removeSelf(), this.teachBar1 = null, this.teachTxt1 = null), this.teachBar2 && (this.teachBar2.removeSelf(), this.teachBar2 = null, this.teachTxt2 = null), this.pause = !1, this.mirror && (this.mirror.dispose(), this.mirror = null), this._wbDivider && (this._wbDivider.removeSelf(), this._wbDivider = null), this._wbSW = 0, this._wbSH = 0, this.gScene.clear(), this.role = null, this.role2 = null,
         this.p2Dash && (this.p2Dash.removeSelf(), this.p2Dash = null);
         for (var q in this.p2DashItems || []) {
           var p2it = this.p2DashItems[q];
@@ -12195,27 +12242,34 @@ var Laya = window.Laya = function(t) {
         return this.bPause
       }, function(t) {
         this.bPause = t
-      }), e.scaleRatio = 1, e.TEACH = [{
+      }),         e.scaleRatio = 1, e.TEACH = [{
         keys: [87, 38],
-        text: "按 W 加速前进"
+        t1: "按 W 加速前进",
+        t2: "按 ↑ 加速前进"
       }, {
         keys: [83, 40],
-        text: "按 S 减速"
+        t1: "按 S 减速",
+        t2: "按 ↓ 减速"
       }, {
         keys: [65, 37, 68, 39],
-        text: "按 A / D 左右偏转"
+        t1: "按 A / D 左右偏转",
+        t2: "按 ← / → 左右偏转"
       }, {
-        keys: [81, 69],
-        text: "按 Q / E 左右急转"
+        keys: [81, 69, 78, 77],
+        t1: "按 Q / E 开火（主 / 副武器）",
+        t2: "按 N / M 开火（主 / 副武器）"
       }, {
-        keys: [32],
-        text: "按 空格 拉起爬升"
+        keys: [32, 13],
+        t1: "按 空格 拉起爬升",
+        t2: "按 Enter 拉起爬升"
       }, {
         keys: [16],
-        text: "按 Shift 翻滚"
+        t1: "按 左 Shift 翻滚",
+        t2: "按 右 Shift 翻滚"
       }, {
-        keys: [74, 13],
-        text: "按 J 使用主武器开火"
+        keys: [74, 78],
+        t1: "按 J 使用主武器开火",
+        t2: "按 N 使用主武器开火"
       }], e
     }(Gi),
     us = function(t) {
@@ -21660,7 +21714,7 @@ var Laya = window.Laya = function(t) {
         return tx.font = c.font, tx.fontSize = c.fontSize, tx.bold = c.bold, tx.color = c.color, tx.align = c.align, tx.width = c.width, tx.text = c.text, tx.mouseEnabled = !1, tx
       }
       var p = new Gi;
-      p.mouseEnabled = !1, p.mouseChildren = !1, c._graphics && c._graphics._cmds && c._graphics._cmds.length > 0 && (p.graphics = c.graphics);
+      p.mouseEnabled = !1, p.mouseChildren = !1, c._graphics && (c._graphics._cmds ? c._graphics._cmds.length > 0 : !!c._graphics._one) && (p.graphics = c.graphics);
       for (var j = 0; j < c.numChildren; j++) {
         var cc = this.cloneNode(c.getChildAt(j));
         cc && p.addChild(cc)
@@ -21673,8 +21727,13 @@ var Laya = window.Laya = function(t) {
       // 关键：GameObject(战斗机/建筑) 的 rotation 访问器返回弧度，但其底层 Laya 显示旋转已是度数；
       // 镜像代理是普通 Sprite，必须把弧度转回度数，否则飞机朝向错乱（之前右屏飞机方向错误即此因）
       p.rotation = r._rotation !== undefined ? g.rad2deg(r._rotation) : r.rotation,
-      p.alpha = r.alpha, p.visible = r.visible, p.scaleX = r.scaleX, p.scaleY = r.scaleY,
-      r instanceof ks ? p.skin != r.skin && (p.skin = r.skin) : r instanceof us ? p.text != r.text && (p.text = r.text) : r._frames && p.graphics != r.graphics && (p.graphics = r.graphics);
+      p.alpha = r.alpha, p.visible = r.visible, p.scaleX = r.scaleX, p.scaleY = r.scaleY;
+      // 注意：普通 Sprite（子弹 Bullet / 建筑等）没有 _frames，只有 Animation 才有；
+      // 这里必须按"是否有实际绘图指令"来判断，否则子弹在镜像视图里永远是空白（P2 看不到子弹）
+      // 注意 Laya Graphics：只有 1 条指令时会走 _one 快路径（_cmds 为 null），必须一并判断，
+      // 否则子弹（drawTexture 单指令）在镜像视图里依然空白
+      var wbG = r._graphics, wbHasG = wbG && (wbG._cmds ? wbG._cmds.length > 0 : !!wbG._one);
+      r instanceof ks ? p.skin != r.skin && (p.skin = r.skin) : r instanceof us ? p.text != r.text && (p.text = r.text) : (wbHasG || r._frames) && p.graphics != r.graphics && (p.graphics = r.graphics);
       // 复现开火/爆炸等动画（炮口火焰、爆炸特效）到镜像视图：让 P2 也能看到开火效果
       if (r instanceof Gs && p instanceof Gs && r._actionName) {
         p.visible = r.visible;
