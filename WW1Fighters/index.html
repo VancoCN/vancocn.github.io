@@ -11730,13 +11730,17 @@ var Laya = window.Laya = function(t) {
     }(Gi),
     cs = function(t) {
       function e() {
-        this.role = null, this.gScene = null, this.bPause = !1, this.loopChannel = null, this.bShoot = !1, this.bBomb = !1, this.bJoystick = !1, this.limitTime = 0 / 0, this.taskType = null, this.taskDesc = null, this.taskObjID = null, this.taskNum = 0, this.curTaskNum = 0, this.destination = null, this.prize = 0, this.honor = 0, this.gateIndex = 1, this.miniMap = null, this.battleUI = null, this.bGameOver = !1, this.pauseDlg = null, this.dlgPanel = null, this.missionCfg = null, this.introMc = null, this.bCutscene = !1, this.bgmIndex = 1, this.teachStep = null, this.teachBar = null, this.teachTxt = null, e.__super.call(this), this.gScene = new rs, this.gScene.mouseEnabled = !1, this.gScene.scaleRatio = e.scaleRatio, this.addChild(this.gScene), this.battleUI = new Gn, this.addChild(this.battleUI), this.gScene.on("complete", this.battleUI, this.battleUI.readjustFrameSize)
+        this.role = null, this.gScene = null, this.bPause = !1, this.loopChannel = null, this.bShoot = !1, this.bBomb = !1, this.bJoystick = !1, this.limitTime = 0 / 0, this.taskType = null, this.taskDesc = null, this.taskObjID = null, this.taskNum = 0, this.curTaskNum = 0, this.destination = null, this.prize = 0, this.honor = 0, this.gateIndex = 1, this.miniMap = null, this.battleUI = null, this.bGameOver = !1, this.pauseDlg = null, this.dlgPanel = null, this.missionCfg = null, this.introMc = null, this.bCutscene = !1, this.bgmIndex = 1, this.teachStep = null, this.teachBar = null, this.teachTxt = null,
+        // 双人协同：P2 友军机（同一场战斗），及 P2 输入标志与状态
+        this.role2 = null, this.bShoot2 = !1, this.bBomb2 = !1, this.p1Dead = !1, this.p2Dead = !1, this.p2Hud = null, this.p2HudBar = null, this.p2TypeCode = 1, e.__super.call(this), this.gScene = new rs, this.gScene.mouseEnabled = !1, this.gScene.scaleRatio = e.scaleRatio, this.addChild(this.gScene), this.battleUI = new Gn, this.addChild(this.battleUI), this.gScene.on("complete", this.battleUI, this.battleUI.readjustFrameSize)
       }
       n(e, "com.ocean.ui.Mission", t);
       var s = e.prototype;
       return       s.init = function(t) {
         this.bGameOver = !1, this.bShoot = !1, this.bBomb = !1, this.curTaskNum = 0, this.teachStep = null, this.missionCfg = t, this.miniMap = "res/map/" + t.src + ".png", this.gScene.loadMap("res/map/" + t.src + ".json"), this.gScene.produceClound(t.cloudNum), this.limitTime = Number(t.limitTime), this.limitTime > 0 && i.timer.once(1e3 * this.limitTime, this, this.onTimeOut), this.gateIndex = parseInt(t.id), this.taskType = t.taskType, this.taskDesc = t.goal, this.taskObjID = t.param1, this.taskNum = parseInt(t.param2), this.destination = g.parsePointsString(t.param3)[0], this.prize = parseInt(t.prize), this.honor = parseInt(t.honor);
         var e = $n.instance.curPlaneCfg;
+        // 双人模式：P1 用选关界面左键选的机型（未选则回退车库当前机）
+        y.storage.__wb_twoPlayer && y.storage.__wb_p1Plane && (e = y.getObjectByID(y.storage.__wb_p1Plane) || e);
         this.playerTypeCode = parseInt(e.typeCode) || 1;
         this.role = this.parseObject(e, !0), this.role.loc = g.parsePointsString(t.bornPos)[0], this.role.rotation = g.deg2rad(Number(t.bornDir)), this.role.on("dead", this, this.onObjectDead), this.role.setMainRole(), this.role.bEnemy = !1;
         var s;
@@ -11746,6 +11750,16 @@ var Laya = window.Laya = function(t) {
           r.on("dead", this, this.onObjectDead), this.gScene.addGameObject(r)
         }
         this.gScene.addGameObject(this.role), this.battleUI.init(this), this.battleUI.alpha = 1, this.showTaskInfo();
+        // 双人协同：P2 作为友军加入同一场战斗（不同实例、不分屏）
+        this.p1Dead = !1, this.p2Dead = !1;
+        if (y.storage.__wb_twoPlayer) {
+          var p2cfg = y.getObjectByID(y.storage.__wb_p2Plane) || e;
+          this.p2TypeCode = parseInt(p2cfg.typeCode) || 1;
+          var r2 = this.parseObject(p2cfg, !0);
+          r2.bEnemy = !1, r2.setMainRole(), r2.on("dead", this, this.onObjectDead),
+          r2.x = this.role.x + 140, r2.y = this.role.y + 90, r2.rotation = this.role.rotation,
+          this.role2 = r2, this.gScene.addGameObject(r2), this.buildP2Hud()
+        } else this.role2 = null;
         var a = null != t.chapter ? parseInt(t.chapter) >= 6 ? 4 : Math.ceil(3 * Math.random()) : Math.floor((parseInt(t.id) - 1) / 12) >= 6 ? 4 : Math.ceil(3 * Math.random());
         this.bgmIndex = a, i.timer.frameLoop(1, this, this.onUpdate), i.stage.on("keydown", this, this.onKeyDown), i.stage.on("keyup", this, this.onKeyUp), this.showIntro()
       }, s.showIntro = function() {
@@ -11815,13 +11829,36 @@ var Laya = window.Laya = function(t) {
       }, s.onObjectDead = function(t) {
         t.off("dead", this, this.onObjectDead);
         var st = y.storage;
-        if (t == this.role) return st.crashCount = (st.crashCount || 0) + 1, this.gameOver(!1), void 0; // 坠毁=自机被摧毁
+        if (t == this.role) return st.crashCount = (st.crashCount || 0) + 1, y.storage.__wb_twoPlayer && this.role2 ? this.onPlayerCrashed(0) : this.gameOver(!1), void 0; // 坠毁=自机被摧毁
+        if (t == this.role2) return this.onPlayerCrashed(1), void 0;
         if (t.bEnemy)
           if (t instanceof com.ocean.game.Aircraft)
             // 击落=自己直接打掉；助攻=非自己击落但自己对敌机造成≥30%伤害（含其漏油自爆）
             t.__wbPLast && !t.__wbPFire ? st.killCount = (st.killCount || 0) + 1 : (t.__wbPDmg || 0) >= .3 * (t.maxHP || 1) && (st.assistCount = (st.assistCount || 0) + 1);
           else t instanceof com.ocean.game.Building && (st.buildingCount = (st.buildingCount || 0) + 1);
         return t.id == this.taskObjID && (this.curTaskNum++, this.showTaskInfo(), this.curTaskNum >= this.taskNum && ("kill" == this.taskType ? this.gameOver(!0) : this.gameOver(!1))), void 0
+      }, s.onPlayerCrashed = function(idx) {
+        // 双人协同：一人坠机不结算，双方都坠机才算任务失败
+        idx ? this.p2Dead = !0 : this.p1Dead = !0;
+        if (this.p1Dead && this.p2Dead) return this.gameOver(!1), void 0;
+        this.battleUI.showWarning(idx ? "P2 坠机！P1 继续战斗！" : "P1 坠机！P2 继续战斗！")
+      }, s.buildP2Hud = function() {
+        var t = new Gi;
+        t.mouseEnabled = !1;
+        var nm = new us;
+        nm.text = "P2 " + ((y.getObjectByID(y.storage.__wb_p2Plane) || {}).name || ""), nm.font = "SimHei", nm.fontSize = 16, nm.bold = !0, nm.color = "#ffd75e", t.addChild(nm);
+        var bk = new Gi;
+        bk.graphics.drawRect(0, 0, 160, 10, "#000000"), bk.alpha = .6, bk.y = 24, t.addChild(bk);
+        var bar = new Gi;
+        bar.graphics.drawRect(0, 0, 160, 10, "#7CFC00"), bar.y = 24, t.addChild(bar);
+        this.p2Hud = t, this.p2HudBar = bar, this.addChild(t), this.updateP2Hud()
+      }, s.updateP2Hud = function() {
+        if (this.p2Hud) {
+          this.p2Hud.x = i.stage.width - 200, this.p2Hud.y = 16;
+          if (this.p2Dead || !this.role2) return this.p2Hud.visible = !1, void 0;
+          var r = this.role2.hp > 0 ? this.role2.hp / this.role2.maxHP : 0;
+          this.p2HudBar.scaleX = Math.max(0, Math.min(1, r))
+        }
       }, s.onTimeOut = function() {
         i.timer.clear(this, this.onTimeOut), "kill" == this.taskType ? this.gameOver(!1) : "protect" == this.taskType ? this.gameOver(!0) : this.gameOver(!0)
       }, s.gameOver = function(t) {
@@ -11840,26 +11877,36 @@ var Laya = window.Laya = function(t) {
         }
         if (!this.bJoystick) switch (t.keyCode) {
           case 87:
-          case 38:
             this.role.bOverHeat ? (this.battleUI.showWarning("发动机过热！"), this.role.speedUp(0)) : this.role.speedUp(1);
+            break;
+          case 38:
+            this.role2 ? this.role2.speedUp(1) : this.role.bOverHeat ? (this.battleUI.showWarning("发动机过热！"), this.role.speedUp(0)) : this.role.speedUp(1);
             break;
           case 83:
           case 40:
-            this.role.speedUp(-1);
+            40 == t.keyCode && this.role2 ? this.role2.speedUp(-1) : this.role.speedUp(-1);
             break;
           case 65:
           case 37:
-            this.role.onYawKey(-1);
+            // 双人：A/D = P1 急转弯，←/→ = P2 急转弯；单人与原版一致（平转）
+            65 == t.keyCode ? (this.role2 ? this.role.onSuddenKey(-1) : this.role.onYawKey(-1)) : this.role2 ? this.role2.onSuddenKey(-1) : this.role.onYawKey(-1);
             break;
           case 68:
           case 39:
-            this.role.onYawKey(1);
+            68 == t.keyCode ? (this.role2 ? this.role.onSuddenKey(1) : this.role.onYawKey(1)) : this.role2 ? this.role2.onSuddenKey(1) : this.role.onYawKey(1);
             break;
           case 81:
-            this.role.bOverHeat ? (this.battleUI.showWarning("发动机过热!"), this.role.onSuddenKey(0), this.role.onYawKey(-1)) : this.role.onSuddenKey(-1);
+            // 双人：Q = P1 主武器开火（按住持续射击）；单人保持急转弯
+            this.role2 ? this.bShoot = !0 : this.role.bOverHeat ? (this.battleUI.showWarning("发动机过热!"), this.role.onSuddenKey(0), this.role.onYawKey(-1)) : this.role.onSuddenKey(-1);
             break;
           case 69:
-            this.role.bOverHeat ? (this.battleUI.showWarning("发动机过热！"), this.role.onSuddenKey(0), this.role.onYawKey(1)) : this.role.onSuddenKey(1);
+            this.role2 ? this.bBomb = !0 : this.role.bOverHeat ? (this.battleUI.showWarning("发动机过热！"), this.role.onSuddenKey(0), this.role.onYawKey(1)) : this.role.onSuddenKey(1);
+            break;
+          case 78:
+            this.role2 && (this.bShoot2 = !0);
+            break;
+          case 77:
+            this.role2 && (this.bBomb2 = !0);
             break;
           case 74:
           case 13:
@@ -11894,19 +11941,29 @@ var Laya = window.Laya = function(t) {
         if (!this.bJoystick) switch (t.keyCode) {
           case 87:
           case 83:
+            this.role.speedUp(0);
+            break;
           case 38:
           case 40:
-            this.role.speedUp(0);
+            this.role2 ? this.role2.speedUp(0) : this.role.speedUp(0);
             break;
           case 65:
           case 68:
+            this.role2 ? this.role.onSuddenKey(0) : this.role.onYawKey(0);
+            break;
           case 37:
           case 39:
-            this.role.onYawKey(0);
+            this.role2 ? this.role2.onSuddenKey(0) : this.role.onYawKey(0);
             break;
           case 81:
           case 69:
-            this.role.bOverHeat && this.role.onYawKey(0), this.role.onSuddenKey(0);
+            this.role2 ? (81 == t.keyCode ? this.bShoot = !1 : this.bBomb = !1) : (this.role.bOverHeat && this.role.onYawKey(0), this.role.onSuddenKey(0));
+            break;
+          case 78:
+            this.bShoot2 = !1;
+            break;
+          case 77:
+            this.bBomb2 = !1;
             break;
           case 74:
           case 13:
@@ -11927,11 +11984,21 @@ var Laya = window.Laya = function(t) {
           // 飞行员档案：按出击机型累计驾驶时长（idx 0=战斗机 1=攻击机 2=轰炸机 3=运输/侦察）
           var st = y.storage, ti = (this.playerTypeCode || 1) - 1;
           st.flyTime || (st.flyTime = [0, 0, 0, 0]), ti >= 0 && ti <= 3 && (st.flyTime[ti] = (st.flyTime[ti] || 0) + i.timer.delta);
-          if (this.gScene.update(i.timer.delta), this.gScene.setViewPortCenter(this.role.x, this.role.y), this.battleUI.update(i.timer.delta), this.bShoot) {
+          // 摄像机：双人跟随机组中点（一人坠机后跟随存活者）
+          var cx = this.role.x, cy = this.role.y;
+          this.role2 && (this.p1Dead ? this.p2Dead || (cx = this.role2.x, cy = this.role2.y) : this.p2Dead ? (cx = this.role.x, cy = this.role.y) : (cx = (this.role.x + this.role2.x) / 2, cy = (this.role.y + this.role2.y) / 2));
+          if (this.gScene.update(i.timer.delta), this.gScene.setViewPortCenter(cx, cy), this.battleUI.update(i.timer.delta), this.updateP2Hud(), this.bShoot && !this.p1Dead) {
             var t = this.role.getGun(0);
             t && (t.isChamberEmpty ? this.battleUI.showWarning("主武器没弹药啦！") : t.shoot())
           }
-          if (this.bBomb && this.role.gunArr.length > 1 && (t = this.role.getGun(1), t && (t.isChamberEmpty ? this.battleUI.showWarning("副武器没弹药啦！") : t.shoot())), this.destination) {
+          if (this.bBomb && !this.p1Dead && this.role.gunArr.length > 1 && (t = this.role.getGun(1), t && (t.isChamberEmpty ? this.battleUI.showWarning("副武器没弹药啦！") : t.shoot())),
+          // P2 开火（N 主武器 / M 副武器）
+          this.role2 && !this.p2Dead) {
+            var g2;
+            this.bShoot2 && (g2 = this.role2.getGun(0), g2 && (g2.isChamberEmpty ? this.battleUI.showWarning("P2 主武器没弹药啦！") : g2.shoot()));
+            this.bBomb2 && (g2 = this.role2.getGun(1), g2 && (g2.isChamberEmpty ? this.battleUI.showWarning("P2 副武器没弹药啦！") : g2.shoot()))
+          }
+          if (this.destination) {
             var e, s = this.gScene.getObjectsInCircle(this.destination.x, this.destination.y, 160);
             for (var n in s) e = s[n], e.id == this.taskObjID && this.gameOver("kill" != this.taskType)
           }
@@ -11979,7 +12046,7 @@ var Laya = window.Laya = function(t) {
           h = [this.onResumeClick, this.onRestartClick, this.onQuitClick];
         for (var o = 0; o < 3; o++) {
           var l = new hn("main/btn2Skin.png", a[o]);
-          l.size(240, 56), l.labelSize = 22, l.labelFont = "SimHei", l.labelColors = "#ffffff,#ffffff,#ffffff,#888888", l.x = 180, l.y = 96 + 70 * o, l.on("click", this, h[o]), n.addChild(l)
+          l.size(240, 56), l.labelSize = 22, l.labelFont = "SimHei", l.labelColors = "#ffffff,#ffffff,#ffffff,#888888", l.x = 60, l.y = 96 + 70 * o, l.on("click", this, h[o]), n.addChild(l)
         }
         this.pauseDlg = t, this.dlgPanel = n, this.addChild(t), this.onPauseResize()
       }, s.onPauseResize = function() {
@@ -11997,7 +12064,7 @@ var Laya = window.Laya = function(t) {
       }, s.onQuitClick = function() {
         this.pause = !1, this.pauseDlg && (this.pauseDlg.visible = !1), i.timer.clear(this, this.onTimeOut), this.dispose(), b.showWindow(cr)
       }, s.dispose = function() {
-        y.saveData(), i.timer.clear(this, this.onIntroEnd), this.introMc && (this.introMc.removeSelf(), this.introMc = null), this.teachBar && (this.teachBar.removeSelf(), this.teachBar = null, this.teachTxt = null), this.bCutscene = !1, this.pause = !1, this.gScene.clear(), this.role = null, this.loopChannel && Se.to(this.loopChannel, {
+        y.saveData(), i.timer.clear(this, this.onIntroEnd), this.introMc && (this.introMc.removeSelf(), this.introMc = null), this.teachBar && (this.teachBar.removeSelf(), this.teachBar = null, this.teachTxt = null), this.bCutscene = !1, this.pause = !1, this.gScene.clear(), this.role = null, this.role2 = null, this.p2Hud && (this.p2Hud.removeSelf(), this.p2Hud = null, this.p2HudBar = null), this.loopChannel && Se.to(this.loopChannel, {
           volume: 0
         }, 1e3), Z.playMusic("res/sound/bgMusic0.mp3"), i.stage.off("keydown", this, this.onKeyDown), i.stage.off("keyup", this, this.onKeyUp), i.timer.clear(this, this.onUpdate);
         var t;
@@ -20263,8 +20330,13 @@ var Laya = window.Laya = function(t) {
           url: "res/atlas/" + h.src + ".json",
           type: "atlas"
         }), r[h.src] = !0);
-        // 双人模式：额外预载 P2 飞机图集（P1 已在上面的循环里随 curPlaneCfg 预载）
+        // 双人模式：额外预载 P1/P2 所选飞机图集（P1 若与车库当前机不同也需预载）
         if (y.storage.__wb_twoPlayer) {
+          var p1c = y.getObjectByID(y.storage.__wb_p1Plane);
+          p1c && p1c.src && !r[p1c.src] && (e.resArr.push({
+            url: "res/atlas/" + p1c.src + ".json",
+            type: "atlas"
+          }), r[p1c.src] = !0);
           var p2c = y.getObjectByID(y.storage.__wb_p2Plane);
           if (p2c) {
             "false" == p2c.bPreLoad && !r.temporary && (e.resArr.push({
@@ -20299,11 +20371,8 @@ var Laya = window.Laya = function(t) {
           n.loadAnimation("res/" + e)
         }
         var r;
-        if (y.storage.__wb_twoPlayer) {
-          r = new com.ocean.ui.TwoPlayerMission();
-          b.layer.removeChildren(), b.layer.addChild(r)
-        } else r = b.showWindow(cs);
-        r.init(t)
+        // 双人协同与单人共用同一个 Mission 实例（P2 友军机在 Mission.init 内生成）
+        r = b.showWindow(cs), r.init(t)
       }, s.setProgress = function(t) {
         this.prgsBar.scrollRect.width = 580 * t
       }, e.resArr = [], e
@@ -21442,170 +21511,6 @@ var Laya = window.Laya = function(t) {
         }
       }, e
     }(rr);
-    // ===== 双人同屏：同一关卡，两个独立显示副本（左 P1 / 右 P2）=====
-    // 因 LayaAir 该构建无 RenderTexture，无法"一世界双摄像机"，故采用两个原生 Mission 实例，
-    // 各自完整模拟+原生渲染（自带小地图/状态UI），缩放到左右半屏，互不冲突。
-    wb2p = function(t) {
-      function e() {
-        this.m1 = null, this.m2 = null, this.crashed = [!1, !1], this.winMarked = [!1, !1],
-        this.bP1Main = !1, this.bP1Sub = !1, this.bP2Main = !1, this.bP2Sub = !1,
-        this.bPaused = !1, this.bEnded = !1, this._backed = !1, this.pauseDlg = null, this.missionCfg = null, e.__super.call(this)
-      }
-      n(e, "com.ocean.ui.TwoPlayerMission", t);
-      var s = e.prototype;
-      return s.init = function(t) {
-        this.missionCfg = t;
-        var W = i.stage.width, H = i.stage.height, halfW = W / 2, sy = H * .25;
-        // 黑底 + 分隔线（先建，m1/m2 之后盖上，分隔线再盖回顶部）
-        var bg = new Gi;
-        bg.graphics.drawRect(0, 0, W, H, "#000000"), bg.mouseEnabled = !1, this.addChild(bg);
-        // 两个独立 Mission 实例（同一关卡，各自渲染副本）
-        var p1cfg = y.getObjectByID(y.storage.__wb_p1Plane) || $n.instance.curPlaneCfg;
-        var p2cfg = y.getObjectByID(y.storage.__wb_p2Plane) || p1cfg;
-        this.m1 = new cs(), this.m2 = new cs();
-        $n.instance.curPlaneCfg = p1cfg, this.m1.init(t);
-        $n.instance.curPlaneCfg = p2cfg, this.m2.init(t);
-        $n.instance.curPlaneCfg = p1cfg;
-        // 去掉两个子 Mission 的全局键盘处理（由本类统一接管输入）
-        i.stage.off("keydown", this.m1, this.m1.onKeyDown), i.stage.off("keyup", this.m1, this.m1.onKeyUp);
-        i.stage.off("keydown", this.m2, this.m2.onKeyDown), i.stage.off("keyup", this.m2, this.m2.onKeyUp);
-        // 改写子 Mission 的 gameOver：只记标志，不再弹原生结算（统一由本类结束）
-        var self = this;
-        this.m1.gameOver = function(win) { if (this.bGameOver) return; this.bGameOver = !0, this.__wbWin = win, y.saveData() };
-        this.m2.gameOver = function(win) { if (this.bGameOver) return; this.bGameOver = !0, this.__wbWin = win, y.saveData() };
-        // 接管坠机判定（仅当对应玩家角色死亡才算该玩家坠机）
-        this.m1.role.off("dead", this.m1, this.m1.onObjectDead), this.m1.role.on("dead", this, this.onPlayerDead, [0]);
-        this.m2.role.off("dead", this.m2, this.m2.onObjectDead), this.m2.role.on("dead", this, this.onPlayerDead, [1]);
-        // 过场：m1 跳过并起 BGM；m2 直接跳过（避免双重战斗 BGM）。
-        // 跳过后立即把 m1.bCutscene 置否，避免 onKeyDown 的过场守卫在淡出 380ms 内吃掉输入。
-        this.m1.skipIntro && this.m1.skipIntro(), this.m1.bCutscene = !1;
-        i.timer.clear(this.m2, this.m2.onIntroEnd), this.m2.bCutscene = !1, this.m2.pause = !1, this.m2.introMc && (this.m2.introMc.removeSelf(), this.m2.introMc = null);
-        // 半屏缩放与定位（各 0.5，纵向居中）
-        this.m1.scaleX = this.m1.scaleY = .5, this.m1.x = 0, this.m1.y = sy;
-        this.m2.scaleX = this.m2.scaleY = .5, this.m2.x = halfW, this.m2.y = sy;
-        this.addChild(this.m1), this.addChild(this.m2);
-        // 分隔线 + 半屏标识（盖在最上层）
-        var line = new Gi;
-        line.graphics.drawLine(halfW, 0, halfW, H, "#3a4a5a", 2), this.addChild(line);
-        this.addHalfLabel("P1", halfW / 2), this.addHalfLabel("P2", halfW + halfW / 2);
-        // 输入 & 主循环 & 自适应
-        i.stage.on("keydown", this, this.onKeyDown), i.stage.on("keyup", this, this.onKeyUp), i.stage.on("resize", this, this.onResize);
-        i.timer.frameLoop(1, this, this.onUpdate)
-      }, s.addHalfLabel = function(txt, x) {
-        var tx = new us;
-        tx.text = txt, tx.font = "SimHei", tx.fontSize = 30, tx.bold = !0, tx.color = "#ffe08a", tx.width = 200, tx.align = "center", tx.x = x - 100, tx.y = 8, this.addChild(tx)
-      }, s.onPlayerDead = function(idx) {
-        if (this.crashed[idx]) return;
-        this.crashed[idx] = !0;
-        var m = idx ? this.m2 : this.m1;
-        m.bGameOver = !0, m.__wbWin = !1, m.alpha = .4, y.storage.crashCount = (y.storage.crashCount || 0) + 1, y.saveData();
-        var W = i.stage.width, H = i.stage.height, halfW = W / 2, lx = idx ? halfW : 0, ov = new Gi;
-        ov.mouseEnabled = !1;
-        var tx = new us;
-        tx.text = "P" + (idx + 1) + " 坠机", tx.font = "SimHei", tx.fontSize = 40, tx.bold = !0, tx.color = "#ff5555", tx.width = halfW, tx.align = "center", tx.x = 0, tx.y = H / 2 - 20, ov.addChild(tx), ov.x = lx, this.addChild(ov)
-      }, s.onKeyDown = function(t) {
-        if (this.bEnded) return;
-        if (this.m1.bCutscene || this.m2.bCutscene) return this.m1.skipIntro && this.m1.skipIntro(), this.m2.bCutscene && (i.timer.clear(this.m2, this.m2.onIntroEnd), this.m2.bCutscene = !1, this.m2.pause = !1, this.m2.introMc && (this.m2.introMc.removeSelf(), this.m2.introMc = null)), void 0;
-        if (27 == t.keyCode) return this.togglePause(), void 0;
-        if (this.bPaused) return void 0;
-        var r1 = this.m1.role, r2 = this.m2.role;
-        switch (t.keyCode) {
-          case 87: r1 && r1.speedUp(1); break;
-          case 83: r1 && r1.speedUp(-1); break;
-          case 65: r1 && r1.onSuddenKey(-1); break;
-          case 68: r1 && r1.onSuddenKey(1); break;
-          case 81: this.bP1Main = !0; break;
-          case 69: this.bP1Sub = !0; break;
-          case 38: r2 && r2.speedUp(1); break;
-          case 40: r2 && r2.speedUp(-1); break;
-          case 37: r2 && r2.onSuddenKey(-1); break;
-          case 39: r2 && r2.onSuddenKey(1); break;
-          case 78: this.bP2Main = !0; break;
-          case 77: this.bP2Sub = !0; break
-        }
-      }, s.onKeyUp = function(t) {
-        var r1 = this.m1.role, r2 = this.m2.role;
-        switch (t.keyCode) {
-          case 87:
-          case 83: r1 && r1.speedUp(0); break;
-          case 65:
-          case 68: r1 && r1.onSuddenKey(0); break;
-          case 81: this.bP1Main = !1; break;
-          case 69: this.bP1Sub = !1; break;
-          case 38:
-          case 40: r2 && r2.speedUp(0); break;
-          case 37:
-          case 39: r2 && r2.onSuddenKey(0); break;
-          case 78: this.bP2Main = !1; break;
-          case 77: this.bP2Sub = !1; break
-        }
-      }, s.fireWeapon = function(m, idx, main, held) {
-        if (!held || this.crashed[idx] || m.bGameOver || !m.role) return;
-        var r = m.role, gun = r.getGun(main ? 0 : 1);
-        if (!gun) return;
-        if (r.bOverHeat) return m.battleUI.showWarning("发动机过热！");
-        if (gun.isChamberEmpty) return m.battleUI.showWarning(main ? "主武器没弹药啦！" : "副武器没弹药啦！");
-        gun.shoot()
-      }, s.onUpdate = function() {
-        if (this.bEnded) return;
-        if (!this.bPaused) {
-          this.fireWeapon(this.m1, 0, !0, this.bP1Main), this.fireWeapon(this.m1, 0, !1, this.bP1Sub);
-          this.fireWeapon(this.m2, 1, !0, this.bP2Main), this.fireWeapon(this.m2, 1, !1, this.bP2Sub);
-          this.markWinIfNeeded(0), this.markWinIfNeeded(1);
-          // 双方都结束（坠机或通关）才结算；只有"双方都坠机"才判失败，其余均算胜利
-          if (this.m1.bGameOver && this.m2.bGameOver) {
-            var bothCrashed = this.crashed[0] && this.crashed[1],
-              bothWon = this.m1.__wbWin && this.m2.__wbWin;
-            this.endGame(!bothCrashed, bothWon)
-          }
-        }
-      }, s.markWinIfNeeded = function(idx) {
-        var m = idx ? this.m2 : this.m1;
-        if (m.bGameOver && !this.crashed[idx] && m.__wbWin && !this.winMarked[idx]) {
-          this.winMarked[idx] = !0;
-          var W = i.stage.width, H = i.stage.height, halfW = W / 2, lx = idx ? halfW : 0, ov = new Gi;
-          ov.mouseEnabled = !1;
-          var tx = new us;
-          tx.text = "P" + (idx + 1) + " 完成任务", tx.font = "SimHei", tx.fontSize = 34, tx.bold = !0, tx.color = "#7CFC00", tx.width = halfW, tx.align = "center", tx.x = 0, tx.y = H / 2 - 20, ov.addChild(tx), ov.x = lx, this.addChild(ov)
-        }
-      }, s.togglePause = function() {
-        if (this.bEnded) return;
-        this.bPaused = !this.bPaused, this.m1.pause = this.bPaused, this.m2.pause = this.bPaused;
-        if (this.bPaused) {
-          if (!this.pauseDlg) {
-            var d = new Gi; d.mouseEnabled = !0;
-            var mask = new Gi; mask.graphics.drawRect(-500, -500, i.stage.width + 1e3, i.stage.height + 1e3, "#000000"), mask.alpha = .6, d.addChild(mask);
-            var panel = new Gi; panel.size(360, 200);
-            var tt = new us; tt.text = "已暂停", tt.font = "SimHei", tt.fontSize = 28, tt.bold = !0, tt.color = "#ffffff", tt.width = 360, tt.align = "center", tt.y = 30, panel.addChild(tt);
-            var rb = new hn("main/btn2Skin.png", "继续游戏"); rb.size(240, 56), rb.labelSize = 22, rb.labelFont = "SimHei", rb.labelColors = "#ffffff,#ffffff,#ffffff,#888888", rb.x = 60, rb.y = 90, rb.on("click", this, this.togglePause), panel.addChild(rb);
-            d.addChild(panel), d.x = (i.stage.width - 360) / 2, d.y = (i.stage.height - 200) / 2, this.pauseDlg = d, this.addChild(d)
-          }
-          this.pauseDlg.visible = !0
-        } else this.pauseDlg && (this.pauseDlg.visible = !1)
-      }, s.endGame = function(win, bothWon) {
-        if (this.bEnded) return;
-        this.bEnded = !0, this.bPaused = !0, this.m1.pause = !0, this.m2.pause = !0;
-        var ov = new Gi; ov.mouseEnabled = !0;
-        var mask = new Gi; mask.graphics.drawRect(-600, -600, i.stage.width + 1200, i.stage.height + 1200, "#000000"), mask.alpha = .75, ov.addChild(mask);
-        var title = win ? (bothWon ? "双双赢！" : "胜利！") : "任务失败", titleColor = win ? "#ffe08a" : "#ff5555";
-        var tt = new us; tt.text = title, tt.font = "SimHei", tt.fontSize = 56, tt.bold = !0, tt.color = titleColor, tt.width = 800, tt.align = "center", tt.x = (i.stage.width - 800) / 2, tt.y = i.stage.height / 2 - 60, ov.addChild(tt);
-        var stx = new us; stx.text = "点击或 3 秒后返回选关", stx.font = "SimHei", stx.fontSize = 24, stx.color = "#ffffff", stx.width = 800, stx.align = "center", stx.x = (i.stage.width - 800) / 2, stx.y = i.stage.height / 2 + 20, ov.addChild(stx);
-        ov.on("click", this, this.backToSelect), this.addChild(ov), i.timer.once(3000, this, this.backToSelect)
-      }, s.backToSelect = function() {
-        if (this._backed) return;
-        this._backed = !0, i.timer.clear(this, this.backToSelect), this.dispose();
-        var mi = b.showWindow(ir); mi.refresh && mi.refresh()
-      }, s.dispose = function() {
-        i.stage.off("keydown", this, this.onKeyDown), i.stage.off("keyup", this, this.onKeyUp), i.stage.off("resize", this, this.onResize);
-        i.timer.clearAll(this), this.m1 && this.m1.dispose && this.m1.dispose(), this.m2 && this.m2.dispose && this.m2.dispose(), this.removeSelf()
-      }, s.onResize = function() {
-        if (this.m1 && this.m2) {
-          var W = i.stage.width, H = i.stage.height, halfW = W / 2, sy = H * .25;
-          this.m1.scaleX = this.m1.scaleY = .5, this.m1.x = 0, this.m1.y = sy;
-          this.m2.scaleX = this.m2.scaleY = .5, this.m2.x = halfW, this.m2.y = sy
-        }
-      }, e
-    }(Gi),
   i.__init([bi, u, _e, as, si, se, hs, Q, Zs, ki, P, Te, fn, Ee]), new w
 }(window, document, Laya), "function" == typeof define && define.amd && define("laya.core", ["require", "exports"], function(t, e) {
   "use strict";
