@@ -11732,7 +11732,7 @@ var Laya = window.Laya = function(t) {
       function e() {
         this.role = null, this.gScene = null, this.bPause = !1, this.loopChannel = null, this.bShoot = !1, this.bBomb = !1, this.bJoystick = !1, this.limitTime = 0 / 0, this.taskType = null, this.taskDesc = null, this.taskObjID = null, this.taskNum = 0, this.curTaskNum = 0, this.destination = null, this.prize = 0, this.honor = 0, this.gateIndex = 1, this.miniMap = null, this.battleUI = null, this.bGameOver = !1, this.pauseDlg = null, this.dlgPanel = null, this.missionCfg = null, this.introMc = null, this.bCutscene = !1, this.bgmIndex = 1, this.teachStep = null, this.teachBar = null, this.teachTxt = null,
         // 双人协同：P2 友军机（同一场战斗），及 P2 输入标志与状态
-        this.role2 = null, this.bShoot2 = !1, this.bBomb2 = !1, this.p1Dead = !1, this.p2Dead = !1, this.p2Hud = null, this.p2HudBar = null, this.p2TypeCode = 1,
+        this.role2 = null, this.bShoot2 = !1, this.bBomb2 = !1, this.p1Dead = !1, this.p2Dead = !1, this.p2TypeCode = 1, this.p2Top = null, this.p2Map = null, this.p2Dash = null, this.p2DashItems = null, this._p2CMap = null,
         // 双人分屏：P2 镜像视图（wbMirror）+ 分割线
         this.mirror = null, this._wbDivider = null, this._wbSW = 0, this._wbSH = 0, e.__super.call(this), this.gScene = new rs, this.gScene.mouseEnabled = !1, this.gScene.scaleRatio = e.scaleRatio, this.addChild(this.gScene), this.battleUI = new Gn, this.addChild(this.battleUI), this.gScene.on("complete", this.battleUI, this.battleUI.readjustFrameSize)
       }
@@ -11765,7 +11765,14 @@ var Laya = window.Laya = function(t) {
           this.mirror = new wbMirror(this.gScene, "res/map/" + t.src + ".json"), this.addChildAt(this.mirror.view, this.getChildIndex(this.battleUI));
           var dv = new Gi;
           dv.mouseEnabled = !1, this._wbDivider = dv, this.addChild(dv)
-        } else this.role2 = null;
+        } else {
+          this.role2 = null,
+          this.mirror && (this.mirror.dispose(), this.mirror = null),
+          this._wbDivider && (this._wbDivider.removeSelf(), this._wbDivider = null),
+          this.p2Top && (this.p2Top.removeSelf(), this.p2Top = null),
+          this.p2Map && (this.p2Map.removeSelf(), this.p2Map = null),
+          this.p2Dash && (this.p2Dash.removeSelf(), this.p2Dash = null)
+        }
         var a = null != t.chapter ? parseInt(t.chapter) >= 6 ? 4 : Math.ceil(3 * Math.random()) : Math.floor((parseInt(t.id) - 1) / 12) >= 6 ? 4 : Math.ceil(3 * Math.random());
         this.bgmIndex = a, i.timer.frameLoop(1, this, this.onUpdate), i.stage.on("keydown", this, this.onKeyDown), i.stage.on("keyup", this, this.onKeyUp), this.showIntro()
       }, s.showIntro = function() {
@@ -11848,50 +11855,83 @@ var Laya = window.Laya = function(t) {
         idx ? this.p2Dead = !0 : this.p1Dead = !0;
         if (this.p1Dead && this.p2Dead) return this.gameOver(!1), void 0;
         this.battleUI.showWarning(idx ? "P2 坠机！P1 继续战斗！" : "P1 坠机！P2 继续战斗！")
-      }, s.buildP2Hud = function() {
-        // P2 飞机信息：复制 P1 原生血条样式（深色底 + 绿色血条 + 名字 + 血量文字），放在右半屏左上角
-        var t = new Gi;
-        t.mouseEnabled = !1;
-        var nm = new us;
-        nm.text = "P2 " + ((y.getObjectByID(y.storage.__wb_p2Plane) || {}).name || ""), nm.font = "SimHei", nm.fontSize = 16, nm.bold = !0, nm.color = "#ffd75e", nm.x = 0, nm.y = 0, t.addChild(nm);
-        var bk = new Gi;
-        bk.graphics.drawRect(0, 0, 200, 14, "#0b1d2bcc"), bk.y = 24, t.addChild(bk);
-        var bar = new Gi;
-        bar.graphics.drawRect(0, 0, 200, 14, "#33cc33"), bar.y = 24, t.addChild(bar);
-        var hp = new us;
-        hp.font = "SimHei", hp.fontSize = 13, hp.color = "#ffffff", hp.x = 206, hp.y = 24, t.addChild(hp);
-        this.p2Hud = t, this.p2HudBar = bar, this.p2HudTxt = hp, this.addChild(t);
-        // P2 小地图：右半屏右上角（与 P1 左半屏右上角对称）
-        var mk = new Gi;
-        mk.mouseEnabled = !1, mk.size(200, 200);
-        var mm = new ks;
-        mm.size(200, 200), mk.addChild(mm);
-        var ms = new Gi;
-        mk.addChild(ms);
-        var vf = new Gi;
-        ms.addChild(vf), this.p2MiniMap = mk, this.p2MiniMapImg = mm, this.p2MiniMapSpt = ms, this.p2VpFrame = vf, this.addChild(mk), this.updateP2Hud()
-      }, s.updateP2Hud = function() {
-        var W = i.stage.width;
-        if (this.p2Hud) {
-          this.p2Hud.x = W / 2 + 12, this.p2Hud.y = 12, this.p2Hud.visible = !(this.p2Dead || !this.role2);
-          if (this.p2Hud.visible) {
-            var r = this.role2.hp > 0 ? this.role2.hp / this.role2.maxHP : 0;
-            this.p2HudBar.scaleX = Math.max(0, Math.min(1, r)), this.p2HudTxt.text = Math.round(this.role2.hp) + "/" + Math.round(this.role2.maxHP)
-          }
+      }, s.wbUIClone = function(c, map) {
+        // 深拷贝 UI 节点（Image/Text/容器），记录 原节点->克隆 映射供每帧按 P2 数值刷新
+        var p;
+        if (c instanceof ks) {
+          p = new ks(c.skin), p.anchorX = c.anchorX, p.anchorY = c.anchorY, p.pivotX = c.pivotX, p.pivotY = c.pivotY,
+          c.width > 0 && (p.width = c.width), c.height > 0 && (p.height = c.height),
+          c.scrollRect && (p.scrollRect = new K(c.scrollRect.x, c.scrollRect.y, c.scrollRect.width, c.scrollRect.height))
+        } else if (c instanceof us) {
+          p = new us, p.font = c.font, p.fontSize = c.fontSize, p.bold = c.bold, p.color = c.color, p.align = c.align,
+          p.width = c.width, p.height = c.height, p.text = c.text, p.pivotX = c.pivotX, p.pivotY = c.pivotY, p.mouseEnabled = !1
+        } else {
+          p = new Gi, p.mouseEnabled = !1, p.mouseChildren = !1,
+          c.scrollRect && (p.scrollRect = new K(c.scrollRect.x, c.scrollRect.y, c.scrollRect.width, c.scrollRect.height))
         }
-        if (this.p2MiniMap) {
-          this.p2MiniMap.x = W - 212, this.p2MiniMap.y = 12, this.p2MiniMap.visible = !(this.p2Dead || !this.role2);
-          if (this.p2MiniMap.visible) {
-            var sc = this.gScene;
-            this.p2MiniMapImg.skin != this.miniMap && (this.p2MiniMapImg.skin = this.miniMap), this.p2MiniMapSpt.graphics.clear();
-            for (var k in sc.objArr) {
-              var o = sc.objArr[k],
-                c = o.bEnemy ? "#ff3030" : "#30ff30";
-              o == this.role2 ? c = "#ffe000" : o == this.role && (c = "#aaffaa"), this.p2MiniMapSpt.graphics.drawCircle(o.x % sc.mapWidth / sc.mapWidth * 200, o.y % sc.mapHeight / sc.mapHeight * 200, 2, c)
-            }
-            var vr = this.mirror && this.mirror.view ? this.mirror.view.vpRect : sc.vpRect;
-            this.p2VpFrame.graphics.clear(), this.p2VpFrame.graphics.drawRect(vr.x / sc.mapWidth * 200, vr.y / sc.mapHeight * 200, vr.width / sc.mapWidth * 200, vr.height / sc.mapHeight * 200, null, "#ffffff")
+        p.x = c.x, p.y = c.y, p.alpha = c.alpha, p.visible = c.visible, map.set(c, p);
+        for (var j = 0; j < c.numChildren; j++) p.addChild(this.wbUIClone(c.getChildAt(j), map));
+        return p
+      }, s.buildP2Hud = function() {
+        // P2 HUD：整体克隆 P1 原生 UI（左上飞机信息面板 / 右上小地图含方格边框），放到右半屏对称位置；
+        // 弹药用原生 DashboardUI(Xn) 绑定 role2 的武器（自带每帧刷新），键位标记 N/M
+        var bu = this.battleUI;
+        this.p2Top && (this.p2Top.removeSelf(), this.p2Top = null),
+        this.p2Map && (this.p2Map.removeSelf(), this.p2Map = null),
+        this.p2Dash && (this.p2Dash.removeSelf(), this.p2Dash = null),
+        this.p2DashItems = [], this._p2CMap = new Map;
+        var map = this._p2CMap;
+        this.p2Top = this.wbUIClone(bu.topBox, map), this.addChild(this.p2Top),
+        this.p2Map = this.wbUIClone(bu.mapBox, map), this.addChild(this.p2Map);
+        var dash = new Gi;
+        dash.mouseEnabled = !1, dash.mouseChildren = !1;
+        var kn = ["N", "M"], base = 1 == this.role2.gunArr.length ? -48 : -103;
+        for (var s2 = 0; s2 < this.role2.gunArr.length; s2++) {
+          var gun = this.role2.gunArr[s2], it = new Xn(gun, s2);
+          2 > s2 && (it.keyTxt.text = kn[s2]), it.numTxt.text = String(gun.bulletNum), it.alpha = .7,
+          it.x = 2 > s2 ? base + 110 * s2 : base + 220 + 30 * Math.floor((s2 - 2) / 4),
+          it.y = 2 > s2 ? 0 : 24 * (3 - (s2 - 2) % 4), dash.addChild(it), this.p2DashItems.push(it)
+        }
+        // 双人模式下 P1 弹药键位标记改为 Q/E（与实际键位一致；单人局 battleUI.init 会重建恢复 J/K）
+        for (var s3 = 0; s3 < bu.dashSpt.numChildren && 2 > s3; s3++) bu.dashSpt.getChildAt(s3).keyTxt && (bu.dashSpt.getChildAt(s3).keyTxt.text = 0 == s3 ? "Q" : "E");
+        this.p2Dash = dash, this.addChild(dash), this.updateP2Hud()
+      }, s.updateP2Hud = function() {
+        var W = i.stage.width, H = i.stage.height, bu = this.battleUI, r2 = this.role2,
+          show = !!(r2 && !this.p2Dead && this.p2Top);
+        if (this.p2Top) {
+          this.p2Top.visible = show, this.p2Top.pos(W / 2 + 20, 20);
+          this.p2Map && (this.p2Map.visible = show, this.p2Map.pos(W - 220, 0));
+          this.p2Dash && (this.p2Dash.visible = show, this.p2Dash.pos(3 * W / 4, H - 120))
+        }
+        if (show) {
+          var M = this._p2CMap;
+          // 右上飞机信息：克隆自 P1 原生面板，按 role2 数值刷新（样式与 P1 完全一致）
+          M.get(bu.nameTxt).text = r2.name;
+          M.get(bu.hpTxt).text = Math.round(r2.hp) + "/" + Math.round(r2.maxHP);
+          M.get(bu.hpImg).scrollRect.width = r2.hp / r2.maxHP * 208;
+          var a2 = r2.thrust > 100 ? 100 : Math.round(r2.thrust);
+          M.get(bu.heatTxt).text = a2 + "/100";
+          var hi = M.get(bu.heatImg);
+          hi.scrollRect.width = a2 / 100 * 208, hi.alpha = r2.bOverHeat ? (Math.sin(bu.duration / 100) + 1) / 2 : 1;
+          M.get(bu.speedTxt).text = Math.round(1e3 * r2.speed).toString();
+          M.get(bu.finger).rotation = -(1.5 * (2 / 3 - r2.speed / r2.maxSpeed) * Math.PI);
+          M.get(bu.taskDesc).text = bu.taskDesc.text;
+          M.get(bu.timeSpt) && (M.get(bu.timeSpt).visible = bu.timeSpt.visible, M.get(bu.timeTxt).text = bu.timeTxt.text);
+          // 右上小地图：方格边框来自原生 mapBox 克隆；点位/视口框按 P2 视角绘制
+          var sc = this.gScene, cImg = M.get(bu.miniMap);
+          cImg.skin != this.miniMap && (cImg.skin = this.miniMap);
+          var co = M.get(bu.objSpt);
+          co.graphics.clear();
+          for (var k in sc.objArr) {
+            var o = sc.objArr[k], c = o.bEnemy ? "#ff3030" : "#30ff30";
+            o == r2 ? c = "#ffe000" : o == this.role && (c = "#aaffaa"), co.graphics.drawCircle(o.x % sc.mapWidth / sc.mapWidth * 200, o.y % sc.mapHeight / sc.mapHeight * 200, 2, c)
           }
+          var vr = this.mirror && this.mirror.view ? this.mirror.view.vpRect : sc.vpRect, cvf = M.get(bu.vpFrame);
+          cvf.graphics.clear();
+          for (var tx = -1; 2 > tx; tx++) for (var ty = -1; 2 > ty; ty++) cvf.graphics.drawRect(200 * tx, 200 * ty, vr.width / sc.mapWidth * 200, vr.height / sc.mapHeight * 200, null, "#ffffff");
+          cvf.pos(vr.x / sc.mapWidth * 200, vr.y / sc.mapHeight * 200);
+          var od = bu.destFrame, cd = M.get(bu.destFrame);
+          cd && (cd.visible = od.visible, od.visible && od.skin && cd.skin != od.skin && (cd.skin = od.skin), od.visible && cd.pos(od.x, od.y))
         }
       }, s.updateSplitView = function() {
         // 双人分屏：左半=P1(真实场景)，右半=P2(镜像视图)；每帧校正布局并同步
@@ -11900,8 +11940,9 @@ var Laya = window.Laya = function(t) {
           this._wbSW != W || this._wbSH != H ? (this._wbSW = W, this._wbSH = H,
             this.gScene.scrollRect = new K(0, 0, W / 2, H),
             this.mirror.view.pos(W / 2, 0), this.mirror.view.size(W / 2, H), this.mirror.view.scrollRect = new K(0, 0, W / 2, H),
-            // P1 原生小地图移到左半屏右上角（避免压在 P2 半屏上）
+            // P1 原生小地图移到左半屏右上角（避免压在 P2 半屏上）；P1 弹药移到左半屏中心
             this.battleUI && this.battleUI.mapBox && (this.battleUI.mapBox.x = W / 2 - 220, this.battleUI.mapBox.y = 0),
+            this.battleUI && this.battleUI.dashSpt && (this.battleUI.dashSpt.x = W / 4, this.battleUI.dashSpt.y = H - 120),
             this._wbDivider && (this._wbDivider.graphics.clear(), this._wbDivider.graphics.drawLine(W / 2, 0, W / 2, H, "#000000", 3),
             this._wbDivider.removeChildren(),
             function(tag, x, y, W2) {
@@ -11919,7 +11960,14 @@ var Laya = window.Laya = function(t) {
           this.gScene.vpRect.width = W / (2 * sr);
           var p2x = this.role2 && !this.p2Dead ? this.role2.x : this.role.x, p2y = this.role2 && !this.p2Dead ? this.role2.y : this.role.y;
           this.mirror.sync(p2x, p2y)
-        } else this.gScene && (this.gScene.scrollRect = null)
+        } else if (this.gScene) {
+          // 单人/非分屏：还原原生布局。Mission 实例被 UIManager 的 wndMap 缓存复用，
+          // 双人局遗留的"半宽视口（飞机偏左）+ 小地图居中 + 弹药偏左"必须在这里还原，否则单人模式布局错乱
+          var W3 = i.stage.width, sr3 = this.gScene.scaleRatio;
+          this.gScene.scrollRect = null, this.gScene.vpRect.width = W3 / sr3,
+          this.battleUI && (this.battleUI.mapBox && (this.battleUI.mapBox.x = W3 - 220, this.battleUI.mapBox.y = 0),
+          this.battleUI.dashSpt && (this.battleUI.dashSpt.x = W3 / 2, this.battleUI.dashSpt.y = i.stage.height - 120))
+        }
       }, s.onTimeOut = function() {
         i.timer.clear(this, this.onTimeOut), "kill" == this.taskType ? this.gameOver(!1) : "protect" == this.taskType ? this.gameOver(!0) : this.gameOver(!0)
       }, s.gameOver = function(t) {
@@ -12126,7 +12174,15 @@ var Laya = window.Laya = function(t) {
       }, s.onQuitClick = function() {
         this.pause = !1, this.pauseDlg && (this.pauseDlg.visible = !1), i.timer.clear(this, this.onTimeOut), this.dispose(), b.showWindow(cr)
       }, s.dispose = function() {
-        y.saveData(), i.timer.clear(this, this.onIntroEnd), this.introMc && (this.introMc.removeSelf(), this.introMc = null), this.teachBar && (this.teachBar.removeSelf(), this.teachBar = null, this.teachTxt = null), this.bCutscene = !1, this.pause = !1, this.mirror && (this.mirror.dispose(), this.mirror = null), this._wbDivider && (this._wbDivider.removeSelf(), this._wbDivider = null), this._wbSW = 0, this._wbSH = 0, this.gScene.clear(), this.role = null, this.role2 = null, this.p2Hud && (this.p2Hud.removeSelf(), this.p2Hud = null, this.p2HudBar = null), this.loopChannel && Se.to(this.loopChannel, {
+        y.saveData(), i.timer.clear(this, this.onIntroEnd), this.introMc && (this.introMc.removeSelf(), this.introMc = null), this.teachBar && (this.teachBar.removeSelf(), this.teachBar = null, this.teachTxt = null), this.bCutscene = !1, this.pause = !1, this.mirror && (this.mirror.dispose(), this.mirror = null), this._wbDivider && (this._wbDivider.removeSelf(), this._wbDivider = null), this._wbSW = 0, this._wbSH = 0, this.gScene.clear(), this.role = null, this.role2 = null,
+        this.p2Dash && (this.p2Dash.removeSelf(), this.p2Dash = null);
+        for (var q in this.p2DashItems || []) {
+          var p2it = this.p2DashItems[q];
+          p2it && i.timer.clear(p2it, p2it.onUpdate)
+        }
+        this.p2DashItems = null, this._p2CMap = null,
+        this.p2Top && (this.p2Top.removeSelf(), this.p2Top = null),
+        this.p2Map && (this.p2Map.removeSelf(), this.p2Map = null), this.loopChannel && Se.to(this.loopChannel, {
           volume: 0
         }, 1e3), Z.playMusic("res/sound/bgMusic0.mp3"), i.stage.off("keydown", this, this.onKeyDown), i.stage.off("keyup", this, this.onKeyUp), i.timer.clear(this, this.onUpdate);
         var t;
