@@ -11872,7 +11872,7 @@ var Laya = window.Laya = function(t) {
           this.taskDesc = "返回集合点", this.destination = this.__wbRally, this.limitTime = this.__wbReturnLimit,
           i.timer.clear(this, this.onTimeOut), i.timer.once(1e3 * this.__wbReturnLimit, this, this.onTimeOut),
           // battleUI 的 duration 是它自己累加的计时器，归零后 timeTxt 才会从新时限开始倒数
-          this.battleUI && (this.battleUI.duration = 0, this.battleUI.timeSpt.visible = !0, this.battleUI.destFrame.visible = !0, this.battleUI.destFrame.skin = "battle/destIcon.png", this.battleUI.destFrame.anchorX = .5, this.battleUI.destFrame.anchorY = .5, this.battleUI.setTaskInfo("任务：" + this.taskDesc + " 0/1")),
+          this.battleUI && (this.battleUI.duration = 0, this.battleUI.timeSpt.visible = !0, this.battleUI.destFrame.visible = !0, this.battleUI.destFrame.skin = "battle/destIcon.png", this.battleUI.destFrame.anchorX = .5, this.battleUI.destFrame.anchorY = .5, this.battleUI.destFrame.x = this.__wbRally.x / this.gScene.mapWidth * 200, this.battleUI.destFrame.y = this.__wbRally.y / this.gScene.mapHeight * 200, this.battleUI.setTaskInfo("任务：" + this.taskDesc + " 0/1")),
           this.battleUI && this.battleUI.showWarning("设施已摧毁！" + this.__wbReturnLimit + " 秒内返回集合点！"),
           this.spawnReturnWave()
       }, s.spawnReturnWave = function() {
