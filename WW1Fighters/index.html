@@ -394,7 +394,7 @@ var Laya = window.Laya = function(t) {
     }(),
     c = function() {
       function t() {
-        this.pilotName = "飞行员", this.createTime = Date.now(), this.killCount = 0, this.buildingCount = 0, this.flyTime = [0, 0, 0, 0], this.legacyStats = !1, this.gold = 100, this.silver = 45e3, this.honour = 0, this.totalCost = 0, this.recDate = -1, this.garageNum = 5, this.garageList = [], this.americaTree = [], this.germanTree = [], this.missionCfg = [], this.selectIndex = 0, this.bNovice = !1, this.garageList = [{
+        this.pilotName = "飞行员", this.createTime = Date.now(), this.killCount = 0, this.assistCount = 0, this.crashCount = 0, this.buildingCount = 0, this.flyTime = [0, 0, 0, 0], this.gold = 100, this.silver = 45e3, this.honour = 0, this.totalCost = 0, this.recDate = -1, this.garageNum = 5, this.garageList = [], this.americaTree = [], this.germanTree = [], this.missionCfg = [], this.selectIndex = 0, this.bNovice = !1, this.garageList = [{
           id: "plane2",
           bDouble: !0,
           upgrade: [0, 0, 0, 0]
@@ -957,8 +957,8 @@ var Laya = window.Laya = function(t) {
           state: 0,
           curGate: 1
         }), t.storage.missionCfg && t.storage.missionCfg[8] && t.storage.missionCfg[8].curGate >= 12 && (t.storage.__wb_testUnlocked = !0),
-        // 飞行员档案：老存档补默认值（老档没有统计字段 -> legacyStats=true，统计显示"无法获取"）
-        null == t.storage.createTime && (t.storage.createTime = 0, t.storage.legacyStats = !0), null == t.storage.legacyStats && (t.storage.legacyStats = !1), null == t.storage.pilotName && (t.storage.pilotName = "飞行员"), null == t.storage.killCount && (t.storage.killCount = 0), null == t.storage.buildingCount && (t.storage.buildingCount = 0), null == t.storage.flyTime && (t.storage.flyTime = [0, 0, 0, 0]);
+        // 飞行员档案：老存档补默认值（老档读不到历史统计，但从当前开始继续累计）
+        null == t.storage.createTime && (t.storage.createTime = 0), null == t.storage.pilotName && (t.storage.pilotName = "飞行员"), null == t.storage.killCount && (t.storage.killCount = 0), null == t.storage.assistCount && (t.storage.assistCount = 0), null == t.storage.crashCount && (t.storage.crashCount = 0), null == t.storage.buildingCount && (t.storage.buildingCount = 0), null == t.storage.flyTime && (t.storage.flyTime = [0, 0, 0, 0]);
         var e = i.loader.getRes("res/cfg/GunCfg.json");
         com.ocean.ui.DataManager.setJsonData("gunCfg", e);
         var s = i.loader.getRes("res/cfg/MissionCfg.json");
@@ -7932,7 +7932,7 @@ var Laya = window.Laya = function(t) {
       n(e, "com.ocean.game.buff.BurnBuff", t);
       var s = e.prototype;
       return s.update = function(t) {
-        this.totalTime += t, this.totalTime > 1e3 && (this.totalTime = 0, this.duration--, this.owner.hp -= this.dps, 0 == this.duration && this.owner.removeBuff(this))
+        this.totalTime += t, this.totalTime > 1e3 && (this.totalTime = 0, this.duration--, this.owner.bEnemy && (this.owner.__wbPFire = !0, this.owner.__wbPLast && (this.owner.__wbPDmg = (this.owner.__wbPDmg || 0) + this.dps)), this.owner.hp -= this.dps, 0 == this.duration && this.owner.removeBuff(this))
       }, s.onAdd = function() {
         this.smoke = new as(this.owner, "smoke"), this.owner.gScene.addToLayer(this.smoke, 3)
       }, s.onRemove = function() {
@@ -10963,7 +10963,7 @@ var Laya = window.Laya = function(t) {
               if (0 == (1 & this.info.atkMode)) continue;
               if (Object(s).notAttacked) continue
             } else if (0 == (2 & this.info.atkMode)) continue;
-            s.bEnemy != this.owner.bEnemy && s.underAttack(this.info.damage), e.recycle(this), this.release()
+            s.bEnemy != this.owner.bEnemy && s.underAttack(this.info.damage, this.owner), e.recycle(this), this.release()
           }
       }, a.release = function() {
         this.removeSelf(), i.timer.clear(this, this.update), this.bDead = !0
@@ -11029,17 +11029,19 @@ var Laya = window.Laya = function(t) {
         this.name = t, this.hud.numChildren > 2 && (this.nameTxt.text = t, this.bloodTxt.x = (this.nameTxt.textWidth + this.iconImg.width) / 2, this.hud.pivotX = (this.nameTxt.textWidth + this.iconImg.width) / 2)
       }, s.pos = function(e, i, s) {
         return void 0 === s && (s = !1), this._pos.x = e, this._pos.y = i, t.prototype.pos.call(this, e, i)
-      }, s.underAttack = function(t) {
-        var e = this;
+      }, s.underAttack = function(t, e) {
+        var n = this;
         this.img.alpha = 1, Se.to(this.img, {
           alpha: .5
         }, 60, null, _.create(this, function() {
-          Se.to(e.img, {
+          Se.to(n.img, {
             alpha: 1
           }, 60)
         }));
         var i = t * (1 + (Math.random() - .5) / 10);
-        Math.random() < this.defenseRate && (i /= 3), this.hp -= i
+        Math.random() < this.defenseRate && (i /= 3)
+        // 战绩归因必须先于扣血：扣血到 0 会同步派发 dead 事件，onObjectDead 需要读到这些标记
+        this.bEnemy && e && (this.__wbPFire = !1, e.bMainRole ? (this.__wbPDmg = (this.__wbPDmg || 0) + i, this.__wbPLast = !0) : this.__wbPLast = !1), this.hp -= i
       }, s.changeState = function(t) {
         this.curState.onExitState(), this.curState = i.__isClass(t) ? new t(this) : t, this.curState.onEnterState()
       }, s.update = function(t) {
@@ -11811,12 +11813,15 @@ var Laya = window.Laya = function(t) {
         var r = g.parsePointsString(t.path);
         return s.setPath(r), r.length > 1 ? (s.loc = r[0], s.dir = r[1].sub(r[0]), s.moveAlong()) : (s.x = Number(t.x), s.y = Number(t.y), t.dir && (s.rotation = g.deg2rad(Number(t.dir)))), "cruise" == t.ai && s.changeState(gi), s
       }, s.onObjectDead = function(t) {
-        if (t.off("dead", this, this.onObjectDead), t != this.role && t.bEnemy) {
-          // 飞行员档案：击落敌机 / 摧毁地面建筑
-          var st = y.storage;
-          t instanceof com.ocean.game.Aircraft ? st.killCount = (st.killCount || 0) + 1 : t instanceof com.ocean.game.Building && (st.buildingCount = (st.buildingCount || 0) + 1), st.legacyStats = !1
-        }
-        return t == this.role ? (this.gameOver(!1), void 0) : (t.id == this.taskObjID && (this.curTaskNum++, this.showTaskInfo(), this.curTaskNum >= this.taskNum && ("kill" == this.taskType ? this.gameOver(!0) : this.gameOver(!1))), void 0)
+        t.off("dead", this, this.onObjectDead);
+        var st = y.storage;
+        if (t == this.role) return st.crashCount = (st.crashCount || 0) + 1, this.gameOver(!1), void 0; // 坠毁=自机被摧毁
+        if (t.bEnemy)
+          if (t instanceof com.ocean.game.Aircraft)
+            // 击落=自己直接打掉；助攻=非自己击落但自己对敌机造成≥30%伤害（含其漏油自爆）
+            t.__wbPLast && !t.__wbPFire ? st.killCount = (st.killCount || 0) + 1 : (t.__wbPDmg || 0) >= .3 * (t.maxHP || 1) && (st.assistCount = (st.assistCount || 0) + 1);
+          else t instanceof com.ocean.game.Building && (st.buildingCount = (st.buildingCount || 0) + 1);
+        return t.id == this.taskObjID && (this.curTaskNum++, this.showTaskInfo(), this.curTaskNum >= this.taskNum && ("kill" == this.taskType ? this.gameOver(!0) : this.gameOver(!1))), void 0
       }, s.onTimeOut = function() {
         i.timer.clear(this, this.onTimeOut), "kill" == this.taskType ? this.gameOver(!1) : "protect" == this.taskType ? this.gameOver(!0) : this.gameOver(!0)
       }, s.gameOver = function(t) {
@@ -11921,7 +11926,7 @@ var Laya = window.Laya = function(t) {
         if (!this.bPause && this.role) {
           // 飞行员档案：按出击机型累计驾驶时长（idx 0=战斗机 1=攻击机 2=轰炸机 3=运输/侦察）
           var st = y.storage, ti = (this.playerTypeCode || 1) - 1;
-          st.flyTime || (st.flyTime = [0, 0, 0, 0]), ti >= 0 && ti <= 3 && (st.flyTime[ti] = (st.flyTime[ti] || 0) + i.timer.delta), st.legacyStats = !1;
+          st.flyTime || (st.flyTime = [0, 0, 0, 0]), ti >= 0 && ti <= 3 && (st.flyTime[ti] = (st.flyTime[ti] || 0) + i.timer.delta);
           if (this.gScene.update(i.timer.delta), this.gScene.setViewPortCenter(this.role.x, this.role.y), this.battleUI.update(i.timer.delta), this.bShoot) {
             var t = this.role.getGun(0);
             t && (t.isChamberEmpty ? this.battleUI.showWarning("主武器没弹药啦！") : t.shoot())
@@ -13267,7 +13272,7 @@ var Laya = window.Laya = function(t) {
               var a = new v(this.x, this.y),
                 h = a.sub(s.loc),
                 o = 1 - h.length / this.info.explosionRange;
-              0 > o && (o = 0), o = o / 2 + .5, s.underAttack(o * this.info.damage)
+              0 > o && (o = 0), o = o / 2 + .5, s.underAttack(o * this.info.damage, this.owner)
             } this.release()
         }
       }, e.fallTime = 2e3, e
@@ -13379,8 +13384,8 @@ var Laya = window.Laya = function(t) {
           var e = this.gunArr[t];
           null != e && (e.bAutoAttack = !1)
         }
-      }, a.underAttack = function(e) {
-        return Math.random() < this.ignition && (this.isOnFire() || this.addBuff(new fi(this, this.maxHP / 10))), t.prototype.underAttack.call(this, e)
+      }, a.underAttack = function(e, i) {
+        return Math.random() < this.ignition && (this.isOnFire() || this.addBuff(new fi(this, this.maxHP / 10))), t.prototype.underAttack.call(this, e, i)
       }, a.evade = function() {
         var t = this;
         this.resetState(), this.bManeuver = !0;
@@ -13545,7 +13550,7 @@ var Laya = window.Laya = function(t) {
               var a = new v(this.x, this.y),
                 h = a.sub(s.loc),
                 o = 1 - h.length / this.info.explosionRange;
-              0 > o && (o = 0), s.underAttack(o * this.info.damage)
+              0 > o && (o = 0), s.underAttack(o * this.info.damage, this.owner)
             }
           }
           this.release()
@@ -21082,6 +21087,8 @@ var Laya = window.Laya = function(t) {
             name: t.pilotName || "",
             ctime: t.createTime || 0,
             kill: t.killCount || 0,
+            asst: t.assistCount || 0,
+            crash: t.crashCount || 0,
             bld: t.buildingCount || 0,
             fly: (t.flyTime || [0, 0, 0, 0]).slice(0, 4),
             garage: [],
@@ -21130,10 +21137,10 @@ var Laya = window.Laya = function(t) {
           return e
         };
         t.usa && t.usa.length && (e.americaTree = n(t.usa)), t.ger && t.ger.length && (e.germanTree = n(t.ger));
-        // 飞行员档案：老存档没有这些字段 -> 取默认值，并标记 legacyStats（统计显示"无法获取"）
-        e.pilotName = "string" == typeof t.name && t.name ? t.name : "飞行员", e.createTime = t.ctime > 0 ? t.ctime : 0, e.killCount = t.kill || 0, e.buildingCount = t.bld || 0, e.flyTime = t.fly && t.fly.length ? t.fly.slice(0, 4) : [0, 0, 0, 0];
+        // 飞行员档案：老存档没有这些字段 -> 取默认值（历史统计读不到，但从当前开始继续累计）
+        // 飞行员档案：老存档没有这些字段 -> 取默认值（历史统计读不到，但从当前开始继续累计）
+        e.pilotName = "string" == typeof t.name && t.name ? t.name : "飞行员", e.createTime = t.ctime > 0 ? t.ctime : 0, e.killCount = t.kill || 0, e.assistCount = t.asst || 0, e.crashCount = t.crash || 0, e.buildingCount = t.bld || 0, e.flyTime = t.fly && t.fly.length ? t.fly.slice(0, 4) : [0, 0, 0, 0];
         while (e.flyTime.length < 4) e.flyTime.push(0);
-        e.legacyStats = !(t.ctime > 0);
         for (i = 0; i < e.missionCfg.length && i < t.mission.length; i++) e.missionCfg[i].state = t.mission[i][0], e.missionCfg[i].curGate = t.mission[i][1];
         e.selectIndex = 0, y.saveData()
       }, s.copyText = function(t) {
@@ -21217,35 +21224,51 @@ var Laya = window.Laya = function(t) {
         if (this.pilotPanel) return void 0;
         var t = i.stage.width,
           e = i.stage.height,
-          s = 620,
-          n = 480,
+          s = 660,
+          n = 600,
           r = (t - s) / 2,
-          a = e / 2 - n / 2 - this.y,
+          a = (e - n) / 2,
           h = new Gi;
-        h.mouseEnabled = !0, h.graphics.drawRect(-500, -500, t + 1e3, e + 1e3, "#000000"), h.alpha = .65, h.on("click", this, this.closePilotPanel), this.addChild(h), this.pilotPanel = h;
+        // 遮罩：直接挂到 stage 最上层 -> 档案界面置顶（盖住 GarageBar / infoLayer 等）
+        h.mouseEnabled = !0, h.graphics.drawRect(-600, -600, t + 1200, e + 1200, "#000000"), h.alpha = .72, h.on("click", this, this.closePilotPanel), i.stage.addChild(h), this.pilotPanel = h;
         var o = new Gi;
-        o.size(s, n), o.pos(r, a), o.graphics.drawRect(0, 0, s, n, "#0d2334f5", "#e8c56a", 3), o.mouseEnabled = !0, o.graphics.drawLine(30, 66, s - 30, 66, "#e8c56a", 1), this.addChild(o), this.pilotPanelBox = o;
-        var l = new us;
-        l.text = "飞行员档案", l.font = "SimHei", l.fontSize = 28, l.bold = !0, l.color = "#ffe9a8", l.width = s, l.align = "center", l.y = 20, o.addChild(l);
+        o.size(s, n), o.pos(r, a), o.graphics.drawRect(0, 0, s, n, "#0e2436f7", "#e8c56a", 3), o.mouseEnabled = !0, i.stage.addChild(o), this.pilotPanelBox = o;
         var c = y.storage,
-          d = !!c.legacyStats,
-          g2 = [
-            ["姓名", c.pilotName || "飞行员"],
-            ["存档创建时间", c.createTime > 0 ? this.fmtPilotTime(c.createTime) : "未知（旧存档）"],
-            ["击落敌机", d ? "无法获取" : (c.killCount || 0) + " 架"],
-            ["摧毁地面建筑", d ? "无法获取" : (c.buildingCount || 0) + " 座"],
-            ["战斗机驾驶时长", d ? "无法获取" : this.fmtPilotDur((c.flyTime || [])[0])],
-            ["攻击机驾驶时长", d ? "无法获取" : this.fmtPilotDur((c.flyTime || [])[1])],
-            ["轰炸机驾驶时长", d ? "无法获取" : this.fmtPilotDur((c.flyTime || [])[2])]
+          d = function(t, e, i, l, c2, v, w, T2) {
+            var T = new us;
+            return T.text = t, T.font = "SimHei", T.fontSize = e, T.color = i, T.x = l, T.y = c2, null != v && (T.width = v, T.align = w), T2 && (T.bold = !0), o.addChild(T), T
+          },
+          sep = function(t, e) {
+            o.graphics.drawLine(40, t, s - 40, t, e, 1)
+          };
+        // 标题
+        d("飞行员档案", 30, "#ffe9a8", 0, 22, s, "center", !0), o.graphics.drawLine(40, 76, s - 40, 76, "#e8c56a", 1);
+        // 飞行员信息
+        d("姓名", 22, "#8fb0c8", 60, 94), d(c.pilotName || "飞行员", 22, "#ffffff", 60, 94, s - 120, "right");
+        d("存档创建", 22, "#8fb0c8", 60, 130), d(c.createTime > 0 ? this.fmtPilotTime(c.createTime) : "未知（旧存档）", 22, "#ffffff", 60, 130, s - 120, "right");
+        sep(172, "#2b4a60");
+        // 战绩：击落 / 助攻 / 坠毁
+        d("战 绩", 20, "#e8c56a", 60, 190);
+        var g2 = [
+            ["击落", c.killCount || 0],
+            ["助攻", c.assistCount || 0],
+            ["坠毁", c.crashCount || 0]
+          ],
+          p = [s * .28, s * .54, s * .8];
+        for (var f = 0; f < 3; f++) d(String(g2[f][1]), 44, "#ffd75e", p[f] - 90, 216, 180, "center", !0), d(g2[f][0], 20, "#9fc0d8", p[f] - 90, 278, 180, "center");
+        sep(318, "#2b4a60");
+        // 摧毁地面建筑
+        d("摧毁地面建筑", 22, "#8fb0c8", 60, 336), d((c.buildingCount || 0) + " 座", 22, "#ffffff", 60, 336, s - 120, "right");
+        sep(378, "#2b4a60");
+        // 驾驶时长
+        var m = [
+            ["战斗机驾驶时长", (c.flyTime || [])[0]],
+            ["攻击机驾驶时长", (c.flyTime || [])[1]],
+            ["轰炸机驾驶时长", (c.flyTime || [])[2]]
           ];
-        !d && (c.flyTime || [])[3] > 0 && g2.push(["运输·侦察机时长", this.fmtPilotDur(c.flyTime[3])]);
-        for (var p = 0; p < g2.length; p++) {
-          var f = 82 + 40 * p,
-            m = new us;
-          m.text = g2[p][0], m.font = "SimHei", m.fontSize = 21, m.color = "#9fc0d8", m.width = 230, m.align = "right", m.x = 36, m.y = f, o.addChild(m);
-          var v = new us;
-          v.text = String(g2[p][1]), v.font = "SimHei", v.fontSize = 21, v.color = "#ffffff", v.width = 300, v.align = "left", v.x = 286, v.y = f, o.addChild(v)
-        }
+        (c.flyTime || [])[3] > 0 && m.push(["运输·侦察机时长", c.flyTime[3]]);
+        for (var v = 0; v < m.length; v++) d(m[v][0], 22, "#8fb0c8", 60, 396 + 32 * v), d(this.fmtPilotDur(m[v][1]), 22, "#ffffff", 60, 396 + 32 * v, s - 120, "right");
+        // 按钮
         var w = new hn("main/btn2Skin.png", "修改名字");
         w.size(180, 48), w.labelSize = 18, w.labelFont = "SimHei", w.labelColors = "#ffffff,#ffffff,#ffffff,#888888", w.x = 170, w.y = n - 46, w.on("click", this, this.editPilotName), o.addChild(w);
         var T = new hn("main/btn2Skin.png", "关闭");
