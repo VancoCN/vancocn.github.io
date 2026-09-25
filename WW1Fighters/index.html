@@ -11749,7 +11749,9 @@ var Laya = window.Laya = function(t) {
           n = null != t.chapter ? parseInt(t.chapter) : 0 >= e ? 0 : Math.floor((e - 1) / 12) + 1,
           r = null != t.gate ? parseInt(t.gate) : 0 >= e ? 1 : (e - 1) % 12 + 1,
           a = ["第零章 训练场", "第一章 重燃战火", "第二章 闪电战", "第三章 海狮计划", "第四章 不列颠之鹰", "第五章 北非空战", "第六章 西线反击", "第七章 条顿悲歌", "第八章 消灭残敌"][n] || "第" + n + "章";
-        this.bCutscene = !0, this.pause = !0;
+        // 进入关卡过场动画：先停掉主界面 BGM（bgMusic0），让过场期间只有开场音效 missionStart.wav；
+        // 战斗 BGM 会在 onIntroEnd 里再起（playMusic 内部也会兜底停旧音乐）。
+        this.bCutscene = !0, this.pause = !0, Z.stopMusic();
         var h = new Gi;
         h.mouseEnabled = !0;
         var o = new Gi;
