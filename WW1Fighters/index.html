@@ -11741,7 +11741,9 @@ var Laya = window.Laya = function(t) {
       n(e, "com.ocean.ui.Mission", t);
       var s = e.prototype;
       return       s.init = function(t) {
-        this.bGameOver = !1, this.bShoot = !1, this.bBomb = !1, this.curTaskNum = 0, this.teachStep = null, this.teachP1 = 0, this.teachP2 = 0, this.missionCfg = t, this.miniMap = "res/map/" + t.src + ".png", this.gScene.loadMap("res/map/" + t.src + ".json"), this.gScene.produceClound(t.cloudNum), this.limitTime = Number(t.limitTime), this.limitTime > 0 && i.timer.once(1e3 * this.limitTime, this, this.onTimeOut), this.gateIndex = parseInt(t.id), this.taskType = t.taskType, this.taskDesc = t.goal, this.taskObjID = t.param1, this.taskNum = parseInt(t.param2), this.destination = g.parsePointsString(t.param3)[0], this.prize = parseInt(t.prize), this.honor = parseInt(t.honor);
+        this.bGameOver = !1, this.bShoot = !1, this.bBomb = !1, this.curTaskNum = 0, this.teachStep = null, this.teachP1 = 0, this.teachP2 = 0, this.missionCfg = t, this.miniMap = "res/map/" + t.src + ".png", this.gScene.loadMap("res/map/" + t.src + ".json"), this.gScene.produceClound(t.cloudNum), this.limitTime = Number(t.limitTime), this.limitTime > 0 && i.timer.once(1e3 * this.limitTime, this, this.onTimeOut), this.gateIndex = parseInt(t.id), this.taskType = t.taskType, this.taskDesc = t.goal, this.taskObjID = t.param1, this.taskNum = parseInt(t.param2), this.destination = g.parsePointsString(t.param3)[0], this.prize = parseInt(t.prize), this.honor = parseInt(t.honor),
+        // 新任务类型 wbFacility（第零章 0-6）：摧毁敌方基地设施后，限时返回地图指定集合点
+        this.__wbPhase = 1, this.__wbFacility = "wbFacility" == t.taskType, this.__wbReturnLimit = Number(t.param4) > 0 ? Number(t.param4) : 60, this.__wbRally = this.__wbFacility ? g.parsePointsString(t.param3)[0] : null, this.destination = this.__wbFacility ? null : this.destination, this.__wbSpawnAfter = this.__wbFacility && t.spawnAfter && t.spawnAfter.length ? t.spawnAfter : null;
         var e = $n.instance.curPlaneCfg;
         // 双人模式：P1 用选关界面左键选的机型（未选则回退车库当前机）
         y.storage.__wb_twoPlayer && y.storage.__wb_p1Plane && (e = y.getObjectByID(y.storage.__wb_p1Plane) || e);
@@ -11754,6 +11756,9 @@ var Laya = window.Laya = function(t) {
           r.on("dead", this, this.onObjectDead), this.gScene.addGameObject(r)
         }
         this.gScene.addGameObject(this.role), this.battleUI.init(this), this.battleUI.alpha = 1, this.showTaskInfo();
+        // 设施任务：把标记为 wbTask 的设施 id 收集起来（同关可有多个设施，全部摧毁才进入返航阶段）
+        this.__wbFacIds = {};
+        if (this.__wbFacility) for (var wb in t.object) if (t.object[wb] && "1" == t.object[wb].wbTask) this.__wbFacIds[t.object[wb].id] = !0;
         // 双人协同：P2 作为友军加入同一场战斗（不同实例、不分屏）
         this.p1Dead = !1, this.p2Dead = !1;
         if (y.storage.__wb_twoPlayer) {
@@ -11782,7 +11787,7 @@ var Laya = window.Laya = function(t) {
       }, s.showIntro = function() {
         var t = this.missionCfg,
           e = parseInt(t.id) || 0,
-          n = null != t.chapter ? parseInt(t.chapter) : 0 >= e ? 0 : Math.floor((e - 1) / 12) + 1,
+          n = null != t.chapter ? parseInt(t.chapter) : 0 >= e || e >= 96 ? 0 : Math.floor((e - 1) / 12) + 1,
           r = null != t.gate ? parseInt(t.gate) : 0 >= e ? 1 : (e - 1) % 12 + 1,
           a = ["第零章 训练场", "第一章 重燃战火", "第二章 闪电战", "第三章 海狮计划", "第四章 不列颠之鹰", "第五章 北非空战", "第六章 西线反击", "第七章 条顿悲歌", "第八章 消灭残敌"][n] || "第" + n + "章";
         // 进入关卡过场动画：先停掉主界面 BGM（bgMusic0），让过场期间只有开场音效 missionStart.wav；
@@ -11853,7 +11858,32 @@ var Laya = window.Laya = function(t) {
             // 击落=自己直接打掉；助攻=非自己击落但自己对敌机造成≥30%伤害（含其漏油自爆）
             t.__wbPLast && !t.__wbPFire ? st.killCount = (st.killCount || 0) + 1 : (t.__wbPDmg || 0) >= .3 * (t.maxHP || 1) && (st.assistCount = (st.assistCount || 0) + 1);
           else t instanceof com.ocean.game.Building && (st.buildingCount = (st.buildingCount || 0) + 1);
+        // 保卫类任务（如保护指挥部）：被保护目标一旦被摧毁，立刻失败
+        if ("protect" == this.taskType && t.id == this.taskObjID) return this.gameOver(!1), void 0;
+        // 设施摧毁类任务：设施全部摧毁后不结算胜利，而是进入"限时返航"阶段
+        if (this.__wbFacility && 1 == this.__wbPhase && this.__wbFacIds && this.__wbFacIds[t.id]) {
+          this.curTaskNum++, this.showTaskInfo(), this.curTaskNum >= this.taskNum && this.enterReturnPhase();
+          return void 0
+        }
         return t.id == this.taskObjID && (this.curTaskNum++, this.showTaskInfo(), this.curTaskNum >= this.taskNum && ("kill" == this.taskType ? this.gameOver(!0) : this.gameOver(!1))), void 0
+      }, s.enterReturnPhase = function() {
+        // 摧毁全部基地设施后进入返航阶段：取消总时限，改为 1 分钟返回集合点
+        this.__wbPhase = 2, this.taskType = "wbRally", this.taskNum = 1, this.curTaskNum = 0,
+          this.taskDesc = "返回集合点", this.destination = this.__wbRally, this.limitTime = this.__wbReturnLimit,
+          i.timer.clear(this, this.onTimeOut), i.timer.once(1e3 * this.__wbReturnLimit, this, this.onTimeOut),
+          // battleUI 的 duration 是它自己累加的计时器，归零后 timeTxt 才会从新时限开始倒数
+          this.battleUI && (this.battleUI.duration = 0, this.battleUI.timeSpt.visible = !0, this.battleUI.destFrame.visible = !0, this.battleUI.destFrame.skin = "battle/destIcon.png", this.battleUI.destFrame.anchorX = .5, this.battleUI.destFrame.anchorY = .5, this.battleUI.setTaskInfo("任务：" + this.taskDesc + " 0/1")),
+          this.battleUI && this.battleUI.showWarning("设施已摧毁！" + this.__wbReturnLimit + " 秒内返回集合点！"),
+          this.spawnReturnWave()
+      }, s.spawnReturnWave = function() {
+        // 返航阶段：按关卡配置在地图上刷出大量敌机（拦截返航路线）
+        var a = this.__wbSpawnAfter;
+        if (!a || !a.length || !this.gScene) return;
+        for (var n in a) {
+          var o = a[n]; if (!o || !o.typeId) continue;
+          var r = this.parseObject(o);
+          r.on("dead", this, this.onObjectDead), this.gScene.addGameObject(r)
+        }
       }, s.onPlayerCrashed = function(idx) {
         // 双人协同：一人坠机不结算，双方都坠机才算任务失败
         idx ? this.p2Dead = !0 : this.p1Dead = !0;
@@ -11976,7 +12006,7 @@ var Laya = window.Laya = function(t) {
           this.battleUI.dashSpt && (this.battleUI.dashSpt.x = W3 / 2, this.battleUI.dashSpt.y = i.stage.height - 120))
         }
       }, s.onTimeOut = function() {
-        i.timer.clear(this, this.onTimeOut), "kill" == this.taskType ? this.gameOver(!1) : "protect" == this.taskType ? this.gameOver(!0) : this.gameOver(!0)
+        i.timer.clear(this, this.onTimeOut), 2 == this.__wbPhase ? this.gameOver(!1) : "kill" == this.taskType ? this.gameOver(!1) : "protect" == this.taskType ? this.gameOver(!0) : this.gameOver(!0)
       }, s.gameOver = function(t) {
         if (!this.bGameOver) {
           this.bGameOver = !0, y.saveData(), this.battleUI.alpha = 0;
@@ -12122,9 +12152,15 @@ var Laya = window.Laya = function(t) {
             this.bShoot2 && (g2 = this.role2.getGun(0), g2 && (g2.isChamberEmpty ? this.battleUI.showWarning("P2 主武器没弹药啦！") : g2.shoot()));
             this.bBomb2 && (g2 = this.role2.getGun(1), g2 && (g2.isChamberEmpty ? this.battleUI.showWarning("P2 副武器没弹药啦！") : g2.shoot()))
           }
-          if (this.destination) {
+          if (this.destination && this.__wbPhase != 2) {
             var e, s = this.gScene.getObjectsInCircle(this.destination.x, this.destination.y, 160);
             for (var n in s) e = s[n], e.id == this.taskObjID && this.gameOver("kill" != this.taskType)
+          }
+          // 返航阶段：进入集合点范围即算完成任务（用 loc 避免摄像机边缘回绕导致坐标跳变）
+          if (2 == this.__wbPhase && this.__wbRally && this.role && !this.p1Dead) {
+            var d = v.distance(this.role.loc, this.__wbRally);
+            if (this.battleUI && !this.bGameOver && 0 == this.__wbRallyWarn && d < 900) this.__wbRallyWarn = 1, this.battleUI.showWarning("已抵达集合点附近，保持低速盘旋！");
+            d < 400 && !this.bGameOver && this.gameOver(!0)
           }
         }
       }, s.wbTeachNext = function(t) {
@@ -12156,7 +12192,7 @@ var Laya = window.Laya = function(t) {
           this.teachTxt && (this.teachTxt.text = s1), this.teachTxt1 && (this.teachTxt1.text = s1), this.teachTxt2 && (this.teachTxt2.text = s2);
           return this.battleUI.setTaskInfo("教学：" + (t ? two ? t.t1 + " ｜ P2：" + t.t2 : t.t1 : "击落靶机")), void 0
         }
-        var t = "kill" == this.taskType ? this.curTaskNum : this.taskNum - this.curTaskNum;
+        var t = "kill" == this.taskType || this.__wbFacility && 1 == this.__wbPhase ? this.curTaskNum : this.taskNum - this.curTaskNum;
         this.battleUI.setTaskInfo("任务：" + this.taskDesc + " " + t + "/" + this.taskNum)
       }, s.buildTeachBar = function() {
         this.teachBar && (this.teachBar.removeSelf(), this.teachBar = null, this.teachTxt = null, this.teachBar1 = null, this.teachTxt1 = null, this.teachBar2 = null, this.teachTxt2 = null);
@@ -20825,7 +20861,7 @@ var Laya = window.Laya = function(t) {
         for (var i = y.storage.missionCfg[e.chapterIndex], s = e.gateCount(e.chapterIndex), n = 0; n < this.itemArr.length; n++) {
           var r = this.itemArr[n];
           // 第零章：gate1（教学）免费；gate2/gate3（阅兵关）需通关第8章第12关；超出本章关数的按钮隐藏
-          if (0 === e.chapterIndex && n >= 1 && n < s) r.visible = !0, r.lock = o ? !1 : !0;
+          if (0 === e.chapterIndex && n >= 1 && n <= 2 && n < s) r.visible = !0, r.lock = o ? !1 : !0;
           else {
             n < s ? (r.visible = !0, r.lock = n < i.curGate ? !1 : !0) : r.visible = !1
           }
@@ -20867,9 +20903,9 @@ var Laya = window.Laya = function(t) {
           s = b.showWindow(Qn);
         s.init(i)
       }, e.chapterIndex = 0, e.gateCount = function(t) {
-        return 0 >= t ? 3 : 12
+        return 0 >= t ? 6 : 12
       }, e.getGateId = function(t, e) {
-        if (0 >= t) return 1 === e ? 0 : 2 === e ? 98 : 99;
+        if (0 >= t) return 1 === e ? 0 : 2 === e ? 98 : 3 === e ? 99 : 4 === e ? 100 : 5 === e ? 101 : 6 === e ? 102 : 0;
         return 12 * (t - 1) + e
       }, e
     }(Rn),
