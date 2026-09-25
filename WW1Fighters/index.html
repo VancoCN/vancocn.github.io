@@ -1051,7 +1051,7 @@ var Laya = window.Laya = function(t) {
         i.stage.addChild(t.layer), i.stage.addChild($n.instance), $n.instance.visible = !1, i.stage.addChild(t.infoLayer)
       }, t.registerWindow = function() {}, t.showWindow = function(e) {
         var i = t.wndMap[e];
-        return null == i && (i = new e, t.wndMap[e] = i), $n.instance.visible = i instanceof com.ocean.ui.StartUI || i instanceof com.ocean.ui.RemakeUI || i instanceof com.ocean.ui.MissionUI ? !0 : !1, t.layer.removeChildren(), t.layer.addChild(i), i
+        return null == i && (i = new e, t.wndMap[e] = i), $n.instance.visible = (i instanceof com.ocean.ui.StartUI || i instanceof com.ocean.ui.RemakeUI || i instanceof com.ocean.ui.MissionUI) && !(i instanceof com.ocean.ui.MissionUI && y.storage.__wb_twoPlayer) ? !0 : !1, t.layer.removeChildren(), t.layer.addChild(i), i
       }, t.closeAllWindow = function() {
         t.layer.removeChildren()
       }, t.popUpDialog = function(e, i, s) {
@@ -20384,7 +20384,9 @@ var Laya = window.Laya = function(t) {
       }, s.onItemClick = function(t) {
         switch (t.state) {
           case 1:
-            this.selItem.selected = !1, t.selected = !0, this.selItem = t, this.gList.refresh(), y.storage.selectIndex = this.gList.array.indexOf(t), this.event("change");
+            this.selItem.selected = !1, t.selected = !0, this.selItem = t, this.gList.refresh(), y.storage.selectIndex = this.gList.array.indexOf(t),
+            // 车库当前机与「P1 默认出战机」保持同步（切回单人时按 P1 的选择出战）
+            y.storage.__wb_p1Plane = t.id, y.saveData(), this.event("change");
             break;
           case 2:
             b.showWindow(or);
@@ -20691,56 +20693,85 @@ var Laya = window.Laya = function(t) {
           return !1
         });
         this.refreshTwoPlayerUI()
-      }, s.refreshTwoPlayerUI = function() {
+      },       s.refreshTwoPlayerUI = function() {
         if (!this.twoPlayerBox) return;
         this.twoPlayerBox.removeChildren(), this._wbPlaneItems.length = 0, this.twoPlayerBox.visible = !!y.storage.__wb_twoPlayer;
+        // 双人选机时隐藏底部原版机库横条（它 z 序更高、占据底部 145px，会盖住并吞掉选机格的点击）
+        try { $n.instance && ($n.instance.visible = !y.storage.__wb_twoPlayer) } catch (e) {}
         if (!y.storage.__wb_twoPlayer) return;
-        var t = i.stage.width,
-          e = i.stage.height,
-          W = t,
-          H = 150,
+        var E = i.stage.height,
+          W = i.stage.width,
+          H = 200,
           bar = new Gi;
-        bar.graphics.drawRect(0, 0, W, H, "#0b1d2ee6"), bar.graphics.drawLine(0, H - 1, W, H - 1, "#e8c56a", 2), this.twoPlayerBox.addChild(bar), this.twoPlayerBox.y = e - H;
+        // 容器必须显式 size：宽高为 0 的容器会让 Laya 的命中检测直接判失败（选机格点不动）
+        this.twoPlayerBox.size(W, H), bar.size(W, H);
+        bar.graphics.drawRect(0, 0, W, H, "#0b1d2ee6"), bar.graphics.drawLine(0, H - 1, W, H - 1, "#e8c56a", 2), this.twoPlayerBox.addChild(bar), this.twoPlayerBox.y = E - H;
         var list = y.storage.garageList || [],
           p1 = y.storage.__wb_p1Plane || (list[0] && list[0].id),
           p2 = y.storage.__wb_p2Plane || (list[0] && list[0].id);
+        // 允许的初始状态：P1/P2 共用同一架战机
+        p1 || (p1 = list[0] && list[0].id), p2 || (p2 = p1);
         y.storage.__wb_p1Plane = p1, y.storage.__wb_p2Plane = p2;
-        var lab1 = new us;
-        lab1.text = "P1（左键选机）", lab1.color = "#7fd0ff", lab1.font = "SimHei", lab1.fontSize = 18, lab1.bold = !0, lab1.x = 14, lab1.y = 10, this.twoPlayerBox.addChild(lab1);
-        var lab2 = new us;
-        lab2.text = "P2（右键选机）", lab2.color = "#ffd75e", lab2.font = "SimHei", lab2.fontSize = 18, lab2.bold = !0, lab2.x = 14, lab2.y = 36, this.twoPlayerBox.addChild(lab2);
-        var n1 = p1 ? (y.getObjectByID(p1) || {}).name || "未选" : "未选",
-          n2 = p2 ? (y.getObjectByID(p2) || {}).name || "未选" : "未选",
-          sel1 = new us;
-        sel1.text = n1, sel1.color = "#ffffff", sel1.font = "SimHei", sel1.fontSize = 16, sel1.x = 190, sel1.y = 10, this.twoPlayerBox.addChild(sel1);
-        var sel2 = new us;
-        sel2.text = n2, sel2.color = "#ffffff", sel2.font = "SimHei", sel2.fontSize = 16, sel2.x = 190, sel2.y = 36, this.twoPlayerBox.addChild(sel2);
-        var gap = 100,
-          y0 = 66,
-          startX = 14;
-        for (var k = 0; k < list.length; k++) {
+        var tip = new us;
+        tip.text = "左键选机=P1　右键选机=P2　两人可选用同一架", tip.color = "#9fb4c7", tip.font = "SimHei", tip.fontSize = 14, tip.x = 12, tip.y = 8, this.twoPlayerBox.addChild(tip);
+        // 机库列较多时自动压缩间距，避免溢出屏幕右侧
+        var gap = Math.min(96, Math.max(58, (W - 128) / Math.max(1, list.length))),
+          x0 = 128,
+          y1 = 56,
+          y2 = 134;
+        this._wbSelRow(1, "P1 ", p1, list, x0, y1, gap), this._wbSelRow(2, "P2 ", p2, list, x0, y2, gap)
+      },
+      // 某一排战机选择条：who=1(P1)/2(P2)，sel=当前选中机型 id
+      s._wbSelRow = function(who, titlePrefix, sel, list, x0, y0, gap) {
+        var col = 1 == who ? "#7fd0ff" : "#ffd75e",
+          lab = new us;
+        lab.text = titlePrefix + ((y.getObjectByID(sel) || {}).name || "未选"), lab.color = col, lab.font = "SimHei", lab.fontSize = 18, lab.bold = !0, lab.x = 12, lab.y = y0 - 27, this.twoPlayerBox.addChild(lab);
+        for (var k = 0; list && k < list.length; k++) {
           var gi = list[k],
             cfg = y.getObjectByID(gi.id);
           if (!cfg) continue;
-          var box = new Gi;
-          box.size(88, 70), box.pos(startX + k * gap, y0), box.graphics.drawRect(0, 0, 88, 70, "#10283cc0", "#3a5f7a", 2), box.mouseEnabled = !0;
+          var on = gi.id === sel,
+            box = new Gi;
+          box.size(88, 62), box.pos(x0 + k * gap, y0), box.mouseEnabled = !0, box.mouseChildren = !1;
+          box.graphics.drawRect(0, 0, 88, 62, on ? "#1d4a6e" : "#10283cc0", on ? col : "#3a5f7a", 2);
           var img = new ks("res/show/" + cfg.src + ".png");
-          img.anchorX = img.anchorY = .5, img.pos(44, 30), box.addChild(img);
+          // show 素材统一为 1280x720，固定缩到 80x45（同比例不变形），否则会撑爆 88x62 的选机格
+          img.anchorX = img.anchorY = .5, img.size(80, 45), img.pos(44, 24), box.addChild(img);
           var nm = new us;
-          nm.text = cfg.name, nm.color = "#cdd8e2", nm.font = "SimHei", nm.fontSize = 12, nm.width = 88, nm.align = "center", nm.y = 52, box.addChild(nm);
-          if (gi.id == p1) {
-            var m1 = new us;
-            m1.text = "P1", m1.color = "#7fd0ff", m1.font = "SimHei", m1.fontSize = 14, m1.bold = !0, m1.x = 3, m1.y = 2, box.addChild(m1)
+          nm.text = cfg.name, nm.color = on ? "#ffffff" : "#cdd8e2", nm.font = "SimHei", nm.fontSize = 12, nm.width = 88, nm.align = "center", nm.y = 46, box.addChild(nm);
+          if (on) {
+            // 选中角标：P1 靠左、P2 靠右，同一架被两人同时选中时也不会重叠
+            var tag = new Gi;
+            tag.graphics.drawRect(0, 0, 30, 19, col), box.addChild(tag);
+            var tg = new us;
+            tg.text = "P" + who, tg.color = "#08131d", tg.font = "SimHei", tg.fontSize = 13, tg.bold = !0, tg.x = 1 == who ? 4 : 54, tg.y = 2, box.addChild(tg)
           }
-          if (gi.id == p2) {
-            var m2 = new us;
-            m2.text = "P2", m2.color = "#ffd75e", m2.font = "SimHei", m2.fontSize = 14, m2.bold = !0, m2.x = 64, m2.y = 2, box.addChild(m2)
-          }
-          box.on("mousedown", this, this.onPlanePick, [gi.id]), this.twoPlayerBox.addChild(box), this._wbPlaneItems.push(box)
+          box.__wbId = gi.id, box.__wbWho = who,
+          // Laya 对左键派发 mousedown、对右键派发独立的 rightmousedown，两个都要监听
+          box.on("mousedown", this, this.onPlanePick, [gi.id]), box.on("rightmousedown", this, this.onPlanePick, [gi.id]), this.twoPlayerBox.addChild(box), this._wbPlaneItems.push(box)
         }
-      }, s.onPlanePick = function(t, id) {
-        var right = t.nativeEvent && 2 === t.nativeEvent.button;
-        right ? (y.storage.__wb_p2Plane = id, y.saveData(), this.refreshTwoPlayerUI()) : (y.storage.__wb_p1Plane = id, y.saveData(), this.refreshTwoPlayerUI())
+      }, s.__wbPickRight = function(t) {
+        // 稳健判定鼠标按键：优先原生事件的 button，其次 Laya 的 button，
+        // 最后按鼠标落在左半屏 / 右半屏回退（防止某些环境下 button 缺失导致左右键失效）
+        var ne = t && t.nativeEvent, b = -1;
+        try {
+          b = ne && "number" == typeof ne.button ? ne.button : ("number" == typeof t.button ? t.button : -1)
+        } catch (e) { b = -1 }
+        if (0 > b) {
+          try { b = i.stage.mouseX > i.stage.width / 2 ? 2 : 0 } catch (e) { b = 0 }
+        }
+        return 2 == b || 1 == b
+      }, s.onPlanePick = function(id, t) {
+        // 注意：Laya 的 on(type,caller,fn,args) 派发时是「绑定参数在前、事件对象在后」，
+        // 所以第一个参数是绑定的飞机 id，第二个才是鼠标事件对象（之前写反导致存档里存进了事件对象）
+        var right = this.__wbPickRight(t);
+        t && t.stopPropagation && t.stopPropagation();
+        var other = right ? y.storage.__wb_p1Plane : y.storage.__wb_p2Plane;
+        right ? y.storage.__wb_p2Plane = id : y.storage.__wb_p1Plane = id, y.saveData();
+        var nm = (y.getObjectByID(id) || {}).name || "该战机",
+          same = other && other == id;
+        b.showMessage((right ? "P2" : "P1") + " 已选择：" + nm + (same ? "（与 P" + (right ? 1 : 2) + " 共用同一架）" : ""));
+        this.refreshTwoPlayerUI()
       },
       s.onResize = function() {
         this.bkImg.width = i.stage.width, this.maskImg.width = i.stage.width, this.moneyBar.x = i.stage.width - 614, this.itemBox.x = i.stage.width / 2 + 40, this.infoPanel.x = i.stage.width - 290, this.y = (i.stage.height - 750) / 2, this.itemBox.width = this.map12.x + this.map12.width, this.itemBox.height = this.map12.y + this.map12.height
@@ -21390,8 +21421,17 @@ var Laya = window.Laya = function(t) {
           var gap = ib ? ib.y - eb.y - eb.height : 12;
           this.twoPlayerBtn.size(eb.width, eb.height), this.twoPlayerBtn.labelSize = eb.labelSize, this.twoPlayerBtn.labelFont = eb.labelFont, this.twoPlayerBtn.labelColors = eb.labelColors, this.twoPlayerBtn.pos(eb.x, eb.y - eb.height - gap)
         }
-      }, s.onTwoPlayerClick = function() {
+      },       s.onTwoPlayerClick = function() {
         y.storage.__wb_twoPlayer = !y.storage.__wb_twoPlayer, this.twoPlayerBtn.label = y.storage.__wb_twoPlayer ? "单人模式" : "双人模式", y.saveData();
+        // 切换回单人模式：沿用选关界面 P1 选中的战机（写回车库当前机）
+        if (!y.storage.__wb_twoPlayer) {
+          var p1 = y.storage.__wb_p1Plane;
+          if (p1) {
+            try {
+              $n.instance && $n.instance.setSelectGarage && $n.instance.setSelectGarage(p1)
+            } catch (e) {}
+          }
+        }
         var mi = b.wndMap[ir];
         mi && mi.refresh && mi.refresh()
       }, s.saveChk = function(t) {
