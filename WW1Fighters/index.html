@@ -11732,7 +11732,9 @@ var Laya = window.Laya = function(t) {
       function e() {
         this.role = null, this.gScene = null, this.bPause = !1, this.loopChannel = null, this.bShoot = !1, this.bBomb = !1, this.bJoystick = !1, this.limitTime = 0 / 0, this.taskType = null, this.taskDesc = null, this.taskObjID = null, this.taskNum = 0, this.curTaskNum = 0, this.destination = null, this.prize = 0, this.honor = 0, this.gateIndex = 1, this.miniMap = null, this.battleUI = null, this.bGameOver = !1, this.pauseDlg = null, this.dlgPanel = null, this.missionCfg = null, this.introMc = null, this.bCutscene = !1, this.bgmIndex = 1, this.teachStep = null, this.teachBar = null, this.teachTxt = null,
         // 双人协同：P2 友军机（同一场战斗），及 P2 输入标志与状态
-        this.role2 = null, this.bShoot2 = !1, this.bBomb2 = !1, this.p1Dead = !1, this.p2Dead = !1, this.p2Hud = null, this.p2HudBar = null, this.p2TypeCode = 1, e.__super.call(this), this.gScene = new rs, this.gScene.mouseEnabled = !1, this.gScene.scaleRatio = e.scaleRatio, this.addChild(this.gScene), this.battleUI = new Gn, this.addChild(this.battleUI), this.gScene.on("complete", this.battleUI, this.battleUI.readjustFrameSize)
+        this.role2 = null, this.bShoot2 = !1, this.bBomb2 = !1, this.p1Dead = !1, this.p2Dead = !1, this.p2Hud = null, this.p2HudBar = null, this.p2TypeCode = 1,
+        // 双人分屏：P2 镜像视图（wbMirror）+ 分割线
+        this.mirror = null, this._wbDivider = null, this._wbSW = 0, this._wbSH = 0, e.__super.call(this), this.gScene = new rs, this.gScene.mouseEnabled = !1, this.gScene.scaleRatio = e.scaleRatio, this.addChild(this.gScene), this.battleUI = new Gn, this.addChild(this.battleUI), this.gScene.on("complete", this.battleUI, this.battleUI.readjustFrameSize)
       }
       n(e, "com.ocean.ui.Mission", t);
       var s = e.prototype;
@@ -11758,7 +11760,11 @@ var Laya = window.Laya = function(t) {
           var r2 = this.parseObject(p2cfg, !0);
           r2.bEnemy = !1, r2.setMainRole(), r2.on("dead", this, this.onObjectDead),
           r2.x = this.role.x + 140, r2.y = this.role.y + 90, r2.rotation = this.role.rotation,
-          this.role2 = r2, this.gScene.addGameObject(r2), this.buildP2Hud()
+          this.role2 = r2, this.gScene.addGameObject(r2), this.buildP2Hud(),
+          // 左右分屏：右侧半屏为 P2 的镜像视图（同一局战斗的独立视角），插到 battleUI 之下
+          this.mirror = new wbMirror(this.gScene, "res/map/" + t.src + ".json"), this.addChildAt(this.mirror.view, this.getChildIndex(this.battleUI));
+          var dv = new Gi;
+          dv.mouseEnabled = !1, this._wbDivider = dv, this.addChild(dv)
         } else this.role2 = null;
         var a = null != t.chapter ? parseInt(t.chapter) >= 6 ? 4 : Math.ceil(3 * Math.random()) : Math.floor((parseInt(t.id) - 1) / 12) >= 6 ? 4 : Math.ceil(3 * Math.random());
         this.bgmIndex = a, i.timer.frameLoop(1, this, this.onUpdate), i.stage.on("keydown", this, this.onKeyDown), i.stage.on("keyup", this, this.onKeyUp), this.showIntro()
@@ -11858,6 +11864,31 @@ var Laya = window.Laya = function(t) {
           if (this.p2Dead || !this.role2) return this.p2Hud.visible = !1, void 0;
           var r = this.role2.hp > 0 ? this.role2.hp / this.role2.maxHP : 0;
           this.p2HudBar.scaleX = Math.max(0, Math.min(1, r))
+        }
+      }, s.updateSplitView = function() {
+        // 双人分屏：左半=P1(真实场景)，右半=P2(镜像视图)；每帧校正布局并同步
+        if (this.mirror) {
+          var W = i.stage.width, H = i.stage.height, sr = this.gScene.scaleRatio;
+          this._wbSW != W || this._wbSH != H ? (this._wbSW = W, this._wbSH = H,
+            this.gScene.scrollRect = new K(0, 0, W / 2, H),
+            this.mirror.view.pos(W / 2, 0), this.mirror.view.size(W / 2, H), this.mirror.view.scrollRect = new K(0, 0, W / 2, H),
+            this._wbDivider && (this._wbDivider.graphics.clear(), this._wbDivider.graphics.drawLine(W / 2, 0, W / 2, H, "#000000", 3),
+            this._wbDivider.removeChildren(),
+            function(tag, x, y, W2) {
+              var bk = new Gi;
+              bk.graphics.drawRect(0, 0, 44, 22, "#000000"), bk.alpha = .45, bk.pos(x, y), tag.addChild(bk);
+              var tx = new us;
+              tx.text = W2, tx.font = "SimHei", tx.fontSize = 15, tx.bold = !0, tx.color = "#ffe08a", tx.width = 44, tx.align = "center", tx.y = y + 3, tag.addChild(tx)
+            }(this._wbDivider, W / 4 - 22, H - 30, "P1"),
+            function(tag, x, y, W2) {
+              var bk = new Gi;
+              bk.graphics.drawRect(0, 0, 44, 22, "#000000"), bk.alpha = .45, bk.pos(x, y), tag.addChild(bk);
+              var tx = new us;
+              tx.text = W2, tx.font = "SimHei", tx.fontSize = 15, tx.bold = !0, tx.color = "#ffe08a", tx.width = 44, tx.align = "center", tx.y = y + 3, tag.addChild(tx)
+            }(this._wbDivider, 3 * W / 4 - 22, H - 30, "P2"))) : 0;
+          this.gScene.vpRect.width = W / (2 * sr);
+          var p2x = this.role2 && !this.p2Dead ? this.role2.x : this.role.x, p2y = this.role2 && !this.p2Dead ? this.role2.y : this.role.y;
+          this.mirror.sync(p2x, p2y)
         }
       }, s.onTimeOut = function() {
         i.timer.clear(this, this.onTimeOut), "kill" == this.taskType ? this.gameOver(!1) : "protect" == this.taskType ? this.gameOver(!0) : this.gameOver(!0)
@@ -11984,10 +12015,10 @@ var Laya = window.Laya = function(t) {
           // 飞行员档案：按出击机型累计驾驶时长（idx 0=战斗机 1=攻击机 2=轰炸机 3=运输/侦察）
           var st = y.storage, ti = (this.playerTypeCode || 1) - 1;
           st.flyTime || (st.flyTime = [0, 0, 0, 0]), ti >= 0 && ti <= 3 && (st.flyTime[ti] = (st.flyTime[ti] || 0) + i.timer.delta);
-          // 摄像机：双人跟随机组中点（一人坠机后跟随存活者）
+          // 摄像机：分屏——P1 左半屏 / P2 右半屏各自跟随；一方坠机后其半屏跟随存活者
           var cx = this.role.x, cy = this.role.y;
-          this.role2 && (this.p1Dead ? this.p2Dead || (cx = this.role2.x, cy = this.role2.y) : this.p2Dead ? (cx = this.role.x, cy = this.role.y) : (cx = (this.role.x + this.role2.x) / 2, cy = (this.role.y + this.role2.y) / 2));
-          if (this.gScene.update(i.timer.delta), this.gScene.setViewPortCenter(cx, cy), this.battleUI.update(i.timer.delta), this.updateP2Hud(), this.bShoot && !this.p1Dead) {
+          this.role2 && this.p1Dead && !this.p2Dead && (cx = this.role2.x, cy = this.role2.y);
+          if (this.gScene.update(i.timer.delta), this.gScene.setViewPortCenter(cx, cy), this.battleUI.update(i.timer.delta), this.updateP2Hud(), this.updateSplitView(), this.bShoot && !this.p1Dead) {
             var t = this.role.getGun(0);
             t && (t.isChamberEmpty ? this.battleUI.showWarning("主武器没弹药啦！") : t.shoot())
           }
@@ -12046,7 +12077,8 @@ var Laya = window.Laya = function(t) {
           h = [this.onResumeClick, this.onRestartClick, this.onQuitClick];
         for (var o = 0; o < 3; o++) {
           var l = new hn("main/btn2Skin.png", a[o]);
-          l.size(240, 56), l.labelSize = 22, l.labelFont = "SimHei", l.labelColors = "#ffffff,#ffffff,#ffffff,#888888", l.x = 60, l.y = 96 + 70 * o, l.on("click", this, h[o]), n.addChild(l)
+          // 注意：hn(ScaleButton) anchorX/Y=.5，x/y 即按钮中心 → 180 = 面板(360)水平中心
+          l.size(240, 56), l.labelSize = 22, l.labelFont = "SimHei", l.labelColors = "#ffffff,#ffffff,#ffffff,#888888", l.x = 180, l.y = 96 + 70 * o, l.on("click", this, h[o]), n.addChild(l)
         }
         this.pauseDlg = t, this.dlgPanel = n, this.addChild(t), this.onPauseResize()
       }, s.onPauseResize = function() {
@@ -12064,7 +12096,7 @@ var Laya = window.Laya = function(t) {
       }, s.onQuitClick = function() {
         this.pause = !1, this.pauseDlg && (this.pauseDlg.visible = !1), i.timer.clear(this, this.onTimeOut), this.dispose(), b.showWindow(cr)
       }, s.dispose = function() {
-        y.saveData(), i.timer.clear(this, this.onIntroEnd), this.introMc && (this.introMc.removeSelf(), this.introMc = null), this.teachBar && (this.teachBar.removeSelf(), this.teachBar = null, this.teachTxt = null), this.bCutscene = !1, this.pause = !1, this.gScene.clear(), this.role = null, this.role2 = null, this.p2Hud && (this.p2Hud.removeSelf(), this.p2Hud = null, this.p2HudBar = null), this.loopChannel && Se.to(this.loopChannel, {
+        y.saveData(), i.timer.clear(this, this.onIntroEnd), this.introMc && (this.introMc.removeSelf(), this.introMc = null), this.teachBar && (this.teachBar.removeSelf(), this.teachBar = null, this.teachTxt = null), this.bCutscene = !1, this.pause = !1, this.mirror && (this.mirror.dispose(), this.mirror = null), this._wbDivider && (this._wbDivider.removeSelf(), this._wbDivider = null), this._wbSW = 0, this._wbSH = 0, this.gScene.clear(), this.role = null, this.role2 = null, this.p2Hud && (this.p2Hud.removeSelf(), this.p2Hud = null, this.p2HudBar = null), this.loopChannel && Se.to(this.loopChannel, {
           volume: 0
         }, 1e3), Z.playMusic("res/sound/bgMusic0.mp3"), i.stage.off("keydown", this, this.onKeyDown), i.stage.off("keyup", this, this.onKeyUp), i.timer.clear(this, this.onUpdate);
         var t;
@@ -21138,7 +21170,7 @@ var Laya = window.Laya = function(t) {
           b.hideToolTip()
         }), this.startBtn.on("click", this, this.onStartBtnClick), this.remakeBtn.on("click", this, this.onRemakeBtnClick), this.researchBtn.on("click", this, this.onResearchBtnClick), this.helpBtn.on("click", this, this.onHelpBtnClick), this.adsBtn.on("click", this, this.onAdsBtnClick), this.shareBtn.on("click", this, this.onShareClick), this.rankBtn.on("click", this, this.onRankClick), this.sellBtn.on("click", this, this.onSellBtnClick), this.chapterBtn.on("click", this, this.onChapterClick), this.exportBtn.on("click", this, this.onExportClick), this.importBtn.on("click", this, this.onImportClick), $n.instance.on("change", this, this.onGarageChange), i.stage.on("resize", this, this.onResize), this.onResize(), y.storage.__wb_moneyOn && (this.shareBtn.label = "撤销货币"), y.storage.__wb_hpLock && (this.rankBtn.label = "血量锁定:开"),         y.storage.__wb_chapterOn && (this.chapterBtn.label = "恢复章节"), this.initPilotPlate(),
         // 双人模式切换按钮（左侧）
-        this.twoPlayerBtn = new hn("main/btn2Skin.png", y.storage.__wb_twoPlayer ? "单人模式" : "双人模式"), this.twoPlayerBtn.size(180, 46), this.twoPlayerBtn.labelSize = 18, this.twoPlayerBtn.labelFont = "SimHei", this.twoPlayerBtn.labelColors = "#ffffff,#ffffff,#ffffff,#888888", this.twoPlayerBtn.x = 20, this.twoPlayerBtn.y = 80, this.twoPlayerBtn.on("click", this, this.onTwoPlayerClick), this.addChild(this.twoPlayerBtn)
+        this.twoPlayerBtn = new hn("main/btn2Skin.png", y.storage.__wb_twoPlayer ? "单人模式" : "双人模式"), this.twoPlayerBtn.on("click", this, this.onTwoPlayerClick), this.addChild(this.twoPlayerBtn), this.placeTwoPlayerBtn()
       }
       n(e, "com.ocean.ui.StartUI", t);
       var s = e.prototype;
@@ -21210,6 +21242,13 @@ var Laya = window.Laya = function(t) {
             item.state = t.missionCfg[item.index].state
           }
           mi.refresh()
+        }
+      }, s.placeTwoPlayerBtn = function() {
+        // 「双人/单人模式」按钮：对齐左侧功能按钮串，放在「导出存档」正上方
+        var eb = this.exportBtn, ib = this.importBtn;
+        if (eb && this.twoPlayerBtn) {
+          var gap = ib ? ib.y - eb.y - eb.height : 12;
+          this.twoPlayerBtn.size(eb.width, eb.height), this.twoPlayerBtn.labelSize = eb.labelSize, this.twoPlayerBtn.labelFont = eb.labelFont, this.twoPlayerBtn.labelColors = eb.labelColors, this.twoPlayerBtn.pos(eb.x, eb.y - eb.height - gap)
         }
       }, s.onTwoPlayerClick = function() {
         y.storage.__wb_twoPlayer = !y.storage.__wb_twoPlayer, this.twoPlayerBtn.label = y.storage.__wb_twoPlayer ? "单人模式" : "双人模式", y.saveData();
@@ -21511,6 +21550,73 @@ var Laya = window.Laya = function(t) {
         }
       }, e
     }(rr);
+    // ========== 双人分屏：镜像视图（同一场战斗，P2 独立"摄像机"） ==========
+    // 原理：新建一个 GameScene 加载同一张地图做纯显示用（不跑逻辑），每帧把真实场景
+    // 5 个层里的显示节点克隆/同步到镜像层（变换+皮肤+文本，Graphics 共享引用）；
+    // 摄像机独立跟随 P2。GameObject 取 _pos 逻辑坐标（避免真实摄像机边缘回绕位移影响）。
+    var wbMirror = function(t, e) {
+      this.real = t, this.proxies = new Map, this.backs = new Map, this.ready = !1;
+      var s = this;
+      this.view = new rs, this.view.mouseEnabled = !1,
+      // 注意：先挂 complete 监听再 loadMap——资源已缓存时 createMap 回调是同步的
+      this.view.on("complete", this, function() {
+        s.ready = !0
+      }), this.view.loadMap(e)
+    };
+    wbMirror.prototype.cloneNode = function(c) {
+      if (c instanceof com.ocean.game.MyParticle) return null;
+      if (c instanceof ks) {
+        var im = new ks(c.skin);
+        return im.anchorX = c.anchorX, im.anchorY = c.anchorY, im.filters = c.filters, im
+      }
+      if (c instanceof us) {
+        var tx = new us;
+        return tx.font = c.font, tx.fontSize = c.fontSize, tx.bold = c.bold, tx.color = c.color, tx.align = c.align, tx.width = c.width, tx.text = c.text, tx.mouseEnabled = !1, tx
+      }
+      var p = new Gi;
+      p.mouseEnabled = !1, p.mouseChildren = !1, c._graphics && c._graphics._cmds && c._graphics._cmds.length > 0 && (p.graphics = c.graphics);
+      for (var j = 0; j < c.numChildren; j++) {
+        var cc = this.cloneNode(c.getChildAt(j));
+        cc && p.addChild(cc)
+      }
+      return p
+    };
+    wbMirror.prototype.syncNode = function(r, p) {
+      var rx = r.x, ry = r.y;
+      r._pos && (rx = r._pos.x, ry = r._pos.y), p.x = rx, p.y = ry, p.rotation = r.rotation, p.alpha = r.alpha, p.visible = r.visible, p.scaleX = r.scaleX, p.scaleY = r.scaleY,
+      r instanceof ks ? p.skin != r.skin && (p.skin = r.skin) : r instanceof us ? p.text != r.text && (p.text = r.text) : r._frames && p.graphics != r.graphics && (p.graphics = r.graphics);
+      for (var j = p.numChildren; j < r.numChildren; j++) {
+        var cc = this.cloneNode(r.getChildAt(j));
+        cc && p.addChild(cc)
+      }
+      for (var j = 0; j < r.numChildren && j < p.numChildren; j++) this.syncNode(r.getChildAt(j), p.getChildAt(j));
+      for (var j = p.numChildren - 1; j >= r.numChildren; j--) p.removeChildAt(j)
+    };
+    wbMirror.prototype.sync = function(t, e) {
+      // 兜底：若 complete 事件早于监听触发，用 mapWidth 是否已初始化判断
+      this.ready || (this.ready = this.view.mapWidth > 0 && this.view.mapWidth < 1e7);
+      if (this.ready) {
+        var W = i.stage.width, H = i.stage.height, sr = this.real.scaleRatio, j, p;
+        this.view.scaleRatio != sr && (this.view.scaleRatio = sr);
+        this.view.vpRect.width = W / (2 * sr), this.view.vpRect.height = H / sr;
+        for (var li = 0; 5 > li; li++) {
+          var rl = this.real.layer.getChildAt(li), vl = this.view.layer.getChildAt(li);
+          for (j = 0; j < rl.numChildren; j++) {
+            var c = rl.getChildAt(j);
+            p = this.proxies.get(c), !p && (p = this.cloneNode(c), p) && (this.proxies.set(c, p), this.backs.set(p, c), vl.addChild(p)), p && this.syncNode(c, p)
+          }
+          for (j = vl.numChildren - 1; j >= 0; j--) {
+            p = vl.getChildAt(j);
+            var rc = this.backs.get(p);
+            rc && rc.parent == rl || (this.proxies.delete(rc), this.backs.delete(p), p.removeSelf())
+          }
+        }
+        this.view.setViewPortCenter(t, e)
+      }
+    };
+    wbMirror.prototype.dispose = function() {
+      this.view.clear(), this.view.removeSelf(), this.proxies.clear(), this.backs.clear()
+    };
   i.__init([bi, u, _e, as, si, se, hs, Q, Zs, ki, P, Te, fn, Ee]), new w
 }(window, document, Laya), "function" == typeof define && define.amd && define("laya.core", ["require", "exports"], function(t, e) {
   "use strict";
