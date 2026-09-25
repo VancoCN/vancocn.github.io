@@ -989,8 +989,13 @@ var Laya = window.Laya = function(t) {
         var i = t.dataMap.upgradeCfg;
         return i.objData[e]
       }, t.getMissionByID = function(e) {
-        var i = t.dataMap.missionCfg;
-        return i.root.mission[e]
+        var i = t.dataMap.missionCfg,
+          m = i.root.mission,
+          n = m.length;
+        e = String(e);
+        for (var s = 0; s < n; s++)
+          if (m[s] && m[s].id === e) return m[s];
+        return null
       }, t.saveData = function() {
         Q.setJSON("Dogfight", t.storage), t.dispatcher.event("change")
       }, t.getHangarData = function(e) {
@@ -11736,13 +11741,13 @@ var Laya = window.Laya = function(t) {
           r.on("dead", this, this.onObjectDead), this.gScene.addGameObject(r)
         }
         this.gScene.addGameObject(this.role), this.battleUI.init(this), this.battleUI.alpha = 1, this.showTaskInfo();
-        var a = Math.floor((parseInt(t.id) - 1) / 12) >= 6 ? 4 : Math.ceil(3 * Math.random());
+        var a = null != t.chapter ? parseInt(t.chapter) >= 6 ? 4 : Math.ceil(3 * Math.random()) : Math.floor((parseInt(t.id) - 1) / 12) >= 6 ? 4 : Math.ceil(3 * Math.random());
         this.bgmIndex = a, i.timer.frameLoop(1, this, this.onUpdate), i.stage.on("keydown", this, this.onKeyDown), i.stage.on("keyup", this, this.onKeyUp), this.showIntro()
       }, s.showIntro = function() {
         var t = this.missionCfg,
           e = parseInt(t.id) || 0,
-          n = 0 >= e ? 0 : Math.floor((e - 1) / 12) + 1,
-          r = 0 >= e ? 1 : (e - 1) % 12 + 1,
+          n = null != t.chapter ? parseInt(t.chapter) : 0 >= e ? 0 : Math.floor((e - 1) / 12) + 1,
+          r = null != t.gate ? parseInt(t.gate) : 0 >= e ? 1 : (e - 1) % 12 + 1,
           a = ["第零章 训练场", "第一章 重燃战火", "第二章 闪电战", "第三章 海狮计划", "第四章 不列颠之鹰", "第五章 北非空战", "第六章 西线反击", "第七章 条顿悲歌", "第八章 消灭残敌"][n] || "第" + n + "章";
         this.bCutscene = !0, this.pause = !0;
         var h = new Gi;
@@ -20427,9 +20432,13 @@ var Laya = window.Laya = function(t) {
         this.setSelectChapter(this.lastSel)
       }, s.setSelectChapter = function(t) {
         e.chapterIndex = t.index, null != this.lastSel && (this.lastSel.selected = !1), this.lastSel = t, this.lastSel.selected = !0, this.chapterList.refresh();
+        var o = 0 === e.chapterIndex && y.storage.missionCfg[8] && y.storage.missionCfg[8].curGate >= 12;
         for (var i = y.storage.missionCfg[e.chapterIndex], s = e.gateCount(e.chapterIndex), n = 0; n < this.itemArr.length; n++) {
           var r = this.itemArr[n];
-          n < s ? (r.visible = !0, r.lock = n < i.curGate ? !1 : !0) : r.visible = !1
+          if (0 === e.chapterIndex && 1 === n) r.visible = !0, r.lock = o ? !1 : !0;
+          else {
+            n < s ? (r.visible = !0, r.lock = n < i.curGate ? !1 : !0) : r.visible = !1
+          }
         }
         this.showGateInfo(e.getGateId(e.chapterIndex, i.curGate > s ? s : i.curGate))
       }, s.showGateInfo = function(t) {
@@ -20461,16 +20470,17 @@ var Laya = window.Laya = function(t) {
       }, s.onGameStart = function(t) {
         if (null == $n.instance.selItem) return b.showMessage("没有战机可出战，请先购买战机！"), void 0;
         var e = t.currentTarget;
-        return e.getLock() ? (b.showMessage("需要开启前面的章节！"), void 0) : (this.mapIdx = e.index, _e.onMobile ? (t.stopPropagation(), this.startBtn.visible = !0, this.startBtn.x = e.x + 61, this.startBtn.y = e.y + 62, void 0) : (this.loadGame(t), void 0))
+        return e.getLock() ? (0 === this.constructor.chapterIndex && 2 === e.index ? b.showMessage("通关第8章第12关后解锁该关卡！") : b.showMessage("需要开启前面的章节！"), void 0) : (this.mapIdx = e.index, _e.onMobile ? (t.stopPropagation(), this.startBtn.visible = !0, this.startBtn.x = e.x + 61, this.startBtn.y = e.y + 62, void 0) : (this.loadGame(t), void 0))
       }, s.loadGame = function() {
         var t = e.getGateId(e.chapterIndex, this.mapIdx),
           i = y.getMissionByID(t),
           s = b.showWindow(Qn);
         s.init(i)
       }, e.chapterIndex = 0, e.gateCount = function(t) {
-        return 0 >= t ? 1 : 12
+        return 0 >= t ? 2 : 12
       }, e.getGateId = function(t, e) {
-        return 0 >= t ? 0 : 12 * (t - 1) + e
+        if (0 >= t) return 1 === e ? 0 : 98;
+        return 12 * (t - 1) + e
       }, e
     }(Rn),
     sr = function(t) {
