@@ -11849,29 +11849,59 @@ var Laya = window.Laya = function(t) {
         if (this.p1Dead && this.p2Dead) return this.gameOver(!1), void 0;
         this.battleUI.showWarning(idx ? "P2 坠机！P1 继续战斗！" : "P1 坠机！P2 继续战斗！")
       }, s.buildP2Hud = function() {
+        // P2 飞机信息：复制 P1 原生血条样式（深色底 + 绿色血条 + 名字 + 血量文字），放在右半屏左上角
         var t = new Gi;
         t.mouseEnabled = !1;
         var nm = new us;
-        nm.text = "P2 " + ((y.getObjectByID(y.storage.__wb_p2Plane) || {}).name || ""), nm.font = "SimHei", nm.fontSize = 16, nm.bold = !0, nm.color = "#ffd75e", t.addChild(nm);
+        nm.text = "P2 " + ((y.getObjectByID(y.storage.__wb_p2Plane) || {}).name || ""), nm.font = "SimHei", nm.fontSize = 16, nm.bold = !0, nm.color = "#ffd75e", nm.x = 0, nm.y = 0, t.addChild(nm);
         var bk = new Gi;
-        bk.graphics.drawRect(0, 0, 160, 10, "#000000"), bk.alpha = .6, bk.y = 24, t.addChild(bk);
+        bk.graphics.drawRect(0, 0, 200, 14, "#0b1d2bcc"), bk.y = 24, t.addChild(bk);
         var bar = new Gi;
-        bar.graphics.drawRect(0, 0, 160, 10, "#7CFC00"), bar.y = 24, t.addChild(bar);
-        this.p2Hud = t, this.p2HudBar = bar, this.addChild(t), this.updateP2Hud()
+        bar.graphics.drawRect(0, 0, 200, 14, "#33cc33"), bar.y = 24, t.addChild(bar);
+        var hp = new us;
+        hp.font = "SimHei", hp.fontSize = 13, hp.color = "#ffffff", hp.x = 206, hp.y = 24, t.addChild(hp);
+        this.p2Hud = t, this.p2HudBar = bar, this.p2HudTxt = hp, this.addChild(t);
+        // P2 小地图：右半屏右上角（与 P1 左半屏右上角对称）
+        var mk = new Gi;
+        mk.mouseEnabled = !1, mk.size(200, 200);
+        var mm = new ks;
+        mm.size(200, 200), mk.addChild(mm);
+        var ms = new Gi;
+        mk.addChild(ms);
+        var vf = new Gi;
+        ms.addChild(vf), this.p2MiniMap = mk, this.p2MiniMapImg = mm, this.p2MiniMapSpt = ms, this.p2VpFrame = vf, this.addChild(mk), this.updateP2Hud()
       }, s.updateP2Hud = function() {
+        var W = i.stage.width;
         if (this.p2Hud) {
-          this.p2Hud.x = i.stage.width - 200, this.p2Hud.y = 16;
-          if (this.p2Dead || !this.role2) return this.p2Hud.visible = !1, void 0;
-          var r = this.role2.hp > 0 ? this.role2.hp / this.role2.maxHP : 0;
-          this.p2HudBar.scaleX = Math.max(0, Math.min(1, r))
+          this.p2Hud.x = W / 2 + 12, this.p2Hud.y = 12, this.p2Hud.visible = !(this.p2Dead || !this.role2);
+          if (this.p2Hud.visible) {
+            var r = this.role2.hp > 0 ? this.role2.hp / this.role2.maxHP : 0;
+            this.p2HudBar.scaleX = Math.max(0, Math.min(1, r)), this.p2HudTxt.text = Math.round(this.role2.hp) + "/" + Math.round(this.role2.maxHP)
+          }
+        }
+        if (this.p2MiniMap) {
+          this.p2MiniMap.x = W - 212, this.p2MiniMap.y = 12, this.p2MiniMap.visible = !(this.p2Dead || !this.role2);
+          if (this.p2MiniMap.visible) {
+            var sc = this.gScene;
+            this.p2MiniMapImg.skin != this.miniMap && (this.p2MiniMapImg.skin = this.miniMap), this.p2MiniMapSpt.graphics.clear();
+            for (var k in sc.objArr) {
+              var o = sc.objArr[k],
+                c = o.bEnemy ? "#ff3030" : "#30ff30";
+              o == this.role2 ? c = "#ffe000" : o == this.role && (c = "#aaffaa"), this.p2MiniMapSpt.graphics.drawCircle(o.x % sc.mapWidth / sc.mapWidth * 200, o.y % sc.mapHeight / sc.mapHeight * 200, 2, c)
+            }
+            var vr = this.mirror && this.mirror.view ? this.mirror.view.vpRect : sc.vpRect;
+            this.p2VpFrame.graphics.clear(), this.p2VpFrame.graphics.drawRect(vr.x / sc.mapWidth * 200, vr.y / sc.mapHeight * 200, vr.width / sc.mapWidth * 200, vr.height / sc.mapHeight * 200, null, "#ffffff")
+          }
         }
       }, s.updateSplitView = function() {
         // 双人分屏：左半=P1(真实场景)，右半=P2(镜像视图)；每帧校正布局并同步
-        if (this.mirror) {
+        if (this.mirror && this.role2) {
           var W = i.stage.width, H = i.stage.height, sr = this.gScene.scaleRatio;
           this._wbSW != W || this._wbSH != H ? (this._wbSW = W, this._wbSH = H,
             this.gScene.scrollRect = new K(0, 0, W / 2, H),
             this.mirror.view.pos(W / 2, 0), this.mirror.view.size(W / 2, H), this.mirror.view.scrollRect = new K(0, 0, W / 2, H),
+            // P1 原生小地图移到左半屏右上角（避免压在 P2 半屏上）
+            this.battleUI && this.battleUI.mapBox && (this.battleUI.mapBox.x = W / 2 - 220, this.battleUI.mapBox.y = 0),
             this._wbDivider && (this._wbDivider.graphics.clear(), this._wbDivider.graphics.drawLine(W / 2, 0, W / 2, H, "#000000", 3),
             this._wbDivider.removeChildren(),
             function(tag, x, y, W2) {
@@ -11889,7 +11919,7 @@ var Laya = window.Laya = function(t) {
           this.gScene.vpRect.width = W / (2 * sr);
           var p2x = this.role2 && !this.p2Dead ? this.role2.x : this.role.x, p2y = this.role2 && !this.p2Dead ? this.role2.y : this.role.y;
           this.mirror.sync(p2x, p2y)
-        }
+        } else this.gScene && (this.gScene.scrollRect = null)
       }, s.onTimeOut = function() {
         i.timer.clear(this, this.onTimeOut), "kill" == this.taskType ? this.gameOver(!1) : "protect" == this.taskType ? this.gameOver(!0) : this.gameOver(!0)
       }, s.gameOver = function(t) {
@@ -21583,8 +21613,19 @@ var Laya = window.Laya = function(t) {
     };
     wbMirror.prototype.syncNode = function(r, p) {
       var rx = r.x, ry = r.y;
-      r._pos && (rx = r._pos.x, ry = r._pos.y), p.x = rx, p.y = ry, p.rotation = r.rotation, p.alpha = r.alpha, p.visible = r.visible, p.scaleX = r.scaleX, p.scaleY = r.scaleY,
+      r._pos && (rx = r._pos.x, ry = r._pos.y), p.x = rx, p.y = ry,
+      // 关键：GameObject(战斗机/建筑) 的 rotation 访问器返回弧度，但其底层 Laya 显示旋转已是度数；
+      // 镜像代理是普通 Sprite，必须把弧度转回度数，否则飞机朝向错乱（之前右屏飞机方向错误即此因）
+      p.rotation = r._rotation !== undefined ? g.rad2deg(r._rotation) : r.rotation,
+      p.alpha = r.alpha, p.visible = r.visible, p.scaleX = r.scaleX, p.scaleY = r.scaleY,
       r instanceof ks ? p.skin != r.skin && (p.skin = r.skin) : r instanceof us ? p.text != r.text && (p.text = r.text) : r._frames && p.graphics != r.graphics && (p.graphics = r.graphics);
+      // 复现开火/爆炸等动画（炮口火焰、爆炸特效）到镜像视图：让 P2 也能看到开火效果
+      if (r instanceof Gs && p instanceof Gs && r._actionName) {
+        p.visible = r.visible;
+        if (r.isPlaying) {
+          if (p._actionName !== r._actionName || !p.isPlaying) p.play(0, !1, r._actionName)
+        } else p.isPlaying && p.stop()
+      }
       for (var j = p.numChildren; j < r.numChildren; j++) {
         var cc = this.cloneNode(r.getChildAt(j));
         cc && p.addChild(cc)
