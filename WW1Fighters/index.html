@@ -11743,7 +11743,7 @@ var Laya = window.Laya = function(t) {
       return       s.init = function(t) {
         this.bGameOver = !1, this.bShoot = !1, this.bBomb = !1, this.curTaskNum = 0, this.teachStep = null, this.teachP1 = 0, this.teachP2 = 0, this.missionCfg = t, this.miniMap = "res/map/" + t.src + ".png", this.gScene.loadMap("res/map/" + t.src + ".json"), this.gScene.produceClound(t.cloudNum), this.limitTime = Number(t.limitTime), this.limitTime > 0 && i.timer.once(1e3 * this.limitTime, this, this.onTimeOut), this.gateIndex = parseInt(t.id), this.taskType = t.taskType, this.taskDesc = t.goal, this.taskObjID = t.param1, this.taskNum = parseInt(t.param2), this.destination = g.parsePointsString(t.param3)[0], this.prize = parseInt(t.prize), this.honor = parseInt(t.honor),
         // 新任务类型 wbFacility（第零章 0-6）：摧毁敌方基地设施后，限时返回地图指定集合点
-        this.__wbPhase = 1, this.__wbFacility = "wbFacility" == t.taskType, this.__wbReturnLimit = Number(t.param4) > 0 ? Number(t.param4) : 60, this.__wbRally = this.__wbFacility ? g.parsePointsString(t.param3)[0] : null, this.destination = this.__wbFacility ? null : this.destination, this.__wbSpawnAfter = this.__wbFacility && t.spawnAfter && t.spawnAfter.length ? t.spawnAfter : null;
+        this.__wbPhase = 1, this.__wbFacility = "wbFacility" == t.taskType, this.__wbReturnLimit = Number(t.param4) > 0 ? Number(t.param4) : 60, this.__wbRally = this.__wbFacility ? g.parsePointsString(t.param3)[0] : null, this.destination = this.__wbFacility ? null : this.destination, this.__wbSpawnAfter = this.__wbFacility && t.spawnAfter && t.spawnAfter.length ? t.spawnAfter : null, this.__wbConvoy = "wbConvoy" == t.taskType, this.__wbConvoyIds = {}, this.__wbConvoyNeed = parseInt(t.param2) > 0 ? parseInt(t.param2) : 3, this.__wbConvoyAlive = this.__wbConvoyNeed, this.__wbFog = "wbFog" == t.taskType, this.__wbFogR = Number(t.param3) > 0 ? Number(t.param3) : 430, this.__wbFogSpr = null, this.__wbFogSpr2 = null; if (this.__wbConvoy) for (var wbc in t.object) if (t.object[wbc] && -1 != ("," + t.param1 + ",").indexOf("," + t.object[wbc].id + ",")) this.__wbConvoyIds[t.object[wbc].id] = !0;
         var e = $n.instance.curPlaneCfg;
         // 双人模式：P1 用选关界面左键选的机型（未选则回退车库当前机）
         y.storage.__wb_twoPlayer && y.storage.__wb_p1Plane && (e = y.getObjectByID(y.storage.__wb_p1Plane) || e);
@@ -11755,7 +11755,7 @@ var Laya = window.Laya = function(t) {
           var r = this.parseObject(s);
           r.on("dead", this, this.onObjectDead), this.gScene.addGameObject(r)
         }
-        this.gScene.addGameObject(this.role), this.battleUI.init(this), this.battleUI.alpha = 1, this.showTaskInfo();
+        this.gScene.addGameObject(this.role), this.battleUI.init(this), this.battleUI.alpha = 1, this.showTaskInfo(), this.__wbFog && this.wbInitFog();
         // 设施任务：把标记为 wbTask 的设施 id 收集起来（同关可有多个设施，全部摧毁才进入返航阶段）
         this.__wbFacIds = {};
         if (this.__wbFacility) for (var wb in t.object) if (t.object[wb] && "1" == t.object[wb].wbTask) this.__wbFacIds[t.object[wb].id] = !0;
@@ -11859,7 +11859,7 @@ var Laya = window.Laya = function(t) {
             t.__wbPLast && !t.__wbPFire ? st.killCount = (st.killCount || 0) + 1 : (t.__wbPDmg || 0) >= .3 * (t.maxHP || 1) && (st.assistCount = (st.assistCount || 0) + 1);
           else t instanceof com.ocean.game.Building && (st.buildingCount = (st.buildingCount || 0) + 1);
         // 保卫类任务（如保护指挥部）：被保护目标一旦被摧毁，立刻失败
-        if ("protect" == this.taskType && t.id == this.taskObjID) return this.gameOver(!1), void 0;
+        if ("protect" == this.taskType && t.id == this.taskObjID) return this.gameOver(!1), void 0; if (this.__wbConvoy && this.__wbConvoyIds[t.id]) { if (--this.__wbConvoyAlive <= 0) return this.gameOver(!1), void 0; this.showTaskInfo(); }
         // 设施摧毁类任务：设施全部摧毁后不结算胜利，而是进入"限时返航"阶段
         if (this.__wbFacility && 1 == this.__wbPhase && this.__wbFacIds && this.__wbFacIds[t.id]) {
           this.curTaskNum++, this.showTaskInfo(), this.curTaskNum >= this.taskNum && this.enterReturnPhase();
@@ -11916,7 +11916,7 @@ var Laya = window.Laya = function(t) {
         this.p2DashItems = [], this._p2CMap = new Map;
         var map = this._p2CMap;
         this.p2Top = this.wbUIClone(bu.topBox, map), this.addChild(this.p2Top),
-        this.p2Map = this.wbUIClone(bu.mapBox, map), this.addChild(this.p2Map);
+        this.p2Map = this.wbUIClone(bu.mapBox, map), this.addChild(this.p2Map), this.__wbFog && (this.p2Map.visible = !1);
         var dash = new Gi;
         dash.mouseEnabled = !1, dash.mouseChildren = !1;
         var kn = ["N", "M"], base = 1 == this.role2.gunArr.length ? -48 : -103;
@@ -11934,7 +11934,7 @@ var Laya = window.Laya = function(t) {
           show = !!(r2 && !this.p2Dead && this.p2Top);
         if (this.p2Top) {
           this.p2Top.visible = show, this.p2Top.pos(W / 2 + 20, 20);
-          this.p2Map && (this.p2Map.visible = show, this.p2Map.pos(W - 220, 0));
+          this.p2Map && (this.p2Map.visible = show && !this.__wbFog, this.p2Map.pos(W - 220, 0));
           this.p2Dash && (this.p2Dash.visible = show, this.p2Dash.pos(3 * W / 4, H - 120))
         }
         if (show) {
@@ -11994,11 +11994,11 @@ var Laya = window.Laya = function(t) {
               var tx = new us;
               tx.text = W2, tx.font = "SimHei", tx.fontSize = 15, tx.bold = !0, tx.color = "#ffe08a", tx.width = 44, tx.align = "center", tx.y = y + 3, tag.addChild(tx)
             }(this._wbDivider, 3 * W / 4 - 22, H - 30, "P2"))) : 0;
-          this.gScene.vpRect.width = W / (2 * sr);
+          this.__wbFog && this.wbInitFog2(); this.gScene.vpRect.width = W / (2 * sr);
           var p2x = this.role2 && !this.p2Dead ? this.role2.x : this.role.x, p2y = this.role2 && !this.p2Dead ? this.role2.y : this.role.y;
           this.mirror.sync(p2x, p2y)
         } else if (this.gScene) {
-          // 单人/非分屏：还原原生布局。Mission 实例被 UIManager 的 wndMap 缓存复用，
+          if (!this.__wbFog && this.__wbFogSpr && this.__wbFogSpr.length) for (var wbf = 0; wbf < this.__wbFogSpr.length; wbf++) this.__wbFogSpr[wbf].removeSelf(); this.__wbFogSpr = null; if (!this.__wbFog && this.__wbFogSpr2) { this.__wbFogSpr2.removeSelf(); this.__wbFogSpr2 = null; } this.__wbFogReady = !1; this.__wbFog && !this.__wbFogSpr && this.wbInitFog();          // 单人/非分屏：还原原生布局。Mission 实例被 UIManager 的 wndMap 缓存复用，
           // 双人局遗留的"半宽视口（飞机偏左）+ 小地图居中 + 弹药偏左"必须在这里还原，否则单人模式布局错乱
           var W3 = i.stage.width, sr3 = this.gScene.scaleRatio;
           this.gScene.scrollRect = null, this.gScene.vpRect.width = W3 / sr3,
@@ -12006,7 +12006,7 @@ var Laya = window.Laya = function(t) {
           this.battleUI.dashSpt && (this.battleUI.dashSpt.x = W3 / 2, this.battleUI.dashSpt.y = i.stage.height - 120))
         }
       }, s.onTimeOut = function() {
-        i.timer.clear(this, this.onTimeOut), 2 == this.__wbPhase ? this.gameOver(!1) : "kill" == this.taskType ? this.gameOver(!1) : "protect" == this.taskType ? this.gameOver(!0) : this.gameOver(!0)
+        i.timer.clear(this, this.onTimeOut), 2 == this.__wbPhase ? this.gameOver(!1) : "kill" == this.taskType ? this.gameOver(!1) : "protect" == this.taskType ? this.gameOver(!0) : this.__wbConvoy || "wbFog" == this.taskType ? this.gameOver(!0) : this.gameOver(!0)
       }, s.gameOver = function(t) {
         if (!this.bGameOver) {
           this.bGameOver = !0, y.saveData(), this.battleUI.alpha = 0;
@@ -12141,7 +12141,7 @@ var Laya = window.Laya = function(t) {
           // 摄像机：分屏——P1 左半屏 / P2 右半屏各自跟随；一方坠机后其半屏跟随存活者
           var cx = this.role.x, cy = this.role.y;
           this.role2 && this.p1Dead && !this.p2Dead && (cx = this.role2.x, cy = this.role2.y);
-          if (this.gScene.update(i.timer.delta), this.gScene.setViewPortCenter(cx, cy), this.battleUI.update(i.timer.delta), this.updateP2Hud(), this.updateSplitView(), this.bShoot && !this.p1Dead) {
+          if (this.gScene.update(i.timer.delta), this.gScene.setViewPortCenter(cx, cy), this.battleUI.update(i.timer.delta), this.updateP2Hud(), this.updateSplitView(), this.wbUpdateFog(), this.bShoot && !this.p1Dead) {
             var t = this.role.getGun(0);
             t && (t.isChamberEmpty ? this.battleUI.showWarning("主武器没弹药啦！") : t.shoot())
           }
@@ -12182,7 +12182,75 @@ var Laya = window.Laya = function(t) {
         // 判断这个按键属于 P1 还是 P2（Shift 按左右区分，其余按键位归属）
         if (16 == k) return this.wbIsRightShift(t) ? 2 : 1;
         return -1 != this._wbTeachP2Keys.indexOf(k) ? 2 : 1
-      }, s.showTaskInfo = function() {
+      }, s.wbFogBands = function() {
+    // 迷雾分层：半径 r 依次增大、alpha 递增（自下而上叠加）
+    if (!this.__wbFogBands) this.__wbFogBands = [
+      { r: 400, alpha: .32 },
+      { r: 490, alpha: .40 },
+      { r: 620, alpha: .55 },
+      { r: 820, alpha: 1 }
+    ];
+    return this.__wbFogBands
+  }, s.wbFogHalf = function() {
+    var bd = this.wbFogBands(); return bd[bd.length - 1].r
+  }, s.wbMakeFogSprite = function(nd) {
+    // 单层迷雾：正方形挖掉半径 r 的圆 = 4 个矩形（不覆盖圆心）
+    var bd = this.wbFogBands(), HS = this.wbFogHalf(), bn = bd[nd], sp = new Gi, r = bn.r, g;
+    sp.mouseEnabled = !1, sp.__wbFog = !0, sp.__wbFogHalf = HS,
+    sp.pos(-99999, -99999), sp.size(2 * HS, 2 * HS);
+    g = sp.graphics;
+    g.drawRect(0, 0, HS, HS - r, "#000000");
+    g.drawRect(0, HS + r, HS, HS - r, "#000000");
+    g.drawRect(0, HS - r, HS - r, 2 * r, "#000000");
+    g.drawRect(HS + r, HS - r, HS - r, 2 * r, "#000000");
+    sp.alpha = bn.alpha, sp.repaint();
+    return sp
+  }, s.wbInitFog = function() {
+    // 0-8 雷达失效：隐藏原生小地图；再挂若干层迷雾
+    try { this.battleUI && this.battleUI.mapBox && (this.battleUI.mapBox.visible = !1); } catch (e) { }
+    this.__wbFogSpr = [], this.__wbFogBands = null;
+    var bd = this.wbFogBands(), ul = this.gScene && this.gScene.upperLayer, i2;
+    if (ul) for (i2 = ul.numChildren - 1; i2 >= 0; i2--) { var oc = ul.getChildAt(i2); oc && oc.__wbFog && oc.removeSelf(); }
+    if (!this.gScene || !this.gScene.upperLayer) return;
+    for (i2 = 0; i2 < bd.length; i2++) {
+      var sp0 = this.wbMakeFogSprite(i2)
+      this.__wbFogSpr.push(sp0),
+      this.gScene.upperLayer.addChild(sp0)
+    }
+    this.__wbFogSpr2 = null, this.__wbFogReady = !1
+  }, s.wbInitFog2 = function() {
+    // 双人分屏：P2 视角（镜像视图）同样只留一圈视野
+    if (!this.__wbFog || this.__wbFogSpr2 || !this.mirror || !this.mirror.view) return; var mw2 = this.mirror.view.upperLayer; if (!mw2) return;
+    for (var wm2 = mw2.numChildren - 1; wm2 >= 0; wm2--) { var om = mw2.getChildAt(wm2); om && om.__wbFog && om.removeSelf(); }
+    this.__wbFogSpr2 = [];
+    var bd2 = this.wbFogBands();
+    for (var w0 = 0; w0 < bd2.length; w0++) {
+      var sp = this.wbMakeFogSprite(w0)
+      this.__wbFogSpr2.push(sp),
+      mw2.addChild(sp)
+    }
+  }, s.wbUpdateFog = function() {
+    // 每帧把各迷雾层对齐本机（P1 在真实场景，P2 在镜像视图）
+    if (!this.__wbFog || !this.gScene) return;
+    var g2 = this.gScene;
+    if (g2.mapWidth > 1e7) return;
+    var a2 = this.__wbFogSpr, s2 = this.__wbFogSpr2, i3, sp3, c4, hf;
+    if (a2 && a2.length) {
+      c4 = this.role;
+      if (c4) for (i3 = 0; i3 < a2.length; i3++) {
+        sp3 = a2[i3], hf = sp3.__wbFogHalf || 0,
+        sp3.x = c4.x - hf, sp3.y = c4.y - hf
+      }
+    }
+    if (s2 && s2.length) {
+      c4 = this.role2 && !this.p2Dead ? this.role2 : this.role;
+      if (c4) for (i3 = 0; i3 < s2.length; i3++) {
+        sp3 = s2[i3], hf = sp3.__wbFogHalf || 0,
+        sp3.x = c4.x - hf, sp3.y = c4.y - hf
+      }
+    }
+  }, s.wbFogPaint = function(sp) { },
+s.showTaskInfo = function() {
         if ("teach" == this.taskType) {
           null == this.teachStep && (this.teachStep = 0, this.destination = null, this.buildTeachBar());
           var t = e.TEACH[this.teachStep], two = !!this.role2,
@@ -12192,7 +12260,7 @@ var Laya = window.Laya = function(t) {
           this.teachTxt && (this.teachTxt.text = s1), this.teachTxt1 && (this.teachTxt1.text = s1), this.teachTxt2 && (this.teachTxt2.text = s2);
           return this.battleUI.setTaskInfo("教学：" + (t ? two ? t.t1 + " ｜ P2：" + t.t2 : t.t1 : "击落靶机")), void 0
         }
-        var t = "kill" == this.taskType || this.__wbFacility && 1 == this.__wbPhase ? this.curTaskNum : this.taskNum - this.curTaskNum;
+        if (this.__wbConvoy) return this.battleUI.setTaskInfo("任务：" + this.taskDesc + " 护卫 " + Math.max(0, this.__wbConvoyAlive) + "/" + this.__wbConvoyNeed), void 0; var t = "kill" == this.taskType || this.__wbFacility && 1 == this.__wbPhase ? this.curTaskNum : this.taskNum - this.curTaskNum;
         this.battleUI.setTaskInfo("任务：" + this.taskDesc + " " + t + "/" + this.taskNum)
       }, s.buildTeachBar = function() {
         this.teachBar && (this.teachBar.removeSelf(), this.teachBar = null, this.teachTxt = null, this.teachBar1 = null, this.teachTxt1 = null, this.teachBar2 = null, this.teachTxt2 = null);
@@ -20903,9 +20971,9 @@ var Laya = window.Laya = function(t) {
           s = b.showWindow(Qn);
         s.init(i)
       }, e.chapterIndex = 0, e.gateCount = function(t) {
-        return 0 >= t ? 6 : 12
+        return 0 >= t ? 8 : 12
       }, e.getGateId = function(t, e) {
-        if (0 >= t) return 1 === e ? 0 : 2 === e ? 98 : 3 === e ? 99 : 4 === e ? 100 : 5 === e ? 101 : 6 === e ? 102 : 0;
+        if (0 >= t) return 1 === e ? 0 : 2 === e ? 98 : 3 === e ? 99 : 4 === e ? 100 : 5 === e ? 101 : 6 === e ? 102 : 7 === e ? 103 : 8 === e ? 104 : 0;
         return 12 * (t - 1) + e
       }, e
     }(Rn),
