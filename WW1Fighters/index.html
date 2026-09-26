@@ -11746,6 +11746,8 @@ var Laya = window.Laya = function(t) {
         this.bGameOver = !1, this.bShoot = !1, this.bBomb = !1, this.curTaskNum = 0, this.teachStep = null, this.teachP1 = 0, this.teachP2 = 0, this.missionCfg = t, this.miniMap = "res/map/" + t.src + ".png", this.gScene.loadMap("res/map/" + t.src + ".json"), this.gScene.produceClound(t.cloudNum), this.limitTime = Number(t.limitTime), this.limitTime > 0 && i.timer.once(1e3 * this.limitTime, this, this.onTimeOut), this.gateIndex = parseInt(t.id), this.taskType = t.taskType, this.taskDesc = t.goal, this.taskObjID = t.param1, this.taskNum = parseInt(t.param2), this.destination = g.parsePointsString(t.param3)[0], this.prize = parseInt(t.prize), this.honor = parseInt(t.honor),
         // 新任务类型 wbFacility（第零章 0-6）：摧毁敌方基地设施后，限时返回地图指定集合点
         this.__wbPhase = 1, this.__wbFacility = "wbFacility" == t.taskType, this.__wbReturnLimit = Number(t.param4) > 0 ? Number(t.param4) : 60, this.__wbRally = this.__wbFacility ? g.parsePointsString(t.param3)[0] : null, this.destination = this.__wbFacility ? null : this.destination, this.__wbSpawnAfter = this.__wbFacility && t.spawnAfter && t.spawnAfter.length ? t.spawnAfter : null, this.__wbConvoy = "wbConvoy" == t.taskType, this.__wbConvoyIds = {}, this.__wbConvoyNeed = parseInt(t.param2) > 0 ? parseInt(t.param2) : 3, this.__wbConvoyAlive = this.__wbConvoyNeed, this.__wbFog = "wbFog" == t.taskType, this.__wbFogR = Number(t.param3) > 0 ? Number(t.param3) : 430, this.__wbFogSpr = null, this.__wbFogRecs = null, this.__wbFogSpr2 = null, this.__wbFogRecs2 = null; if (this.__wbConvoy) for (var wbc in t.object) if (t.object[wbc] && -1 != ("," + t.param1 + ",").indexOf("," + t.object[wbc].id + ",")) this.__wbConvoyIds[t.object[wbc].id] = !0;
+        // 手机版强制单人：即使存档里残留双人标志（比如 PC 上开过），手机上也不进入分屏双人
+        if (wbIsMobile() && y.storage.__wb_twoPlayer) y.storage.__wb_twoPlayer = !1, y.saveData();
         var e = $n.instance.curPlaneCfg;
         // 双人模式：P1 用选关界面左键选的机型（未选则回退车库当前机）
         y.storage.__wb_twoPlayer && y.storage.__wb_p1Plane && (e = y.getObjectByID(y.storage.__wb_p1Plane) || e);
@@ -20846,6 +20848,7 @@ s.showTaskInfo = function() {
       n(e, "com.ocean.ui.MissionUI", t);
       var s = e.prototype;
       return s.initTwoPlayerUI = function() {
+        if (wbIsMobile()) return; // 手机版不加载双人选机 UI（横条归属框等）
         this._wbPlaneItems = [], document.oncontextmenu = function() {
           return !1
         }, this._wbBindPick(), this.refreshTwoPlayerUI()
@@ -21461,8 +21464,12 @@ s.showTaskInfo = function() {
         }), this.adsBtn.on("mouseout", this, function() {
           b.hideToolTip()
         }), this.startBtn.on("click", this, this.onStartBtnClick), this.remakeBtn.on("click", this, this.onRemakeBtnClick), this.researchBtn.on("click", this, this.onResearchBtnClick), this.helpBtn.on("click", this, this.onHelpBtnClick), this.adsBtn.on("click", this, this.onAdsBtnClick), this.shareBtn.on("click", this, this.onShareClick), this.rankBtn.on("click", this, this.onRankClick), this.sellBtn.on("click", this, this.onSellBtnClick), this.chapterBtn.on("click", this, this.onChapterClick), this.exportBtn.on("click", this, this.onExportClick), this.importBtn.on("click", this, this.onImportClick), $n.instance.on("change", this, this.onGarageChange), i.stage.on("resize", this, this.onResize), this.onResize(), y.storage.__wb_moneyOn && (this.shareBtn.label = "撤销货币"), y.storage.__wb_hpLock && (this.rankBtn.label = "血量锁定:开"),         y.storage.__wb_chapterOn && (this.chapterBtn.label = "恢复章节"), this.initPilotPlate(),
-        // 双人模式切换按钮（左侧）
-        this.twoPlayerBtn = new hn("main/btn2Skin.png", y.storage.__wb_twoPlayer ? "单人模式" : "双人模式"), this.twoPlayerBtn.on("click", this, this.onTwoPlayerClick), this.addChild(this.twoPlayerBtn), this.placeTwoPlayerBtn()
+        // 双人模式切换按钮（左侧）：手机版不创建（触屏无法操作键盘分屏），也强制回到单人
+        this.__wbMobile = wbIsMobile();
+        this.__wbMobile && y.storage.__wb_twoPlayer && (y.storage.__wb_twoPlayer = !1, y.saveData());
+        if (!this.__wbMobile) {
+          this.twoPlayerBtn = new hn("main/btn2Skin.png", y.storage.__wb_twoPlayer ? "单人模式" : "双人模式"), this.twoPlayerBtn.on("click", this, this.onTwoPlayerClick), this.addChild(this.twoPlayerBtn), this.placeTwoPlayerBtn()
+        }
       }
       n(e, "com.ocean.ui.StartUI", t);
       var s = e.prototype;
@@ -21543,6 +21550,7 @@ s.showTaskInfo = function() {
           this.twoPlayerBtn.size(eb.width, eb.height), this.twoPlayerBtn.labelSize = eb.labelSize, this.twoPlayerBtn.labelFont = eb.labelFont, this.twoPlayerBtn.labelColors = eb.labelColors, this.twoPlayerBtn.pos(eb.x, eb.y - eb.height - gap)
         }
       },       s.onTwoPlayerClick = function() {
+        if (this.__wbMobile || wbIsMobile()) return; // 手机版不可开启双人
         y.storage.__wb_twoPlayer = !y.storage.__wb_twoPlayer, this.twoPlayerBtn.label = y.storage.__wb_twoPlayer ? "单人模式" : "双人模式", y.saveData();
         // 打开双人：用原版消息条提示机库横条的用法（左键 P1 蓝框 / 右键 P2 黄框）
         y.storage.__wb_twoPlayer && b.showMessage("机库选机：左键 = P1（蓝框），右键 = P2（黄框），可选用同一架");
@@ -21853,6 +21861,22 @@ s.showTaskInfo = function() {
         }
       }, e
     }(rr);
+    // ========== 移动端识别：手机版隐藏双人模式（分屏键位依赖键盘，触屏无法操作） ==========
+    // 不能完全只看 UA——iPadOS 桌面模式的 UA 是 Macintosh，必须一并考虑触屏能力
+    function wbIsMobile() {
+      try {
+        var Br = (window.laya && window.laya.utils && window.laya.utils.Browser) || (window.Laya && window.Laya.utils && window.Laya.utils.Browser) || null,
+          ua = (Br && Br.userAgent) || (navigator.userAgent || "");
+        if ((Br && (Br.onMobile || Br.onAndroid || Br.onIOS || Br.onIPad || Br.onWP)) || /Android|iPhone|iPad|iPod|Windows Phone|HarmonyOS|Mobile/i.test(ua)) return !0;
+        // 触屏兜底（覆盖 iPadOS 桌面模式这类 UA 伪装成 Mac 的设备）：
+        // 必须要求「多指触控」且「没有精确指针（鼠标/触控笔）」，否则触屏笔记本会被误判成手机
+        if ((navigator.maxTouchPoints || 0) > 1) {
+          try { if (window.matchMedia && window.matchMedia("(pointer: fine)").matches) return !1 } catch (err2) { }
+          return !0
+        }
+        return !1
+      } catch (err) { return !1 }
+    }
     // ========== 双人分屏：镜像视图（同一场战斗，P2 独立"摄像机"） ==========
     // 原理：新建一个 GameScene 加载同一张地图做纯显示用（不跑逻辑），每帧把真实场景
     // 5 个层里的显示节点克隆/同步到镜像层（变换+皮肤+文本，Graphics 共享引用）；
