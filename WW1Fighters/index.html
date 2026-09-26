@@ -12184,32 +12184,27 @@ var Laya = window.Laya = function(t) {
         // 判断这个按键属于 P1 还是 P2（Shift 按左右区分，其余按键位归属）
         if (16 == k) return this.wbIsRightShift(t) ? 2 : 1;
         return -1 != this._wbTeachP2Keys.indexOf(k) ? 2 : 1
-      }, s.wbFogHalf = function() {
-    // 迷雾暗幕半边长：需覆盖视口对角线（1334x750 对角≈765）
-    return 1000
-  }, s.wbMakeFogClouds = function(ul) {
-    // 云层迷雾：底层=挖圆盘暗幕（圆心留观察窗），上层=一圈云 sprite 盖住地形与敌机
+      }, s.wbMakeFogClouds = function(ul) {
+    // 云层迷雾（纯云版）：不用暗幕，只用两圈交错的大白云把观察窗外的一切遮住
     if (!ul) return null;
     for (var j = ul.numChildren - 1; j >= 0; j--) { var oc = ul.getChildAt(j); oc && oc.__wbFog && oc.removeSelf(); }
-    var R = this.__wbFogR || 430, HS = this.wbFogHalf(), disp = [], recs = [],
-      CW = [675, 503, 740, 665, 543, 535, 356], N = 26, i2;
-    // 底层暗幕：正方形挖掉半径 R 的圆 = 4 个矩形（不覆盖圆心）
-    var base = new Gi;
-    base.mouseEnabled = !1, base.__wbFog = !0, base.pos(-99999, -99999), base.size(2 * HS, 2 * HS);
-    base.graphics.drawRect(0, 0, HS, HS - R, "#0a1420"), base.graphics.drawRect(0, HS + R, HS, HS - R, "#0a1420"),
-    base.graphics.drawRect(0, HS - R, HS - R, 2 * R, "#0a1420"), base.graphics.drawRect(HS + R, HS - R, HS - R, 2 * R, "#0a1420"),
-    base.alpha = .6, base.repaint(), base.__wbFogHalf = HS, disp.push(base), ul.addChild(base);
+    var R = this.__wbFogR || 430, disp = [], recs = [],
+      CW = [675, 503, 740, 665, 543, 535, 356], N = 48, i2;
     for (i2 = 0; i2 < N; i2++) {
-      var tid = 1 + i2 % 7, sc = .8 + .6 * Math.random(), hw = CW[tid - 1] * sc / 2,
+      var tid = 1 + i2 % 7, sc = 1 + .8 * Math.random(), hw = CW[tid - 1] * sc / 2,
         img = new ks("cloud/cloud" + tid + ".png");
       img.anchorX = img.anchorY = .5, img.mouseEnabled = !1, img.__wbFog = !0, img.__wbHW = hw,
-      img.scaleX = img.scaleY = sc, img.alpha = .97, img.rotation = Math.random() * 360;
-      var rec = { ang: 2 * Math.PI * i2 / N + (Math.random() - .5) * .35, rad: R + hw + 24 + 70 * Math.random(), spd: 2e-5 * (.6 + .8 * Math.random()) * (Math.random() < .5 ? 1 : -1), rot: 6e-5 * (Math.random() - .5), ph: 6.28 * Math.random(), baseRot: Math.random() * 360 };
+      img.scaleX = img.scaleY = sc, img.alpha = 1, img.rotation = Math.random() * 360;
+      // 两圈交错：奇偶索引错开半径，云心略压过观察窗边缘（内缘≈R-60..R-10）保证无缺口
+      var rec = { ang: 2 * Math.PI * i2 / N + (Math.random() - .5) * .18,
+        rad: R + hw * .55 + (i2 % 2) * 150 + 40 * Math.random(),
+        spd: 2e-5 * (.6 + .8 * Math.random()) * (Math.random() < .5 ? 1 : -1),
+        rot: 6e-5 * (Math.random() - .5), ph: 6.28 * Math.random(), baseRot: Math.random() * 360 };
       disp.push(img), recs.push(rec), ul.addChild(img)
     }
     return { disp: disp, recs: recs }
   }, s.wbInitFog = function() {
-    // 0-8 雷达失效：隐藏原生小地图；用暗幕+云层把窗外世界遮住，只留本机周围一圈观察窗
+    // 0-8 雷达失效：隐藏原生小地图；用云层把窗外世界遮住，只留本机周围一圈观察窗
     try { this.battleUI && this.battleUI.mapBox && (this.battleUI.mapBox.visible = !1); } catch (e) { }
     this.__wbFogT = 0;
     var r1 = this.wbMakeFogClouds(this.gScene && this.gScene.upperLayer);
@@ -12227,12 +12222,11 @@ var Laya = window.Laya = function(t) {
     var r2 = this.wbMakeFogClouds(this.mirror.view.upperLayer);
     this.__wbFogSpr2 = r2 ? r2.disp : null, this.__wbFogRecs2 = r2 ? r2.recs : null
   }, s.wbFogSync = function(disp, recs, gn, c4, tS) {
-    // 把暗幕与云环对齐到本机显示坐标（含摄像机边缘回绕修正），并做缓慢漂移
-    if (!disp || !disp.length || !gn || !c4) return;
-    var HS = this.wbFogHalf(), cx = c4.x, cy = c4.y, k;
-    disp[0] && disp[0].__wbFogHalf && (disp[0].x = cx - HS, disp[0].y = cy - HS);
-    if (recs) for (k = 1; k < disp.length; k++) {
-      var rc = recs[k - 1], ang = rc.ang + tS * rc.spd, rad = rc.rad + Math.sin(tS * 3e-4 + rc.ph) * 26;
+    // 把云环对齐到本机显示坐标（含摄像机边缘回绕修正），并做缓慢漂移
+    if (!disp || !disp.length || !gn || !c4 || !recs) return;
+    var cx = c4.x, cy = c4.y, k;
+    for (k = 0; k < disp.length && k < recs.length; k++) {
+      var rc = recs[k], ang = rc.ang + tS * rc.spd, rad = rc.rad + Math.sin(tS * 3e-4 + rc.ph) * 26;
       disp[k].x = cx + Math.cos(ang) * rad, disp[k].y = cy + Math.sin(ang) * rad, disp[k].rotation = rc.baseRot + tS * rc.rot
     }
   }, s.wbUpdateFog = function() {
