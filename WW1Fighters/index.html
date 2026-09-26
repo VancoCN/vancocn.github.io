@@ -10954,6 +10954,7 @@ var Laya = window.Laya = function(t) {
         var r = Mi.getRes(n + ".png");
         r && (this.graphics.clear(), this.graphics.drawTexture(r, -r.width / 2, -r.height / 2, r.width, r.height)), this.x = t.x, this.y = t.y, this.rotation = e.degree, i.timer.frameLoop(1, this, this.update)
       }, a.update = function() {
+        if (window.__wbPaused) return; // 暂停时子弹冻结（子弹有独立 frameLoop，不走 gScene.update）
         var t = this.info.speed * i.timer.delta;
         if (this.curRange += t, this.dir.scale(t), this.x += this.dir.x, this.y += this.dir.y, this.curRange > this.info.maxRange) return this.release(), void 0;
         var s, n = this.owner.gScene.getObjectsInCircle(this.x, this.y);
@@ -11406,6 +11407,7 @@ var Laya = window.Laya = function(t) {
       n(e, "com.ocean.game.MyParticle", t);
       var r = e.prototype;
       return r.onUpdate = function() {
+        if (window.__wbPaused) return; // 暂停时粒子（烟雾等）冻结
         this.graphics.clear(!0);
         for (var t = 0; t < this.particleArr.length; t++) {
           var e = this.particleArr[t];
@@ -11743,7 +11745,7 @@ var Laya = window.Laya = function(t) {
       return       s.init = function(t) {
         this.bGameOver = !1, this.bShoot = !1, this.bBomb = !1, this.curTaskNum = 0, this.teachStep = null, this.teachP1 = 0, this.teachP2 = 0, this.missionCfg = t, this.miniMap = "res/map/" + t.src + ".png", this.gScene.loadMap("res/map/" + t.src + ".json"), this.gScene.produceClound(t.cloudNum), this.limitTime = Number(t.limitTime), this.limitTime > 0 && i.timer.once(1e3 * this.limitTime, this, this.onTimeOut), this.gateIndex = parseInt(t.id), this.taskType = t.taskType, this.taskDesc = t.goal, this.taskObjID = t.param1, this.taskNum = parseInt(t.param2), this.destination = g.parsePointsString(t.param3)[0], this.prize = parseInt(t.prize), this.honor = parseInt(t.honor),
         // 新任务类型 wbFacility（第零章 0-6）：摧毁敌方基地设施后，限时返回地图指定集合点
-        this.__wbPhase = 1, this.__wbFacility = "wbFacility" == t.taskType, this.__wbReturnLimit = Number(t.param4) > 0 ? Number(t.param4) : 60, this.__wbRally = this.__wbFacility ? g.parsePointsString(t.param3)[0] : null, this.destination = this.__wbFacility ? null : this.destination, this.__wbSpawnAfter = this.__wbFacility && t.spawnAfter && t.spawnAfter.length ? t.spawnAfter : null, this.__wbConvoy = "wbConvoy" == t.taskType, this.__wbConvoyIds = {}, this.__wbConvoyNeed = parseInt(t.param2) > 0 ? parseInt(t.param2) : 3, this.__wbConvoyAlive = this.__wbConvoyNeed, this.__wbFog = "wbFog" == t.taskType, this.__wbFogR = Number(t.param3) > 0 ? Number(t.param3) : 430, this.__wbFogSpr = null, this.__wbFogSpr2 = null; if (this.__wbConvoy) for (var wbc in t.object) if (t.object[wbc] && -1 != ("," + t.param1 + ",").indexOf("," + t.object[wbc].id + ",")) this.__wbConvoyIds[t.object[wbc].id] = !0;
+        this.__wbPhase = 1, this.__wbFacility = "wbFacility" == t.taskType, this.__wbReturnLimit = Number(t.param4) > 0 ? Number(t.param4) : 60, this.__wbRally = this.__wbFacility ? g.parsePointsString(t.param3)[0] : null, this.destination = this.__wbFacility ? null : this.destination, this.__wbSpawnAfter = this.__wbFacility && t.spawnAfter && t.spawnAfter.length ? t.spawnAfter : null, this.__wbConvoy = "wbConvoy" == t.taskType, this.__wbConvoyIds = {}, this.__wbConvoyNeed = parseInt(t.param2) > 0 ? parseInt(t.param2) : 3, this.__wbConvoyAlive = this.__wbConvoyNeed, this.__wbFog = "wbFog" == t.taskType, this.__wbFogR = Number(t.param3) > 0 ? Number(t.param3) : 430, this.__wbFogSpr = null, this.__wbFogRecs = null, this.__wbFogSpr2 = null, this.__wbFogRecs2 = null; if (this.__wbConvoy) for (var wbc in t.object) if (t.object[wbc] && -1 != ("," + t.param1 + ",").indexOf("," + t.object[wbc].id + ",")) this.__wbConvoyIds[t.object[wbc].id] = !0;
         var e = $n.instance.curPlaneCfg;
         // 双人模式：P1 用选关界面左键选的机型（未选则回退车库当前机）
         y.storage.__wb_twoPlayer && y.storage.__wb_p1Plane && (e = y.getObjectByID(y.storage.__wb_p1Plane) || e);
@@ -11755,7 +11757,7 @@ var Laya = window.Laya = function(t) {
           var r = this.parseObject(s);
           r.on("dead", this, this.onObjectDead), this.gScene.addGameObject(r)
         }
-        this.gScene.addGameObject(this.role), this.battleUI.init(this), this.battleUI.alpha = 1, this.showTaskInfo(), this.__wbFog && this.wbInitFog();
+        this.gScene.addGameObject(this.role), this.battleUI.init(this), this.battleUI.alpha = 1, this.showTaskInfo(), this.__wbFog ? this.wbInitFog() : this.wbClearFog();
         // 设施任务：把标记为 wbTask 的设施 id 收集起来（同关可有多个设施，全部摧毁才进入返航阶段）
         this.__wbFacIds = {};
         if (this.__wbFacility) for (var wb in t.object) if (t.object[wb] && "1" == t.object[wb].wbTask) this.__wbFacIds[t.object[wb].id] = !0;
@@ -11998,7 +12000,7 @@ var Laya = window.Laya = function(t) {
           var p2x = this.role2 && !this.p2Dead ? this.role2.x : this.role.x, p2y = this.role2 && !this.p2Dead ? this.role2.y : this.role.y;
           this.mirror.sync(p2x, p2y)
         } else if (this.gScene) {
-          if (!this.__wbFog && this.__wbFogSpr && this.__wbFogSpr.length) for (var wbf = 0; wbf < this.__wbFogSpr.length; wbf++) this.__wbFogSpr[wbf].removeSelf(); this.__wbFogSpr = null; if (!this.__wbFog && this.__wbFogSpr2) { this.__wbFogSpr2.removeSelf(); this.__wbFogSpr2 = null; } this.__wbFogReady = !1; this.__wbFog && !this.__wbFogSpr && this.wbInitFog();          // 单人/非分屏：还原原生布局。Mission 实例被 UIManager 的 wndMap 缓存复用，
+          if (!this.__wbFog && (this.__wbFogSpr || this.__wbFogSpr2)) this.wbClearFog(); this.__wbFogReady = !1; this.__wbFog && !this.__wbFogSpr && this.wbInitFog();          // 单人/非分屏：还原原生布局。Mission 实例被 UIManager 的 wndMap 缓存复用，
           // 双人局遗留的"半宽视口（飞机偏左）+ 小地图居中 + 弹药偏左"必须在这里还原，否则单人模式布局错乱
           var W3 = i.stage.width, sr3 = this.gScene.scaleRatio;
           this.gScene.scrollRect = null, this.gScene.vpRect.width = W3 / sr3,
@@ -12182,74 +12184,70 @@ var Laya = window.Laya = function(t) {
         // 判断这个按键属于 P1 还是 P2（Shift 按左右区分，其余按键位归属）
         if (16 == k) return this.wbIsRightShift(t) ? 2 : 1;
         return -1 != this._wbTeachP2Keys.indexOf(k) ? 2 : 1
-      }, s.wbFogBands = function() {
-    // 迷雾分层：半径 r 依次增大、alpha 递增（自下而上叠加）
-    if (!this.__wbFogBands) this.__wbFogBands = [
-      { r: 400, alpha: .32 },
-      { r: 490, alpha: .40 },
-      { r: 620, alpha: .55 },
-      { r: 820, alpha: 1 }
-    ];
-    return this.__wbFogBands
-  }, s.wbFogHalf = function() {
-    var bd = this.wbFogBands(); return bd[bd.length - 1].r
-  }, s.wbMakeFogSprite = function(nd) {
-    // 单层迷雾：正方形挖掉半径 r 的圆 = 4 个矩形（不覆盖圆心）
-    var bd = this.wbFogBands(), HS = this.wbFogHalf(), bn = bd[nd], sp = new Gi, r = bn.r, g;
-    sp.mouseEnabled = !1, sp.__wbFog = !0, sp.__wbFogHalf = HS,
-    sp.pos(-99999, -99999), sp.size(2 * HS, 2 * HS);
-    g = sp.graphics;
-    g.drawRect(0, 0, HS, HS - r, "#000000");
-    g.drawRect(0, HS + r, HS, HS - r, "#000000");
-    g.drawRect(0, HS - r, HS - r, 2 * r, "#000000");
-    g.drawRect(HS + r, HS - r, HS - r, 2 * r, "#000000");
-    sp.alpha = bn.alpha, sp.repaint();
-    return sp
-  }, s.wbInitFog = function() {
-    // 0-8 雷达失效：隐藏原生小地图；再挂若干层迷雾
-    try { this.battleUI && this.battleUI.mapBox && (this.battleUI.mapBox.visible = !1); } catch (e) { }
-    this.__wbFogSpr = [], this.__wbFogBands = null;
-    var bd = this.wbFogBands(), ul = this.gScene && this.gScene.upperLayer, i2;
-    if (ul) for (i2 = ul.numChildren - 1; i2 >= 0; i2--) { var oc = ul.getChildAt(i2); oc && oc.__wbFog && oc.removeSelf(); }
-    if (!this.gScene || !this.gScene.upperLayer) return;
-    for (i2 = 0; i2 < bd.length; i2++) {
-      var sp0 = this.wbMakeFogSprite(i2)
-      this.__wbFogSpr.push(sp0),
-      this.gScene.upperLayer.addChild(sp0)
+      }, s.wbFogHalf = function() {
+    // 迷雾暗幕半边长：需覆盖视口对角线（1334x750 对角≈765）
+    return 1000
+  }, s.wbMakeFogClouds = function(ul) {
+    // 云层迷雾：底层=挖圆盘暗幕（圆心留观察窗），上层=一圈云 sprite 盖住地形与敌机
+    if (!ul) return null;
+    for (var j = ul.numChildren - 1; j >= 0; j--) { var oc = ul.getChildAt(j); oc && oc.__wbFog && oc.removeSelf(); }
+    var R = this.__wbFogR || 430, HS = this.wbFogHalf(), disp = [], recs = [],
+      CW = [675, 503, 740, 665, 543, 535, 356], N = 26, i2;
+    // 底层暗幕：正方形挖掉半径 R 的圆 = 4 个矩形（不覆盖圆心）
+    var base = new Gi;
+    base.mouseEnabled = !1, base.__wbFog = !0, base.pos(-99999, -99999), base.size(2 * HS, 2 * HS);
+    base.graphics.drawRect(0, 0, HS, HS - R, "#0a1420"), base.graphics.drawRect(0, HS + R, HS, HS - R, "#0a1420"),
+    base.graphics.drawRect(0, HS - R, HS - R, 2 * R, "#0a1420"), base.graphics.drawRect(HS + R, HS - R, HS - R, 2 * R, "#0a1420"),
+    base.alpha = .6, base.repaint(), base.__wbFogHalf = HS, disp.push(base), ul.addChild(base);
+    for (i2 = 0; i2 < N; i2++) {
+      var tid = 1 + i2 % 7, sc = .8 + .6 * Math.random(), hw = CW[tid - 1] * sc / 2,
+        img = new ks("cloud/cloud" + tid + ".png");
+      img.anchorX = img.anchorY = .5, img.mouseEnabled = !1, img.__wbFog = !0, img.__wbHW = hw,
+      img.scaleX = img.scaleY = sc, img.alpha = .97, img.rotation = Math.random() * 360;
+      var rec = { ang: 2 * Math.PI * i2 / N + (Math.random() - .5) * .35, rad: R + hw + 24 + 70 * Math.random(), spd: 2e-5 * (.6 + .8 * Math.random()) * (Math.random() < .5 ? 1 : -1), rot: 6e-5 * (Math.random() - .5), ph: 6.28 * Math.random(), baseRot: Math.random() * 360 };
+      disp.push(img), recs.push(rec), ul.addChild(img)
     }
-    this.__wbFogSpr2 = null, this.__wbFogReady = !1
+    return { disp: disp, recs: recs }
+  }, s.wbInitFog = function() {
+    // 0-8 雷达失效：隐藏原生小地图；用暗幕+云层把窗外世界遮住，只留本机周围一圈观察窗
+    try { this.battleUI && this.battleUI.mapBox && (this.battleUI.mapBox.visible = !1); } catch (e) { }
+    this.__wbFogT = 0;
+    var r1 = this.wbMakeFogClouds(this.gScene && this.gScene.upperLayer);
+    this.__wbFogSpr = r1 ? r1.disp : null, this.__wbFogRecs = r1 ? r1.recs : null,
+    this.__wbFogSpr2 = null, this.__wbFogRecs2 = null, this.__wbFogReady = !1
+  }, s.wbClearFog = function() {
+    // 非迷雾关（含 0-8 之后重进的关）：清掉残留迷雾并恢复雷达
+    try { this.battleUI && this.battleUI.mapBox && (this.battleUI.mapBox.visible = !0); } catch (e) { }
+    var hosts = [this.gScene && this.gScene.upperLayer, this.mirror && this.mirror.view && this.mirror.view.upperLayer], h2, j2;
+    for (h2 = 0; h2 < hosts.length; h2++) { var ul2 = hosts[h2]; if (ul2) for (j2 = ul2.numChildren - 1; j2 >= 0; j2--) { var oc2 = ul2.getChildAt(j2); oc2 && oc2.__wbFog && oc2.removeSelf(); } }
+    this.__wbFogSpr = null, this.__wbFogRecs = null, this.__wbFogSpr2 = null, this.__wbFogRecs2 = null
   }, s.wbInitFog2 = function() {
-    // 双人分屏：P2 视角（镜像视图）同样只留一圈视野
-    if (!this.__wbFog || this.__wbFogSpr2 || !this.mirror || !this.mirror.view) return; var mw2 = this.mirror.view.upperLayer; if (!mw2) return;
-    for (var wm2 = mw2.numChildren - 1; wm2 >= 0; wm2--) { var om = mw2.getChildAt(wm2); om && om.__wbFog && om.removeSelf(); }
-    this.__wbFogSpr2 = [];
-    var bd2 = this.wbFogBands();
-    for (var w0 = 0; w0 < bd2.length; w0++) {
-      var sp = this.wbMakeFogSprite(w0)
-      this.__wbFogSpr2.push(sp),
-      mw2.addChild(sp)
+    // 双人分屏：P2 视角（镜像视图）同样只留一圈观察窗
+    if (!this.__wbFog || this.__wbFogSpr2 || !this.mirror || !this.mirror.view) return;
+    var r2 = this.wbMakeFogClouds(this.mirror.view.upperLayer);
+    this.__wbFogSpr2 = r2 ? r2.disp : null, this.__wbFogRecs2 = r2 ? r2.recs : null
+  }, s.wbFogSync = function(disp, recs, gn, c4, tS) {
+    // 把暗幕与云环对齐到本机显示坐标（含摄像机边缘回绕修正），并做缓慢漂移
+    if (!disp || !disp.length || !gn || !c4) return;
+    var HS = this.wbFogHalf(), cx = c4.x, cy = c4.y, k;
+    disp[0] && disp[0].__wbFogHalf && (disp[0].x = cx - HS, disp[0].y = cy - HS);
+    if (recs) for (k = 1; k < disp.length; k++) {
+      var rc = recs[k - 1], ang = rc.ang + tS * rc.spd, rad = rc.rad + Math.sin(tS * 3e-4 + rc.ph) * 26;
+      disp[k].x = cx + Math.cos(ang) * rad, disp[k].y = cy + Math.sin(ang) * rad, disp[k].rotation = rc.baseRot + tS * rc.rot
     }
   }, s.wbUpdateFog = function() {
-    // 每帧把各迷雾层对齐本机（P1 在真实场景，P2 在镜像视图）
+    // 每帧把迷雾对齐本机（P1 在真实场景，P2 在镜像视图）
     if (!this.__wbFog || !this.gScene) return;
     var g2 = this.gScene;
     if (g2.mapWidth > 1e7) return;
-    var a2 = this.__wbFogSpr, s2 = this.__wbFogSpr2, i3, sp3, c4, hf;
-    if (a2 && a2.length) {
-      c4 = this.role;
-      if (c4) for (i3 = 0; i3 < a2.length; i3++) {
-        sp3 = a2[i3], hf = sp3.__wbFogHalf || 0,
-        sp3.x = c4.x - hf, sp3.y = c4.y - hf
-      }
+    this.__wbFogT = (this.__wbFogT || 0) + i.timer.delta;
+    var tS = this.__wbFogT;
+    this.__wbFogSpr && this.wbFogSync(this.__wbFogSpr, this.__wbFogRecs, g2, this.role, tS);
+    if (this.__wbFogSpr2 && this.mirror && this.mirror.view) {
+      var c2 = this.role2 && !this.p2Dead ? this.role2 : this.role;
+      this.wbFogSync(this.__wbFogSpr2, this.__wbFogRecs2, this.mirror.view, c2, tS)
     }
-    if (s2 && s2.length) {
-      c4 = this.role2 && !this.p2Dead ? this.role2 : this.role;
-      if (c4) for (i3 = 0; i3 < s2.length; i3++) {
-        sp3 = s2[i3], hf = sp3.__wbFogHalf || 0,
-        sp3.x = c4.x - hf, sp3.y = c4.y - hf
-      }
-    }
-  }, s.wbFogPaint = function(sp) { },
+  },
 s.showTaskInfo = function() {
         if ("teach" == this.taskType) {
           null == this.teachStep && (this.teachStep = 0, this.destination = null, this.buildTeachBar());
@@ -12345,7 +12343,7 @@ s.showTaskInfo = function() {
       }, r(0, s, "pause", function() {
         return this.bPause
       }, function(t) {
-        this.bPause = t
+        this.bPause = t, window.__wbPaused = t
       }),         e.scaleRatio = 1, e.TEACH = [{
         keys: [87, 38],
         t1: "按 W 加速前进",
