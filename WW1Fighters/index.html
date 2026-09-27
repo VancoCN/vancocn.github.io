@@ -509,6 +509,10 @@ var Laya = window.Laya = function(t) {
           state: 1,
           curGate: 1
         }, {
+          // 第六章《帝国苍穹》：state 3 = 银币 49000 + 金币 120 双币支付
+          state: 3,
+          curGate: 1
+        }, {
           state: 2,
           curGate: 1
         }, {
@@ -892,7 +896,19 @@ var Laya = window.Laya = function(t) {
       function t() {}
       return n(t, "com.ocean.ui.DataManager"), r(1, t, "garageSurplus", function() {
         return t.storage.garageNum - t.storage.garageList.length
-      }), t.init = function() {
+      }), // 新第六章《帝国苍穹》插章后的老档迁移（9 章 -> 10 章 + 成就 id 顺延）
+      t.wbMigrateSave = function() {
+        if (!t.storage) return;
+        // 旧 index 6/7/8 的进度搬到 7/8/9；新 index 6 = 新第六章（state 3：49000 银 + 120 金）
+        t.storage.missionCfg && 9 === t.storage.missionCfg.length && !t.storage.__wbCh6Mig && (t.storage.missionCfg[9] = t.storage.missionCfg[8], t.storage.missionCfg[8] = t.storage.missionCfg[7], t.storage.missionCfg[7] = t.storage.missionCfg[6], t.storage.missionCfg[6] = {
+          state: 3,
+          curGate: 1
+        }, t.storage.__wbCh6Mig = !0);
+        // 成就 id 顺延（倒序处理避免覆盖）：旧 c6/c7/c8 分别代表 6/7/8 章 -> 新 c7/c8/c9
+        t.storage.__wbAch && !t.storage.__wbAchMig && (t.storage.__wbAch.c8 && (t.storage.__wbAch.c9 = !0, delete t.storage.__wbAch.c8), t.storage.__wbAch.c7 && (t.storage.__wbAch.c8 = !0, delete t.storage.__wbAch.c7), t.storage.__wbAch.c6 && (t.storage.__wbAch.c7 = !0, delete t.storage.__wbAch.c6), t.storage.__wbAchMig = !0);
+        // 兜底：章节条目缺失时按默认补齐，避免章节界面读 undefined
+        if (t.storage.missionCfg) for (var e = 0; e < 10; e++) t.storage.missionCfg[e] || (t.storage.missionCfg[e] = { state: 0 === e || 1 === e ? 0 : 6 === e ? 3 : 6 > e ? 1 : 2, curGate: 1 });
+      }, t.init = function() {
         t.storage = Q.getJSON("Dogfight"), t.storage || (t.storage = new c, Q.setJSON("Dogfight", t.storage)), t.storage.__wb_testTree || (t.storage.__wb_testTree = [{
           id: "plane14",
           state: 2,
@@ -956,7 +972,9 @@ var Laya = window.Laya = function(t) {
         }]), t.storage.missionCfg && 9 > t.storage.missionCfg.length && t.storage.missionCfg.unshift({
           state: 0,
           curGate: 1
-        }), t.storage.missionCfg && t.storage.missionCfg[8] && t.storage.missionCfg[8].curGate >= 12 && (t.storage.__wb_testUnlocked = !0),
+        }),
+        t.wbMigrateSave(),
+        t.storage.missionCfg && t.storage.missionCfg[9] && t.storage.missionCfg[9].curGate >= 12 && (t.storage.__wb_testUnlocked = !0),
         // 飞行员档案：老存档补默认值（老档读不到历史统计，但从当前开始继续累计）
         null == t.storage.createTime && (t.storage.createTime = 0), null == t.storage.pilotName && (t.storage.pilotName = "飞行员"), null == t.storage.killCount && (t.storage.killCount = 0), null == t.storage.assistCount && (t.storage.assistCount = 0), null == t.storage.crashCount && (t.storage.crashCount = 0), null == t.storage.buildingCount && (t.storage.buildingCount = 0),         null == t.storage.flyTime && (t.storage.flyTime = [0, 0, 0, 0]), null == t.storage.__wbAch && (t.storage.__wbAch = {});
         var e = i.loader.getRes("res/cfg/GunCfg.json");
@@ -1029,16 +1047,20 @@ var Laya = window.Laya = function(t) {
         desc: "通过关卡 5-12"
       }, {
         id: "c6",
-        name: "力挽狂澜",
+        name: "以血铸空",
         desc: "通过关卡 6-12"
       }, {
         id: "c7",
-        name: "秋后蚂蚱",
+        name: "力挽狂澜",
         desc: "通过关卡 7-12"
       }, {
         id: "c8",
-        name: "长夜终尽",
+        name: "秋后蚂蚱",
         desc: "通过关卡 8-12"
+      }, {
+        id: "c9",
+        name: "长夜终尽",
+        desc: "通过关卡 9-12"
       }, {
         id: "coop",
         name: "双人成行",
@@ -1096,7 +1118,7 @@ var Laya = window.Laya = function(t) {
       }, t.wbAchProg = function(e) {
         // 未达成时显示的进度（"x/y"），已达成或无法量化时返回 null
         var i, s, t2 = t.storage;
-        if ("c1" == e || "c2" == e || "c3" == e || "c4" == e || "c5" == e || "c6" == e || "c7" == e || "c8" == e) {
+        if ("c1" == e || "c2" == e || "c3" == e || "c4" == e || "c5" == e || "c6" == e || "c7" == e || "c8" == e || "c9" == e) {
           var gh = ((t2.missionCfg || [])[parseInt(String(e).slice(1), 10)] || {}).curGate || 1;
           return gh + "/12"
         }
@@ -1110,7 +1132,7 @@ var Laya = window.Laya = function(t) {
       }, t.wbAchEval = function() {
         // 全量重算「关卡进度 / 飞机收集」类成就，返回本次新解锁的 id 数组
         var e = t.storage.missionCfg || [], i, s = [], n = t.wbAchGet();
-        for (i = 1; i <= 8; i++) e[i] && (e[i].curGate || 1) >= 12 && s.push("c" + i);
+        for (i = 1; i <= 9; i++) e[i] && (e[i].curGate || 1) >= 12 && s.push("c" + i);
         t.wbAchAllUnlocked(t.storage.americaTree, 2) && s.push("usa");
         t.wbAchAllUnlocked(t.storage.germanTree, 2) && s.push("ger");
         t.wbAchAllUnlocked(t.storage.americaTree, 4) && t.wbAchAllUnlocked(t.storage.germanTree, 4) && s.push("rich");
@@ -11856,7 +11878,9 @@ var Laya = window.Laya = function(t) {
       return       s.init = function(t) {
         this.bGameOver = !1, this.bShoot = !1, this.bBomb = !1, this.curTaskNum = 0, this.teachStep = null, this.teachP1 = 0, this.teachP2 = 0, this.missionCfg = t, this.miniMap = "res/map/" + t.src + ".png", this.gScene.loadMap("res/map/" + t.src + ".json"), this.gScene.produceClound(t.cloudNum), this.limitTime = Number(t.limitTime), this.limitTime > 0 && i.timer.once(1e3 * this.limitTime, this, this.onTimeOut), this.gateIndex = parseInt(t.id), this.taskType = t.taskType, this.taskDesc = t.goal, this.taskObjID = t.param1, this.taskNum = parseInt(t.param2), this.destination = g.parsePointsString(t.param3)[0], this.prize = parseInt(t.prize), this.honor = parseInt(t.honor),
         // 新任务类型 wbFacility（第零章 0-6）：摧毁敌方基地设施后，限时返回地图指定集合点
-        this.__wbPhase = 1, this.__wbFacility = "wbFacility" == t.taskType, this.__wbReturnLimit = Number(t.param4) > 0 ? Number(t.param4) : 60, this.__wbRally = this.__wbFacility ? g.parsePointsString(t.param3)[0] : null, this.destination = this.__wbFacility ? null : this.destination, this.__wbSpawnAfter = this.__wbFacility && t.spawnAfter && t.spawnAfter.length ? t.spawnAfter : null, this.__wbConvoy = "wbConvoy" == t.taskType, this.__wbConvoyIds = {}, this.__wbConvoyNeed = parseInt(t.param2) > 0 ? parseInt(t.param2) : 3, this.__wbConvoyAlive = this.__wbConvoyNeed, this.__wbFog = "wbFog" == t.taskType, this.__wbFogR = Number(t.param3) > 0 ? Number(t.param3) : 430, this.__wbFogSpr = null, this.__wbFogRecs = null, this.__wbFogSpr2 = null, this.__wbFogRecs2 = null; if (this.__wbConvoy) for (var wbc in t.object) if (t.object[wbc] && -1 != ("," + t.param1 + ",").indexOf("," + t.object[wbc].id + ",")) this.__wbConvoyIds[t.object[wbc].id] = !0;
+        this.__wbPhase = 1, this.__wbFacility = "wbFacility" == t.taskType, this.__wbReturnLimit = Number(t.param4) > 0 ? Number(t.param4) : 60, this.__wbRally = this.__wbFacility ? g.parsePointsString(t.param3)[0] : null, this.destination = this.__wbFacility ? null : this.destination, this.__wbSpawnAfter = this.__wbFacility && t.spawnAfter && t.spawnAfter.length ? t.spawnAfter : null, this.__wbConvoy = "wbConvoy" == t.taskType, this.__wbConvoyIds = {}, this.__wbConvoyNeed = parseInt(t.param2) > 0 ? parseInt(t.param2) : 3, this.__wbConvoyAlive = this.__wbConvoyNeed, this.__wbFog = "wbFog" == t.taskType, // wbKeepOne：半剧情关（6-8 黑星期四）——被保护目标只要还剩一架就不算失败
+    this.__wbKeepOne = "1" === t.wbKeepOne, this.__wbFogR = Number(t.param3) > 0 ? Number(t.param3) : 430, this.__wbFogSpr = null, this.__wbFogRecs = null, this.__wbFogSpr2 = null, this.__wbFogRecs2 = null, // wbRadar=single：雷达受损，小地图只显示自机 + 最近的一名敌人（与 __wbFog 的「雷达全失」区分）
+    window.__wbRadarSingle = "single" === t.wbRadar; if (this.__wbConvoy) for (var wbc in t.object) if (t.object[wbc] && -1 != ("," + t.param1 + ",").indexOf("," + t.object[wbc].id + ",")) this.__wbConvoyIds[t.object[wbc].id] = !0;
         // 手机版强制单人：即使存档里残留双人标志（比如 PC 上开过），手机上也不进入分屏双人
         if (wbIsMobile() && y.storage.__wb_twoPlayer) y.storage.__wb_twoPlayer = !1, y.saveData();
         var e = $n.instance.curPlaneCfg;
@@ -11903,14 +11927,15 @@ var Laya = window.Laya = function(t) {
         }
         // 教学关：showTaskInfo 在双人分支之前就跑过一次（当时 role2 还没生成），这里进分屏后重建两侧教学条
         "teach" == this.taskType && (this.buildTeachBar(), this.showTaskInfo());
-        var a = null != t.chapter ? parseInt(t.chapter) >= 6 ? 4 : Math.ceil(3 * Math.random()) : Math.floor((parseInt(t.id) - 1) / 12) >= 6 ? 4 : Math.ceil(3 * Math.random());
+        // BGM：第 6 章（新《帝国苍穹》）起用终章曲 bgMusic4
+        var a = null != t.chapter ? parseInt(t.chapter) >= 6 ? 4 : Math.ceil(3 * Math.random()) : Math.floor((parseInt(t.id) - 1) / 12) >= 5 ? 4 : Math.ceil(3 * Math.random());
         this.bgmIndex = a, i.timer.frameLoop(1, this, this.onUpdate), i.stage.on("keydown", this, this.onKeyDown), i.stage.on("keyup", this, this.onKeyUp), this.showIntro()
       }, s.showIntro = function() {
         var t = this.missionCfg,
           e = parseInt(t.id) || 0,
-          n = null != t.chapter ? parseInt(t.chapter) : 0 >= e || e >= 96 ? 0 : Math.floor((e - 1) / 12) + 1,
+          n = null != t.chapter ? parseInt(t.chapter) : 0 >= e || e > 108 ? 0 : Math.floor((e - 1) / 12) + 1,
           r = null != t.gate ? parseInt(t.gate) : 0 >= e ? 1 : (e - 1) % 12 + 1,
-          a = ["第零章 训练场", "第一章 重燃战火", "第二章 闪电战", "第三章 海狮计划", "第四章 不列颠之鹰", "第五章 北非空战", "第六章 西线反击", "第七章 条顿悲歌", "第八章 消灭残敌"][n] || "第" + n + "章";
+          a = ["第零章 训练场", "第一章 重燃战火", "第二章 闪电战", "第三章 海狮计划", "第四章 不列颠之鹰", "第五章 北非空战", "第六章 帝国苍穹", "第七章 西线反击", "第八章 条顿悲歌", "第九章 消灭残敌"][n] || "第" + n + "章";
         // 进入关卡过场动画：先停掉主界面 BGM（bgMusic0），让过场期间只有开场音效 missionStart.wav；
         // 战斗 BGM 会在 onIntroEnd 里再起（playMusic 内部也会兜底停旧音乐）。
         this.bCutscene = !0, this.pause = !0, Z.stopMusic();
@@ -11966,7 +11991,8 @@ var Laya = window.Laya = function(t) {
             s = new Ps(i)
         }
         if (s.gScene = this.gScene, e) return s;
-        s.id = t.id, s.difficulty = t.difficulty, t.name && (s.name = t.name), t.hp && (s.hp = Number(t.hp)), s.bEnemy = "false" != t.bEnemy;
+        s.id = t.id, s.difficulty = t.difficulty, t.name && (s.name = t.name), // 配置里显式的 hp 覆盖默认血量；maxHP 跟着取大值，避免血条超过 100%（1% 血量的重伤友机除外）
+        t.hp && (s.hp = Number(t.hp), s.maxHP = Math.max(s.maxHP || 0, s.hp)), s.bEnemy = "false" != t.bEnemy;
         var r = g.parsePointsString(t.path);
         return s.setPath(r), r.length > 1 ? (s.loc = r[0], s.dir = r[1].sub(r[0]), s.moveAlong()) : (s.x = Number(t.x), s.y = Number(t.y), t.dir && (s.rotation = g.deg2rad(Number(t.dir)))), "cruise" == t.ai && s.changeState(gi), s
       }, s.onObjectDead = function(t) {
@@ -11982,8 +12008,17 @@ var Laya = window.Laya = function(t) {
             t.__wbPLast && !t.__wbPFire ? st.killCount = (st.killCount || 0) + 1 : (t.__wbPDmg || 0) >= .3 * (t.maxHP || 1) && (st.assistCount = (st.assistCount || 0) + 1);
           }
           else t instanceof com.ocean.game.Building && (st.buildingCount = (st.buildingCount || 0) + 1);
-        // 保卫类任务（如保护指挥部）：被保护目标一旦被摧毁，立刻失败
-        if ("protect" == this.taskType && t.id == this.taskObjID) return this.gameOver(!1), void 0; if (this.__wbConvoy && this.__wbConvoyIds[t.id]) { if (--this.__wbConvoyAlive <= 0) return this.gameOver(!1), void 0; this.showTaskInfo(); }
+        // 保卫类任务（如保护指挥部）：被保护目标一旦被摧毁，立刻失败。
+        // 例外 wbKeepOne（6-8 黑星期四）：只要还剩至少一架就不判负，HUD 显示剩余数
+        if ("protect" == this.taskType && t.id == this.taskObjID) {
+          if (this.__wbKeepOne) {
+            var keep = 0;
+            for (var wk in this.gScene.objArr) this.gScene.objArr[wk].id == this.taskObjID && this.gScene.objArr[wk].hp > 0 && keep++;
+            if (keep > 0) return this.curTaskNum = keep, this.showTaskInfo(), void 0;
+          }
+          return this.gameOver(!1), void 0;
+        }
+        if (this.__wbConvoy && this.__wbConvoyIds[t.id]) { if (--this.__wbConvoyAlive <= 0) return this.gameOver(!1), void 0; this.showTaskInfo(); }
         // 设施摧毁类任务：设施全部摧毁后不结算胜利，而是进入"限时返航"阶段
         if (this.__wbFacility && 1 == this.__wbPhase && this.__wbFacIds && this.__wbFacIds[t.id]) {
           this.curTaskNum++, this.showTaskInfo(), this.curTaskNum >= this.taskNum && this.enterReturnPhase();
@@ -12058,7 +12093,7 @@ var Laya = window.Laya = function(t) {
           show = !!(r2 && !this.p2Dead && this.p2Top);
         if (this.p2Top) {
           this.p2Top.visible = show, this.p2Top.pos(W / 2 + 20, 20);
-          this.p2Map && (this.p2Map.visible = show && !this.__wbFog, this.p2Map.pos(W - 220, 0));
+          this.p2Map && (this.p2Map.visible = show && (!this.__wbFog || !!window.__wbRadarSingle), this.p2Map.pos(W - 220, 0));
           this.p2Dash && (this.p2Dash.visible = show, this.p2Dash.pos(3 * W / 4, H - 120))
         }
         if (show) {
@@ -12337,15 +12372,17 @@ var Laya = window.Laya = function(t) {
     }
     return { disp: disp, recs: recs }
   }, s.wbInitFog = function() {
-    // 0-8 雷达失效：隐藏原生小地图；用云层把窗外世界遮住，只留本机周围一圈观察窗
-    try { this.battleUI && this.battleUI.mapBox && (this.battleUI.mapBox.visible = !1); } catch (e) { }
+    // 雷达处理：0-8「雷达全失」隐藏原生小地图；6-9（wbRadar=single）保留小地图只画最近一名敌人
+    try { this.battleUI && this.battleUI.mapBox && (this.battleUI.mapBox.visible = !!window.__wbRadarSingle); } catch (e) { }
+    window.__wbRadarSingle = !!window.__wbRadarSingle;
     this.__wbFogT = 0;
     var r1 = this.wbMakeFogClouds(this.gScene && this.gScene.upperLayer);
     this.__wbFogSpr = r1 ? r1.disp : null, this.__wbFogRecs = r1 ? r1.recs : null,
     this.__wbFogSpr2 = null, this.__wbFogRecs2 = null, this.__wbFogReady = !1
   }, s.wbClearFog = function() {
-    // 非迷雾关（含 0-8 之后重进的关）：清掉残留迷雾并恢复雷达
+    // 非迷雾关（含 0-8 / 6-9 之后重进的关）：清掉残留迷雾并恢复雷达
     try { this.battleUI && this.battleUI.mapBox && (this.battleUI.mapBox.visible = !0); } catch (e) { }
+    window.__wbRadarSingle = !1;
     var hosts = [this.gScene && this.gScene.upperLayer, this.mirror && this.mirror.view && this.mirror.view.upperLayer], h2, j2;
     for (h2 = 0; h2 < hosts.length; h2++) { var ul2 = hosts[h2]; if (ul2) for (j2 = ul2.numChildren - 1; j2 >= 0; j2--) { var oc2 = ul2.getChildAt(j2); oc2 && oc2.__wbFog && oc2.removeSelf(); } }
     this.__wbFogSpr = null, this.__wbFogRecs = null, this.__wbFogSpr2 = null, this.__wbFogRecs2 = null
@@ -20420,10 +20457,21 @@ s.showTaskInfo = function() {
           var h = 1.5 * (2 / 3 - this.role.speed / this.role.maxSpeed) * Math.PI;
           this.finger.rotation = -h, this.speedTxt.text = Math.round(1e3 * this.oldSpeed).toString()
         }
+        // 小地图：默认画全部单位；雷达受损（wbRadar=single）时只画自机 + 最近的一名敌人
         this.objSpt.graphics.clear();
-        var o;
+        var o, near = null, nearD = 1 / 0;
+        if ("single" == (this.scene && this.scene.missionCfg && this.scene.missionCfg.wbRadar) || window.__wbRadarSingle) {
+          for (var rm in this.scene.objArr) {
+            o = this.scene.objArr[rm];
+            if (o.bEnemy && o != this.role) {
+              var dd = (o.x - this.role.x) * (o.x - this.role.x) + (o.y - this.role.y) * (o.y - this.role.y);
+              dd < nearD && (nearD = dd, near = o)
+            }
+          }
+        }
         for (var l in this.scene.objArr) {
           o = this.scene.objArr[l];
+          if (near && o != this.role && o != near) continue;
           var c = o.bEnemy ? "#ff0000" : "#00ff00";
           o == this.role ? c = "#FFFF00" : o.id == this.taskObjID && (c = "#FFBBBB");
           var u = o.x % this.scene.mapWidth / this.scene.mapWidth * 200,
@@ -20938,6 +20986,13 @@ s.showTaskInfo = function() {
           b.popUpDialog(i), i.confirmHandle = _.create(this, function() {
             y.storage.gold < t._dataSource.money ? b.showMessage("金币不足") : (t._dataSource.state = 0, y.storage.missionCfg[t._dataSource.index].state = 0, y.storage.gold -= t._dataSource.money, y.saveData(), t._dataSource.wnd.event("select", t._dataSource))
           })
+        } else if (3 == this._dataSource.state) {
+          // state 3：银币 + 金币同时支付（第六章《帝国苍穹》49000 银 + 120 金）
+          var e3 = "是否花费 " + this._dataSource.money + "银币 和 " + (this._dataSource.money2 || 0) + "金币，开启该章节",
+            i3 = new ur(e3);
+          b.popUpDialog(i3), i3.confirmHandle = _.create(this, function() {
+            y.storage.silver < t._dataSource.money || y.storage.gold < (t._dataSource.money2 || 0) ? b.showMessage("银币或金币不足") : (t._dataSource.state = 0, t._dataSource.selected = !0, y.storage.missionCfg[t._dataSource.index].state = 0, y.storage.silver -= t._dataSource.money, y.storage.gold -= t._dataSource.money2 || 0, y.saveData(), t._dataSource.wnd.event("select", t._dataSource))
+          })
         }
       }, r(0, s, "dataSource", t.prototype._$get_dataSource, function(t) {
         i.superSet(An, this, "dataSource", t);
@@ -20964,10 +21019,12 @@ s.showTaskInfo = function() {
     ir = function(t) {
       function e() {
         this.lastSel = null, this.itemArr = null, this.curChapter = null, this.mapIdx = 0, e.__super.call(this), this.startBtn.on("click", this, this.loadGame), this.startBtn.visible = !1;
-        for (var t = [new l("第零章：训练场", 0, 0, 0, !1, !1, this), new l("第一章：重燃战火", 1, 0, 0, !1, !0, this), new l("第二章： 闪电战", 2, 12e3, 1, !1, !1, this), new l("第三章： 海狮计划", 3, 28e3, 1, !1, !1, this), new l("第四章： 不列颠之鹰", 4, 52e3, 1, !1, !1, this), new l("第五章： 北非空战", 5, 98e3, 1, !1, !1, this), new l("第六章： 西线反击", 6, 240, 2, !0, !1, this), new l("第七章： 条顿悲歌", 7, 550, 2, !0, !1, this), new l("第八章： 消灭残敌", 8, 960, 2, !0, !1, this)], s = 0; s < t.length; s++) {
+        for (var t = [new l("第零章：训练场", 0, 0, 0, !1, !1, this), new l("第一章：重燃战火", 1, 0, 0, !1, !0, this), new l("第二章： 闪电战", 2, 12e3, 1, !1, !1, this), new l("第三章： 海狮计划", 3, 28e3, 1, !1, !1, this), new l("第四章： 不列颠之鹰", 4, 52e3, 1, !1, !1, this), new l("第五章： 北非空战", 5, 98e3, 1, !1, !1, this), new l("第六章： 帝国苍穹", 6, 49e3, 3, !0, !1, this), new l("第七章： 西线反击", 7, 240, 2, !0, !1, this), new l("第八章： 条顿悲歌", 8, 550, 2, !0, !1, this), new l("第九章： 消灭残敌", 9, 960, 2, !0, !1, this)], s = 0; s < t.length; s++) {
           var n = t[s];
-          n.state = y.storage.missionCfg[s].state
+          n.state = (y.storage.missionCfg[s] || { state: n.state }).state
         }
+        t[6].money2 = 120, // 第六章：银币 49000 + 金币 120（state 3 = 双币同时支付）
+
         this.chapterList.array = t, this.on("select", this, this.onSelectChapter), this.itemArr = [this.map1, this.map2, this.map3, this.map4, this.map5, this.map6, this.map7, this.map8, this.map9, this.map10, this.map11, this.map12];
         for (var r = 0; r < this.itemArr.length; r++) {
           var a = this.itemArr[r];
@@ -21046,15 +21103,22 @@ s.showTaskInfo = function() {
           b.popUpDialog(s), s.confirmHandle = _.create(this, function() {
             y.storage.gold < e.money ? b.showMessage("金币不足") : (e.state = 0, t.setSelectChapter(e), y.storage.missionCfg[e.index].state = 0, y.storage.gold -= e.money, y.saveData())
           })
+        } else if (3 == e.state) {
+          // state 3：银币 + 金币同时支付（第六章《帝国苍穹》49000 银 + 120 金）
+          var i3 = "是否花费 " + e.money + "银币 和 " + (e.money2 || 0) + "金币，开启该章节",
+            s3 = new ur(i3);
+          b.popUpDialog(s3), s3.confirmHandle = _.create(this, function() {
+            y.storage.silver < e.money || y.storage.gold < (e.money2 || 0) ? b.showMessage("银币或金币不足") : (e.state = 0, e.selected = !0, t.setSelectChapter(e), y.storage.missionCfg[e.index].state = 0, y.storage.silver -= e.money, y.storage.gold -= e.money2 || 0, y.saveData())
+          })
         }
       },       s.refresh = function() {
         this.initTwoPlayerUI && this.initTwoPlayerUI(), this.setSelectChapter(this.lastSel)
       }, s.setSelectChapter = function(t) {
         e.chapterIndex = t.index, null != this.lastSel && (this.lastSel.selected = !1), this.lastSel = t, this.lastSel.selected = !0, this.chapterList.refresh();
-        var o = 0 === e.chapterIndex && y.storage.missionCfg[8] && y.storage.missionCfg[8].curGate >= 12;
+        var o = 0 === e.chapterIndex && y.storage.missionCfg[9] && y.storage.missionCfg[9].curGate >= 12;
         for (var i = y.storage.missionCfg[e.chapterIndex], s = e.gateCount(e.chapterIndex), n = 0; n < this.itemArr.length; n++) {
           var r = this.itemArr[n];
-          // 第零章：gate1（教学）免费；gate2/gate3（阅兵关）需通关第8章第12关；超出本章关数的按钮隐藏
+          // 第零章：gate1（教学）免费；gate2/gate3（阅兵关）需通关第9章第12关；超出本章关数的按钮隐藏
           if (0 === e.chapterIndex && n >= 1 && n <= 2 && n < s) r.visible = !0, r.lock = o ? !1 : !0;
           else {
             n < s ? (r.visible = !0, r.lock = n < i.curGate ? !1 : !0) : r.visible = !1
@@ -21090,7 +21154,7 @@ s.showTaskInfo = function() {
       }, s.onGameStart = function(t) {
         if (null == $n.instance.selItem) return b.showMessage("没有战机可出战，请先购买战机！"), void 0;
         var e = t.currentTarget;
-        return e.getLock() ? (0 === this.constructor.chapterIndex && e.index >= 2 ? b.showMessage("通关第8章第12关后解锁该关卡！") : b.showMessage("需要开启前面的章节！"), void 0) : (this.mapIdx = e.index, _e.onMobile ? (t.stopPropagation(), this.startBtn.visible = !0, this.startBtn.x = e.x + 61, this.startBtn.y = e.y + 62, void 0) : (this.loadGame(t), void 0))
+        return e.getLock() ? (0 === this.constructor.chapterIndex && e.index >= 2 ? b.showMessage("通关第9章第12关后解锁该关卡！") : b.showMessage("需要开启前面的章节！"), void 0) : (this.mapIdx = e.index, _e.onMobile ? (t.stopPropagation(), this.startBtn.visible = !0, this.startBtn.x = e.x + 61, this.startBtn.y = e.y + 62, void 0) : (this.loadGame(t), void 0))
       }, s.loadGame = function() {
         var t = e.getGateId(e.chapterIndex, this.mapIdx),
           i = y.getMissionByID(t),
@@ -21099,7 +21163,7 @@ s.showTaskInfo = function() {
       }, e.chapterIndex = 0, e.gateCount = function(t) {
         return 0 >= t ? 8 : 12
       }, e.getGateId = function(t, e) {
-        if (0 >= t) return 1 === e ? 0 : 2 === e ? 98 : 3 === e ? 99 : 4 === e ? 100 : 5 === e ? 101 : 6 === e ? 102 : 7 === e ? 103 : 8 === e ? 104 : 0;
+        if (0 >= t) return 1 === e ? 0 : 2 === e ? 122 : 3 === e ? 123 : 4 === e ? 124 : 5 === e ? 125 : 6 === e ? 126 : 7 === e ? 127 : 8 === e ? 128 : 0;
         return 12 * (t - 1) + e
       }, e
     }(Rn),
@@ -22050,13 +22114,14 @@ s.showTaskInfo = function() {
       function e(t, s) {
         this.count = 4, e.__super.call(this);
         var n = !1;
-        if (s) {
+        // wbFailPass（6-8 黑星期四）：剧情关失败也算放行，照样解锁下一关
+        if (s || t && t.missionCfg && "1" == t.missionCfg.wbFailPass) {
           var r = $n.instance.selID,
             a = y.getHangarData(r);
           n = a ? a.bDouble : !1, a && (a.bDouble = !1);
           var h = y.storage.missionCfg[ir.chapterIndex],
             o = t.gateIndex % 12;
-          o == h.curGate && h.curGate < 12 && (h.curGate += 1), s && 8 == ir.chapterIndex && h.curGate >= 12 && !y.storage.__wb_testUnlocked && (y.storage.__wb_testUnlocked = !0, y.saveData(), b.showMessage("恭喜通关全部章节！测试飞机已解锁，快去科技树查看吧！"))
+          o == h.curGate && h.curGate < 12 && (h.curGate += 1), s && 9 == ir.chapterIndex && h.curGate >= 12 && !y.storage.__wb_testUnlocked && (y.storage.__wb_testUnlocked = !0, y.saveData(), b.showMessage("恭喜通关全部章节！测试飞机已解锁，快去科技树查看吧！"))
         }
         var l = s ? t.prize : 0;
         n ? l *= 2 : 0, y.storage.silver += l;
