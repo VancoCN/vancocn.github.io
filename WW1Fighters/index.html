@@ -1063,7 +1063,9 @@ var Laya = window.Laya = function(t) {
         t.wbMigrateSave(),
         t.storage.missionCfg && t.storage.missionCfg[9] && t.storage.missionCfg[9].curGate >= 12 && (t.storage.__wb_testUnlocked = !0),
         // 飞行员档案：老存档补默认值（老档读不到历史统计，但从当前开始继续累计）
-        null == t.storage.createTime && (t.storage.createTime = 0), null == t.storage.pilotName && (t.storage.pilotName = "飞行员"), null == t.storage.killCount && (t.storage.killCount = 0), null == t.storage.assistCount && (t.storage.assistCount = 0), null == t.storage.crashCount && (t.storage.crashCount = 0), null == t.storage.buildingCount && (t.storage.buildingCount = 0),         null == t.storage.flyTime && (t.storage.flyTime = [0, 0, 0, 0]), null == t.storage.__wbAch && (t.storage.__wbAch = {});
+        null == t.storage.createTime && (t.storage.createTime = 0), null == t.storage.pilotName && (t.storage.pilotName = "飞行员"), null == t.storage.killCount && (t.storage.killCount = 0), null == t.storage.assistCount && (t.storage.assistCount = 0), null == t.storage.crashCount && (t.storage.crashCount = 0), null == t.storage.buildingCount && (t.storage.buildingCount = 0),         null == t.storage.flyTime && (t.storage.flyTime = [0, 0, 0, 0]), null == t.storage.__wbAch && (t.storage.__wbAch = {}),
+        // 英/日科技树：老存档缺字段 -> 用构造器默认补齐（否则机库页签全是占位符、导出存档会崩）
+        t.storage.britainTree && t.storage.britainTree.length || (t.storage.britainTree = (new c).britainTree), t.storage.japanTree && t.storage.japanTree.length || (t.storage.japanTree = (new c).japanTree);
         var e = i.loader.getRes("res/cfg/GunCfg.json");
         com.ocean.ui.DataManager.setJsonData("gunCfg", e);
         var s = i.loader.getRes("res/cfg/MissionCfg.json");
@@ -19788,7 +19790,7 @@ s.showTaskInfo = function() {
           child: [{
             type: "Button",
             props: {
-              x: 664,
+              x: 417,
               "var": "tabBtn2",
               skin: "main/tabBtn.png",
               labelSize: 24,
@@ -19799,7 +19801,7 @@ s.showTaskInfo = function() {
           }, {
             type: "Button",
             props: {
-              x: 499,
+              x: 252,
               "var": "tabBtn1",
               skin: "main/tabBtn.png",
               labelSize: 24,
@@ -19810,7 +19812,7 @@ s.showTaskInfo = function() {
           }, {
             type: "Button",
             props: {
-              x: 829,
+              x: 912,
               "var": "tabBtn3",
               skin: "main/tabBtn.png",
               labelSize: 24,
@@ -19821,7 +19823,7 @@ s.showTaskInfo = function() {
           }, {
             type: "Button",
             props: {
-              x: 994,
+              x: 582,
               "var": "tabBtn4",
               skin: "main/tabBtn.png",
               labelSize: 24,
@@ -19832,7 +19834,7 @@ s.showTaskInfo = function() {
           }, {
             type: "Button",
             props: {
-              x: 1159,
+              x: 747,
               "var": "tabBtn5",
               skin: "main/tabBtn.png",
               labelSize: 24,
