@@ -11879,7 +11879,7 @@ var Laya = window.Laya = function(t) {
         this.bGameOver = !1, this.bShoot = !1, this.bBomb = !1, this.curTaskNum = 0, this.teachStep = null, this.teachP1 = 0, this.teachP2 = 0, this.missionCfg = t, this.miniMap = "res/map/" + t.src + ".png", this.gScene.loadMap("res/map/" + t.src + ".json"), this.gScene.produceClound(t.cloudNum), this.limitTime = Number(t.limitTime), this.limitTime > 0 && i.timer.once(1e3 * this.limitTime, this, this.onTimeOut), this.gateIndex = parseInt(t.id), this.taskType = t.taskType, this.taskDesc = t.goal, this.taskObjID = t.param1, this.taskNum = parseInt(t.param2), this.destination = g.parsePointsString(t.param3)[0], this.prize = parseInt(t.prize), this.honor = parseInt(t.honor),
         // 新任务类型 wbFacility（第零章 0-6）：摧毁敌方基地设施后，限时返回地图指定集合点
         this.__wbPhase = 1, this.__wbFacility = "wbFacility" == t.taskType, this.__wbReturnLimit = Number(t.param4) > 0 ? Number(t.param4) : 60, this.__wbRally = this.__wbFacility ? g.parsePointsString(t.param3)[0] : null, this.destination = this.__wbFacility ? null : this.destination, this.__wbSpawnAfter = this.__wbFacility && t.spawnAfter && t.spawnAfter.length ? t.spawnAfter : null, this.__wbConvoy = "wbConvoy" == t.taskType, this.__wbConvoyIds = {}, this.__wbConvoyNeed = parseInt(t.param2) > 0 ? parseInt(t.param2) : 3, this.__wbConvoyAlive = this.__wbConvoyNeed, this.__wbFog = "wbFog" == t.taskType, // wbKeepOne：半剧情关（6-8 黑星期四）——被保护目标只要还剩一架就不算失败
-    this.__wbKeepOne = "1" === t.wbKeepOne, this.__wbFogR = Number(t.param3) > 0 ? Number(t.param3) : 430, this.__wbFogSpr = null, this.__wbFogRecs = null, this.__wbFogSpr2 = null, this.__wbFogRecs2 = null, // wbRadar=single：雷达受损，小地图只显示自机 + 最近的一名敌人（与 __wbFog 的「雷达全失」区分）
+    this.__wbKeepOne = "1" === t.wbKeepOne, this.__wbNight = "1" === t.wbNight, this.__wbFogR = Number(t.param3) > 0 ? Number(t.param3) : 430, this.__wbFogSpr = null, this.__wbFogRecs = null, this.__wbFogSpr2 = null, this.__wbFogRecs2 = null, // wbRadar=single：雷达受损，小地图只显示自机 + 最近的一名敌人（与 __wbFog 的「雷达全失」区分）
     window.__wbRadarSingle = "single" === t.wbRadar; if (this.__wbConvoy) for (var wbc in t.object) if (t.object[wbc] && -1 != ("," + t.param1 + ",").indexOf("," + t.object[wbc].id + ",")) this.__wbConvoyIds[t.object[wbc].id] = !0;
         // 手机版强制单人：即使存档里残留双人标志（比如 PC 上开过），手机上也不进入分屏双人
         if (wbIsMobile() && y.storage.__wb_twoPlayer) y.storage.__wb_twoPlayer = !1, y.saveData();
@@ -11895,6 +11895,8 @@ var Laya = window.Laya = function(t) {
           r.on("dead", this, this.onObjectDead), this.gScene.addGameObject(r)
         }
         this.gScene.addGameObject(this.role), this.battleUI.init(this), this.battleUI.alpha = 1, this.showTaskInfo(), this.__wbFog ? this.wbInitFog() : this.wbClearFog();
+        // 夜间关（6-5）：叠一层夜色滤镜；非夜间关清掉，避免跨关残留
+        this.__wbNight ? this.wbMakeNight() : this.wbClearNight();
         // 成就统计：本关敌机总数（用于 0-8「全歼」判定）与自机受伤标记（用于 0-8「无伤」判定）
         this.__wbKills = 0, this.__wbHurt = !1, this.__wbEnemyTotal = 0;
         for (var wbe in t.object) {
@@ -12311,7 +12313,7 @@ var Laya = window.Laya = function(t) {
           // 摄像机：分屏——P1 左半屏 / P2 右半屏各自跟随；一方坠机后其半屏跟随存活者
           var cx = this.role.x, cy = this.role.y;
           this.role2 && this.p1Dead && !this.p2Dead && (cx = this.role2.x, cy = this.role2.y);
-          if (this.gScene.update(i.timer.delta), this.gScene.setViewPortCenter(cx, cy), this.battleUI.update(i.timer.delta), this.updateP2Hud(), this.updateSplitView(), this.wbUpdateFog(), this.bShoot && !this.p1Dead) {
+          if (this.wbUpdateNight(), this.gScene.update(i.timer.delta), this.gScene.setViewPortCenter(cx, cy), this.battleUI.update(i.timer.delta), this.updateP2Hud(), this.updateSplitView(), this.wbUpdateFog(), this.bShoot && !this.p1Dead) {
             var t = this.role.getGun(0);
             t && (t.isChamberEmpty ? this.battleUI.showWarning("主武器没弹药啦！") : t.shoot())
           }
@@ -12386,6 +12388,29 @@ var Laya = window.Laya = function(t) {
     var hosts = [this.gScene && this.gScene.upperLayer, this.mirror && this.mirror.view && this.mirror.view.upperLayer], h2, j2;
     for (h2 = 0; h2 < hosts.length; h2++) { var ul2 = hosts[h2]; if (ul2) for (j2 = ul2.numChildren - 1; j2 >= 0; j2--) { var oc2 = ul2.getChildAt(j2); oc2 && oc2.__wbFog && oc2.removeSelf(); } }
     this.__wbFogSpr = null, this.__wbFogRecs = null, this.__wbFogSpr2 = null, this.__wbFogRecs2 = null
+  }, // 夜间滤镜（6-5 汉堡长夜）：整块压暗+偏蓝的色罩，压在场景之上、HUD 之下
+  s.wbMakeNight = function() {
+    if (this.__wbNightSpr) return;
+    var sp = new Gi;
+    sp.mouseEnabled = !1, sp.__wbNight = !0,
+    this.addChild(sp);
+    // 插到 battleUI 之前（用下标法最稳，不依赖 zOrder 重排）：盖住场景、压在 HUD 之下
+    try {
+      if (this.battleUI && this.contains(this.battleUI)) this.setChildIndex(sp, this.getChildIndex(this.battleUI));
+    } catch (e) { }
+    this.__wbNightSpr = sp, this.wbResizeNight()
+  }, s.wbResizeNight = function() {
+    var sp = this.__wbNightSpr;
+    if (!sp) return;
+    var W = i.stage.width, H = i.stage.height;
+    sp.size(W, H), sp.graphics.clear(), sp.graphics.drawRect(0, 0, W, H, "#0b1d38"),
+    sp.alpha = .42, sp.repaint()   // drawRect 不会自动重绘，必须显式 repaint
+  }, s.wbUpdateNight = function() {
+    // 尺寸变化时重画一次（分屏/横竖屏切换后罩子要跟着变）
+    var sp = this.__wbNightSpr;
+    if (sp && (sp.width !== i.stage.width || sp.height !== i.stage.height)) this.wbResizeNight()
+  }, s.wbClearNight = function() {
+    this.__wbNightSpr && (this.__wbNightSpr.removeSelf(), this.__wbNightSpr = null)
   }, s.wbInitFog2 = function() {
     // 双人分屏：P2 视角（镜像视图）同样只留一圈观察窗
     if (!this.__wbFog || this.__wbFogSpr2 || !this.mirror || !this.mirror.view) return;
