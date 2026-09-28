@@ -1123,11 +1123,38 @@ var Laya = window.Laya = function(t) {
         return null
       }, t.saveData = function() {
         Q.setJSON("Dogfight", t.storage), t.dispatcher.event("change")
-      }, t.getHangarData = function(e) {
+      },       t.getHangarData = function(e) {
         var i;
         for (var s in t.storage.garageList)
           if (i = t.storage.garageList[s], i.id == e) return i;
         return null
+      },
+      // ========== 按国家取科技树（1美/2德/3英/4日），并统一写入某架飞机的 state ==========
+      t.wbTreeByCountry = function(e) {
+        switch (String(e)) {
+          case "1":
+            return t.storage.americaTree;
+          case "2":
+            return t.storage.germanTree;
+          case "3":
+            return t.storage.britainTree;
+          case "4":
+            return t.storage.japanTree
+        }
+        return null
+      }, t.wbSetPlaneState = function(e, i) {
+        if (!e) return !1;
+        var s, n = t.wbTreeByCountry(e.country),
+          o = !1;
+        if (n)
+          for (var r in n) s = n[r], s && s.id == e.id && (s.state = i, o = !0);
+        if (!o)
+          for (var a = ["americaTree", "germanTree", "britainTree", "japanTree"], k = 0; k < a.length && !o; k++) {
+            var m = t.storage[a[k]];
+            if (!m) continue;
+            for (var q in m) s = m[q], s && s.id == e.id && (s.state = i, o = !0)
+          }
+        return o
       },
       // ========== 成就系统（14 项：关卡进度 / 双人 / 飞机收集 / 0-8 挑战） ==========
       t.wbAchDefs = [{
@@ -22040,8 +22067,8 @@ s.showTaskInfo = function() {
             if (e[i].id == t.curXML.id) {
               e.splice(i, 1);
               break
-            } var s, n = 1 == t.curXML.country ? y.storage.americaTree : y.storage.germanTree;
-          for (var r in n) s = n[r], s.id == t.curXML.id && (s.state = 2);
+            }
+          y.wbSetPlaneState(t.curXML, 2);
           y.storage.silver += t.curXML.price / 5, $n.instance.removeCurItem(), y.saveData(), 0 == e.length && (t.sellBtn.visible = !1, t.showMc.skin = "", t.nameTxt.text = "", t.typeTxt.text = "", t.lvlTxt.text = "", t.propTxt.text = "", t.valueTxt.text = "")
         })
       }, s.decideAdsState = function() {
