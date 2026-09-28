@@ -20912,45 +20912,60 @@ s.showTaskInfo = function() {
     }(Tn),
     // ========== 通用国家科技树（英系/日系动态生成：连线 + 滚轮，风格同美/德） ==========
     wbCountryTrees = {
+      // 排布规则（与原版美/德一致）：4 列 x=70 金币 / 400 攻击 / 730 战斗 / 1060 轰炸；
+      // 行 = 等级，y=(等级-该系最低等级)*98，一行只放同一等级的飞机（该系没有的等级整行跳过）；
+      // 同类型同等级撞车时，多出来的那架溢出到「语义最接近」的列：攻击→轰炸→战斗→金币；
+      // 若该行 4 列都占满（英系 V 级有 5 架），多出的那架下移到相邻行的空位，等级保持不变。
       britain: {
         country: 3,
         layout: [
-          {id:"plane54", typeCode:1, x:70, y:392},
-          {id:"plane58", typeCode:1, x:70, y:490},
-          {id:"plane63", typeCode:2, x:400, y:0},
-          {id:"plane60", typeCode:2, x:400, y:98},
-          {id:"plane61", typeCode:2, x:400, y:196},
-          {id:"plane62", typeCode:2, x:400, y:294},
-          {id:"plane56", typeCode:1, x:730, y:0},
-          {id:"plane55", typeCode:1, x:730, y:98},
-          {id:"plane57", typeCode:1, x:730, y:196},
-          {id:"plane59", typeCode:1, x:730, y:294},
-          {id:"plane64", typeCode:3, x:1060, y:0},
-          {id:"plane65", typeCode:3, x:1060, y:98},
-          {id:"plane66", typeCode:3, x:1060, y:196},
-          {id:"plane68", typeCode:3, x:1060, y:294},
-          {id:"plane67", typeCode:3, x:1060, y:392},
-      
+          // 金币战机列：喷火(V,880金) / 流星(VI,1100金)，金币直购、无前置依赖
+          {id:"plane54", typeCode:1, x:70,   y:294, gold:!0},
+          {id:"plane58", typeCode:1, x:70,   y:392, gold:!0},
+          // II 级（英系无 I 级，II 级顶到第一行）
+          {id:"plane63", typeCode:2, x:400,  y:0},
+          // III 级
+          {id:"plane56", typeCode:1, x:730,  y:98},
+          {id:"plane64", typeCode:3, x:1060, y:98},
+          // IV 级：两架攻击机撞车，英俊战士溢出到金币列
+          {id:"plane61", typeCode:2, x:70,   y:196},
+          {id:"plane60", typeCode:2, x:400,  y:196},
+          {id:"plane55", typeCode:1, x:730,  y:196},
+          {id:"plane65", typeCode:3, x:1060, y:196},
+          // V 级
+          {id:"plane62", typeCode:2, x:400,  y:294},
+          {id:"plane57", typeCode:1, x:730,  y:294},
+          {id:"plane66", typeCode:3, x:1060, y:294},
+          // VI 级：V 级有两架轰炸机（哈利法克斯/斯特林），斯特林下移到 VI 行攻击机空位，等级仍为 V
+          {id:"plane68", typeCode:3, x:400,  y:392},
+          {id:"plane59", typeCode:1, x:730,  y:392},
+          {id:"plane67", typeCode:3, x:1060, y:392}
         ]
       },
       japan: {
         country: 4,
         layout: [
-          {id:"plane73", typeCode:1, x:70, y:294},
-          {id:"plane74", typeCode:1, x:70, y:392},
-          {id:"plane77", typeCode:2, x:400, y:0},
-          {id:"plane78", typeCode:2, x:400, y:98},
-          {id:"plane79", typeCode:2, x:400, y:196},
-          {id:"plane80", typeCode:2, x:400, y:294},
-          {id:"plane70", typeCode:1, x:730, y:0},
-          {id:"plane71", typeCode:1, x:730, y:98},
-          {id:"plane69", typeCode:1, x:730, y:196},
-          {id:"plane72", typeCode:1, x:730, y:294},
-          {id:"plane75", typeCode:1, x:730, y:392},
-          {id:"plane76", typeCode:1, x:730, y:490},
-          {id:"plane81", typeCode:3, x:1060, y:0},
-          {id:"plane82", typeCode:3, x:1060, y:98},
-      
+          // 金币战机列：钟馗(IV,660金) / 五式战(V,880金)，金币直购、无前置依赖
+          {id:"plane73", typeCode:1, x:70,   y:294, gold:!0},
+          {id:"plane74", typeCode:1, x:70,   y:392, gold:!0},
+          // I 级
+          {id:"plane70", typeCode:1, x:730,  y:0},
+          // II 级：两架攻击机撞车，九七舰攻溢出到轰炸机列
+          {id:"plane77", typeCode:2, x:400,  y:98},
+          {id:"plane78", typeCode:2, x:1060, y:98},
+          // III 级：两架攻击机撞车，彗星溢出到轰炸机列
+          {id:"plane79", typeCode:2, x:400,  y:196},
+          {id:"plane71", typeCode:1, x:730,  y:196},
+          {id:"plane80", typeCode:2, x:1060, y:196},
+          // IV 级：两架战斗机撞车，隼溢出到攻击机列
+          {id:"plane72", typeCode:1, x:400,  y:294},
+          {id:"plane69", typeCode:1, x:730,  y:294},
+          {id:"plane81", typeCode:3, x:1060, y:294},
+          // V 级
+          {id:"plane75", typeCode:1, x:730,  y:392},
+          {id:"plane82", typeCode:3, x:1060, y:392},
+          // VI 级
+          {id:"plane76", typeCode:1, x:730,  y:490}
         ]
       }
     },
@@ -20974,14 +20989,34 @@ s.showTaskInfo = function() {
           var nd = layout[a], item = new hr;
           item.pos(nd.x, nd.y), this.treeBox.addChild(item), this.itemArr.push(item)
         }
-        var cols = {}, idx = {}, a2;
-        for (a2 = 0; a2 < layout.length; a2++) (cols[layout[a2].x] || (cols[layout[a2].x] = [])).push(layout[a2]), idx[layout[a2].id] = a2;
-        for (var cx in cols) {
-          var col = cols[cx];
-          col.sort(function(p, q) { return p.y - q.y });
-          for (var j = 1; j < col.length; j++) {
-            var ci = this.itemArr[idx[col[j - 1].id]], cj = this.itemArr[idx[col[j].id]];
-            ci && cj && ci.pushNextItem(cj)
+        // ---- 依赖链：按「等级行」连线（不是同列上下相邻）----
+        // 每架飞机依赖「上一等级」的飞机：同机型线（战斗/攻击/轰炸）优先；同线有多架时取视觉最近（同列）的那架；
+        // 该等级没有同机型线的飞机时，跨线取位置最近的一架
+        // （原版德系 Do17(III轰炸) ← Bf109(II战斗) 就是这条规则）。金币战机无前置，花金币直购。
+        var info = [], byLv = {}, lvArr = [], a2;
+        for (a2 = 0; a2 < layout.length; a2++) {
+          var cf = y.getObjectByID(layout[a2].id) || {},
+            o = {i: a2, id: layout[a2].id, x: layout[a2].x, tc: parseInt(cf.typeCode) || 1, lv: parseInt(cf.level) || 1, gold: !!layout[a2].gold};
+          info.push(o);
+          if (!byLv[o.lv]) byLv[o.lv] = [], lvArr.push(o.lv);
+          byLv[o.lv].push(o)
+        }
+        lvArr.sort(function(p, q) { return p - q });
+        this._links = [];
+        for (var li = 1; li < lvArr.length; li++) {
+          var cands = byLv[lvArr[li - 1]], cur = byLv[lvArr[li]];
+          if (!cands || !cands.length || !cur) continue;
+          for (var ci2 = 0; ci2 < cur.length; ci2++) {
+            var ch = cur[ci2];
+            if (ch.gold) continue;
+            var best = null, bestKey = null;
+            for (var pi = 0; pi < cands.length; pi++) {
+              var pa = cands[pi];
+              if (pa.gold) continue;
+              var key = (pa.tc === ch.tc ? 0 : 1e6) + Math.abs(pa.x - ch.x) * 100 + (parseInt(String(pa.id).replace("plane", "")) || 0);
+              if (null === bestKey || key < bestKey) bestKey = key, best = pa
+            }
+            if (best) this.itemArr[best.i].pushNextItem(this.itemArr[ch.i]), this._links.push({f: best.i, t: ch.i})
           }
         }
         var maxY = 0;
@@ -20996,16 +21031,16 @@ s.showTaskInfo = function() {
         this.lineG.graphics.clear();
         var stateById = {}, nodeById = {}, a, d;
         for (a = 0; a < this._tree.length; a++) stateById[this._tree[a].id] = this._tree[a].state, nodeById[this._tree[a].id] = this._tree[a];
-        var cols = {}, a2, nd;
-        for (a2 = 0; a2 < this._layout.length; a2++) (cols[this._layout[a2].x] || (cols[this._layout[a2].x] = [])).push(this._layout[a2]);
-        for (var cx in cols) {
-          var col = cols[cx];
-          col.sort(function(p, q) { return p.y - q.y });
-          for (var j = 1; j < col.length; j++) {
-            var c1 = col[j - 1], c2 = col[j], active = (stateById[c2.id] || 0) > 1;
-            this.lineG.graphics.drawLine(c1.x + 103, c1.y + 42, c2.x + 103, c2.y + 42, active ? "#7fd0ff" : "#3a6ea5", 3)
-          }
+        // 依赖线按 initTree 算好的「上一等级」链接绘制（不是同列上下相邻）
+        var lks = this._links || [], lk;
+        for (var lki = 0; lki < lks.length; lki++) {
+          lk = lks[lki];
+          var c1 = this._layout[lk.f], c2 = this._layout[lk.t];
+          if (!c1 || !c2) continue;
+          var active = (stateById[c2.id] || 0) > 1;
+          this.lineG.graphics.drawLine(c1.x + 103, c1.y + 42, c2.x + 103, c2.y + 42, active ? "#7fd0ff" : "#3a6ea5", 3)
         }
+        this.lineG.repaint();
         for (a = 0; a < this._layout.length; a++) {
           // 按 id 绑定（而非按数组下标）：老存档的机票数组顺序与 layout 顺序可能不同，
           // 按 index 绑定会把飞机塞进错误的列/等级（用户反馈：攻击机/战斗机错位、框超出界面）。
