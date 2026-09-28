@@ -20975,7 +20975,14 @@ s.showTaskInfo = function() {
       }
       n(e, "com.ocean.ui.CountryTree", t);
       var i = e.prototype;
-      return i.createChildren = function() {
+      // 原版连线素材：main/line3.png(竖,18x57,clipX=2→每帧9x57)、main/line1.png(横,115x6,clipY=2→每帧115x3)
+      // 两态：index 0 = 灰(未解锁) / index 1 = 蓝(已解锁)，与原版 `s.index = state>1?1:0` 一致
+      return i._mkClip = function(vert) {
+        var c = new laya.ui.Clip;
+        c.skin = vert ? "main/line3.png" : "main/line1.png", c.sizeGrid = vert ? "0,0,8,0" : "0,16,0,16",
+          vert ? c.clipX = 2 : c.clipY = 2;
+        return c
+      }, i.createChildren = function() {
         laya.ui.Component.prototype.createChildren.call(this), this.size(1334, 580)
       }, i.initTree = function(country, layout, treeData) {
         this._layout = layout, this._tree = treeData, this.size(1334, 580);
@@ -21019,6 +21026,39 @@ s.showTaskInfo = function() {
             if (best) this.itemArr[best.i].pushNextItem(this.itemArr[ch.i]), this._links.push({f: best.i, t: ch.i})
           }
         }
+        // ---- 连线：原版「直角折线」风格（横 + 竖，不用斜线）----
+        // 几何完全照抄原版美系树（格子 206 宽，中心 x+103；线宽 9，横线高 3）：
+        //   同列      ：竖线 x=列+100, y=父格底-3, h=子格顶-父格底+11（原版 line12/line35）
+        //   同行跨列  ：竖线素材旋转 -90 当横线，从父格右侧到子格左侧（原版 line33）
+        //   跨列跨行  ：横线在父格中心高度（原版 heng22）→ 拐点 → 竖线沿子列下行（原版 line22）
+        var itemStart = this.treeBox.numChildren - layout.length;
+        this._clips = [];
+        for (var cli = 0; cli < this._links.length; cli++) {
+          var lk = this._links[cli], pf = this._layout[lk.f], ct = this._layout[lk.t];
+          if (!pf || !ct) continue;
+          var mk = this._mkClip, self = this,
+            add = function(c, lki) {
+              c._lk = lki, self.treeBox.addChildAt(c, itemStart), self._clips.push(c)
+            };
+          if (pf.x === ct.x) {
+            // 同列
+            var v = mk(!0);
+            v.pos(ct.x + 100, pf.y + 81), v.height = ct.y - pf.y - 73, add(v, cli)
+          } else if (pf.y === ct.y) {
+            // 同行跨列：一条横线
+            var h2 = mk(!0);
+            h2.rotation = -90, h2.pos(Math.min(pf.x, ct.x) + 203, pf.y + 44), h2.height = Math.abs(ct.x - pf.x) - 200, add(h2, cli)
+          } else {
+            // 跨列跨行：横线 + 竖线
+            var hx, hw;
+            if (ct.x < pf.x) hx = ct.x + 100, hw = pf.x - ct.x - 95;
+            else hx = pf.x + 201, hw = ct.x - pf.x - 96;
+            var hh = mk(!1);
+            hh.pos(hx, pf.y + 41), hh.width = hw, add(hh, cli);
+            var vv = mk(!0);
+            vv.pos(ct.x + 100, pf.y + 42), vv.height = ct.y - pf.y - 38, add(vv, cli)
+          }
+        }
         var maxY = 0;
         for (a2 = 0; a2 < layout.length; a2++) layout[a2].y + 84 > maxY && (maxY = layout[a2].y + 84);
         this._maxY = maxY, this.treeBox.scrollRect = new K(0, 0, 1334, 580), this.on("mousewheel", this, this._onWheel), this.onUpdateData(), y.dispatcher.on("ResearchChange", this, this.onUpdateData)
@@ -21031,16 +21071,14 @@ s.showTaskInfo = function() {
         this.lineG.graphics.clear();
         var stateById = {}, nodeById = {}, a, d;
         for (a = 0; a < this._tree.length; a++) stateById[this._tree[a].id] = this._tree[a].state, nodeById[this._tree[a].id] = this._tree[a];
-        // 依赖线按 initTree 算好的「上一等级」链接绘制（不是同列上下相邻）
-        var lks = this._links || [], lk;
-        for (var lki = 0; lki < lks.length; lki++) {
-          lk = lks[lki];
-          var c1 = this._layout[lk.f], c2 = this._layout[lk.t];
-          if (!c1 || !c2) continue;
-          var active = (stateById[c2.id] || 0) > 1;
-          this.lineG.graphics.drawLine(c1.x + 103, c1.y + 42, c2.x + 103, c2.y + 42, active ? "#7fd0ff" : "#3a6ea5", 3)
+        // 连线用 initTree 建好的 Clip（直角折线），这里只按子机状态切灰/蓝两态
+        var cps = this._clips || [];
+        for (var lki = 0; lki < cps.length; lki++) {
+          var cp = cps[lki], lk = this._links[cp._lk];
+          if (!lk) continue;
+          var c2 = this._layout[lk.t];
+          cp.index = (stateById[c2.id] || 0) > 1 ? 1 : 0
         }
-        this.lineG.repaint();
         for (a = 0; a < this._layout.length; a++) {
           // 按 id 绑定（而非按数组下标）：老存档的机票数组顺序与 layout 顺序可能不同，
           // 按 index 绑定会把飞机塞进错误的列/等级（用户反馈：攻击机/战斗机错位、框超出界面）。
