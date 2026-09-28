@@ -498,13 +498,13 @@ var Laya = window.Laya = function(t) {
           state: 0
         }, {
           id: "plane54",
-          state: 0
+          state: 3
         }, {
           id: "plane57",
           state: 0
         }, {
           id: "plane58",
-          state: 0
+          state: 3
         }, {
           id: "plane59",
           state: 0
@@ -549,10 +549,10 @@ var Laya = window.Laya = function(t) {
           state: 0
         }, {
           id: "plane73",
-          state: 0
+          state: 3
         }, {
           id: "plane74",
-          state: 0
+          state: 3
         }, {
           id: "plane75",
           state: 0
@@ -999,6 +999,14 @@ var Laya = window.Laya = function(t) {
         // 老存档若这几架仍是 locked(0) 或其它非 3 状态，一次性提升为 3（已拥有的 4 不动）。
         !t.storage.__wbGoldColFix && (t.storage.__wbGoldColFix = !0,
           [["americaTree", ["plane13"]], ["germanTree", ["plane34", "plane35"]]].forEach(function(pair) {
+            var arr = t.storage[pair[0]];
+            if (arr) for (var k = 0; k < arr.length; k++)
+              if (pair[1].indexOf(arr[k].id) >= 0 && 4 !== arr[k].state) arr[k].state = 3;
+          }));
+        // 英/日金币战机（英 Spitfire plane54 / Meteor plane58；日 Ki44 plane73 / Ki100 plane74）
+        // 同样移入最左金币列并改为金币购买；老存档一次性提升（已拥有 4 不动）。
+        !t.storage.__wbGoldColFix2 && (t.storage.__wbGoldColFix2 = !0,
+          [["britainTree", ["plane54", "plane58"]], ["japanTree", ["plane73", "plane74"]]].forEach(function(pair) {
             var arr = t.storage[pair[0]];
             if (arr) for (var k = 0; k < arr.length; k++)
               if (pair[1].indexOf(arr[k].id) >= 0 && 4 !== arr[k].state) arr[k].state = 3;
@@ -20907,26 +20915,29 @@ s.showTaskInfo = function() {
       britain: {
         country: 3,
         layout: [
+          {id:"plane54", typeCode:1, x:70, y:392},
+          {id:"plane58", typeCode:1, x:70, y:490},
           {id:"plane63", typeCode:2, x:400, y:0},
           {id:"plane60", typeCode:2, x:400, y:98},
           {id:"plane61", typeCode:2, x:400, y:196},
           {id:"plane62", typeCode:2, x:400, y:294},
           {id:"plane56", typeCode:1, x:730, y:0},
           {id:"plane55", typeCode:1, x:730, y:98},
-          {id:"plane54", typeCode:1, x:730, y:196},
-          {id:"plane57", typeCode:1, x:730, y:294},
-          {id:"plane58", typeCode:1, x:730, y:392},
-          {id:"plane59", typeCode:1, x:730, y:490},
+          {id:"plane57", typeCode:1, x:730, y:196},
+          {id:"plane59", typeCode:1, x:730, y:294},
           {id:"plane64", typeCode:3, x:1060, y:0},
           {id:"plane65", typeCode:3, x:1060, y:98},
           {id:"plane66", typeCode:3, x:1060, y:196},
           {id:"plane68", typeCode:3, x:1060, y:294},
           {id:"plane67", typeCode:3, x:1060, y:392},
+      
         ]
       },
       japan: {
         country: 4,
         layout: [
+          {id:"plane73", typeCode:1, x:70, y:294},
+          {id:"plane74", typeCode:1, x:70, y:392},
           {id:"plane77", typeCode:2, x:400, y:0},
           {id:"plane78", typeCode:2, x:400, y:98},
           {id:"plane79", typeCode:2, x:400, y:196},
@@ -20935,12 +20946,11 @@ s.showTaskInfo = function() {
           {id:"plane71", typeCode:1, x:730, y:98},
           {id:"plane69", typeCode:1, x:730, y:196},
           {id:"plane72", typeCode:1, x:730, y:294},
-          {id:"plane73", typeCode:1, x:730, y:392},
-          {id:"plane74", typeCode:1, x:730, y:490},
-          {id:"plane75", typeCode:1, x:730, y:588},
-          {id:"plane76", typeCode:1, x:730, y:686},
+          {id:"plane75", typeCode:1, x:730, y:392},
+          {id:"plane76", typeCode:1, x:730, y:490},
           {id:"plane81", typeCode:3, x:1060, y:0},
           {id:"plane82", typeCode:3, x:1060, y:98},
+      
         ]
       }
     },
