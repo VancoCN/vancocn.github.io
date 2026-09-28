@@ -20899,40 +20899,40 @@ s.showTaskInfo = function() {
       britain: {
         country: 3,
         layout: [
-          {id:"plane56", typeCode:1, x:70, y:20},
-          {id:"plane55", typeCode:1, x:70, y:120},
-          {id:"plane54", typeCode:1, x:70, y:220},
-          {id:"plane57", typeCode:1, x:70, y:320},
-          {id:"plane58", typeCode:1, x:70, y:420},
-          {id:"plane59", typeCode:1, x:70, y:520},
-          {id:"plane63", typeCode:2, x:330, y:20},
-          {id:"plane60", typeCode:2, x:330, y:120},
-          {id:"plane61", typeCode:2, x:330, y:220},
-          {id:"plane62", typeCode:2, x:330, y:320},
-          {id:"plane64", typeCode:3, x:590, y:20},
-          {id:"plane65", typeCode:3, x:590, y:120},
-          {id:"plane66", typeCode:3, x:590, y:220},
-          {id:"plane68", typeCode:3, x:590, y:320},
-          {id:"plane67", typeCode:3, x:590, y:420}
+          {id:"plane63", typeCode:2, x:400, y:0},
+          {id:"plane60", typeCode:2, x:400, y:98},
+          {id:"plane61", typeCode:2, x:400, y:196},
+          {id:"plane62", typeCode:2, x:400, y:294},
+          {id:"plane56", typeCode:1, x:730, y:0},
+          {id:"plane55", typeCode:1, x:730, y:98},
+          {id:"plane54", typeCode:1, x:730, y:196},
+          {id:"plane57", typeCode:1, x:730, y:294},
+          {id:"plane58", typeCode:1, x:730, y:392},
+          {id:"plane59", typeCode:1, x:730, y:490},
+          {id:"plane64", typeCode:3, x:1060, y:0},
+          {id:"plane65", typeCode:3, x:1060, y:98},
+          {id:"plane66", typeCode:3, x:1060, y:196},
+          {id:"plane68", typeCode:3, x:1060, y:294},
+          {id:"plane67", typeCode:3, x:1060, y:392},
         ]
       },
       japan: {
         country: 4,
         layout: [
-          {id:"plane70", typeCode:1, x:70, y:20},
-          {id:"plane71", typeCode:1, x:70, y:120},
-          {id:"plane69", typeCode:1, x:70, y:220},
-          {id:"plane72", typeCode:1, x:70, y:320},
-          {id:"plane73", typeCode:1, x:70, y:420},
-          {id:"plane74", typeCode:1, x:70, y:520},
-          {id:"plane75", typeCode:1, x:70, y:620},
-          {id:"plane76", typeCode:1, x:70, y:720},
-          {id:"plane77", typeCode:2, x:330, y:20},
-          {id:"plane78", typeCode:2, x:330, y:120},
-          {id:"plane79", typeCode:2, x:330, y:220},
-          {id:"plane80", typeCode:2, x:330, y:320},
-          {id:"plane81", typeCode:3, x:590, y:20},
-          {id:"plane82", typeCode:3, x:590, y:120}
+          {id:"plane77", typeCode:2, x:400, y:0},
+          {id:"plane78", typeCode:2, x:400, y:98},
+          {id:"plane79", typeCode:2, x:400, y:196},
+          {id:"plane80", typeCode:2, x:400, y:294},
+          {id:"plane70", typeCode:1, x:730, y:0},
+          {id:"plane71", typeCode:1, x:730, y:98},
+          {id:"plane69", typeCode:1, x:730, y:196},
+          {id:"plane72", typeCode:1, x:730, y:294},
+          {id:"plane73", typeCode:1, x:730, y:392},
+          {id:"plane74", typeCode:1, x:730, y:490},
+          {id:"plane75", typeCode:1, x:730, y:588},
+          {id:"plane76", typeCode:1, x:730, y:686},
+          {id:"plane81", typeCode:3, x:1060, y:0},
+          {id:"plane82", typeCode:3, x:1060, y:98},
         ]
       }
     },
@@ -21863,11 +21863,11 @@ s.showTaskInfo = function() {
         }
       }, s.onChangeTest = function() {
         if (!y.storage.__wb_testUnlocked) return this.tabBtn3.selected = !1, b.showMessage("通关第8章第12关后解锁测试飞机！"), void 0;
-        null == this.testItemArr && this.buildTestItems(), this.tabBtn1.selected = !1, this.tabBtn2.selected = !1, this.tabBtn3.selected = !0, this.americaTree.visible = !1, this.germanTree.visible = !1, this.testTree.visible = !0
+        null == this.testItemArr && this.buildTestItems(), this.tabBtn1.selected = !1, this.tabBtn2.selected = !1, this.tabBtn3.selected = !0, this.americaTree.visible = !1, this.germanTree.visible = !1, this.testTree.visible = !0, this.britainTree.visible = !1, this.japanTree.visible = !1
       }, s.onChangeAmerican = function() {
-        this.tabBtn1.selected = !0, this.tabBtn2.selected = !1, this.tabBtn3.selected = !1, this.americaTree.visible = !0, this.germanTree.visible = !1, this.testTree.visible = !1
+        this.tabBtn1.selected = !0, this.tabBtn2.selected = !1, this.tabBtn3.selected = !1, this.americaTree.visible = !0, this.germanTree.visible = !1, this.testTree.visible = !1, this.britainTree.visible = !1, this.japanTree.visible = !1
       }, s.onChangeGerman = function() {
-        this.tabBtn1.selected = !1, this.tabBtn2.selected = !0, this.tabBtn3.selected = !1, this.americaTree.visible = !1, this.germanTree.visible = !0, this.testTree.visible = !1
+        this.tabBtn1.selected = !1, this.tabBtn2.selected = !0, this.tabBtn3.selected = !1, this.americaTree.visible = !1, this.germanTree.visible = !0, this.testTree.visible = !1, this.britainTree.visible = !1, this.japanTree.visible = !1
       }, s.onChangeBritain = function() {
         this.tabBtn1.selected = !1, this.tabBtn2.selected = !1, this.tabBtn3.selected = !1, this.tabBtn4.selected = !0, this.tabBtn5.selected = !1, this.americaTree.visible = !1, this.germanTree.visible = !1, this.testTree.visible = !1, this.britainTree.visible = !0, this.japanTree.visible = !1
       }, s.onChangeJapan = function() {
