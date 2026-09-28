@@ -995,6 +995,14 @@ var Laya = window.Laya = function(t) {
         t.storage.__wbAch && !t.storage.__wbAchMig && (t.storage.__wbAch.c8 && (t.storage.__wbAch.c9 = !0, delete t.storage.__wbAch.c8), t.storage.__wbAch.c7 && (t.storage.__wbAch.c8 = !0, delete t.storage.__wbAch.c7), t.storage.__wbAch.c6 && (t.storage.__wbAch.c7 = !0, delete t.storage.__wbAch.c6), t.storage.__wbAchMig = !0);
         // 兜底：章节条目缺失时按默认补齐，避免章节界面读 undefined
         if (t.storage.missionCfg) for (var e = 0; e < 10; e++) t.storage.missionCfg[e] || (t.storage.missionCfg[e] = { state: 0 === e || 1 === e ? 0 : 6 === e ? 3 : 6 > e ? 1 : 2, curGate: 1 });
+        // 金币战机列（美 plane13"闪电"、德 plane34/35）统一改为「金币购买」(state 3)：只需花金币、不用攒军功。
+        // 老存档若这几架仍是 locked(0) 或其它非 3 状态，一次性提升为 3（已拥有的 4 不动）。
+        !t.storage.__wbGoldColFix && (t.storage.__wbGoldColFix = !0,
+          [["americaTree", ["plane13"]], ["germanTree", ["plane34", "plane35"]]].forEach(function(pair) {
+            var arr = t.storage[pair[0]];
+            if (arr) for (var k = 0; k < arr.length; k++)
+              if (pair[1].indexOf(arr[k].id) >= 0 && 4 !== arr[k].state) arr[k].state = 3;
+          }));
       }, t.init = function() {
         t.storage = Q.getJSON("Dogfight"), t.storage || (t.storage = new c, Q.setJSON("Dogfight", t.storage)), t.storage.__wb_testTree || (t.storage.__wb_testTree = [{
           id: "plane14",
