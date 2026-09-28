@@ -20976,8 +20976,8 @@ s.showTaskInfo = function() {
       }, i.onUpdateData = function() {
         if (!this._tree || !this._layout) return;
         this.lineG.graphics.clear();
-        var stateById = {}, a, d;
-        for (a = 0; a < this._tree.length; a++) stateById[this._tree[a].id] = this._tree[a].state;
+        var stateById = {}, nodeById = {}, a, d;
+        for (a = 0; a < this._tree.length; a++) stateById[this._tree[a].id] = this._tree[a].state, nodeById[this._tree[a].id] = this._tree[a];
         var cols = {}, a2, nd;
         for (a2 = 0; a2 < this._layout.length; a2++) (cols[this._layout[a2].x] || (cols[this._layout[a2].x] = [])).push(this._layout[a2]);
         for (var cx in cols) {
@@ -20989,7 +20989,10 @@ s.showTaskInfo = function() {
           }
         }
         for (a = 0; a < this._layout.length; a++) {
-          var item = this.itemArr[a], dd = this._tree[a];
+          // 按 id 绑定（而非按数组下标）：老存档的机票数组顺序与 layout 顺序可能不同，
+          // 按 index 绑定会把飞机塞进错误的列/等级（用户反馈：攻击机/战斗机错位、框超出界面）。
+          // 存档缺少该机（老存档早于新机上线）时合成一个锁定节点，保证格子仍正确渲染。
+          var item = this.itemArr[a], lid = this._layout[a].id, dd = nodeById[lid] || {id: lid, state: 0};
           item && dd && item.init(dd)
         }
       }, e
