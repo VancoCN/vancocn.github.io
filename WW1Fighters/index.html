@@ -21037,7 +21037,7 @@ s.showTaskInfo = function() {
           this.selectFrame.visible = e.selected, this.nameTxt.text = e.cfg.name;
           var i = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"],
             s = i[e.cfg.level];
-          this.levelTxt.text = s, this.flagMc.skin = parseInt(e.cfg.country) >= 3 ? "res/atlas/flag" + e.cfg.country + ".png" : "main/flag" + e.cfg.country + ".png", this.iconMc.skin = parseInt(e.cfg.country) >= 3 ? "res/atlas/picon_" + e.cfg.src + ".png" : "icon/" + e.cfg.src + ".png", parseInt(e.cfg.country) >= 3 && (this.iconMc.scrollRect = new K(9, 18, 196, 72)), this.doubleMc.visible = e.bDouble, this.typeMc.skin = "main/typeIcon" + e.cfg.typeCode + ".png"
+          this.levelTxt.text = s, this.flagMc.skin = parseInt(e.cfg.country) >= 3 ? "res/atlas/flag" + e.cfg.country + ".png" : "main/flag" + e.cfg.country + ".png", this.iconMc.skin = parseInt(e.cfg.country) >= 3 ? "res/atlas/picon_" + e.cfg.src + ".png" : "icon/" + e.cfg.src + ".png", this.doubleMc.visible = e.bDouble, this.typeMc.skin = "main/typeIcon" + e.cfg.typeCode + ".png"
         }
       }), e
     }(Sn),
@@ -21787,7 +21787,8 @@ s.showTaskInfo = function() {
       }, i.init = function(t) {
         this.cfgObj = t, this.cfgXML = y.getObjectByID(t.id), this.state = t.state;
         var __c = parseInt(this.cfgXML.country);
-        this.iconMc.skin = __c >= 3 ? "res/atlas/picon_" + this.cfgXML.src + ".png" : "icon/" + this.cfgXML.src + ".png", __c >= 3 && (this.iconMc.scrollRect = new K(9, 18, 196, 72));
+        // 英/日(country>=3)用 picon_ 图集图标（240x130，与 icon/ 同格式）；构造器已设好裁切窗口(9,35,196,72)，勿再覆盖
+        this.iconMc.skin = __c >= 3 ? "res/atlas/picon_" + this.cfgXML.src + ".png" : "icon/" + this.cfgXML.src + ".png";
         var e = parseInt(this.cfgXML.typeCode);
         e = 3 == this.state ? e + 3 : e, this.typeMc.skin = "main/typeIcon" + e + ".png";
         var i = this.cfgXML.level,
