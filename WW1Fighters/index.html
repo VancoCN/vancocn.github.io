@@ -22361,11 +22361,11 @@ s.showTaskInfo = function() {
           mi.refresh()
         }
       }, s.placeTwoPlayerBtn = function() {
-        // 「双人/单人模式」按钮：对齐左侧功能按钮串，放在「导出存档」正上方
-        var eb = this.exportBtn, ib = this.importBtn;
-        if (eb && this.twoPlayerBtn) {
-          var gap = ib ? ib.y - eb.y - eb.height : 12;
-          this.twoPlayerBtn.size(eb.width, eb.height), this.twoPlayerBtn.labelSize = eb.labelSize, this.twoPlayerBtn.labelFont = eb.labelFont, this.twoPlayerBtn.labelColors = eb.labelColors, this.twoPlayerBtn.pos(eb.x, eb.y - eb.height - gap)
+        // 「双人/单人模式」按钮：挂在左侧功能按钮串里，放在「帮助说明」正上方。
+        // （原来锚在「导出存档」上，但导出/导入已移入飞行员档案并隐藏，那个位置现在会跟「广告奖励」叠在一起）
+        var hb = this.helpBtn;
+        if (hb && this.twoPlayerBtn) {
+          this.twoPlayerBtn.size(hb.width, hb.height), this.twoPlayerBtn.labelSize = hb.labelSize, this.twoPlayerBtn.labelFont = hb.labelFont, this.twoPlayerBtn.labelColors = hb.labelColors, this.twoPlayerBtn.pos(hb.x, hb.y - hb.height - 18)
         }
       },       s.onTwoPlayerClick = function() {
         if (this.__wbMobile || wbIsMobile()) return; // 手机版不可开启双人
@@ -22591,8 +22591,16 @@ s.showTaskInfo = function() {
           var t = y.storage,
             W = 460,
             H = 340,
-            x = (i.stage.width - W) / 2,
-            y0 = (i.stage.height - H) / 2,
+            // 以档案面板为参照居中（挂在其内部）
+            R = this.wbPilotRect || {
+              x: (i.stage.width - 980) / 2,
+              y: (i.stage.height - 600) / 2,
+              W: 980,
+              H: 600,
+              left: 660
+            },
+            x = (R.left - W) / 2,
+            y0 = (R.H - H) / 2,
             sp = new Gi;
           sp.size(W, H), sp.pos(x, y0), sp.zOrder = 999;
           var g = sp.graphics;
@@ -22638,29 +22646,87 @@ s.showTaskInfo = function() {
               sync: sync
             }
           };
-          // 三项
-          this.__wbCheatRows = [];
-          this.__wbCheatRows.push(mkRow(0, "章节全解", "解锁全部章节与关卡", function() {
-            return !!y.storage.__wb_chapterOn
-          }, function(sync) {
+          // 三项（回调同时存一份，供 canvas 原生兜底命中用）
+          this.__wbCheatRows = [], this.__wbCheatRowCbs = [];
+          this.__wbCheatRowCbs.push(function(sync) {
             self.toggleChapter(sync)
-          }));
-          this.__wbCheatRows.push(mkRow(1, "货币增加", "金币 / 银币 / 军功 各 +999999999", function() {
-            return !!y.storage.__wb_moneyOn
-          }, function(sync) {
+          }), this.__wbCheatRows.push(mkRow(0, "章节全解", "解锁全部章节与关卡", function() {
+            return !!y.storage.__wb_chapterOn
+          }, this.__wbCheatRowCbs[0]));
+          this.__wbCheatRowCbs.push(function(sync) {
             self.toggleMoney(sync)
-          }));
-          this.__wbCheatRows.push(mkRow(2, "血量锁定", "自机血量锁定为满血", function() {
-            return !!y.storage.__wb_hpLock
-          }, function(sync) {
+          }), this.__wbCheatRows.push(mkRow(1, "货币增加", "金币 / 银币 / 军功 各 +999999999", function() {
+            return !!y.storage.__wb_moneyOn
+          }, this.__wbCheatRowCbs[1]));
+          this.__wbCheatRowCbs.push(function(sync) {
             self.toggleHpLock(sync)
-          }));
-          // 关闭按钮
-          var cb = new hn("main/btn2Skin.png", "关 闭");
-          cb.size(160, 40), cb.labelSize = 17, cb.labelFont = "SimHei", cb.labelColors = "#ffffff,#ffffff,#ffffff,#888888", cb.x = (W - 160) / 2, cb.y = H - 46, cb.on("click", this, this.closeCheatMenu), sp.addChild(cb);
-          b.layer.addChild(sp), this.cheatPanel = sp
+          }), this.__wbCheatRows.push(mkRow(2, "血量锁定", "自机血量锁定为满血", function() {
+            return !!y.storage.__wb_hpLock
+          }, this.__wbCheatRowCbs[2]));
+          // 关闭按钮（ScaleButton 默认 anchor .5 -> 置 0 后 x/y 才是左上角）
+          var cb = new hn("main/btn2Skin.png", "返 回");
+          cb.size(160, 40), cb.anchorX = cb.anchorY = 0, cb.labelSize = 17, cb.labelFont = "SimHei", cb.labelColors = "#ffffff,#ffffff,#ffffff,#888888", cb.x = (W - 160) / 2, cb.y = H - 46, cb.on("click", this, this.closeCheatMenu), sp.addChild(cb);
+          // ★ 挂到「档案面板 box」内部而不是 b.layer：这样它会随档案面板一起出现/关闭，
+          //   不会像挂 layer 那样在面板关闭后脱离界面留在屏幕上（"排布有问题" 的根因）
+          var host = this.pilotPanelBox || this.pilotPanel || b.layer;
+          host.addChild(sp), this.cheatPanel = sp;
+          // 子菜单的兜底命中矩形（后加的覆盖先加的 -> 优先于档案按钮）
+          var R2 = this.wbPilotRect || {
+            x: 0,
+            y: 0
+          }, reg = this.__wbPanelBtns || (this.__wbPanelBtns = []);
+          for (var ri = 0; ri < 3; ri++) reg.push({
+            x: R2.x + sp.x + 20,
+            y: R2.y + sp.y + 84 + ri * 68,
+            w: W - 40,
+            h: 62,
+            cb: this.__wbCheatRowCbs[ri],
+            tag: "cheat"
+          });
+          reg.push({
+            x: R2.x + sp.x + cb.x,
+            y: R2.y + sp.y + cb.y,
+            w: 160,
+            h: 40,
+            cb: this.closeCheatMenu,
+            tag: "cheat"
+          })
         }, s.closeCheatMenu = function() {
-          this.cheatPanel && (this.cheatPanel.removeSelf(), this.cheatPanel = null, this.__wbCheatRows = null)
+          if (this.cheatPanel) {
+            this.cheatPanel.removeSelf(), this.cheatPanel = null, this.__wbCheatRows = null, this.__wbCheatRowCbs = null;
+            // 撤掉子菜单的兜底命中矩形，避免面板关掉后仍在响应
+            var a = [];
+            if (this.__wbPanelBtns) for (var i = 0; i < this.__wbPanelBtns.length; i++) "cheat" != this.__wbPanelBtns[i].tag && a.push(this.__wbPanelBtns[i]);
+            this.__wbPanelBtns = a
+          }
+        },
+        // 动态按钮的点击兜底：Laya 在这条 UI 链路上 mousedown 命中按钮、mouseup 却掉到父容器，
+        // click 永远不触发 -> 沿用机库选机那套：canvas 原生 mousedown/touchstart + 几何判定
+        s.wbBindPanelPick = function() {
+          if (this.__wbPickBound) return;
+          this.__wbPickBound = !0;
+          var self = this;
+          try {
+            var cv = document.querySelector("canvas");
+            if (!cv || !cv.addEventListener) return;
+            var h2 = function(e) {
+              if (!self.pilotPanelBox) return;
+              // 触屏上 touchstart 后会补发一次 mousedown，忽略掉避免触发两次
+              if ("touchstart" == e.type) self.__wbTouchAt = Date.now();
+              else if (self.__wbTouchAt && Date.now() - self.__wbTouchAt < 800) return;
+              var p = self.wbAchClientPos(e);
+              if (!p) return;
+              var arr = self.__wbPanelBtns || [], hit = null;
+              for (var i2 = 0; i2 < arr.length; i2++) {
+                var b = arr[i2];
+                if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) hit = b
+              }
+              if (hit && hit.cb) try {
+                hit.cb.call(self)
+              } catch (err) {}
+            };
+            cv.addEventListener("mousedown", h2, !0), cv.addEventListener("touchstart", h2, !0)
+          } catch (e) {}
         },
         // 三个作弊动作：先过闸门（未作弊的存档会先弹原生确认窗）
         s.toggleChapter = function(t) {
@@ -22700,6 +22766,14 @@ s.showTaskInfo = function() {
           r = (t - W) / 2,
           a = (e - n) / 2,
           h = new Gi;
+        // 面板几何存起来：作弊子菜单要作为「档案面板的子节点」定位，才能跟着面板一起移动/关闭
+        this.wbPilotRect = {
+          x: r,
+          y: a,
+          W: W,
+          H: n,
+          left: s
+        };
         // 遮罩：直接挂到 stage 最上层 -> 档案界面置顶（盖住 GarageBar / infoLayer 等）
         h.mouseEnabled = !0, h.graphics.drawRect(-600, -600, t + 1200, e + 1200, "#000000"), h.alpha = .72, h.on("click", this, this.closePilotPanel), i.stage.addChild(h), this.pilotPanel = h;
         var o = new Gi;
@@ -22740,18 +22814,31 @@ s.showTaskInfo = function() {
         (c.flyTime || [])[3] > 0 && m.push(["运输·侦察机时长", c.flyTime[3]]);
         for (var v = 0; v < m.length; v++) d(m[v][0], 22, "#8fb0c8", 60, 396 + 32 * v), d(this.fmtPilotDur(m[v][1]), 22, "#ffffff", 60, 396 + 32 * v, s - 120, "right");
         // 底部按钮两行：上排 修改名字 / 导出存档，下排 导入存档 / 作弊选项 / 关闭
-        var BW = 150, BH = 42, mkBtn = function(lab, x, y, cb) {
+        // ⚠ ScaleButton 默认 anchorX/anchorY = .5（x/y 是中心）→ 显式置 0，下面才能按左上角排版，
+        //   否则整排按钮会整体左偏半个按钮宽（"排布有问题" 的根因之一）
+        var BW = 150, BH = 42, PR = this.wbPilotRect, btnReg = [];
+        var mkBtn = function(lab, x, y, cb) {
             var w = new hn("main/btn2Skin.png", lab);
-            w.size(BW, BH), w.labelSize = 17, w.labelFont = "SimHei", w.labelColors = "#ffffff,#ffffff,#ffffff,#888888",
+            w.size(BW, BH), w.anchorX = w.anchorY = 0, w.labelSize = 17, w.labelFont = "SimHei", w.labelColors = "#ffffff,#ffffff,#ffffff,#888888",
               w.x = x, w.y = y, w.on("click", this, cb), o.addChild(w);
+            // 兜底命中矩形（舞台坐标）：Laya 在这条 UI 链路上 mouseup 会掉到父容器，click 不触发
+            btnReg.push({
+              x: PR.x + x,
+              y: PR.y + y,
+              w: BW,
+              h: BH,
+              cb: cb
+            });
             return w
           },
-          ROW1 = n - 104, ROW2 = n - 54, cx0 = s / 2;
-        mkBtn.call(this, "修改名字", cx0 - BW - 8, ROW1, this.editPilotName);
-        mkBtn.call(this, "导出存档", cx0 + 8, ROW1, this.onExportClick);
-        mkBtn.call(this, "导入存档", cx0 - BW * 1.5 - 16, ROW2, this.onImportClick);
-        mkBtn.call(this, "作弊选项", cx0 - BW / 2, ROW2, this.showCheatMenu);
-        mkBtn.call(this, "关闭", cx0 + BW / 2 + 16, ROW2, this.closePilotPanel);
+          ROW1 = n - 104, ROW2 = n - 54, cx0 = s / 2, GAP = 8 * 2;
+        mkBtn.call(this, "修改名字", (s - (2 * BW + GAP)) / 2, ROW1, this.editPilotName);
+        mkBtn.call(this, "导出存档", (s - (2 * BW + GAP)) / 2 + BW + GAP, ROW1, this.onExportClick);
+        mkBtn.call(this, "导入存档", (s - (3 * BW + 2 * GAP)) / 2, ROW2, this.onImportClick);
+        mkBtn.call(this, "作弊选项", (s - (3 * BW + 2 * GAP)) / 2 + BW + GAP, ROW2, this.showCheatMenu);
+        mkBtn.call(this, "关闭", (s - (3 * BW + 2 * GAP)) / 2 + 2 * (BW + GAP), ROW2, this.closePilotPanel);
+        this.__wbPanelBtns = btnReg;
+        this.wbBindPanelPick();
         this.buildAchPanel(o, W, n)
       }, s.buildAchPanel = function(e, t, n) {
         // ========== 成就区域（档案面板右侧）：鼠标滚轮 / 拖拽查看 ==========
