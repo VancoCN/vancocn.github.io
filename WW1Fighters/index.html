@@ -396,7 +396,7 @@ var Laya = window.Laya = function(t) {
       function t() {
         this.pilotName = "飞行员", this.createTime = Date.now(), this.killCount = 0, this.assistCount = 0, this.crashCount = 0, this.buildingCount = 0, this.flyTime = [0, 0, 0, 0], this.gold = 100, this.silver = 45e3, this.honour = 0, this.totalCost = 0, this.recDate = -1, this.garageNum = 5, this.garageList = [], this.americaTree = [], this.germanTree = [], this.missionCfg = [], this.selectIndex = 0, this.bNovice = !1,
         // 作弊相关：新号默认全部关闭、成就可用
-        this.__wbCheat = !1, this.__wbCheatApplied = !0, this.__wb_cheatMenu = !1, this.__wb_chapterOn = !1, this.__wb_moneyOn = !1, this.__wb_hpLock = !1, this.__wbAchQueue = [], this.garageList = [{
+        this.__wbCheat = !1, this.__wbCheatApplied = !0, this.__wb_cheatMenu = !1, this.__wb_chapterOn = !1, this.__wb_moneyOn = !1, this.__wb_hpLock = !1, this.__wb_heatOn = !1, this.__wb_ammoOn = !1, this.__wbAchQueue = [], this.garageList = [{
           id: "plane2",
           bDouble: !0,
           upgrade: [0, 0, 0, 0]
@@ -1084,6 +1084,8 @@ var Laya = window.Laya = function(t) {
         null == t.storage.createTime && (t.storage.createTime = 0), null == t.storage.pilotName && (t.storage.pilotName = "飞行员"), null == t.storage.killCount && (t.storage.killCount = 0), null == t.storage.assistCount && (t.storage.assistCount = 0), null == t.storage.crashCount && (t.storage.crashCount = 0), null == t.storage.buildingCount && (t.storage.buildingCount = 0),         null == t.storage.flyTime && (t.storage.flyTime = [0, 0, 0, 0]), null == t.storage.__wbAch && (t.storage.__wbAch = {}),
         // 英/日科技树：老存档缺字段 -> 用构造器默认补齐（否则机库页签全是占位符、导出存档会崩）
         t.storage.britainTree && t.storage.britainTree.length || (t.storage.britainTree = (new c).britainTree), t.storage.japanTree && t.storage.japanTree.length || (t.storage.japanTree = (new c).japanTree);
+        // 新作弊开关：老存档缺字段 -> 补默认关闭（2026-09-29 发动机不过热/弹药无限）
+        null == t.storage.__wb_heatOn && (t.storage.__wb_heatOn = !1), null == t.storage.__wb_ammoOn && (t.storage.__wb_ammoOn = !1);
         // 作弊开关一次性迁移到"作弊选项"二级菜单。
         // 老存档里如果之前开过任何作弊（章节全解/货币增加/血量锁定），则视为已作弊 -> 成就永久关闭；
         // 之后默认全是关闭状态（__wbCheatApplied 保证只判断一次，玩家后续再开菜单不会反复重置）。
@@ -1171,7 +1173,31 @@ var Laya = window.Laya = function(t) {
         return o
       },
       // ========== 成就系统（24 项：关卡进度 / 双人 / 飞机收集 / 0-8 挑战 / 战绩 / 里程碑） ==========
+      // ---- 成就顺序（2026-09-29 重排）：类型分组 + 组内按解锁先后 ----
+      // ① 飞行员入门 → ② 击落里程碑 → ③ 战役历程(1~9章) → ④ 机库收集(美→德→英→日→全收集) → ⑤ 特殊挑战
       t.wbAchDefs = [{
+        id: "a0",
+        name: "王牌飞行员的开端",
+        desc: "开启任意一局游戏"
+      }, {
+        id: "a1",
+        name: "你的名字",
+        desc: "在飞行员档案中修改名字"
+      }, {
+        id: "a2",
+        name: "首杀",
+        desc: "击落 1 架敌机"
+      }, {
+        id: "a3",
+        name: "滴水不漏",
+        desc: "击落 100 架敌机"
+      }, {
+        id: "a4",
+        name: "敌机毁灭者",
+        desc: "击落 1000 架敌机"
+      },
+      // ---- 战役历程：按章节顺序 ----
+      {
         id: "c1",
         name: "初出茅庐",
         desc: "通过关卡 1-12"
@@ -1207,52 +1233,12 @@ var Laya = window.Laya = function(t) {
         id: "c9",
         name: "长夜终尽",
         desc: "通过关卡 9-12"
-      }, {
-        id: "coop",
-        name: "双人成行",
-        desc: "游玩并通过一局双人模式"
-      }, {
+      },
+      // ---- 机库收集：美系(含 F80/B17) → 德系 → 英系 → 日系 → 全收集 ----
+      {
         id: "usa",
         name: "科研尖兵",
         desc: "解锁全部美系飞机（无需购买）"
-      }, {
-        id: "ger",
-        name: "师夷长技以制夷",
-        desc: "解锁全部德系飞机（无需购买）"
-      }, {
-        id: "rich",
-        name: "富可敌国",
-        desc: "解锁并购买所有飞机"
-      }, {
-        id: "east",
-        name: "你在玩东方吗？",
-        desc: "在关卡 0-8 中无伤"
-      }, {
-        id: "ace",
-        name: "谁才是挑战者",
-        desc: "在关卡 0-8 中击落所有敌机"
-      },
-      // ---- 新增 9 项（战绩里程碑 / 名字 / 特定机型 / 英日全解锁）----
-      {
-        id: "a0",
-        name: "王牌飞行员的开端",
-        desc: "开启任意一局游戏"
-      }, {
-        id: "a1",
-        name: "你的名字",
-        desc: "在飞行员档案中修改名字"
-      }, {
-        id: "a2",
-        name: "首杀",
-        desc: "击落 1 架敌机"
-      }, {
-        id: "a3",
-        name: "滴水不漏",
-        desc: "击落 100 架敌机"
-      }, {
-        id: "a4",
-        name: "敌机毁灭者",
-        desc: "击落 1000 架敌机"
       }, {
         id: "a5",
         name: "流星之名",
@@ -1262,6 +1248,10 @@ var Laya = window.Laya = function(t) {
         name: "坚不可摧的堡垒",
         desc: "解锁 B17\"空中堡垒\""
       }, {
+        id: "ger",
+        name: "师夷长技以制夷",
+        desc: "解锁全部德系飞机（无需购买）"
+      }, {
         id: "a7",
         name: "日不落帝国",
         desc: "解锁全部英系飞机（无需购买）"
@@ -1269,6 +1259,24 @@ var Laya = window.Laya = function(t) {
         id: "a8",
         name: "以敌之翼",
         desc: "解锁全部日系飞机（无需购买）"
+      }, {
+        id: "rich",
+        name: "富可敌国",
+        desc: "解锁并购买所有飞机"
+      },
+      // ---- 特殊挑战 ----
+      {
+        id: "coop",
+        name: "双人成行",
+        desc: "游玩并通过一局双人模式"
+      }, {
+        id: "east",
+        name: "你在玩东方吗？",
+        desc: "在关卡 0-8 中无伤"
+      }, {
+        id: "ace",
+        name: "谁才是挑战者",
+        desc: "在关卡 0-8 中击落所有敌机"
       }],
       // ========== 作弊标记：使用过作弊的存档永久关闭成就 ==========
       t.wbCheatOn = function() {
@@ -11624,7 +11632,7 @@ var Laya = window.Laya = function(t) {
           this.parentObj.gScene.playSound(this.bulletInfo.fireSound, this.parentObj.loc)
         }
       }, s.fireAtOnce = function(t, e) {
-        this.bulletNum -= 1;
+        y.storage.__wb_ammoOn && this.parentObj.bMainRole || (this.bulletNum -= 1);
         for (var i = 1 == this.gunNum ? 0 : this.gunGap / (this.gunNum - 1), s = 0; s < this.gunNum; s++) {
           var n = (1 - this.gunNum) / 2 * i + i * s,
             r = this.dir.perp();
@@ -12186,6 +12194,8 @@ var Laya = window.Laya = function(t) {
         this.__wbPhase = 1, this.__wbFacility = "wbFacility" == t.taskType, this.__wbReturnLimit = Number(t.param4) > 0 ? Number(t.param4) : 60, this.__wbRally = this.__wbFacility ? g.parsePointsString(t.param3)[0] : null, this.destination = this.__wbFacility ? null : this.destination, this.__wbSpawnAfter = this.__wbFacility && t.spawnAfter && t.spawnAfter.length ? t.spawnAfter : null, this.__wbConvoy = "wbConvoy" == t.taskType, this.__wbConvoyIds = {}, this.__wbConvoyNeed = parseInt(t.param2) > 0 ? parseInt(t.param2) : 3, this.__wbConvoyAlive = this.__wbConvoyNeed, this.__wbFog = "wbFog" == t.taskType, // wbKeepOne：半剧情关（6-8 黑星期四）——被保护目标只要还剩一架就不算失败
     this.__wbKeepOne = "1" === t.wbKeepOne, this.__wbNight = "1" === t.wbNight, this.__wbFogR = Number(t.param3) > 0 ? Number(t.param3) : 430, this.__wbFogSpr = null, this.__wbFogRecs = null, this.__wbFogSpr2 = null, this.__wbFogRecs2 = null, // wbRadar=single：雷达受损，小地图只显示自机 + 最近的一名敌人（与 __wbFog 的「雷达全失」区分）
     window.__wbRadarSingle = "single" === t.wbRadar; if (this.__wbConvoy) for (var wbc in t.object) if (t.object[wbc] && -1 != ("," + t.param1 + ",").indexOf("," + t.object[wbc].id + ",")) this.__wbConvoyIds[t.object[wbc].id] = !0;
+        // wbKeepOne：初始 curTaskNum=被保护目标数，HUD「剩余 x/y」开局就正确（首次阵亡后按实际存活数重算）
+        if (this.__wbKeepOne && "protect" == this.taskType) for (var wbk = 0, wba = t.object || []; wbk < wba.length; wbk++) wba[wbk] && wba[wbk].id == this.taskObjID && this.curTaskNum++;
         // 手机版强制单人：即使存档里残留双人标志（比如 PC 上开过），手机上也不进入分屏双人
         if (wbIsMobile() && y.storage.__wb_twoPlayer) y.storage.__wb_twoPlayer = !1, y.saveData();
         var e = $n.instance.curPlaneCfg;
@@ -12320,7 +12330,7 @@ var Laya = window.Laya = function(t) {
           }
           else t instanceof com.ocean.game.Building && (st.buildingCount = (st.buildingCount || 0) + 1);
         // 保卫类任务（如保护指挥部）：被保护目标一旦被摧毁，立刻失败。
-        // 例外 wbKeepOne（6-8 黑星期四）：只要还剩至少一架就不判负，HUD 显示剩余数
+        // 例外 wbKeepOne（6-8 黑星期四 / 2-10 掩护攻击机）：只要还剩至少一架就不判负，HUD 显示剩余数
         if ("protect" == this.taskType && t.id == this.taskObjID) {
           if (this.__wbKeepOne) {
             var keep = 0;
@@ -12756,7 +12766,11 @@ s.showTaskInfo = function() {
           this.teachTxt && (this.teachTxt.text = s1), this.teachTxt1 && (this.teachTxt1.text = s1), this.teachTxt2 && (this.teachTxt2.text = s2);
           return this.battleUI.setTaskInfo("教学：" + (t ? two ? t.t1 + " ｜ P2：" + t.t2 : t.t1 : "击落靶机")), void 0
         }
-        if (this.__wbConvoy) return this.battleUI.setTaskInfo("任务：" + this.taskDesc + " 护卫 " + Math.max(0, this.__wbConvoyAlive) + "/" + this.__wbConvoyNeed), void 0; var t = "kill" == this.taskType || this.__wbFacility && 1 == this.__wbPhase ? this.curTaskNum : this.taskNum - this.curTaskNum;
+        if (this.__wbConvoy) return this.battleUI.setTaskInfo("任务：" + this.taskDesc + " 护卫 " + Math.max(0, this.__wbConvoyAlive) + "/" + this.__wbConvoyNeed), void 0;
+        // wbKeepOne：任务条显示"剩余 存活数/总数"（onObjectDead 里 curTaskNum=存活数）。
+        // 原来的 taskNum-curTaskNum 在这里会变成"已损失数"，且初始 3/3 -> 死一架 1/3 -> 再死 2/3 越死越大
+        if (this.__wbKeepOne && "protect" == this.taskType) return this.battleUI.setTaskInfo("任务：" + this.taskDesc + " 剩余 " + Math.max(0, this.curTaskNum) + "/" + this.taskNum), void 0;
+        var t = "kill" == this.taskType || this.__wbFacility && 1 == this.__wbPhase ? this.curTaskNum : this.taskNum - this.curTaskNum;
         this.battleUI.setTaskInfo("任务：" + this.taskDesc + " " + t + "/" + this.taskNum)
       }, s.buildTeachBar = function() {
         this.teachBar && (this.teachBar.removeSelf(), this.teachBar = null, this.teachTxt = null, this.teachBar1 = null, this.teachTxt1 = null, this.teachBar2 = null, this.teachTxt2 = null);
@@ -14132,10 +14146,10 @@ s.showTaskInfo = function() {
           if (a > Math.abs(r)) this.curSpeed = this.endSpeed;
           else {
             var h = this.curSpeed < this.endSpeed ? 1 : -1;
-            this.curSpeed += s * this.acc * h, 1 == h && (this.thrust += this.heatSpeed * s)
+            this.curSpeed += s * this.acc * h, 1 == h && (y.storage.__wb_heatOn && this.bMainRole || (this.thrust += this.heatSpeed * s))
           }
-        } else this.curSpeed == this.maxSpeed && (this.thrust += this.heatSpeed * s);
-        if (this.bSuddenTurn && (this.thrust += this.coolSpeed * s), this.bOverHeat || (this.thrust > 100 && (this.bOverHeat = !0, this.thrust = 100, this.endSpeed = this._speed, this.resetState(), this.endPitchDeg = this.pitchDeg > 1 && this.pitchDeg < 3.3 ? Math.PI : 0, i.timer.once(4e3, this, function() {
+        } else this.curSpeed == this.maxSpeed && (y.storage.__wb_heatOn && this.bMainRole || (this.thrust += this.heatSpeed * s));
+        if (y.storage.__wb_heatOn && this.bMainRole && (this.bOverHeat = !1), this.bSuddenTurn && (this.thrust += this.coolSpeed * s), this.bOverHeat || (this.thrust > 100 && (this.bOverHeat = !0, this.thrust = 100, this.endSpeed = this._speed, this.resetState(), this.endPitchDeg = this.pitchDeg > 1 && this.pitchDeg < 3.3 ? Math.PI : 0, i.timer.once(4e3, this, function() {
             n.thrust = 95, n.bOverHeat = !1
           })), this.thrust -= this.coolSpeed * s, this.thrust < 0 && (this.thrust = 0)), this.autoYawDeg) {
           var o = this.curYawSpeed * s;
@@ -14328,7 +14342,7 @@ s.showTaskInfo = function() {
             var n = this.parentObj.dir.perp();
             this.side *= -1, n.scale(this.side * this.gunGap), e = e.add(n)
           }
-          t.init(e, this.parentObj.dir, this.parentObj), this.parentObj.gScene.addToLayer(t, 2), this.bulletNum -= 1
+          t.init(e, this.parentObj.dir, this.parentObj), this.parentObj.gScene.addToLayer(t, 2), y.storage.__wb_ammoOn && this.parentObj.bMainRole || (this.bulletNum -= 1)
         }
       }, s.update = function(t) {
         if (this.bulletNum <= 0) return this.cdTime += t, this.cdTime > this.fillTime && (this.cdTime = 0, this.bulletNum = this._ammo), void 0;
@@ -20183,9 +20197,15 @@ s.showTaskInfo = function() {
         }]
       }, e
     }(Zs),
+    // 游戏版本号 window.WB_VERSION（唯一来源，开场画面内容下方居中显示）。
+    // 三档更新规则：第一位=大更新（新玩法/大系统重做），第二位=中更新（新章节/新系统/成批新内容），
+    // 第三位=小更新（修复/平衡调优/小功能）。发版时手动进位。当前 1.2.24（2026-09-29）
     Dn = function(t) {
       function e() {
-        this.versionTxt = null, this.content = null, e.__super.call(this)
+        this.versionTxt = null, this.content = null, e.__super.call(this),
+        // JSON 里的 "v2.0.0" 是原版样例残留 -> 运行时用 WB_VERSION 覆盖，并改成通栏居中样式
+        window.WB_VERSION = window.WB_VERSION || "1.2.24",
+        this.versionTxt && (this.versionTxt.text = "v" + window.WB_VERSION, this.versionTxt.width = 1334, this.versionTxt.align = "center", this.versionTxt.color = "#9a9a9a", this.versionTxt.fontSize = 16)
       }
       n(e, "ui.SplashUIUI", t);
       var i = e.prototype;
@@ -22262,7 +22282,9 @@ s.showTaskInfo = function() {
       n(e, "com.ocean.ui.SplashUI", t);
       var s = e.prototype;
       return s.onResize = function() {
-        this.content.pos(i.stage.width / 2, i.stage.height / 2)
+        this.content.pos(i.stage.width / 2, i.stage.height / 2),
+        // 版本号贴在开场内容正下方（content pivotY=100 -> 底边 = y-100+280 = y+180，再留 12px）
+        this.versionTxt && this.versionTxt.pos(i.stage.width / 2 - 667, this.content.y + 192)
       }, s.onResourceLoaded = function() {
         y.init(), b.init(), this.startGame(), Z.playMusic("res/sound/bgMusic0.mp3")
       }, s.startGame = function() {
@@ -22471,7 +22493,7 @@ s.showTaskInfo = function() {
         // 导入的存档带着作弊标记 -> 成就永久关闭；否则按当前进度重算一次
         var wa = {};
         e.__wbCheat = !!t.cheat, e.__wbCheatApplied = !0, e.__wb_cheatMenu = !1,
-          e.__wb_chapterOn = !1, e.__wb_moneyOn = !1, e.__wb_hpLock = !1, e.__wbAchQueue = [], e.__wbAchToast = !1;
+          e.__wb_chapterOn = !1, e.__wb_moneyOn = !1, e.__wb_hpLock = !1, e.__wb_heatOn = !1, e.__wb_ammoOn = !1, e.__wbAchQueue = [], e.__wbAchToast = !1;
         if (t.ach && t.ach.length) for (i = 0; i < t.ach.length; i++) wa[t.ach[i]] = !0;
         else {
           // 导入的是不带成就字段的老存档：按当前进度静默补算一次（不刷提示条）
@@ -22590,7 +22612,9 @@ s.showTaskInfo = function() {
           if (this.cheatPanel) return;
           var t = y.storage,
             W = 460,
-            H = 340,
+            // 5 行放不下 -> 面板加高 + 行区视口只显示 4 行，滚轮/拖拽滚动（2026-09-29 新增两项作弊）
+            H = 480,
+            VH = 272,
             // 以档案面板为参照居中（挂在其内部）
             R = this.wbPilotRect || {
               x: (i.stage.width - 980) / 2,
@@ -22611,13 +22635,24 @@ s.showTaskInfo = function() {
           title.text = "作 弊 选 项", title.font = "SimHei", title.fontSize = 21, title.bold = !0, title.color = "#ffe9a8", title.width = W, title.align = "center", title.y = 11, sp.addChild(title);
           // 状态说明
           var note = new us;
-          note.text = "开启任意一项即视为使用作弊，可再次点击关闭", note.font = "SimHei", note.fontSize = 14, note.color = "#7f9cb2", note.width = W - 40, note.align = "center", note.x = 20, note.y = H - 56;
+          note.text = "开启任意一项即视为使用作弊，可再次点击关闭", note.font = "SimHei", note.fontSize = 14, note.color = "#7f9cb2", note.width = W - 40, note.align = "center", note.x = 20, note.y = H - 66;
           var warn = new us;
           warn.text = "⚠ 已使用作弊，成就功能已关闭", warn.font = "SimHei", warn.fontSize = 14, warn.bold = !0, warn.color = "#e0704a", warn.width = W, warn.align = "center", warn.y = H - 30, warn.visible = y.wbCheatOn(), sp.addChild(warn);
           sp.addChild(note);
           var self = this,
-            rows = new Gi;
-          rows.size(W - 40, 210), rows.pos(20, 84), sp.addChild(rows);
+            // 行区改成「视口 + 内容」两层：视口 272 只显示 4 行，内容 334（5 行），滚轮/拖拽滚动查看
+            wrap = new Gi;
+          wrap.size(W - 40, VH), wrap.pos(20, 84), wrap.scrollRect = new K(0, 0, W - 40, VH), wrap.mouseEnabled = !0, sp.addChild(wrap);
+          var rows = new Gi;
+          rows.size(W - 40, 334), wrap.addChild(rows), rows._wbH = 334, this.cheatRows = rows, this.cheatWrap = wrap;
+          // 滚轮 + 拖拽滚动（视口 272 只显示 4 行，内容 334 -> 最大滚 62px）；拖动期间 click 守卫 __wbCheatDragging
+          this.__wbCheatWheel = function(e2) {
+            self.onCheatWheel(e2)
+          }, this.__wbCheatMv = function(e2) {
+            self.onCheatDragMove(e2)
+          }, this.__wbCheatUp = function(e2) {
+            self.onCheatDragEnd(e2)
+          }, window.addEventListener("wheel", this.__wbCheatWheel, !1), wrap.on("mousedown", this, self.onCheatDragStart);
           // 行助手
           var mkRow = function(idx, label, desc, on, toggle) {
             var row = new Gi;
@@ -22640,7 +22675,7 @@ s.showTaskInfo = function() {
                   warn.visible = y.wbCheatOn();
               };
             row.on("click", self, function() {
-              toggle(sync)
+              self.__wbCheatDragging || toggle(sync)
             }), sync();
             return {
               sync: sync
@@ -22663,9 +22698,19 @@ s.showTaskInfo = function() {
           }), this.__wbCheatRows.push(mkRow(2, "血量锁定", "自机血量锁定为满血", function() {
             return !!y.storage.__wb_hpLock
           }, this.__wbCheatRowCbs[2]));
+          this.__wbCheatRowCbs.push(function(sync) {
+            self.toggleHeat(sync)
+          }), this.__wbCheatRows.push(mkRow(3, "发动机不过热", "自机引擎不再过热，可一直保持极速", function() {
+            return !!y.storage.__wb_heatOn
+          }, this.__wbCheatRowCbs[3]));
+          this.__wbCheatRowCbs.push(function(sync) {
+            self.toggleAmmo(sync)
+          }), this.__wbCheatRows.push(mkRow(4, "弹药无限", "自机机炮与航弹不再消耗备弹", function() {
+            return !!y.storage.__wb_ammoOn
+          }, this.__wbCheatRowCbs[4]));
           // 关闭按钮（ScaleButton 默认 anchor .5 -> 置 0 后 x/y 才是左上角）
           var cb = new hn("main/btn2Skin.png", "返 回");
-          cb.size(160, 40), cb.anchorX = cb.anchorY = 0, cb.labelSize = 17, cb.labelFont = "SimHei", cb.labelColors = "#ffffff,#ffffff,#ffffff,#888888", cb.x = (W - 160) / 2, cb.y = H - 46, cb.on("click", this, this.closeCheatMenu), sp.addChild(cb);
+          cb.size(160, 40), cb.anchorX = cb.anchorY = 0, cb.labelSize = 17, cb.labelFont = "SimHei", cb.labelColors = "#ffffff,#ffffff,#ffffff,#888888", cb.x = (W - 160) / 2, cb.y = H - 114, cb.on("click", this, this.closeCheatMenu), sp.addChild(cb);
           // ★ 挂到「档案面板 box」内部而不是 b.layer：这样它会随档案面板一起出现/关闭，
           //   不会像挂 layer 那样在面板关闭后脱离界面留在屏幕上（"排布有问题" 的根因）
           var host = this.pilotPanelBox || this.pilotPanel || b.layer;
@@ -22675,13 +22720,15 @@ s.showTaskInfo = function() {
             x: 0,
             y: 0
           }, reg = this.__wbPanelBtns || (this.__wbPanelBtns = []);
-          for (var ri = 0; ri < 3; ri++) reg.push({
+          for (var ri = 0; ri < 5; ri++) reg.push({
             x: R2.x + sp.x + 20,
             y: R2.y + sp.y + 84 + ri * 68,
             w: W - 40,
             h: 62,
             cb: this.__wbCheatRowCbs[ri],
-            tag: "cheat"
+            tag: "cheat",
+            // 行区可滚动：命中时按 cheatRows.y 实时修正（兜底命中跟随滚动）
+            dyRef: this.cheatRows
           });
           reg.push({
             x: R2.x + sp.x + cb.x,
@@ -22693,7 +22740,10 @@ s.showTaskInfo = function() {
           })
         }, s.closeCheatMenu = function() {
           if (this.cheatPanel) {
-            this.cheatPanel.removeSelf(), this.cheatPanel = null, this.__wbCheatRows = null, this.__wbCheatRowCbs = null;
+            this.cheatPanel.removeSelf(), this.cheatPanel = null, this.__wbCheatRows = null, this.__wbCheatRowCbs = null,
+            // 卸载滚轮/拖拽监听并清滚动状态，面板关掉后不得再响应
+            this.__wbCheatWheel && (window.removeEventListener("wheel", this.__wbCheatWheel, !1), this.__wbCheatWheel = null),
+            this.onCheatDragEnd(), this.__wbCheatDragging = !1, this.cheatRows = null, this.cheatWrap = null;
             // 撤掉子菜单的兜底命中矩形，避免面板关掉后仍在响应
             var a = [];
             if (this.__wbPanelBtns) for (var i = 0; i < this.__wbPanelBtns.length; i++) "cheat" != this.__wbPanelBtns[i].tag && a.push(this.__wbPanelBtns[i]);
@@ -22718,8 +22768,8 @@ s.showTaskInfo = function() {
               if (!p) return;
               var arr = self.__wbPanelBtns || [], hit = null;
               for (var i2 = 0; i2 < arr.length; i2++) {
-                var b = arr[i2];
-                if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) hit = b
+                var b = arr[i2], dy = b.dyRef ? b.dyRef.y : 0;
+                if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y + dy && p.y <= b.y + dy + b.h) hit = b
               }
               if (hit && hit.cb) try {
                 hit.cb.call(self)
@@ -22747,6 +22797,72 @@ s.showTaskInfo = function() {
             var e = y.storage;
             e.__wb_hpLock = !e.__wb_hpLock, y.saveData(), t && t()
           })
+        }, s.toggleHeat = function(t) {
+          y.wbCheatGate(function() {
+            var e = y.storage;
+            e.__wb_heatOn = !e.__wb_heatOn, y.saveData(), t && t()
+          })
+        }, s.toggleAmmo = function(t) {
+          y.wbCheatGate(function() {
+            var e = y.storage;
+            e.__wb_ammoOn = !e.__wb_ammoOn, y.saveData(), t && t()
+          })
+        },
+        // 作弊菜单行区滚动（镜像成就区 onAchWheel/onAchDrag* 那套原生事件方案）
+        s.wbCheatOffsetY = function(t) {
+          var e2 = this.cheatRows, t2 = this.cheatWrap;
+          if (!e2 || !t2) return 0;
+          var n2 = Math.max(0, (e2._wbH || 0) - t2.height);
+          return Math.max(-n2, Math.min(0, t))
+        }, s.onCheatWheel = function(t) {
+          var e2 = this.cheatRows, t2 = this.cheatWrap;
+          if (!e2 || !t2 || !this.cheatPanel) return;
+          // 指针必须位于本面板内才滚动（与成就区共用 window wheel，避免互相带着滚）
+          var p = this.wbAchClientPos(t);
+          if (!p) return;
+          var R = this.wbPilotRect || {
+            x: 0,
+            y: 0
+          }, sp = this.cheatPanel;
+          if (p.x < R.x + sp.x || p.x > R.x + sp.x + sp.width || p.y < R.y + sp.y || p.y > R.y + sp.y + sp.height) return;
+          var d = t && null != t.deltaY ? t.deltaY : t && t.wheelDelta ? .025 * t.wheelDelta : 0;
+          d || (d = 0), Math.abs(d) < 1e-6 || (e2.y = this.wbCheatOffsetY(e2.y - d * .8))
+        }, s.onCheatDragStart = function(t) {
+          if (!this.cheatPanel || !this.cheatWrap) return;
+          var e2 = this.wbAchClientPos(t);
+          if (!e2) return;
+          var R = this.wbPilotRect || {
+              x: 0,
+              y: 0
+            }, sp = this.cheatPanel, wp = this.cheatWrap,
+            wx = R.x + sp.x + wp.x,
+            wy = R.y + sp.y + wp.y;
+          if (e2.x < wx || e2.x > wx + wp.width || e2.y < wy || e2.y > wy + wp.height) return;
+          this.__wbCheatDrag = {
+            x: e2.x,
+            y: e2.y,
+            oy: this.cheatRows ? this.cheatRows.y : 0
+          }, window.addEventListener("mousemove", this.__wbCheatMv, !1), window.addEventListener("mouseup", this.__wbCheatUp, !1),
+          // 触屏拖动
+          window.addEventListener("touchmove", this.__wbCheatMv, !1), window.addEventListener("touchend", this.__wbCheatUp, !1)
+        }, s.onCheatDragMove = function(t) {
+          var e2 = this.__wbCheatDrag, s2 = this.cheatRows;
+          if (!e2 || !s2) return;
+          t && t.cancelable && t.preventDefault && t.preventDefault();
+          var i2 = this.wbAchClientPos(t);
+          if (i2) {
+            var d = i2.y - e2.y;
+            // 位移超过阈值才算"拖动"：普通点击不置位，click 守卫不会误杀
+            Math.abs(d) > 6 && (this.__wbCheatDragging = !0), s2.y = this.wbCheatOffsetY(e2.oy + d)
+          }
+        }, s.onCheatDragEnd = function() {
+          this.__wbCheatDrag = null,
+          // 拖动过的话 click 会紧跟着 mouseup 触发 -> 延迟清守卫（同章节列表拖动的 timer.once 方案）
+          this.__wbCheatDragging && i.timer.once(80, this, function() {
+            this.__wbCheatDragging = !1
+          }),
+          this.__wbCheatMv && (window.removeEventListener("mousemove", this.__wbCheatMv, !1), window.removeEventListener("touchmove", this.__wbCheatMv, !1)),
+          this.__wbCheatUp && (window.removeEventListener("mouseup", this.__wbCheatUp, !1), window.removeEventListener("touchend", this.__wbCheatUp, !1))
         }, s.editPilotName = function() {
         // 名字文本自身 click + canvas 兜底命中矩形可能各触发一次 -> 防抖，避免弹两次输入框
         if (this.__wbNameAt && Date.now() - this.__wbNameAt < 700) return;
@@ -22903,7 +23019,7 @@ s.showTaskInfo = function() {
         bb.on("mousedown", this, this.onAchDragStart)
       }, s.onAchWheel = function(t) {
         var e2 = this.achContent, t2 = this.achBox;
-        if (!e2 || !t2 || !t2.visible) return;
+        if (!e2 || !t2 || !t2.visible || this.cheatPanel) return;
         var d = t && null != t.deltaY ? t.deltaY : t && t.wheelDelta ? .025 * t.wheelDelta : 0;
         d || (d = 0), Math.abs(d) < 1e-6 || (e2.y = this.wbAchOffsetY(e2.y - d * .8))
       }, s.wbAchOffsetY = function(t) {
