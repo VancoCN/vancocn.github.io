@@ -22748,6 +22748,9 @@ s.showTaskInfo = function() {
             e.__wb_hpLock = !e.__wb_hpLock, y.saveData(), t && t()
           })
         }, s.editPilotName = function() {
+        // 名字文本自身 click + canvas 兜底命中矩形可能各触发一次 -> 防抖，避免弹两次输入框
+        if (this.__wbNameAt && Date.now() - this.__wbNameAt < 700) return;
+        this.__wbNameAt = Date.now();
         var t = y.storage.pilotName || "飞行员",
           e = prompt("请输入飞行员名字（最多 12 个字符）：", t);
         if (null == e) return;
@@ -22789,7 +22792,10 @@ s.showTaskInfo = function() {
         // 标题
         d("飞行员档案", 30, "#ffe9a8", 0, 22, s, "center", !0), o.graphics.drawLine(40, 76, s - 40, 76, "#e8c56a", 1);
         // 飞行员信息
-        d("姓名", 22, "#8fb0c8", 60, 94), d(c.pilotName || "飞行员", 22, "#ffffff", 60, 94, s - 120, "right");
+        // ★ 姓名：点击名字即可修改（不再单列「修改名字」按钮）
+        var nmTxt = d(c.pilotName || "飞行员", 22, "#ffe9a8", 60, 94, s - 120, "right");
+        nmTxt.mouseEnabled = !0, nmTxt.underline = !0, nmTxt.on("click", this, this.editPilotName);
+        d("点击名字可修改", 14, "#6d8ba3", 118, 100);
         d("存档创建", 22, "#8fb0c8", 60, 130), d(c.createTime > 0 ? this.fmtPilotTime(c.createTime) : "未知（旧存档）", 22, "#ffffff", 60, 130, s - 120, "right");
         sep(172, "#2b4a60");
         // 战绩：击落 / 助攻 / 坠毁
@@ -22813,30 +22819,41 @@ s.showTaskInfo = function() {
           ];
         (c.flyTime || [])[3] > 0 && m.push(["运输·侦察机时长", c.flyTime[3]]);
         for (var v = 0; v < m.length; v++) d(m[v][0], 22, "#8fb0c8", 60, 396 + 32 * v), d(this.fmtPilotDur(m[v][1]), 22, "#ffffff", 60, 396 + 32 * v, s - 120, "right");
-        // 底部按钮两行：上排 修改名字 / 导出存档，下排 导入存档 / 作弊选项 / 关闭
+        // 底部按钮：左区「导出存档 / 导入存档」并排居中；右区成就列下方「作弊选项」；右上角「×」关闭
         // ⚠ ScaleButton 默认 anchorX/anchorY = .5（x/y 是中心）→ 显式置 0，下面才能按左上角排版，
         //   否则整排按钮会整体左偏半个按钮宽（"排布有问题" 的根因之一）
-        var BW = 150, BH = 42, PR = this.wbPilotRect, btnReg = [];
-        var mkBtn = function(lab, x, y, cb) {
+        var PR = this.wbPilotRect, btnReg = [];
+        var mkBtn = function(lab, x, y, cb, bw, bh, fs) {
             var w = new hn("main/btn2Skin.png", lab);
-            w.size(BW, BH), w.anchorX = w.anchorY = 0, w.labelSize = 17, w.labelFont = "SimHei", w.labelColors = "#ffffff,#ffffff,#ffffff,#888888",
+            w.size(bw, bh), w.anchorX = w.anchorY = 0, w.labelSize = fs || 17, w.labelFont = "SimHei", w.labelColors = "#ffffff,#ffffff,#ffffff,#888888",
               w.x = x, w.y = y, w.on("click", this, cb), o.addChild(w);
             // 兜底命中矩形（舞台坐标）：Laya 在这条 UI 链路上 mouseup 会掉到父容器，click 不触发
             btnReg.push({
               x: PR.x + x,
               y: PR.y + y,
-              w: BW,
-              h: BH,
+              w: bw,
+              h: bh,
               cb: cb
             });
             return w
           },
-          ROW1 = n - 104, ROW2 = n - 54, cx0 = s / 2, GAP = 8 * 2;
-        mkBtn.call(this, "修改名字", (s - (2 * BW + GAP)) / 2, ROW1, this.editPilotName);
-        mkBtn.call(this, "导出存档", (s - (2 * BW + GAP)) / 2 + BW + GAP, ROW1, this.onExportClick);
-        mkBtn.call(this, "导入存档", (s - (3 * BW + 2 * GAP)) / 2, ROW2, this.onImportClick);
-        mkBtn.call(this, "作弊选项", (s - (3 * BW + 2 * GAP)) / 2 + BW + GAP, ROW2, this.showCheatMenu);
-        mkBtn.call(this, "关闭", (s - (3 * BW + 2 * GAP)) / 2 + 2 * (BW + GAP), ROW2, this.closePilotPanel);
+          BW2 = 160, BH = 44, BOT_Y = n - 58, GAP = 16,
+          pairW = 2 * BW2 + GAP, bx0 = (s - pairW) / 2;
+        // 中下：导出 / 导入 放在一起
+        mkBtn.call(this, "导出存档", bx0, BOT_Y, this.onExportClick, BW2, BH);
+        mkBtn.call(this, "导入存档", bx0 + BW2 + GAP, BOT_Y, this.onImportClick, BW2, BH);
+        // 右下角：成就列表下方
+        mkBtn.call(this, "作弊选项", W - 280, BOT_Y, this.showCheatMenu, 250, BH);
+        // 右上角：× 关闭
+        mkBtn.call(this, "×", W - 52, 12, this.closePilotPanel, 38, 38, 24);
+        // 点击名字改名：文本命中区不稳定 -> 同样登记兜底矩形（editPilotName 内已做防抖）
+        btnReg.push({
+          x: PR.x + 60,
+          y: PR.y + 88,
+          w: s - 120,
+          h: 32,
+          cb: this.editPilotName
+        });
         this.__wbPanelBtns = btnReg;
         this.wbBindPanelPick();
         this.buildAchPanel(o, W, n)
