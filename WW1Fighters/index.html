@@ -12246,9 +12246,14 @@ var Laya = window.Laya = function(t) {
         }
         // 教学关：showTaskInfo 在双人分支之前就跑过一次（当时 role2 还没生成），这里进分屏后重建两侧教学条
         "teach" == this.taskType && (this.buildTeachBar(), this.showTaskInfo());
-        // BGM：第 6 章（新《帝国苍穹》）起用终章曲 bgMusic4
-        var a = null != t.chapter ? parseInt(t.chapter) >= 6 ? 4 : Math.ceil(3 * Math.random()) : Math.floor((parseInt(t.id) - 1) / 12) >= 5 ? 4 : Math.ceil(3 * Math.random());
+        // BGM：终章曲 bgMusic4 只在最后一章（第九章 消灭残敌，id 97~108）播放；
+        // 其余关卡（含训练场 / 第 6~8 章）从战斗池 [1,2,3,5] 随机，5 = KIZUNA Resolution（2026-09-29 加入）
+        var a = null != t.chapter ? this.wbBgmPick(parseInt(t.chapter)) : this.wbBgmPick(Math.floor((parseInt(t.id) - 1) / 12));
         this.bgmIndex = a, i.timer.frameLoop(1, this, this.onUpdate), i.stage.on("keydown", this, this.onKeyDown), i.stage.on("keyup", this, this.onKeyUp), this.showIntro()
+      },
+      // BGM 选择（0 基章号）：8（第九章 消灭残敌，id 97~108）-> 终章曲 bgMusic4；否则战斗池 [1,2,3,5] 均匀随机
+      s.wbBgmPick = function(t) {
+        return 8 == t ? 4 : [1, 2, 3, 5][Math.floor(4 * Math.random())]
       }, s.showIntro = function() {
         var t = this.missionCfg,
           e = parseInt(t.id) || 0,
