@@ -394,7 +394,9 @@ var Laya = window.Laya = function(t) {
     }(),
     c = function() {
       function t() {
-        this.pilotName = "飞行员", this.createTime = Date.now(), this.killCount = 0, this.assistCount = 0, this.crashCount = 0, this.buildingCount = 0, this.flyTime = [0, 0, 0, 0], this.gold = 100, this.silver = 45e3, this.honour = 0, this.totalCost = 0, this.recDate = -1, this.garageNum = 5, this.garageList = [], this.americaTree = [], this.germanTree = [], this.missionCfg = [], this.selectIndex = 0, this.bNovice = !1, this.garageList = [{
+        this.pilotName = "飞行员", this.createTime = Date.now(), this.killCount = 0, this.assistCount = 0, this.crashCount = 0, this.buildingCount = 0, this.flyTime = [0, 0, 0, 0], this.gold = 100, this.silver = 45e3, this.honour = 0, this.totalCost = 0, this.recDate = -1, this.garageNum = 5, this.garageList = [], this.americaTree = [], this.germanTree = [], this.missionCfg = [], this.selectIndex = 0, this.bNovice = !1,
+        // 作弊相关：新号默认全部关闭、成就可用
+        this.__wbCheat = !1, this.__wbCheatApplied = !0, this.__wb_cheatMenu = !1, this.__wb_chapterOn = !1, this.__wb_moneyOn = !1, this.__wb_hpLock = !1, this.__wbAchQueue = [], this.garageList = [{
           id: "plane2",
           bDouble: !0,
           upgrade: [0, 0, 0, 0]
@@ -1082,6 +1084,15 @@ var Laya = window.Laya = function(t) {
         null == t.storage.createTime && (t.storage.createTime = 0), null == t.storage.pilotName && (t.storage.pilotName = "飞行员"), null == t.storage.killCount && (t.storage.killCount = 0), null == t.storage.assistCount && (t.storage.assistCount = 0), null == t.storage.crashCount && (t.storage.crashCount = 0), null == t.storage.buildingCount && (t.storage.buildingCount = 0),         null == t.storage.flyTime && (t.storage.flyTime = [0, 0, 0, 0]), null == t.storage.__wbAch && (t.storage.__wbAch = {}),
         // 英/日科技树：老存档缺字段 -> 用构造器默认补齐（否则机库页签全是占位符、导出存档会崩）
         t.storage.britainTree && t.storage.britainTree.length || (t.storage.britainTree = (new c).britainTree), t.storage.japanTree && t.storage.japanTree.length || (t.storage.japanTree = (new c).japanTree);
+        // 作弊开关一次性迁移到"作弊选项"二级菜单。
+        // 老存档里如果之前开过任何作弊（章节全解/货币增加/血量锁定），则视为已作弊 -> 成就永久关闭；
+        // 之后默认全是关闭状态（__wbCheatApplied 保证只判断一次，玩家后续再开菜单不会反复重置）。
+        if (!t.storage.__wbCheatApplied) {
+          (t.storage.__wb_chapterOn || t.storage.__wb_moneyOn || t.storage.__wb_hpLock) && (t.storage.__wbCheat = !0),
+            t.storage.__wb_chapterOn = !1, t.storage.__wb_moneyOn = !1, t.storage.__wb_hpLock = !1,
+            t.storage.__wb_cheatMenu = !1, t.storage.__wbCheatApplied = !0
+        }
+        null == t.storage.__wbAchQueue && (t.storage.__wbAchQueue = []);
         var e = i.loader.getRes("res/cfg/GunCfg.json");
         com.ocean.ui.DataManager.setJsonData("gunCfg", e);
         var s = i.loader.getRes("res/cfg/MissionCfg.json");
@@ -1142,7 +1153,7 @@ var Laya = window.Laya = function(t) {
             return t.storage.japanTree
         }
         return null
-      }, t.wbSetPlaneState = function(e, i) {
+      },       t.wbSetPlaneState = function(e, i) {
         if (!e) return !1;
         var s, n = t.wbTreeByCountry(e.country),
           o = !1;
@@ -1154,9 +1165,12 @@ var Laya = window.Laya = function(t) {
             if (!m) continue;
             for (var q in m) s = m[q], s && s.id == e.id && (s.state = i, o = !0)
           }
+        // 机型解锁类成就（a5 流星 / a6 空中堡垒）：state 到 2 = 已研发即算解锁，无需购买
+        o && i >= 2 && ("plane6" == e.id && t.wbAchTry("a5", !0), "plane12" == e.id && t.wbAchTry("a6", !0)),
+          o && t.wbAchEval();
         return o
       },
-      // ========== 成就系统（14 项：关卡进度 / 双人 / 飞机收集 / 0-8 挑战） ==========
+      // ========== 成就系统（24 项：关卡进度 / 双人 / 飞机收集 / 0-8 挑战 / 战绩 / 里程碑） ==========
       t.wbAchDefs = [{
         id: "c1",
         name: "初出茅庐",
@@ -1217,7 +1231,56 @@ var Laya = window.Laya = function(t) {
         id: "ace",
         name: "谁才是挑战者",
         desc: "在关卡 0-8 中击落所有敌机"
-      }], t.wbAchGet = function() {
+      },
+      // ---- 新增 9 项（战绩里程碑 / 名字 / 特定机型 / 英日全解锁）----
+      {
+        id: "a0",
+        name: "王牌飞行员的开端",
+        desc: "开启任意一局游戏"
+      }, {
+        id: "a1",
+        name: "你的名字",
+        desc: "在飞行员档案中修改名字"
+      }, {
+        id: "a2",
+        name: "首杀",
+        desc: "击落 1 架敌机"
+      }, {
+        id: "a3",
+        name: "滴水不漏",
+        desc: "击落 100 架敌机"
+      }, {
+        id: "a4",
+        name: "敌机毁灭者",
+        desc: "击落 1000 架敌机"
+      }, {
+        id: "a5",
+        name: "流星之名",
+        desc: "解锁 F80\"流星\""
+      }, {
+        id: "a6",
+        name: "坚不可摧的堡垒",
+        desc: "解锁 B17\"空中堡垒\""
+      }, {
+        id: "a7",
+        name: "日不落帝国",
+        desc: "解锁全部英系飞机（无需购买）"
+      }, {
+        id: "a8",
+        name: "以敌之翼",
+        desc: "解锁全部日系飞机（无需购买）"
+      }],
+      // ========== 作弊标记：使用过作弊的存档永久关闭成就 ==========
+      t.wbCheatOn = function() {
+        return !!(t.storage && t.storage.__wbCheat)
+      }, t.wbSetCheat = function() {
+        t.storage && (t.storage.__wbCheat = !0, t.saveData())
+      },
+      // 成就解锁入口：作弊存档直接拒绝（返回 false = 没解锁）
+      t.wbAchTry = function(e, i) {
+        return t.wbCheatOn() ? !1 : t.wbAchUnlock(e, i)
+      },
+      t.wbAchGet = function() {
         var e = t.storage && t.storage.__wbAch;
         if (!e || "object" != typeof e) {
           e = {};
@@ -1231,13 +1294,97 @@ var Laya = window.Laya = function(t) {
         return i
       }, t.wbAchHas = function(e) {
         return !!t.wbAchGet()[e]
-      }, t.wbAchUnlock = function(e, i) {
+      },       t.wbAchUnlock = function(e, i) {
         var s = t.wbAchGet(), n = null, r;
         if (s[e]) return !1;
         s[e] = !0, t.saveData();
         for (r = 0; r < t.wbAchDefs.length; r++) if (t.wbAchDefs[r].id == e) n = t.wbAchDefs[r];
-        n && !i && b.showMessage("成就达成：" + n.name);
+        // 右上角「成就已完成」提示条（所有解锁入口统一走这里，包括静默解锁）
+        // silent（批量重算，如导入存档 / 关卡结算补算）时只写存档、不排队弹窗，避免一次性刷屏
+        if (n && !t.__wbAchSilent) {
+          t.storage && !t.storage.__wbAchQueue && (t.storage.__wbAchQueue = []);
+          t.storage && t.storage.__wbAchQueue && t.storage.__wbAchQueue.push(n.name), t.wbAchToastPump()
+        }
         return !0
+      },
+      // 作弊闸门：未使用过作弊的存档第一次开作弊要先确认（原生弹窗），
+      // 确认后 __wbCheat = true，成就永久关闭；已作弊存档直接放行不再重复提示。
+      t.wbCheatGate = function(e) {
+        if (!t.storage) return;
+        if (t.wbCheatOn()) return e && e.call && e.call(), void 0;
+        var i2 = new ur("使用作弊后存档将无法使用成就功能\n\n是否继续？");
+        b.popUpDialog(i2), i2.confirmHandle = _.create(t, function() {
+          t.wbSetCheat(), t.wbAchToastNote("成就功能已关闭"), e && e.call && e.call()
+        })
+      },
+      // 小型居中提示（比 showMessage 更醒目，用于告知成就被关闭）
+      t.wbAchToastNote = function(e) {
+        var host = b.layer;
+        if (!host) return;
+        var W = 360, H = 52, box = new Gi;
+        box.size(W, H), box.x = (i.stage.width - W) / 2, box.y = 150, box.mouseEnabled = !1;
+        var g = box.graphics;
+        g.clear(), g.drawRect(0, 0, W, H, "#0a1522e6", "#c9a44a", 2), g.drawRect(3, 3, W - 6, H - 6, "#3a2a12"), box.repaint();
+        var tx = new us;
+        tx.text = e, tx.font = "SimHei", tx.fontSize = 18, tx.bold = !0, tx.color = "#e8c56a", tx.width = W, tx.align = "center", tx.y = 15, tx.mouseEnabled = !1, box.addChild(tx);
+        host.addChild(box);
+        i.timer.once(1800, null, function() {
+          box.removeSelf()
+        })
+      },
+      // 右上角成就提示：逐条弹出，每条显示 2.8 秒（用帧计时器手写缓动，避免依赖 Tween）
+      t.wbAchToastPump = function() {
+        var S = t.storage;
+        if (!S || S.__wbAchToast) return;
+        var q = S.__wbAchQueue || [];
+        if (!q.length) return;
+        var host = b.layer;
+        if (!host) return;
+        S.__wbAchToast = !0;
+        var nm = q.shift(), W = 330, H = 68,
+          Y0 = -H - 10, Y1 = 22;
+        var box = new Gi;
+        box.size(W, H), box.x = i.stage.width - W - 24, box.y = Y0, box.mouseEnabled = !1;
+        var g = box.graphics;
+        g.clear(), g.drawRect(0, 0, W, H, "#0a1522e6", "#e8c56a", 2),
+          g.drawRect(3, 3, W - 6, H - 6, "#16324a"),
+          g.drawRect(3, 3, 5, H - 6, "#e8c56a"),
+          g.drawRect(8, 6, 42, 42, "#0d2033", "#c9a44a", 1), box.repaint();
+        var star = new ks;
+        star.skin = "main/starGlod.png", star.anchorX = star.anchorY = .5, star.pos(29, 27), star.mouseEnabled = !1, box.addChild(star);
+        var t1 = new us;
+        t1.text = "成就已完成", t1.font = "SimHei", t1.fontSize = 14, t1.color = "#9fc4e0", t1.pos(62, 11), t1.mouseEnabled = !1, box.addChild(t1);
+        var t2 = new us;
+        t2.text = nm, t2.font = "SimHei", t2.fontSize = 21, t2.bold = !0, t2.color = "#ffd75e", t2.pos(62, 31), t2.width = W - 76, t2.mouseEnabled = !1, box.addChild(t2);
+        host.addChild(box);
+        // 用墙钟时间做缓动（不依赖帧回调参数，避免不同 Laya 版本 frameLoop 传参差异）
+        var DUR = 300, HOLD = 2500, t0 = Date.now(),
+          easeOut = function(p) {
+            return 1 - (1 - p) * (1 - p)
+          },
+          easeIn = function(p) {
+            return p * p
+          },
+          loop = function() {
+            // 切界面时 layer 会被 removeChildren 清掉：条子被外部移除就立刻复位，避免 __wbAchToast 卡死
+            if (!box.parent) return i.timer.clear(null, loop), S.__wbAchToast = !1, void t.wbAchToastPump();
+            var p = Math.min(1, (Date.now() - t0) / DUR);
+            box.y = Y0 + (Y1 - Y0) * easeOut(p);
+            if (p < 1) return;
+            i.timer.clear(null, loop), i.timer.once(HOLD, null, function() {
+              var t1b = Date.now(),
+                loop2 = function() {
+                  if (!box.parent) return i.timer.clear(null, loop2), S.__wbAchToast = !1, void t.wbAchToastPump();
+                  var p2 = Math.min(1, (Date.now() - t1b) / DUR);
+                  box.y = Y1 - (Y1 - Y0) * easeIn(p2);
+                  if (p2 < 1) return;
+                  // 收起 -> 移除 -> 队列下一条
+                  i.timer.clear(null, loop2), box.removeSelf(), S.__wbAchToast = !1, t.wbAchToastPump()
+                };
+              i.timer.frameLoop(1, null, loop2)
+            })
+          };
+        i.timer.frameLoop(1, null, loop)
       }, t.wbAchCount = function() {
         var e = t.wbAchGet(), i = 0;
         for (var s = 0; s < t.wbAchDefs.length; s++) e[t.wbAchDefs[s].id] && i++;
@@ -1254,22 +1401,48 @@ var Laya = window.Laya = function(t) {
           var gh = ((t2.missionCfg || [])[parseInt(String(e).slice(1), 10)] || {}).curGate || 1;
           return gh + "/12"
         }
-        if ("usa" == e || "ger" == e || "rich" == e) {
-          s = "usa" == e ? t2.americaTree : "ger" == e ? t2.germanTree : (t2.americaTree || []).concat(t2.germanTree || [], t2.britainTree || [], t2.japanTree || []);
+        if ("usa" == e || "ger" == e || "a7" == e || "a8" == e || "rich" == e) {
+          s = "usa" == e ? t2.americaTree : "ger" == e ? t2.germanTree : "a7" == e ? t2.britainTree : "a8" == e ? t2.japanTree : (t2.americaTree || []).concat(t2.germanTree || [], t2.britainTree || [], t2.japanTree || []);
           if (!s || !s.length) return null;
-          for (var n = 0, r = 0; n < s.length; n++) (s[n].state || 0) >= (2 == e ? 2 : 4) && r++;
+          // "rich" 要求购买(state=4)，其余只要求已研发(state>=2)
+          for (var n = 0, r = 0; n < s.length; n++) (s[n].state || 0) >= ("rich" == e ? 4 : 2) && r++;
           return r + "/" + s.length
+        }
+        if ("a3" == e) {
+          var kc3 = t2.killCount || 0;
+          return kc3 >= 100 ? null : Math.min(kc3, 99) + "/100"
+        }
+        if ("a4" == e) {
+          var kc4 = t2.killCount || 0;
+          return kc4 >= 1000 ? null : Math.min(kc4, 999) + "/1000"
         }
         return null
       }, t.wbAchEval = function() {
-        // 全量重算「关卡进度 / 飞机收集」类成就，返回本次新解锁的 id 数组
-        var e = t.storage.missionCfg || [], i, s = [], n = t.wbAchGet();
+        // 全量重算「关卡进度 / 飞机收集 / 战绩」类成就，返回本次新解锁的 id 数组
+        // 传 silent=true 表示批量补算（导入存档等），不弹提示条
+        var e = t.storage.missionCfg || [], i, s = [], n = t.wbAchGet(), silent = !!arguments[0];
+        t.__wbAchSilent = silent;
         for (i = 1; i <= 9; i++) e[i] && (e[i].curGate || 1) >= 12 && s.push("c" + i);
         t.wbAchAllUnlocked(t.storage.americaTree, 2) && s.push("usa");
         t.wbAchAllUnlocked(t.storage.germanTree, 2) && s.push("ger");
+        // a7/a8：英/日全系解锁（只需研发到 state>=2，不必购买）
+        t.storage.britainTree && t.storage.britainTree.length && t.wbAchAllUnlocked(t.storage.britainTree, 2) && s.push("a7");
+        t.storage.japanTree && t.storage.japanTree.length && t.wbAchAllUnlocked(t.storage.japanTree, 2) && s.push("a8");
+        // a5/a6：特定机型解锁（state>=2 = 已研发）
+        var a5s = t.wbPlaneState(t.storage.americaTree, "plane6"), a6s = t.wbPlaneState(t.storage.americaTree, "plane12");
+        a5s >= 2 && s.push("a5"), a6s >= 2 && s.push("a6");
+        // a2/a3/a4：累计击落数
+        var kc = t.storage.killCount || 0;
+        kc >= 1 && s.push("a2"), kc >= 100 && s.push("a3"), kc >= 1000 && s.push("a4");
         t.wbAchAllUnlocked(t.storage.americaTree, 4) && t.wbAchAllUnlocked(t.storage.germanTree, 4) && t.wbAchAllUnlocked(t.storage.britainTree, 4) && t.wbAchAllUnlocked(t.storage.japanTree, 4) && s.push("rich");
-        for (i = 0; i < s.length; i++) if (!n[s[i]]) t.wbAchUnlock(s[i], !0);
+        for (i = 0; i < s.length; i++) if (!n[s[i]]) t.wbAchTry(s[i], !0);
+        t.__wbAchSilent = !1;
         return s
+      }, t.wbPlaneState = function(e, i) {
+        // 在给定科技树里查某架飞机的 state（找不到返回 0）
+        if (!e) return 0;
+        for (var s = 0; s < e.length; s++) if (e[s] && e[s].id == i) return e[s].state || 0;
+        return 0
       }, t.getPropValue = function(e) {
         var i = "生命值\n重点防护率\n速度\n转弯半径\n爬升速度\n过热速度\n着火率\n机长\n翼展\n",
           s = e.hp + "\n";
@@ -12035,6 +12208,8 @@ var Laya = window.Laya = function(t) {
           var wbo = t.object[wbe];
           wbo && "false" != wbo.bEnemy && this.__wbEnemyTotal++
         }
+        // 成就「王牌飞行员的开端」：开启任意一局游戏
+        y.wbAchTry("a0", !0);
         // 设施任务：把标记为 wbTask 的设施 id 收集起来（同关可有多个设施，全部摧毁才进入返航阶段）
         this.__wbFacIds = {};
         if (this.__wbFacility) for (var wb in t.object) if (t.object[wb] && "1" == t.object[wb].wbTask) this.__wbFacIds[t.object[wb].id] = !0;
@@ -12139,7 +12314,9 @@ var Laya = window.Laya = function(t) {
             // 成就「谁才是挑战者」：统计本关击落数（0-8 需要全歼）
             this.__wbKills = (this.__wbKills || 0) + 1;
             // 击落=自己直接打掉；助攻=非自己击落但自己对敌机造成≥30%伤害（含其漏油自爆）
-            t.__wbPLast && !t.__wbPFire ? st.killCount = (st.killCount || 0) + 1 : (t.__wbPDmg || 0) >= .3 * (t.maxHP || 1) && (st.assistCount = (st.assistCount || 0) + 1);
+            t.__wbPLast && !t.__wbPFire ? (st.killCount = (st.killCount || 0) + 1,
+              // 成就「首杀 / 滴水不漏 / 敌机毁灭者」：击落数达标立即结算，不用等通关
+              y.wbAchEval()) : (t.__wbPDmg || 0) >= .3 * (t.maxHP || 1) && (st.assistCount = (st.assistCount || 0) + 1);
           }
           else t instanceof com.ocean.game.Building && (st.buildingCount = (st.buildingCount || 0) + 1);
         // 保卫类任务（如保护指挥部）：被保护目标一旦被摧毁，立刻失败。
@@ -12310,10 +12487,10 @@ var Laya = window.Laya = function(t) {
       }, s.wbAchOnWin = function() {
         // 胜利结算时判定关卡类成就：0-8 无伤/全歼、双人通关，以及全量重算关卡与飞机类成就
         if (this.__wbFog) {
-          this.__wbEnemyTotal > 0 && (this.__wbKills || 0) >= this.__wbEnemyTotal && y.wbAchUnlock("ace", !0);
-          !this.__wbHurt && y.wbAchUnlock("east", !0);
+          this.__wbEnemyTotal > 0 && (this.__wbKills || 0) >= this.__wbEnemyTotal && y.wbAchTry("ace", !0);
+          !this.__wbHurt && y.wbAchTry("east", !0);
         }
-        y.storage.__wb_twoPlayer && y.wbAchUnlock("coop", !0);
+        y.storage.__wb_twoPlayer && y.wbAchTry("coop", !0);
         y.wbAchEval();
       }, s.onKeyDown = function(t) {
         if (this.bCutscene) return this.skipIntro(), void 0;
@@ -22094,11 +22271,17 @@ s.showTaskInfo = function() {
     }(Dn),
     cr = function(t) {
       function e() {
-        this.curID = null, this.curXML = null, this.bClick = !1, e.__super.call(this), this.typeMc.skin = "main/typeIcon1.png", this.flagMc.skin = "main/flag1.png", this.circleMc.visible = !1, 0 == y.storage.garageList.length && (this.sellBtn.visible = !1, this.showMc.skin = "", this.nameTxt.text = "", this.typeTxt.text = "", this.lvlTxt.text = "", this.propTxt.text = "", this.valueTxt.text = ""), this.onGarageChange(null), _e.window.h5api && this.decideAdsState(), this.adsBtn.on("mouseover", this, function() {
+        this.curID = null, this.curXML = null, this.bClick = !1, e.__super.call(this), this.typeMc.skin = "main/typeIcon1.png", this.flagMc.skin = "main/flag1.png", this.circleMc.visible = !1, 0 == y.storage.garageList.length && (this.sellBtn.visible = !1, this.showMc.skin = "", this.nameTxt.text = "", this.typeTxt.text = "", this.lvlTxt.text = "", this.propTxt.text = "", this.valueTxt.text = ""), this.onGarageChange(null), _e.window.h5api && this.decideAdsState(),           this.adsBtn.on("mouseover", this, function() {
           b.createToolTip("观看广告即可获得20金币奖励", null)
         }), this.adsBtn.on("mouseout", this, function() {
           b.hideToolTip()
-        }), this.startBtn.on("click", this, this.onStartBtnClick), this.remakeBtn.on("click", this, this.onRemakeBtnClick), this.researchBtn.on("click", this, this.onResearchBtnClick), this.helpBtn.on("click", this, this.onHelpBtnClick), this.adsBtn.on("click", this, this.onAdsBtnClick), this.shareBtn.on("click", this, this.onShareClick), this.rankBtn.on("click", this, this.onRankClick), this.sellBtn.on("click", this, this.onSellBtnClick), this.chapterBtn.on("click", this, this.onChapterClick), this.exportBtn.on("click", this, this.onExportClick), this.importBtn.on("click", this, this.onImportClick), $n.instance.on("change", this, this.onGarageChange), i.stage.on("resize", this, this.onResize), this.onResize(), y.storage.__wb_moneyOn && (this.shareBtn.label = "撤销货币"), y.storage.__wb_hpLock && (this.rankBtn.label = "血量锁定:开"),         y.storage.__wb_chapterOn && (this.chapterBtn.label = "恢复章节"), this.initPilotPlate(),
+        }), this.startBtn.on("click", this, this.onStartBtnClick), this.remakeBtn.on("click", this, this.onRemakeBtnClick), this.researchBtn.on("click", this, this.onResearchBtnClick), this.helpBtn.on("click", this, this.onHelpBtnClick), this.adsBtn.on("click", this, this.onAdsBtnClick), this.sellBtn.on("click", this, this.onSellBtnClick), $n.instance.on("change", this, this.onGarageChange), i.stage.on("resize", this, this.onResize), this.onResize(),
+        // 作弊按钮（货币增加/血量锁定/章节全解）已移入「飞行员档案 -> 作弊选项」二级菜单，
+        // 入口按钮在 UI 里彻底隐藏；导入/导出存档同样只在档案面板里。
+        this.shareBtn && (this.shareBtn.visible = !1), this.rankBtn && (this.rankBtn.visible = !1),
+        this.chapterBtn && (this.chapterBtn.visible = !1), this.exportBtn && (this.exportBtn.visible = !1),
+        this.importBtn && (this.importBtn.visible = !1),
+        this.initPilotPlate(),
         // 双人模式切换按钮（左侧）：手机版不创建（触屏无法操作键盘分屏），也强制回到单人
         this.__wbMobile = wbIsMobile();
         this.__wbMobile && y.storage.__wb_twoPlayer && (y.storage.__wb_twoPlayer = !1, y.saveData());
@@ -22225,6 +22408,8 @@ s.showTaskInfo = function() {
             crash: t.crashCount || 0,
             bld: t.buildingCount || 0,
             fly: (t.flyTime || [0, 0, 0, 0]).slice(0, 4),
+            // 作弊标记：用过作弊的存档永久关闭成就（导出/导入后同样保持）
+            cheat: t.__wbCheat ? 1 : 0,
             garage: [],
             usa: [],
             ger: [],
@@ -22283,9 +22468,15 @@ s.showTaskInfo = function() {
         while (e.flyTime.length < 4) e.flyTime.push(0);
         for (i = 0; i < e.missionCfg.length && i < t.mission.length; i++) e.missionCfg[i].state = t.mission[i][0], e.missionCfg[i].curGate = t.mission[i][1];
         // 成就：老档没有 ach 字段时按当前进度重算一次（导入的存档也算数）
+        // 导入的存档带着作弊标记 -> 成就永久关闭；否则按当前进度重算一次
         var wa = {};
+        e.__wbCheat = !!t.cheat, e.__wbCheatApplied = !0, e.__wb_cheatMenu = !1,
+          e.__wb_chapterOn = !1, e.__wb_moneyOn = !1, e.__wb_hpLock = !1, e.__wbAchQueue = [], e.__wbAchToast = !1;
         if (t.ach && t.ach.length) for (i = 0; i < t.ach.length; i++) wa[t.ach[i]] = !0;
-        else y.wbAchEval();
+        else {
+          // 导入的是不带成就字段的老存档：按当前进度静默补算一次（不刷提示条）
+          e.__wbAch = wa, y.wbAchEval(!0)
+        }
         e.__wbAch = wa, e.selectIndex = 0, y.saveData()
       }, s.copyText = function(t) {
         var e = !1;
@@ -22369,14 +22560,15 @@ s.showTaskInfo = function() {
           star.skin = "main/starGlod.png", star.anchorX = star.anchorY = .5, star.pos(27, 27), star.scale(.9, .9), star.mouseEnabled = !1, t.addChild(star);
           var s = new us;
           s.text = y.storage.pilotName || "飞行员", s.font = "SimHei", s.fontSize = 22, s.bold = !0, s.color = "#ffe9a8", s.stroke = 3, s.strokeColor = "#20160a", s.width = e - 68, s.align = "left", s.pos(54, 4), s.mouseEnabled = !1, t.addChild(s);
+          // 副标题压在内板深色区，用暖金 #d9b96a 提对比（原 #9fb8cc 太暗、和底板糊在一起）
           var sub = new us;
-          sub.font = "SimHei", sub.fontSize = 13, sub.color = "#9fb8cc", sub.width = e - 68, sub.align = "left", sub.pos(54, 35), sub.mouseEnabled = !1, t.addChild(sub), this.pilotSubTxt = sub;
+          sub.font = "SimHei", sub.fontSize = 14, sub.bold = !0, sub.color = "#d9b96a", sub.stroke = 2, sub.strokeColor = "#1a1206", sub.width = e - 68, sub.align = "left", sub.pos(54, 34), sub.mouseEnabled = !1, t.addChild(sub), this.pilotSubTxt = sub;
           t.on("click", this, this.onPilotPlateClick);
           var self = this;
           t.on("mouseover", this, function() {
-            draw(!0), s.color = "#ffffff", sub.color = "#d8e8f5"
+            draw(!0), s.color = "#ffffff", sub.color = "#ffe9a8"
           }), t.on("mouseout", this, function() {
-            draw(!1), s.color = "#ffe9a8", sub.color = "#9fb8cc"
+            draw(!1), s.color = "#ffe9a8", sub.color = "#d9b96a"
           });
           this.addChild(t), this.pilotPlate = t, this.pilotNameTxt = s, this.refreshPilotPlate()
         }, s.refreshPilotPlate = function() {
@@ -22388,14 +22580,116 @@ s.showTaskInfo = function() {
         // 成就区滚动：卸载原生监听（滚轮 / 拖拽），避免面板关掉后仍在响应
         this.__wbAchWheel && (window.removeEventListener("wheel", this.__wbAchWheel, !1), this.__wbAchWheel = null),
         this.onAchDragEnd(), this.achBox = null, this.achContent = null, this.achTitle = null,
+        this.closeCheatMenu(),
         this.pilotPanel && (this.pilotPanel.removeSelf(), this.pilotPanel = null), this.pilotPanelBox && (this.pilotPanelBox.removeSelf(), this.pilotPanelBox = null)
-      }, s.editPilotName = function() {
+      },
+        // ===== 作弊选项（二级菜单）=====
+        // 章节全解 / 货币增加 / 血量锁定 三项搬进这里，默认全关。
+        // 未作弊的存档第一次开启任意一项时先弹原生窗确认，确认后成就永久关闭。
+        s.showCheatMenu = function() {
+          if (this.cheatPanel) return;
+          var t = y.storage,
+            W = 460,
+            H = 340,
+            x = (i.stage.width - W) / 2,
+            y0 = (i.stage.height - H) / 2,
+            sp = new Gi;
+          sp.size(W, H), sp.pos(x, y0), sp.zOrder = 999;
+          var g = sp.graphics;
+          g.clear(), g.drawRect(0, 0, W, H, "#0a1522f2", "#e8c56a", 2),
+            g.drawRect(4, 4, W - 8, H - 8, "#132a42"), g.drawRect(4, 4, W - 8, 44, "#1d3a56"),
+            g.drawLine(20, 74, W - 20, 74, "#8f7433", 1), sp.repaint();
+          var title = new us;
+          title.text = "作 弊 选 项", title.font = "SimHei", title.fontSize = 21, title.bold = !0, title.color = "#ffe9a8", title.width = W, title.align = "center", title.y = 11, sp.addChild(title);
+          // 状态说明
+          var note = new us;
+          note.text = "开启任意一项即视为使用作弊，可再次点击关闭", note.font = "SimHei", note.fontSize = 14, note.color = "#7f9cb2", note.width = W - 40, note.align = "center", note.x = 20, note.y = H - 56;
+          var warn = new us;
+          warn.text = "⚠ 已使用作弊，成就功能已关闭", warn.font = "SimHei", warn.fontSize = 14, warn.bold = !0, warn.color = "#e0704a", warn.width = W, warn.align = "center", warn.y = H - 30, warn.visible = y.wbCheatOn(), sp.addChild(warn);
+          sp.addChild(note);
+          var self = this,
+            rows = new Gi;
+          rows.size(W - 40, 210), rows.pos(20, 84), sp.addChild(rows);
+          // 行助手
+          var mkRow = function(idx, label, desc, on, toggle) {
+            var row = new Gi;
+            row.size(W - 40, 62), row.pos(0, idx * 68), row.mouseEnabled = !0;
+            var rg = row.graphics;
+            var paint = function() {
+              rg.clear(), rg.drawRect(0, 0, W - 40, 62, on() ? "#16324a" : "#0c1a26", on() ? "#e8c56a" : "#24384a", on() ? 2 : 1), row.repaint()
+            };
+            rows.addChild(row);
+            var l1 = new us;
+            l1.text = label, l1.font = "SimHei", l1.fontSize = 18, l1.bold = !0, l1.x = 14, l1.y = 9, l1.width = 200, row.addChild(l1);
+            var d1 = new us;
+            d1.text = desc, d1.font = "SimHei", d1.fontSize = 12, d1.color = "#7f9cb2", d1.x = 14, d1.y = 34, d1.width = W - 140, row.addChild(d1);
+            var st = new us;
+            st.font = "SimHei", st.fontSize = 15, st.bold = !0, st.align = "right", st.width = 100, st.x = W - 40 - 114, st.y = 21, row.addChild(st);
+            var sync = function() {
+                var v = on();
+                l1.color = v ? "#ffd75e" : "#8fb0c8", st.text = v ? "已开启" : "已关闭", st.color = v ? "#7ee08a" : "#6d8ba3", paint(),
+                  // 开过一次之后整块面板要亮出「成就已关闭」警告
+                  warn.visible = y.wbCheatOn();
+              };
+            row.on("click", self, function() {
+              toggle(sync)
+            }), sync();
+            return {
+              sync: sync
+            }
+          };
+          // 三项
+          this.__wbCheatRows = [];
+          this.__wbCheatRows.push(mkRow(0, "章节全解", "解锁全部章节与关卡", function() {
+            return !!y.storage.__wb_chapterOn
+          }, function(sync) {
+            self.toggleChapter(sync)
+          }));
+          this.__wbCheatRows.push(mkRow(1, "货币增加", "金币 / 银币 / 军功 各 +999999999", function() {
+            return !!y.storage.__wb_moneyOn
+          }, function(sync) {
+            self.toggleMoney(sync)
+          }));
+          this.__wbCheatRows.push(mkRow(2, "血量锁定", "自机血量锁定为满血", function() {
+            return !!y.storage.__wb_hpLock
+          }, function(sync) {
+            self.toggleHpLock(sync)
+          }));
+          // 关闭按钮
+          var cb = new hn("main/btn2Skin.png", "关 闭");
+          cb.size(160, 40), cb.labelSize = 17, cb.labelFont = "SimHei", cb.labelColors = "#ffffff,#ffffff,#ffffff,#888888", cb.x = (W - 160) / 2, cb.y = H - 46, cb.on("click", this, this.closeCheatMenu), sp.addChild(cb);
+          b.layer.addChild(sp), this.cheatPanel = sp
+        }, s.closeCheatMenu = function() {
+          this.cheatPanel && (this.cheatPanel.removeSelf(), this.cheatPanel = null, this.__wbCheatRows = null)
+        },
+        // 三个作弊动作：先过闸门（未作弊的存档会先弹原生确认窗）
+        s.toggleChapter = function(t) {
+          y.wbCheatGate(function() {
+            var e = y.storage;
+            e.__wb_chapterOn ? (e.missionCfg = e.__wb_chapterBak || e.missionCfg, e.__wb_chapterOn = !1) : (e.__wb_chapterBak = JSON.parse(JSON.stringify(e.missionCfg)), e.missionCfg.forEach(function(it) {
+              it.state = 0, it.curGate = 12
+            }), e.__wb_chapterOn = !0), y.saveData(), t && t()
+          })
+        }, s.toggleMoney = function(t) {
+          y.wbCheatGate(function() {
+            var e = y.storage,
+              N = 999999999;
+            e.__wb_moneyOn ? (e.gold = e.__wb_moneyBak[0], e.silver = e.__wb_moneyBak[1], e.honour = e.__wb_moneyBak[2], e.__wb_moneyOn = !1) : (e.__wb_moneyBak = [e.gold, e.silver, e.honour], e.gold = N, e.silver = N, e.honour = N, e.__wb_moneyOn = !0), y.saveData(), t && t()
+          })
+        }, s.toggleHpLock = function(t) {
+          y.wbCheatGate(function() {
+            var e = y.storage;
+            e.__wb_hpLock = !e.__wb_hpLock, y.saveData(), t && t()
+          })
+        }, s.editPilotName = function() {
         var t = y.storage.pilotName || "飞行员",
           e = prompt("请输入飞行员名字（最多 12 个字符）：", t);
         if (null == e) return;
         var i = String(e).replace(/[\r\n\t]/g, " ").replace(/^\s+|\s+$/g, "");
         if (0 == i.length) return b.showMessage("名字不能为空"), void 0;
-        i.length > 12 && (i = i.slice(0, 12)), y.storage.pilotName = i, y.saveData(), this.refreshPilotPlate(), this.closePilotPanel(), this.showPilotPanel()
+        i.length > 12 && (i = i.slice(0, 12)),
+          // 成就「你的名字」：在飞行员档案中改过一次名字（与默认值不同才计数）
+          i && "飞行员" != i && y.wbAchTry("a1", !0), y.storage.pilotName = i, y.saveData(), this.refreshPilotPlate(), this.closePilotPanel(), this.showPilotPanel()
       }, s.showPilotPanel = function() {
         if (this.pilotPanel) return void 0;
         var t = i.stage.width,
@@ -22445,11 +22739,19 @@ s.showTaskInfo = function() {
           ];
         (c.flyTime || [])[3] > 0 && m.push(["运输·侦察机时长", c.flyTime[3]]);
         for (var v = 0; v < m.length; v++) d(m[v][0], 22, "#8fb0c8", 60, 396 + 32 * v), d(this.fmtPilotDur(m[v][1]), 22, "#ffffff", 60, 396 + 32 * v, s - 120, "right");
-        // 按钮
-        var w = new hn("main/btn2Skin.png", "修改名字");
-        w.size(180, 48), w.labelSize = 18, w.labelFont = "SimHei", w.labelColors = "#ffffff,#ffffff,#ffffff,#888888", w.x = 170, w.y = n - 46, w.on("click", this, this.editPilotName), o.addChild(w);
-        var T = new hn("main/btn2Skin.png", "关闭");
-        T.size(180, 48), T.labelSize = 18, T.labelFont = "SimHei", T.labelColors = "#ffffff,#ffffff,#ffffff,#888888", T.x = s - 170, T.y = n - 46, T.on("click", this, this.closePilotPanel), o.addChild(T);
+        // 底部按钮两行：上排 修改名字 / 导出存档，下排 导入存档 / 作弊选项 / 关闭
+        var BW = 150, BH = 42, mkBtn = function(lab, x, y, cb) {
+            var w = new hn("main/btn2Skin.png", lab);
+            w.size(BW, BH), w.labelSize = 17, w.labelFont = "SimHei", w.labelColors = "#ffffff,#ffffff,#ffffff,#888888",
+              w.x = x, w.y = y, w.on("click", this, cb), o.addChild(w);
+            return w
+          },
+          ROW1 = n - 104, ROW2 = n - 54, cx0 = s / 2;
+        mkBtn.call(this, "修改名字", cx0 - BW - 8, ROW1, this.editPilotName);
+        mkBtn.call(this, "导出存档", cx0 + 8, ROW1, this.onExportClick);
+        mkBtn.call(this, "导入存档", cx0 - BW * 1.5 - 16, ROW2, this.onImportClick);
+        mkBtn.call(this, "作弊选项", cx0 - BW / 2, ROW2, this.showCheatMenu);
+        mkBtn.call(this, "关闭", cx0 + BW / 2 + 16, ROW2, this.closePilotPanel);
         this.buildAchPanel(o, W, n)
       }, s.buildAchPanel = function(e, t, n) {
         // ========== 成就区域（档案面板右侧）：鼠标滚轮 / 拖拽查看 ==========
@@ -22463,6 +22765,11 @@ s.showTaskInfo = function() {
         lab.text = "成 就 " + y.wbAchCount() + "/" + c2.length, lab.font = "SimHei", lab.fontSize = 20, lab.bold = !0, lab.color = "#e8c56a", lab.x = RX, lab.y = 86, e.addChild(lab), this.achTitle = lab;
         var tip = new us;
         tip.text = "滚轮滑动查看", tip.font = "SimHei", tip.fontSize = 14, tip.color = "#6d8ba3", tip.x = RX, tip.y = 89, tip.width = RW, tip.align = "right", e.addChild(tip);
+        // 作弊存档：成就已永久关闭，给出醒目提示
+        if (y.wbCheatOn()) {
+          lab.text = "成 就 " + y.wbAchCount() + "/" + c2.length + "（已关闭）", lab.color = "#c98a6a";
+          tip.text = "使用过作弊", tip.color = "#c98a6a"
+        }
         var bb = new Gi;
         bb.size(RW, RH), bb.pos(RX, RY), bb.scrollRect = new K(0, 0, RW, RH), bb.mouseEnabled = !0, e.addChild(bb), this.achBox = bb;
         var aw = RW - 20, ah = c2.length * 62, ac = new Gi;
