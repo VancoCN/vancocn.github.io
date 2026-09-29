@@ -21351,6 +21351,8 @@ s.showTaskInfo = function() {
         this.lightMc.visible || (this.chapterName.color = t ? "#ffffff" : "#aaaaaa", this.moneyTxt.color = t ? "#ffffff" : "#aaaaaa")
       }, s.onClick = function() {
         var t = this;
+        // 手指在章节列表上拖动滚动时，抬手那下不要当成点选章节
+        if (window.__wbChapterDragging) return;
         if (0 == this._dataSource.state) this._dataSource.wnd.event("select", this._dataSource);
         else if (1 == this._dataSource.state) e = "是否花费 " + this._dataSource.money + "银币，开启该章节", i = new ur(e), b.popUpDialog(i), i.confirmHandle = _.create(this, function() {
           y.storage.silver < t._dataSource.money ? b.showMessage("银币不足") : (t._dataSource.state = 0, t._dataSource.selected = !0, y.storage.missionCfg[t._dataSource.index].state = 0, y.storage.silver -= t._dataSource.money, y.saveData(), t._dataSource.wnd.event("select", t._dataSource))
@@ -21406,7 +21408,7 @@ s.showTaskInfo = function() {
           a.init(r), a.on("click", this, this.onGameStart), a.on("mouseover", this, this.onItemOver)
         }
         for (var u = 0; u < t.length; u++) t[u].selected = !1;
-        this.setSelectChapter(t[0]), this.backBtn.on("click", this, this.onBackBtnClick), this.on("click", this, this.onMouseClick), i.stage.on("mousewheel", this, this.onWheel), i.stage.on("resize", this, this.onResize), this.initTwoPlayerUI(), this.onResize()
+        this.setSelectChapter(t[0]), this.backBtn.on("click", this, this.onBackBtnClick), this.on("click", this, this.onMouseClick), i.stage.on("mousewheel", this, this.onWheel), i.stage.on("resize", this, this.onResize), this.initTwoPlayerUI(), this.initChapterScroll(), this.onResize()
       }
       n(e, "com.ocean.ui.MissionUI", t);
       var s = e.prototype;
@@ -21460,7 +21462,63 @@ s.showTaskInfo = function() {
           $n.instance && ($n.instance.visible = !0);
         try { $n.instance && $n.instance._wbRefreshOwner && $n.instance._wbRefreshOwner() } catch (e) {}
       },
-      s.onResize = function() {
+        // ===== 手机版：左侧章节列表触摸拖动滚动 =====
+        // 原实现只监听 stage 的 mousewheel，触屏设备根本没有滚轮事件，
+        // 于是第 9/10 章（列表 384px 只放得下 8 行 x 48px）在手机上永远滑不出来。
+        // 这里补一套按下-拖动-抬手的手势：位移按行高换算成 List.startIndex。
+        s.initChapterScroll = function() {
+          if (this.__wbChScroll || !this.chapterList) return;
+          this.__wbChScroll = !0;
+          var self = this, lst = this.chapterList, drag = null;
+          lst.mouseEnabled = !0, window.__wbChapterDragging = !1;
+          var hitList = function() {
+            var p = lst.localToGlobal(new Laya.Point(0, 0));
+            if (!p) return !1;
+            var mx = i.stage.mouseX, my = i.stage.mouseY;
+            return mx >= p.x - 10 && mx <= p.x + lst.width + 10 && my >= p.y - 10 && my <= p.y + lst.height + 10;
+          };
+          lst.on("mousedown", this, function() {
+            if (!hitList()) return;
+            drag = { y: i.stage.mouseY, base: lst.startIndex || 0, moved: !1 }, window.__wbChapterDragging = !1
+          });
+          i.stage.on("mousemove", this, function() {
+            if (!drag) return;
+            var dy = i.stage.mouseY - drag.y;
+            if (!drag.moved && Math.abs(dy) < 12) return;
+            // 手指向上拖(dy<0) => 看后面的章节 => startIndex 变大
+            drag.moved = !0, window.__wbChapterDragging = !0, self.wbChSetStart(drag.base - Math.floor(dy / self.wbChRowH()))
+          });
+          i.stage.on("mouseup", this, function() {
+            // Laya 的 click 紧跟 mouseup 派发，延后一点再解除抑制，避免拖动后被当成点选
+            drag && (drag = null, i.timer.once(60, self, function() {
+              window.__wbChapterDragging = !1
+            }))
+          });
+          this.wbChUpdateBar()
+        }, s.wbChRowH = function() {
+          var lst = this.chapterList;
+          if (!lst) return 48;
+          var n = lst.getCell(lst.startIndex || 0) || lst.getCell(0);
+          return n && n.height ? n.height : 48
+        }, s.wbChMaxStart = function() {
+          var lst = this.chapterList;
+          if (!lst || !lst.array || !lst.array.length) return 0;
+          return Math.max(0, lst.array.length - Math.max(1, Math.floor(lst.height / this.wbChRowH())))
+        }, s.wbChSetStart = function(t) {
+          var lst = this.chapterList, m = this.wbChMaxStart();
+          lst && (lst.startIndex = t < 0 ? 0 : t > m ? m : t, this.wbChUpdateBar())
+        }, s.wbChUpdateBar = function() {
+          var lst = this.chapterList;
+          if (!lst) return;
+          var m = this.wbChMaxStart();
+          this.chBar || (this.chBar = new Gi, this.chBar.mouseEnabled = !1, this.addChild(this.chBar));
+          var b = this.chBar, W = 5, H = lst.height;
+          if (b.pos(lst.x + lst.width - W - 2, lst.y), b.visible = m > 0, m <= 0) return;
+          var vis = Math.max(1, Math.floor(H / this.wbChRowH())),
+            th = Math.max(24, H * vis / lst.array.length),
+            ty = (H - th) * (lst.startIndex || 0) / m;
+          b.graphics.clear(), b.graphics.drawRect(0, 0, W, H, "rgba(0,0,0,0.35)"), b.graphics.drawRect(0, ty, W, th, "#e8c56a"), b.repaint()
+        }, s.onResize = function() {
         this.bkImg.width = i.stage.width, this.maskImg.width = i.stage.width, this.moneyBar.x = i.stage.width - 614, this.itemBox.x = i.stage.width / 2 + 40, this.infoPanel.x = i.stage.width - 290, this.y = (i.stage.height - 750) / 2, this.itemBox.width = this.map12.x + this.map12.width, this.itemBox.height = this.map12.y + this.map12.height
       }, s.onSelectChapter = function(t) {
         this.setSelectChapter(t)
@@ -21517,7 +21575,7 @@ s.showTaskInfo = function() {
               s = Math.max(1, Math.floor(e.height / r)),
               a = Math.max(0, e.array.length - s),
               h = e.startIndex + (t.delta > 0 ? -1 : 1);
-            e.startIndex = 0 > h ? 0 : h > a ? a : h
+            this.wbChSetStart(h)
           }
         }
       }, s.onBackBtnClick = function() {
@@ -22282,20 +22340,49 @@ s.showTaskInfo = function() {
           i = Math.floor(t % 3600 / 60),
           s = t % 60;
         return e > 0 ? e + "小时" + i + "分" : i > 0 ? i + "分" + s + "秒" : s + "秒"
-      }, s.initPilotPlate = function() {
-        var t = new Gi,
-          e = 210,
-          i = 46;
-        t.size(e, i), t.pos(16, 14), t.graphics.drawRect(0, 0, e, i, "#0b1d2be6", "#e8c56a", 2);
-        var s = new us;
-        s.text = y.storage.pilotName || "飞行员", s.font = "SimHei", s.fontSize = 22, s.color = "#ffe9a8", s.width = e, s.align = "center", s.y = 9, t.addChild(s), t.mouseEnabled = !0, t.on("click", this, this.onPilotPlateClick), t.on("mouseover", this, function() {
-          s.color = "#ffffff"
-        }), t.on("mouseout", this, function() {
-          s.color = "#ffe9a8"
-        }), this.addChild(t), this.pilotPlate = t, this.pilotNameTxt = s
-      }, s.refreshPilotPlate = function() {
-        this.pilotNameTxt && (this.pilotNameTxt.text = y.storage.pilotName || "飞行员")
-      }, s.onPilotPlateClick = function() {
+      },
+        // 飞行员铭牌：做成"金属铭牌 + 军徽 + 战绩副行"的样式（原来只是一块纯色矩形 + 居中文字）
+        // 配色沿用科技树/档案面板的金蓝主色：#0a1522 底 / #132a42 内板 / #e8c56a 金线 / #ffe9a8 字
+        s.initPilotPlate = function() {
+          var t = new Gi,
+            e = 252,
+            n = 54,
+            g = t.graphics,
+            // hot = 悬停态：整块铭牌提亮（描边变亮金、内板变浅、副行文字提亮）
+            draw = function(hot) {
+              g.clear(),
+                g.drawRect(0, 0, e, n, "#0a1522", hot ? "#ffe9a8" : "#8f7433", 2),
+                g.drawRect(3, 3, e - 6, n - 6, hot ? "#1c3d5c" : "#132a42"),
+                g.drawRect(3, 3, e - 6, n - 6, hot ? "#ffe9a8" : "#c9a44a", 1),
+                g.drawRect(4, 4, e - 8, 9, hot ? "#2a5378" : "#1d3a56"),
+                // 左侧军徽底框 + 四角铆钉
+                g.drawRect(9, 9, 36, 36, "#0d2033", hot ? "#ffe9a8" : "#c9a44a", 1),
+                g.drawCircle(13, 13, 2, "#c9a44a"), g.drawCircle(41, 13, 2, "#c9a44a"),
+                g.drawCircle(13, 41, 2, "#c9a44a"), g.drawCircle(41, 41, 2, "#c9a44a"),
+                // 姓名下的金色分隔线
+                g.drawLine(54, 33, e - 14, 33, hot ? "#ffe9a8" : "#8f7433", 1),
+                t.repaint()
+            };
+          t.size(e, n), t.pos(16, 12), t.mouseEnabled = !0, draw(!1);
+          // 军徽：复用主图集的金星
+          var star = new ks;
+          star.skin = "main/starGlod.png", star.anchorX = star.anchorY = .5, star.pos(27, 27), star.scale(.9, .9), star.mouseEnabled = !1, t.addChild(star);
+          var s = new us;
+          s.text = y.storage.pilotName || "飞行员", s.font = "SimHei", s.fontSize = 22, s.bold = !0, s.color = "#ffe9a8", s.stroke = 3, s.strokeColor = "#20160a", s.width = e - 68, s.align = "left", s.pos(54, 4), s.mouseEnabled = !1, t.addChild(s);
+          var sub = new us;
+          sub.font = "SimHei", sub.fontSize = 13, sub.color = "#9fb8cc", sub.width = e - 68, sub.align = "left", sub.pos(54, 35), sub.mouseEnabled = !1, t.addChild(sub), this.pilotSubTxt = sub;
+          t.on("click", this, this.onPilotPlateClick);
+          var self = this;
+          t.on("mouseover", this, function() {
+            draw(!0), s.color = "#ffffff", sub.color = "#d8e8f5"
+          }), t.on("mouseout", this, function() {
+            draw(!1), s.color = "#ffe9a8", sub.color = "#9fb8cc"
+          });
+          this.addChild(t), this.pilotPlate = t, this.pilotNameTxt = s, this.refreshPilotPlate()
+        }, s.refreshPilotPlate = function() {
+          this.pilotNameTxt && (this.pilotNameTxt.text = y.storage.pilotName || "飞行员");
+          this.pilotSubTxt && (this.pilotSubTxt.text = "击落 " + (y.storage.killCount || 0) + " · 查看档案")
+        }, s.onPilotPlateClick = function() {
         this.showPilotPanel()
       }, s.closePilotPanel = function() {
         // 成就区滚动：卸载原生监听（滚轮 / 拖拽），避免面板关掉后仍在响应
