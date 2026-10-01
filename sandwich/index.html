@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>猫和老鼠 · 三明治比赛</title>
+<style>
+  :root{ --bg:#0f1115; --line:#262b36; --fg:#e6e9ef; --dim:#8b93a5; --accent:#4da3ff; }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:var(--bg)}
+  body{
+    color:var(--fg);
+    font:14px/1.6 "Microsoft YaHei","PingFang SC",-apple-system,Segoe UI,sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    padding:16px;
+  }
+  #stage{
+    width:min(1100px,97vw); aspect-ratio:16/9;
+    background:#000; border:1px solid var(--line); border-radius:10px;
+    overflow:hidden; box-shadow:0 18px 50px rgba(0,0,0,.55);
+    position:relative;
+  }
+  #stage canvas, #stage ruffle-object, #stage ruffle-embed, #stage ruffle-object > *{
+    width:100%!important; height:100%!important; display:block;
+  }
+  #override{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:24px; background:#000; color:var(--dim); font-size:13px; line-height:2;
+  }
+  #override .err{color:#ff6b6b; white-space:pre-wrap; text-align:left; max-width:660px}
+  #override .spin{
+    display:inline-block; width:13px; height:13px; margin-right:7px; vertical-align:-2px;
+    border:2px solid #2b3240; border-top-color:var(--accent); border-radius:50%;
+    animation:sp .8s linear infinite;
+  }
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .tip{color:#59617a; font-size:11px; margin-top:10px; letter-spacing:.3px}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="override"><span><span class="spin"></span>正在载入游戏…</span></div>
+</div>
+<div class="tip">Tom and Jerry: Trap Sandwich</div>
+
+<!-- Ruffle 播放器运行时。它会在自身执行时按「本脚本的 URL 所在目录」自动去取
+     同目录的 core chunk 与两个 wasm 模块，所以这些文件必须与本页保持在
+     assets/ 里的相对关系不变。 -->
+<script src="assets/ruffle.js"
+        onerror="document.getElementById('override').innerHTML='<span class=&quot;err&quot;>找不到 assets/ruffle.js&lt;br&gt;请确认资源包文件夹（assets/）与本页位于同一目录。</span>'"></script>
+
+<script>
+(function () {
+  const stage   = document.getElementById("stage");
+  const overlay = document.getElementById("override");
+
+  function bail(msg) {
+    if (overlay && overlay.isConnected) {
+      overlay.innerHTML = '<span class="err">' + msg + '</span>';
+    }
+  }
+
+  try {
+    if (typeof window.RufflePlayer === "undefined" || !window.RufflePlayer.newest) {
+      return bail("Flash 播放内核未能载入。\n请确认 assets/ 文件夹与本页同级，且浏览器允许加载该目录下的脚本。");
+    }
+
+    const player = window.RufflePlayer.newest().createPlayer();
+    player.style.width  = "100%";
+    player.style.height = "100%";
+    player.style.display = "block";
+    stage.appendChild(player);
+    if (overlay) overlay.remove();
+
+    player
+      .load("assets/TrapSandwich.swf")
+      .then(function () { window.__player = player; })
+      .catch(function (e) {
+        bail("游戏载入失败：" + (e && e.message ? e.message : e) +
+             "\n请确认 assets/TrapSandwich.swf 存在且完整（约 8.5 MB）。");
+      });
+  } catch (e) {
+    bail("初始化异常：" + (e && e.message ? e.message : e));
+  }
+})();
+</script>
+
+</body>
+</html>
