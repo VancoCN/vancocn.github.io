@@ -1,6 +1,6 @@
 window.ARC_VERSIONS = {
   "latest": "7.0.260c",
-  "updated_at": "2026-10-01T13:25:45+00:00",
+  "updated_at": "2026-10-01T13:30:30+00:00",
   "history": [
     {
       "version": "7.0.260c",
@@ -11,6 +11,11 @@ window.ARC_VERSIONS = {
     }
   ],
   "checks": [
+    {
+      "time": "2026-10-01T13:30:30+00:00",
+      "status": "unchanged",
+      "version": "7.0.260c"
+    },
     {
       "time": "2026-10-01T13:25:45+00:00",
       "status": "new_version",
