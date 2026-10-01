@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arcaea 版本留档</title>
+<link rel="preload" href="../alfyt.ttf" as="font" type="font/ttf" crossorigin>
+
+<style>
+/* ==================== 自定义字体 ==================== */
+@font-face {
+    font-family: "AlfytFont";
+    src: url("alfyt.ttf") format("truetype"),
+         url("../alfyt.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ==================== 全局 ==================== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: "AlfytFont", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    color: #e8e8e8;
+    padding: 20px 40px 60px;
+    position: relative;
+    z-index: 0;
+    background-color: #0a0a0f;
+    background-image:
+        radial-gradient(1200px 700px at 15% -10%, rgba(90, 90, 150, 0.16), transparent 60%),
+        radial-gradient(900px 600px at 100% 0%, rgba(140, 90, 150, 0.12), transparent 55%);
+    background-attachment: fixed;
+}
+
+.noise-overlay {
+    position: fixed;
+    inset: 0;
+    opacity: 0.04;
+    z-index: -1;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* ==================== 页头 ==================== */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 5px;
+}
+
+.page-title {
+    font-size: 2.4em;
+    font-weight: 700;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #ffffff 0%, #a0a0c0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.header-meta {
+    font-size: 0.85em;
+    color: rgba(255, 255, 255, 0.35);
+    letter-spacing: 2px;
+}
+
+.header-line {
+    border-top: 2px solid rgba(255, 255, 255, 0.12);
+    margin-bottom: 40px;
+}
+
+.category-title {
+    font-size: 1.4em;
+    font-weight: 700;
+    margin-top: 35px;
+    margin-bottom: 16px;
+    color: #b0b0d0;
+    letter-spacing: 1px;
+    border-left: 3px solid rgba(160, 160, 220, 0.6);
+    padding-left: 12px;
+}
+
+/* ==================== 玻璃卡片 ==================== */
+.glass-card,
+.tool-card {
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.glass-card {
+    padding: 26px 30px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ==================== 当前版本 ==================== */
+.version-card {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.version-wrap {
+    flex: 0 0 auto;
+    text-align: center;
+    min-width: 160px;
+}
+
+.version-big {
+    font-size: 3.2em;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -1px;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(135deg, #ffffff 0%, #a0a0c0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.version-label {
+    margin-top: 8px;
+    font-size: 0.76em;
+    color: #8a8a9e;
+    letter-spacing: 3px;
+}
+
+.version-main { flex: 1; min-width: 0; }
+
+.version-top {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.version-level {
+    font-size: 1.2em;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #cfcfe4;
+}
+
+.version-date { font-size: 0.8em; color: #7c7c90; letter-spacing: 1px; }
+
+.version-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.version-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78em;
+    color: #8f8fa6;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 99px;
+    padding: 5px 13px;
+    letter-spacing: 1px;
+}
+
+.version-tag b { color: #dcdcea; font-weight: 600; }
+
+.version-hint {
+    margin-top: 14px;
+    font-size: 0.72em;
+    color: rgba(255, 255, 255, 0.22);
+    letter-spacing: 1px;
+}
+
+/* ==================== 历史表格 ==================== */
+table { width: 100%; border-collapse: collapse; font-size: 0.95em; }
+
+th {
+    text-align: left;
+    padding: 0 8px 12px;
+    color: #8a8a9e;
+    font-weight: 600;
+    font-size: 0.78em;
+    letter-spacing: 2px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+td {
+    padding: 12px 8px;
+    color: #cfcfe4;
+    font-variant-numeric: tabular-nums;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+tr:last-child td { border-bottom: none; }
+
+/* ==================== 链接卡片 ==================== */
+.card-list { display: flex; flex-direction: column; gap: 16px; }
+
+.tool-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 26px;
+    text-decoration: none;
+    color: #e0e0e0;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.tool-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        105deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.04) 40%,
+        rgba(255, 255, 255, 0.1) 50%,
+        rgba(255, 255, 255, 0.04) 60%,
+        transparent 100%
+    );
+    transition: left 0.7s ease;
+}
+
+.tool-card:hover::before { left: 100%; }
+
+.tool-card:hover {
+    transform: translateY(-3px) scale(1.01);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.4),
+        0 0 20px rgba(160, 160, 220, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+}
+
+.tool-card:active { transform: translateY(-1px) scale(0.998); }
+
+.card-title { font-size: 1.25em; font-weight: 600; min-width: 120px; color: #f0f0f0; }
+
+.card-desc {
+    flex: 1;
+    margin: 0 20px;
+    font-size: 0.92em;
+    color: #999;
+    transition: color 0.3s;
+}
+
+.tool-card:hover .card-desc { color: #c0c0c0; }
+
+.card-play-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.tool-card:hover .card-play-btn {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: scale(1.1);
+}
+
+.card-play-btn svg { width: 20px; height: 20px; fill: #bbb; transition: fill 0.3s; }
+.tool-card:hover .card-play-btn svg { fill: #fff; }
+
+/* ==================== 说明 ==================== */
+.note { font-size: 0.88em; color: #9a9ab0; line-height: 1.85; }
+.note p { margin-bottom: 12px; }
+.note p:last-child { margin-bottom: 0; }
+.note strong { color: #dcdcea; font-weight: 600; }
+.note code {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-size: 0.9em;
+    color: #c8c8dc;
+}
+
+.empty { color: #7c7c90; font-size: 0.92em; }
+
+/* ==================== 检查日志 ==================== */
+.st-new { color: #8fe3b0; }
+.st-ok  { color: #8a8a9e; }
+.st-err { color: #ff7d7d; }
+
+.log-msg { font-size: 0.82em; color: #7c7c90; word-break: break-all; }
+
+.log-note {
+    margin-top: 14px;
+    font-size: 0.74em;
+    color: rgba(255, 255, 255, 0.22);
+    letter-spacing: 1px;
+}
+
+.footer {
+    margin-top: 60px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 0.85em;
+    letter-spacing: 1px;
+}
+
+/* ==================== 响应式 ==================== */
+@media (max-width: 900px) {
+    .version-card { flex-wrap: wrap; gap: 22px; }
+    .version-wrap {
+        flex: 1;
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: 14px;
+        min-width: 0;
+    }
+    .version-label { margin-top: 0; }
+    .version-main { flex: 1 1 100%; }
+}
+
+@media (max-width: 600px) {
+    body { padding: 16px 18px 40px; }
+    .page-title { font-size: 1.8em; }
+    .version-card { flex-direction: column; align-items: stretch; gap: 20px; padding: 22px 20px; }
+    .version-big { font-size: 2.8em; }
+    .version-wrap { justify-content: flex-start; }
+    .card-title { min-width: 90px; font-size: 1.1em; }
+    .card-desc { font-size: 0.85em; padding: 0 8px; margin: 0 8px; }
+    .card-play-btn { width: 38px; height: 38px; }
+    .glass-card { padding: 22px 20px; }
+    th, td { padding: 10px 6px; font-size: 0.9em; }
+    .log-msg, .th-msg { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="noise-overlay"></div>
+
+<div class="page-header">
+    <div class="page-title">Arcaea 版本留档</div>
+    <div class="header-meta" id="headerMeta"></div>
+</div>
+<div class="header-line"></div>
+
+<!-- ==================== 当前版本 ==================== -->
+<div class="category-title">当前版本</div>
+<div class="glass-card version-card" id="versionCard">
+    <div class="version-wrap">
+        <div class="version-big" id="latest">—</div>
+        <div class="version-label" id="latestLabel">最新版本</div>
+    </div>
+    <div class="version-main">
+        <div class="version-top">
+            <span class="version-level" id="seenTitle">等待数据</span>
+            <span class="version-date" id="seen"></span>
+        </div>
+        <div class="version-tags">
+            <span class="version-tag">文件大小 <b id="size">—</b></span>
+            <span class="version-tag">历史版本 <b id="count">—</b></span>
+            <span class="version-tag">轮询间隔 <b>6 小时</b></span>
+        </div>
+        <div class="version-hint" id="hint">版本号由 GitHub Actions 定时轮询官方接口获得</div>
+    </div>
+</div>
+
+<!-- ==================== 历史记录 ==================== -->
+<div class="category-title">历史记录</div>
+<div class="glass-card">
+    <div id="table-wrap"></div>
+</div>
+
+<!-- ==================== 检查日志 ==================== -->
+<div class="category-title">检查日志</div>
+<div class="glass-card">
+    <div id="log-wrap"></div>
+</div>
+
+<!-- ==================== 获取 ==================== -->
+<div class="category-title">获取</div>
+<div class="card-list">
+    <a href="https://arcaea.lowiro.com/" class="tool-card" target="_blank" rel="noopener noreferrer">
+        <div class="card-title">前往官网</div>
+        <div class="card-desc">由官方判断你的地区是否提供 APK 下载</div>
+        <div class="card-play-btn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+    </a>
+</div>
+
+<!-- ==================== 关于 ==================== -->
+<div class="category-title">关于本站</div>
+<div class="glass-card">
+    <div class="note">
+        <p><strong>数据来源。</strong>来自 lowiro 公开接口
+        <code>webapi.lowiro.com/webapi/serve/static/bin/arcaea/apk</code>，
+        由 GitHub Actions 定时轮询，仅在发现新版本号时追加一条留档。</p>
+
+        <p><strong>“首次观测”不等于官方发布时间。</strong>它是本站第一次探测到该版本的时间，
+        受轮询间隔限制，可能晚于真实发布时刻。GitHub Actions 的定时任务也不保证准点。</p>
+
+        <p><strong>为什么没有下载直链？</strong>接口返回的地址带有一次性 <code>token</code> 会失效，
+        存下来就成了死链；而且官方会按访问者的地区决定是否提供 APK，直接公开直链等于绕过这一层判断。</p>
+
+        <p><strong>本站不提供、不存储、不分发任何 APK 或游戏资产。</strong>
+        页面仅收录版本号、观测时间、文件体积等事实性元数据。Arcaea 为 lowiro limited 所有，
+        本站为非官方、非商业项目。</p>
+    </div>
+</div>
+
+<div class="footer">Arcaea Version Archive · 元数据留档 · 不含任何游戏文件</div>
+
+<script src="versions.js"></script>
+<script>
+(function () {
+    var data = window.ARC_VERSIONS || {};
+    var wrap = document.getElementById('table-wrap');
+    var logWrap = document.getElementById('log-wrap');
+
+    var LOG_LIMIT = 50;
+    var STATUS = {
+        new_version: { text: '发现新版本', cls: 'st-new' },
+        unchanged:   { text: '无变化',     cls: 'st-ok' },
+        error:       { text: '请求失败',   cls: 'st-err' }
+    };
+
+    function fmt(iso) {
+        if (!iso) return '—';
+        var d = new Date(iso);
+        if (isNaN(d)) return '—';
+        var p = function (n) { return n < 10 ? '0' + n : '' + n; };
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+             + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    }
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    /* ---------- 检查日志：不管有没有版本数据都渲染 ---------- */
+    var logs = data.checks || [];
+    if (!logs.length) {
+        logWrap.innerHTML = '<div class="empty">还没有检查记录。跑一次工作流后这里就会有内容。</div>';
+    } else {
+        var shown = logs.slice(0, LOG_LIMIT);
+        var lrows = shown.map(function (e) {
+            var s = STATUS[e.status] || { text: e.status, cls: 'st-ok' };
+            return '<tr>'
+                + '<td>' + fmt(e.time) + '</td>'
+                + '<td class="' + s.cls + '">' + s.text + '</td>'
+                + '<td>' + (e.version ? esc(e.version) : '—') + '</td>'
+                + '<td class="log-msg">' + (e.message ? esc(e.message) : '') + '</td>'
+                + '</tr>';
+        }).join('');
+        var note = logs.length > LOG_LIMIT
+            ? '仅显示最近 ' + LOG_LIMIT + ' 条，共 ' + logs.length + ' 条（留档上限 300 条）'
+            : '共 ' + logs.length + ' 条';
+        logWrap.innerHTML = '<table><thead><tr>'
+            + '<th>检查时间</th><th>结果</th><th>观测版本</th><th class="th-msg">备注</th>'
+            + '</tr></thead><tbody>' + lrows + '</tbody></table>'
+            + '<div class="log-note">' + note + '</div>';
+    }
+
+    /* ---------- 版本信息 ---------- */
+    if (!data.history || !data.history.length) {
+        document.getElementById('latest').textContent = '暂无数据';
+        document.getElementById('latestLabel').textContent = '等待首次采集';
+        document.getElementById('seenTitle').textContent = '尚未运行';
+        document.getElementById('seen').textContent = '在 Actions 里手动 Run workflow 一次';
+        document.getElementById('size').textContent = '—';
+        document.getElementById('count').textContent = '0';
+        document.getElementById('headerMeta').textContent = '暂无数据';
+        wrap.innerHTML = '<div class="empty">还没有版本记录，请查看上方检查日志。</div>';
+        return;
+    }
+
+    var hist = data.history;
+    document.getElementById('latest').textContent = data.latest || hist[0].version;
+    document.getElementById('seenTitle').textContent = '首次观测';
+    document.getElementById('seen').textContent = fmt(hist[0].first_seen) + '（本地时间）';
+    document.getElementById('size').textContent = hist[0].size_human || '—';
+    document.getElementById('count').textContent = hist.length;
+    document.getElementById('headerMeta').textContent = '最后检查 ' + fmt(data.updated_at);
+
+    var rows = hist.map(function (e) {
+        return '<tr>'
+            + '<td>' + esc(e.version) + '</td>'
+            + '<td>' + fmt(e.first_seen) + '</td>'
+            + '<td>' + (e.size_human || '—') + '</td>'
+            + '</tr>';
+    }).join('');
+
+    wrap.innerHTML = '<table><thead><tr>'
+        + '<th>版本号</th><th>首次观测</th><th>文件大小</th>'
+        + '</tr></thead><tbody>' + rows + '</tbody></table>';
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,54 @@
+name: Arcaea Version Tracker
+
+# 注意：这个文件必须放在仓库根目录的 .github/workflows/ 下才会被执行。
+# 项目本体在 arctracker/ 子目录，靠 working-directory 指回去。
+
+on:
+  schedule:
+    # GitHub Actions 用 UTC，北京时间 = UTC + 8。
+    # Arcaea 通常在北京时间 08:00 前后发版：早上密集轮询，下午/晚上各一次兜底。
+    - cron: "50 23 * * *"   # 北京 07:50
+    - cron: "0 0 * * *"     # 北京 08:00
+    - cron: "15 0 * * *"    # 北京 08:15
+    - cron: "30 0 * * *"    # 北京 08:30
+    - cron: "45 0 * * *"    # 北京 08:45
+    - cron: "17 6 * * *"    # 北京 14:17（避开整点拥堵）
+    - cron: "17 12 * * *"   # 北京 20:17
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: arcaea-version-tracker
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: arctracker
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Probe metadata
+        run: python scripts/check.py
+
+      - name: Commit if changed
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -z "$(git status --porcelain .)" ]; then
+            echo "无变更，跳过提交。"
+            exit 0
+          fi
+          VER=$(python -c "import json;d=json.load(open('versions.json'));print(d['latest'] or 'n/a')")
+          git add versions.json versions.js
+          git commit -m "arctracker: version $VER"
+          git push
