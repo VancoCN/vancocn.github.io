@@ -1,0 +1,2168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>化学实验室 · Chem Lab</title>
+<style>
+    /* ==================== 全局重置 ==================== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+        min-height: 100vh;
+        color: #e8e8e8;
+        padding: 20px 40px 60px;
+        position: relative;
+        z-index: 0;
+        background-color: #0a0a0f;
+        background-image:
+            radial-gradient(1200px 700px at 15% -10%, rgba(90, 120, 150, 0.16), transparent 60%),
+            radial-gradient(900px 600px at 100% 0%, rgba(110, 140, 170, 0.13), transparent 55%);
+        background-attachment: fixed;
+    }
+
+    .noise-overlay {
+        position: fixed;
+        inset: 0;
+        opacity: 0.04;
+        z-index: -1;
+        pointer-events: none;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+
+    /* ==================== 头部 ==================== */
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 5px;
+    }
+    .page-title {
+        font-size: 2.4em;
+        font-weight: 700;
+        letter-spacing: 2px;
+        background: linear-gradient(135deg, #ffffff 0%, #9ec8e8 60%, #8fb9a8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .header-meta {
+        font-size: 0.85em;
+        color: rgba(255,255,255,0.35);
+        letter-spacing: 2px;
+    }
+    .header-line {
+        border-top: 2px solid rgba(255,255,255,0.12);
+        margin-bottom: 34px;
+    }
+
+    /* ==================== 布局 ==================== */
+    .lab-wrap {
+        display: grid;
+        grid-template-columns: 330px minmax(360px, 1fr) 380px;
+        gap: 20px;
+        align-items: start;
+    }
+
+    .panel {
+        border-radius: 18px;
+        padding: 20px 22px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow:
+            0 4px 24px rgba(0,0,0,0.3),
+            inset 0 1px 0 rgba(255,255,255,0.08),
+            inset 0 -1px 0 rgba(0,0,0,0.2);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .panel-title {
+        font-size: 1.15em;
+        font-weight: 700;
+        letter-spacing: 1px;
+        color: #c6c6de;
+        margin-bottom: 16px;
+        padding-left: 12px;
+        border-left: 3px solid rgba(150, 200, 220, 0.6);
+    }
+    .panel-title small {
+        font-size: 0.68em;
+        font-weight: 500;
+        color: #7a7a92;
+        margin-left: 8px;
+        letter-spacing: 0;
+    }
+
+    /* ==================== 试剂架 ==================== */
+    .search-box {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #e8e8e8;
+        font-size: 0.9em;
+        outline: none;
+        transition: border-color .3s, box-shadow .3s;
+        font-family: inherit;
+    }
+    .search-box:focus {
+        border-color: rgba(160,200,220,0.45);
+        box-shadow: 0 0 0 3px rgba(140,190,210,0.1);
+    }
+    .search-box::placeholder { color: rgba(255,255,255,0.28); }
+
+    .cat-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 14px;
+    }
+    .cat-tab {
+        font-size: 0.75em;
+        padding: 5px 11px;
+        border-radius: 99px;
+        border: 1px solid rgba(255,255,255,0.09);
+        background: rgba(255,255,255,0.04);
+        color: #9090a8;
+        cursor: pointer;
+        transition: all .25s;
+        font-family: inherit;
+        letter-spacing: .5px;
+    }
+    .cat-tab:hover { color: #d6d6e6; border-color: rgba(255,255,255,0.2); }
+    .cat-tab.active {
+        background: rgba(160, 200, 220, 0.16);
+        border-color: rgba(160, 200, 220, 0.45);
+        color: #eaf6ff;
+        box-shadow: 0 0 14px rgba(150,200,220,0.14);
+    }
+
+    .sub-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        max-height: 60vh;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+    .sub-grid::-webkit-scrollbar { width: 6px; }
+    .sub-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 99px; }
+    .sub-grid::-webkit-scrollbar-track { background: transparent; }
+
+    .sub-card {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 9px 11px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.07);
+        background: rgba(255,255,255,0.035);
+        cursor: pointer;
+        text-align: left;
+        color: #dedeee;
+        font-family: inherit;
+        transition: all .25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    .sub-card:hover {
+        transform: translateY(-2px);
+        background: rgba(255,255,255,0.09);
+        border-color: rgba(255,255,255,0.2);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    }
+    .sub-card:active { transform: translateY(0) scale(0.98); }
+    .sub-f {
+        font-family: "Times New Roman", Georgia, serif;
+        font-size: 1.02em;
+        letter-spacing: .5px;
+        color: #f2f6ff;
+    }
+    .sub-f sub { font-size: 0.7em; }
+    .sub-n { font-size: 0.72em; color: #8d8da4; }
+    .st-dot {
+        position: absolute;
+        width: 6px; height: 6px; border-radius: 50%;
+    }
+
+    .state-badge {
+        font-size: 0.62em;
+        padding: 1px 6px;
+        border-radius: 99px;
+        border: 1px solid rgba(255,255,255,0.12);
+        color: #a2a2b8;
+        width: fit-content;
+        margin-top: 3px;
+        letter-spacing: .5px;
+    }
+    .state-g { color: #9fd0ff; border-color: rgba(159,208,255,0.3); }
+    .state-s { color: #e8d9a8; border-color: rgba(232,217,168,0.3); }
+    .state-l { color: #9fe8d0; border-color: rgba(159,232,208,0.3); }
+    .state-a { color: #c9b6f0; border-color: rgba(201,182,240,0.3); }
+
+    /* ==================== 实验台 ==================== */
+    .flask-stage {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.07);
+        margin-bottom: 16px;
+    }
+
+    .flask {
+        position: relative;
+        flex: 0 0 auto;
+        width: 74px;
+        height: 96px;
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 10px 10px 26px 26px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.015));
+        overflow: hidden;
+        box-shadow: inset 0 2px 10px rgba(255,255,255,0.06);
+    }
+    .flask::before {
+        content: "";
+        position: absolute;
+        top: 6px; left: 50%;
+        transform: translateX(-50%);
+        width: 26px; height: 7px;
+        border-radius: 4px;
+        background: rgba(255,255,255,0.12);
+    }
+    .liquid {
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        height: 0%;
+        background: linear-gradient(180deg, rgba(130,170,200,0.55), rgba(100,140,170,0.35));
+        transition: height .9s cubic-bezier(0.22,0.9,0.25,1), background .9s ease;
+    }
+    .liquid::before {
+        content: "";
+        position: absolute; left: 0; right: 0; top: -2px;
+        height: 4px; border-radius: 50%;
+        background: rgba(255,255,255,0.25);
+        opacity: .8;
+    }
+    .sediment {
+        position: absolute; left: 0; right: 0; bottom: 0;
+        height: 0;
+        background: rgba(240,240,250,0.5);
+        border-radius: 0 0 24px 24px;
+        transition: height .9s ease;
+    }
+    .flask.bubbling .bubble { animation: rise 1.4s ease-in infinite; }
+    .bubble {
+        position: absolute;
+        bottom: 4px;
+        width: 5px; height: 5px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.55);
+        opacity: 0;
+    }
+    @keyframes rise {
+        0%   { transform: translateY(0) scale(.6); opacity: 0; }
+        25%  { opacity: .9; }
+        100% { transform: translateY(-70px) scale(1.1); opacity: 0; }
+    }
+    .flask.glow { box-shadow: inset 0 0 26px rgba(255,150,80,0.35), 0 0 24px rgba(255,140,70,0.18); }
+    .flask.flash { animation: flash .7s ease; }
+    @keyframes flash {
+        0% { box-shadow: inset 0 0 40px rgba(255,255,255,0.6); }
+        100% { box-shadow: inset 0 2px 10px rgba(255,255,255,0.06); }
+    }
+
+    .stage-info { flex: 1; min-width: 0; }
+    .stage-label { font-size: 0.72em; color: #7f7f96; letter-spacing: 1px; }
+    .stage-value { font-size: 0.95em; color: #e2e2f2; margin-top: 4px; line-height: 1.5; }
+    .stage-value b { color: #a8d8f0; font-weight: 600; }
+
+    .chips {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 92px;
+        max-height: 240px;
+        overflow-y: auto;
+        padding: 2px;
+    }
+    .chips::-webkit-scrollbar { width: 6px; }
+    .chips::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 99px; }
+
+    .empty-hint {
+        border: 1px dashed rgba(255,255,255,0.14);
+        border-radius: 14px;
+        padding: 26px 16px;
+        text-align: center;
+        color: rgba(255,255,255,0.28);
+        font-size: 0.85em;
+        line-height: 1.8;
+    }
+
+    .chip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 12px;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.09);
+        animation: chipIn .35s cubic-bezier(0.25,0.8,0.25,1);
+    }
+    @keyframes chipIn {
+        from { opacity: 0; transform: translateY(6px) scale(.97); }
+        to { opacity: 1; transform: none; }
+    }
+    .chip-formula {
+        font-family: "Times New Roman", Georgia, serif;
+        font-size: 1.05em;
+        min-width: 78px;
+        color: #f2f6ff;
+    }
+    .chip-formula sub { font-size: 0.7em; }
+    .chip-name { font-size: 0.76em; color: #8d8da4; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chip-count {
+        font-variant-numeric: tabular-nums;
+        font-size: 0.85em;
+        color: #cfd6ea;
+        min-width: 34px;
+        text-align: center;
+        border-left: 1px solid rgba(255,255,255,0.1);
+        border-right: 1px solid rgba(255,255,255,0.1);
+        padding: 0 6px;
+    }
+    .round-btn {
+        width: 22px; height: 22px;
+        border-radius: 50%;
+        border: 1px solid rgba(255,255,255,0.14);
+        background: rgba(255,255,255,0.05);
+        color: #c9c9dc;
+        cursor: pointer;
+        font-size: 0.9em;
+        line-height: 1;
+        display: flex; align-items: center; justify-content: center;
+        transition: all .2s;
+        font-family: inherit;
+        flex: 0 0 auto;
+    }
+    .round-btn:hover { background: rgba(255,255,255,0.16); color: #fff; transform: scale(1.1); }
+    .round-btn.del:hover { background: rgba(255,110,110,0.3); border-color: rgba(255,110,110,0.5); }
+
+    /* ==================== 条件按钮 ==================== */
+    .section-label {
+        font-size: 0.72em;
+        letter-spacing: 2px;
+        color: #7f7f96;
+        margin: 18px 0 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .section-label::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: rgba(255,255,255,0.08);
+    }
+
+    .cond-row { display: flex; flex-wrap: wrap; gap: 7px; }
+    .cond-btn {
+        padding: 7px 13px;
+        border-radius: 99px;
+        font-size: 0.8em;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.04);
+        color: #9a9ab2;
+        cursor: pointer;
+        transition: all .3s;
+        font-family: inherit;
+        letter-spacing: .5px;
+    }
+    .cond-btn:hover { color: #e0e0f0; border-color: rgba(255,255,255,0.22); }
+    .cond-btn.active {
+        background: rgba(255,170,90,0.16);
+        border-color: rgba(255,180,100,0.55);
+        color: #ffd9a8;
+        box-shadow: 0 0 16px rgba(255,170,90,0.18);
+    }
+
+    .act-row { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+    .btn {
+        flex: 1;
+        min-width: 120px;
+        padding: 12px 16px;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(255,255,255,0.05);
+        color: #e4e4f4;
+        font-size: 0.92em;
+        font-weight: 600;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all .3s cubic-bezier(0.25,0.8,0.25,1);
+        font-family: inherit;
+    }
+    .btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+    .btn:active { transform: translateY(0); }
+    .btn.primary {
+        background: linear-gradient(135deg, rgba(120,200,180,0.22), rgba(130,180,220,0.18));
+        border-color: rgba(150,220,200,0.42);
+        color: #eafffb;
+        box-shadow: 0 6px 22px rgba(90,190,170,0.14);
+    }
+    .btn.primary:hover { box-shadow: 0 10px 30px rgba(90,190,170,0.24); }
+    .btn.ghost { flex: 0 0 auto; min-width: 92px; font-weight: 500; color: #a3a3bb; }
+
+    .toggle-line {
+        display: flex; align-items: center; gap: 10px;
+        margin-top: 14px; font-size: 0.78em; color: #8d8da4;
+        cursor: pointer; user-select: none;
+    }
+    .toggle {
+        width: 36px; height: 20px; border-radius: 99px;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.12);
+        position: relative; transition: all .3s; flex: 0 0 auto;
+    }
+    .toggle::after {
+        content: ""; position: absolute;
+        top: 2px; left: 2px;
+        width: 14px; height: 14px; border-radius: 50%;
+        background: #9a9ab2; transition: all .3s;
+    }
+    .toggle-line.on .toggle { background: rgba(120,200,180,0.28); border-color: rgba(150,220,200,0.5); }
+    .toggle-line.on .toggle::after { left: 18px; background: #b6f0e0; }
+
+    /* ==================== 结果区 ==================== */
+    .result-wrap { min-height: 240px; }
+    .result-card {
+        border-radius: 16px;
+        padding: 18px 20px;
+        background: rgba(255,255,255,0.045);
+        border: 1px solid rgba(255,255,255,0.1);
+        animation: resultIn .5s cubic-bezier(0.25,0.8,0.25,1);
+    }
+    @keyframes resultIn {
+        from { opacity: 0; transform: translateY(14px) scale(.98); }
+        to { opacity: 1; transform: none; }
+    }
+    .result-card.fail { border-color: rgba(255,255,255,0.1); }
+    .result-head {
+        display: flex; align-items: center; gap: 10px;
+        flex-wrap: wrap; margin-bottom: 14px;
+    }
+    .type-badge {
+        font-size: 0.72em;
+        padding: 4px 11px;
+        border-radius: 99px;
+        background: rgba(150,200,220,0.14);
+        border: 1px solid rgba(150,200,220,0.35);
+        color: #bfe4f5;
+        letter-spacing: 1px;
+    }
+    .warn-badge {
+        font-size: 0.72em;
+        padding: 4px 11px;
+        border-radius: 99px;
+        background: rgba(255,120,120,0.14);
+        border: 1px solid rgba(255,120,120,0.4);
+        color: #ffb3b3;
+        letter-spacing: 1px;
+    }
+    .eq-box {
+        font-family: "Times New Roman", Georgia, serif;
+        font-size: 1.22em;
+        line-height: 1.9;
+        color: #f4f8ff;
+        padding: 14px 16px;
+        border-radius: 12px;
+        background: rgba(0,0,0,0.22);
+        border: 1px solid rgba(255,255,255,0.07);
+        word-break: break-word;
+    }
+    .eq-box sub { font-size: 0.68em; }
+    .arrow {
+        color: #ffce9a;
+        font-family: inherit;
+        font-size: 0.82em;
+        letter-spacing: 0;
+        padding: 0 2px;
+    }
+    .ud { color: #a8e0ff; font-size: 0.7em; vertical-align: super; }
+
+    .ion-box {
+        margin-top: 10px;
+        padding: 11px 14px;
+        border-radius: 11px;
+        background: rgba(160, 200, 230, 0.06);
+        border: 1px dashed rgba(160, 200, 230, 0.28);
+        font-family: "Times New Roman", Georgia, serif;
+        font-size: 1.05em;
+        color: #dbeaf6;
+        line-height: 1.8;
+    }
+    .ion-label {
+        display: block;
+        font-family: -apple-system, "PingFang SC", sans-serif;
+        font-size: 0.66em;
+        letter-spacing: 2px;
+        color: #6f8fa8;
+        margin-bottom: 4px;
+    }
+
+    .phen-list { margin-top: 14px; }
+    .phen-title { font-size: 0.72em; letter-spacing: 2px; color: #7f7f96; margin-bottom: 8px; }
+    .phen-text { font-size: 0.92em; line-height: 1.85; color: #c2c2d6; }
+
+    .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+    .tag {
+        font-size: 0.72em;
+        padding: 4px 11px;
+        border-radius: 99px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.09);
+        color: #9a9ab2;
+    }
+    .tag.hot { color: #ffc79a; border-color: rgba(255,180,120,0.32); background: rgba(255,180,120,0.1); }
+    .tag.gas { color: #a8e0ff; border-color: rgba(168,224,255,0.32); background: rgba(168,224,255,0.08); }
+    .tag.pre { color: #e8dcb0; border-color: rgba(232,220,176,0.32); background: rgba(232,220,176,0.08); }
+    .tag.lig { color: #fff0b0; border-color: rgba(255,240,176,0.32); background: rgba(255,240,176,0.08); }
+
+    .prod-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .prod-chip {
+        padding: 7px 13px;
+        border-radius: 12px;
+        background: rgba(160,220,200,0.08);
+        border: 1px solid rgba(160,220,200,0.28);
+        font-size: 0.82em;
+        color: #d8f4ec;
+    }
+    .prod-chip sub { font-size: 0.7em; }
+    .prod-chip span { color: #8fb3a8; font-size: 0.8em; margin-left: 6px; }
+
+    .note-line {
+        margin-top: 14px;
+        font-size: 0.78em;
+        color: #8d8da4;
+        line-height: 1.7;
+        padding-top: 12px;
+        border-top: 1px solid rgba(255,255,255,0.07);
+    }
+
+    /* ==================== 常见实验 ==================== */
+    .book-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 4px; }
+    .book-btn {
+        font-size: 0.76em;
+        padding: 7px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.09);
+        background: rgba(255,255,255,0.035);
+        color: #9a9ab2;
+        cursor: pointer;
+        transition: all .25s;
+        font-family: inherit;
+    }
+    .book-btn:hover {
+        color: #e6f4ff;
+        background: rgba(255,255,255,0.09);
+        border-color: rgba(255,255,255,0.22);
+        transform: translateY(-2px);
+    }
+
+    /* ==================== 实验记录 ==================== */
+    .log-panel { margin-top: 20px; }
+    .log-list {
+        display: flex; flex-direction: column; gap: 8px;
+        max-height: 260px; overflow-y: auto; padding-right: 4px;
+    }
+    .log-list::-webkit-scrollbar { width: 6px; }
+    .log-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 99px; }
+    .log-item {
+        display: flex; gap: 12px; align-items: baseline;
+        padding: 10px 14px;
+        border-radius: 11px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.06);
+        font-size: 0.85em;
+        animation: chipIn .3s ease;
+    }
+    .log-time { color: #6f6f88; font-size: 0.8em; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+    .log-eq { color: #c8c8de; font-family: "Times New Roman", Georgia, serif; }
+    .log-eq sub { font-size: 0.7em; }
+    .log-item.bad .log-eq { color: #9a9ab2; font-family: inherit; }
+
+    .footer {
+        margin-top: 44px;
+        text-align: center;
+        color: rgba(255,255,255,0.2);
+        font-size: 0.85em;
+        letter-spacing: 1px;
+    }
+
+    /* ==================== 多容器实验台 ==================== */
+    .bench-toolbar {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+    }
+    .bench-toolbar .toggle-line { margin-top: 0; }
+
+    .vessel-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(296px, 1fr));
+        gap: 14px;
+    }
+    .vessel {
+        border-radius: 16px;
+        padding: 13px 14px;
+        background: rgba(255,255,255,0.035);
+        border: 1px solid rgba(255,255,255,0.09);
+        display: flex; flex-direction: column; gap: 10px;
+        transition: border-color .3s, box-shadow .3s;
+        animation: chipIn .35s cubic-bezier(0.25,0.8,0.25,1);
+    }
+    .vessel:hover { border-color: rgba(255,255,255,0.18); }
+    .vessel.focus {
+        border-color: rgba(150,220,200,0.45);
+        box-shadow: 0 0 0 1px rgba(150,220,200,0.12) inset, 0 8px 26px rgba(0,0,0,0.28);
+    }
+    .vessel.focus .vessel-name::before {
+        content: "▸ ";
+        color: #9fe8d0;
+    }
+
+    .vessel-head { display: flex; align-items: center; gap: 8px; }
+    .vessel-name { font-size: 0.92em; font-weight: 600; color: #eaf2ff; letter-spacing: 1px; }
+    .vessel-meta { font-size: 0.73em; color: #7f7f96; flex: 1; min-width: 0; }
+
+    .vbtn {
+        font-size: 0.73em; padding: 5px 10px; border-radius: 9px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.05);
+        color: #a5a5bd; cursor: pointer; transition: all .25s;
+        font-family: inherit; white-space: nowrap;
+    }
+    .vbtn:hover { background: rgba(255,255,255,0.12); color: #eaeaf6; }
+    .vbtn.del:hover { background: rgba(255,110,110,0.25); border-color: rgba(255,110,110,0.4); color: #ffd0d0; }
+    .vbtn.react {
+        width: 100%; padding: 9px; border-radius: 11px; letter-spacing: 1px;
+        background: linear-gradient(135deg, rgba(120,200,180,0.18), rgba(130,180,220,0.15));
+        border-color: rgba(150,220,200,0.3); color: #dff7ef; font-weight: 600;
+    }
+    .vbtn.react:hover { box-shadow: 0 6px 20px rgba(90,190,170,0.16); }
+
+    .vessel-body { display: flex; gap: 12px; align-items: stretch; }
+    .flask.mini { width: 46px; height: 68px; border-radius: 8px 8px 20px 20px; flex: 0 0 auto; }
+    .flask.mini::before { width: 18px; height: 5px; }
+    .flask.mini .bubble { width: 4px; height: 4px; }
+    .flask.mini.bubbling .bubble { animation: riseMini 1.4s ease-in infinite; }
+    @keyframes riseMini {
+        0%   { transform: translateY(0) scale(.6); opacity: 0; }
+        25%  { opacity: .9; }
+        100% { transform: translateY(-48px) scale(1.1); opacity: 0; }
+    }
+    .vessel-chips {
+        flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px;
+        max-height: 152px; overflow-y: auto; padding-right: 2px;
+    }
+    .vessel-chips::-webkit-scrollbar { width: 5px; }
+    .vessel-chips::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 99px; }
+    .chip.mini { padding: 6px 9px; gap: 6px; }
+    .chip.mini .chip-formula { min-width: 54px; font-size: 0.94em; }
+
+    .vessel-conds { display: flex; flex-wrap: wrap; gap: 5px; }
+    .cond-mini {
+        font-size: 0.7em; padding: 4px 9px; border-radius: 99px;
+        border: 1px solid rgba(255,255,255,0.09);
+        background: rgba(255,255,255,0.035);
+        color: #8f8fa8; cursor: pointer; transition: all .25s;
+        font-family: inherit;
+    }
+    .cond-mini:hover { color: #dcdcea; border-color: rgba(255,255,255,0.2); }
+    .cond-mini.active {
+        background: rgba(255,170,90,0.16);
+        border-color: rgba(255,180,100,0.5);
+        color: #ffd9a8;
+        box-shadow: 0 0 12px rgba(255,170,90,0.14);
+    }
+
+    .transfer-bar {
+        display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+        padding: 9px 10px; border-radius: 11px;
+        background: rgba(150,200,220,0.08);
+        border: 1px dashed rgba(150,200,220,0.3);
+        font-size: 0.75em; color: #b8c8d8; line-height: 1.6;
+    }
+    .transfer-bar .vbtn { padding: 4px 9px; }
+
+    .add-vessel {
+        border: 1px dashed rgba(255,255,255,0.16);
+        border-radius: 16px; min-height: 128px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        color: rgba(255,255,255,0.3); font-size: 0.85em; letter-spacing: 1px;
+        background: rgba(255,255,255,0.015); transition: all .3s;
+        font-family: inherit;
+    }
+    .add-vessel:hover {
+        color: #cfeee4; border-color: rgba(150,220,200,0.45);
+        background: rgba(150,220,200,0.06);
+    }
+    .hint-inline { font-size: 0.7em; color: #6f6f88; letter-spacing: 0; font-weight: 500; }
+
+    /* ==================== 响应式 ==================== */
+    @media (max-width: 1240px) {
+        .lab-wrap { grid-template-columns: 300px 1fr; }
+        .result-col { grid-column: 1 / -1; }
+    }
+    @media (max-width: 860px) {
+        body { padding: 16px 18px 40px; }
+        .lab-wrap { grid-template-columns: 1fr; }
+        .page-title { font-size: 1.8em; }
+        .sub-grid { grid-template-columns: 1fr 1fr 1fr; max-height: 340px; }
+    }
+</style>
+</head>
+<body>
+
+<div class="noise-overlay"></div>
+
+<div class="page-header">
+    <div class="page-title">化学实验室</div>
+    <div class="header-meta" id="headerMeta"></div>
+</div>
+<div class="header-line"></div>
+
+<div class="lab-wrap">
+
+    <!-- ==================== 左：试剂架 ==================== -->
+    <section class="panel">
+        <div class="panel-title">试剂架 <small>点击取用药品</small></div>
+        <input class="search-box" id="searchBox" placeholder="搜索名称或化学式，如 氧气 / CuSO4" autocomplete="off">
+        <div class="cat-tabs" id="catTabs"></div>
+        <div class="sub-grid" id="subGrid"></div>
+    </section>
+
+    <!-- ==================== 中：实验台 ==================== -->
+    <section class="panel">
+        <div class="panel-title">实验台 <small>多个容器可并行实验，药品可以在容器间转移；取药会加入当前选中的容器</small></div>
+
+        <div class="bench-toolbar">
+            <div class="toggle-line on" id="keepToggle">
+                <div class="toggle"></div>
+                <span>反应后产物留在原容器中（便于做连续实验）</span>
+            </div>
+            <button class="btn ghost" id="btnClearAll" style="flex:0 0 auto;min-width:96px;padding:9px 14px;font-size:.85em;">全部清洗</button>
+        </div>
+
+        <div class="vessel-grid" id="vesselGrid"></div>
+
+        <div class="section-label">经典实验 <span class="hint-inline">点击后自动摆好药品并在第一个容器中反应</span></div>
+        <div class="book-list" id="bookList"></div>
+    </section>
+
+    <!-- ==================== 右：结果 ==================== -->
+    <section class="panel result-col">
+        <div class="panel-title">实验现象 <small>结果与现象记录</small></div>
+        <div class="result-wrap" id="resultWrap">
+            <div class="empty-hint">还没有开始实验<br>取用药品后点击「开始反应」</div>
+        </div>
+    </section>
+
+</div>
+
+<section class="panel log-panel">
+    <div class="panel-title">实验记录 <small id="logCount">共 0 条</small></div>
+    <div class="log-list" id="logList">
+        <div class="empty-hint">暂无记录</div>
+    </div>
+</section>
+
+<div class="footer">CHEM LAB · 文字版化学实验台 · 数据以初中/高中常见反应为限</div>
+
+<script>
+/* ==================================================================
+   数据区
+   SUBS: [ 化学式(key), 中文名, 状态(s固体/l液体/g气体/a水溶液), 类别, 性质简述, 溶液/固体颜色(可选) ]
+   ================================================================== */
+
+const CATS = [
+    { id: "all",     name: "全部" },
+    { id: "nonmetal",name: "非金属单质" },
+    { id: "metal",   name: "金属单质" },
+    { id: "oxide",   name: "氧化物" },
+    { id: "acid",    name: "酸" },
+    { id: "base",    name: "碱" },
+    { id: "salt",    name: "盐" },
+    { id: "organic", name: "有机物" },
+    { id: "other",   name: "其他气体" }
+];
+
+const STATE_CN = { s: "固体", l: "液体", g: "气体", a: "水溶液" };
+
+const SUBS = [
+    // ---------- 非金属单质 ----------
+    ["H2","氢气","g","nonmetal","密度最小的气体，可燃，燃烧呈淡蓝色火焰，混有空气时点燃会爆鸣"],
+    ["O2","氧气","g","nonmetal","支持燃烧，能使带火星的木条复燃，密度略大于空气"],
+    ["N2","氮气","g","nonmetal","化学性质很不活泼，常用作保护气"],
+    ["Cl2","氯气","g","nonmetal","黄绿色有刺激性气味的气体，有毒，能溶于水"],
+    ["O3","臭氧","g","nonmetal","淡蓝色气体，强氧化性，可用于漂白和消毒"],
+    ["C","碳（木炭）","s","nonmetal","黑色固体，可燃，高温下具有还原性"],
+    ["S","硫（硫磺）","s","nonmetal","淡黄色固体，俗称硫磺，不溶于水"],
+    ["P","红磷","s","nonmetal","暗红色固体，着火点约 240℃，燃烧产生大量白烟"],
+    ["Si","硅","s","nonmetal","灰黑色有金属光泽的固体，半导体材料"],
+    ["I2","碘","s","nonmetal","紫黑色固体，遇淀粉变蓝，易升华"],
+    // ---------- 金属单质 ----------
+    ["Na","钠","s","metal","银白色质软金属，极活泼，保存在煤油中"],
+    ["K","钾","s","metal","银白色金属，比钠更活泼，与水反应更剧烈"],
+    ["Ca","钙","s","metal","活泼金属，与水反应生成微溶的氢氧化钙"],
+    ["Mg","镁","s","metal","银白色金属，燃烧发出耀眼白光，能在二氧化碳中燃烧"],
+    ["Al","铝","s","metal","银白色金属，表面有致密氧化膜，两性"],
+    ["Zn","锌","s","metal","青白色金属，实验室制取氢气的常用药品"],
+    ["Fe","铁","s","metal","银白色，铁粉为黑色，能被磁铁吸引"],
+    ["Cu","铜","s","metal","紫红色金属，活动性排在氢之后"],
+    ["Ag","银","s","metal","银白色金属，活动性很弱，导电导热性最好"],
+    ["Sn","锡","s","metal","银白色金属，活动性排在氢之前"],
+    ["Pb","铅","s","metal","青白色重金属，活动性排在氢之前"],
+    // ---------- 氧化物 ----------
+    ["H2O","水","l","oxide","最常见的溶剂，通电可分解为氢气和氧气"],
+    ["H2O2","过氧化氢（双氧水）","a","oxide","无色液体，在二氧化锰催化下迅速放出氧气"],
+    ["CO2","二氧化碳","g","oxide","能使澄清石灰水变浑浊，不支持燃烧，密度比空气大"],
+    ["CO","一氧化碳","g","oxide","无色无味、有毒，可燃且具有还原性"],
+    ["SO2","二氧化硫","g","oxide","有刺激性气味的有毒气体，能使品红溶液褪色"],
+    ["SO3","三氧化硫","g","oxide","与水剧烈反应生成硫酸"],
+    ["NO","一氧化氮","g","oxide","无色气体，在空气中立即变为红棕色"],
+    ["NO2","二氧化氮","g","oxide","红棕色有刺激性气味的有毒气体，能溶于水"],
+    ["CaO","氧化钙（生石灰）","s","oxide","白色块状固体，遇水放出大量热，常用作干燥剂"],
+    ["Na2O","氧化钠","s","oxide","白色固体，碱性氧化物"],
+    ["Na2O2","过氧化钠","s","oxide","淡黄色粉末，与水或二氧化碳反应放出氧气"],
+    ["Fe2O3","氧化铁（铁锈）","s","oxide","红棕色粉末，铁锈的主要成分"],
+    ["Fe3O4","四氧化三铁","s","oxide","黑色晶体，有磁性，铁丝燃烧的产物"],
+    ["CuO","氧化铜","s","oxide","黑色粉末，能被氢气、碳、一氧化碳还原"],
+    ["MgO","氧化镁","s","oxide","白色粉末，熔点很高，可作耐火材料"],
+    ["Al2O3","氧化铝","s","oxide","白色固体，典型的两性氧化物"],
+    ["MnO2","二氧化锰","s","oxide","黑色粉末，常作过氧化氢、氯酸钾分解的催化剂"],
+    ["SiO2","二氧化硅","s","oxide","沙子、石英的主要成分，酸性氧化物"],
+    ["P2O5","五氧化二磷","s","oxide","白色粉末，极易吸水，可作干燥剂"],
+    // ---------- 酸 ----------
+    ["HCl","盐酸","a","acid","氯化氢气体的水溶液，有挥发性，具有酸的通性"],
+    ["H2SO4稀","稀硫酸","a","acid","无色液体，具有酸的通性，能与活泼金属反应放氢"],
+    ["H2SO4浓","浓硫酸","a","acid","无色油状液体，有强腐蚀性、吸水性和脱水性"],
+    ["HNO3稀","稀硝酸","a","acid","无色液体，有强氧化性，与金属反应不放氢气"],
+    ["HNO3浓","浓硝酸","a","acid","无色液体，见光受热易分解，氧化性极强"],
+    ["H2CO3","碳酸","a","acid","极不稳定，常温下即分解为水和二氧化碳"],
+    ["H2SO3","亚硫酸","a","acid","能使品红溶液褪色，易被氧化"],
+    ["H3PO4","磷酸","a","acid","无色黏稠液体，中强酸"],
+    ["HClO","次氯酸","a","acid","弱酸，有强氧化性，可漂白、杀菌"],
+    // ---------- 碱 ----------
+    ["NaOH","氢氧化钠（烧碱）","a","base","白色固体极易潮解，溶于水放热，强腐蚀性"],
+    ["KOH","氢氧化钾","a","base","白色固体，性质与氢氧化钠相似"],
+    ["Ca(OH)2","氢氧化钙（石灰水）","a","base","微溶于水，澄清石灰水可检验二氧化碳"],
+    ["NH3·H2O","氨水","a","base","有刺激性气味，弱碱，能使酚酞变红"],
+    ["Al(OH)3","氢氧化铝","s","base","白色胶状沉淀，典型两性氢氧化物"],
+    ["Cu(OH)2","氢氧化铜","s","base","蓝色絮状沉淀，受热易分解为黑色氧化铜"],
+    ["Fe(OH)3","氢氧化铁","s","base","红褐色沉淀，受热分解为红棕色氧化铁"],
+    ["Mg(OH)2","氢氧化镁","s","base","白色难溶沉淀，能溶于酸"],
+    // ---------- 盐 ----------
+    ["NaCl","氯化钠","a","salt","食盐的主要成分，白色易溶"],
+    ["KCl","氯化钾","a","salt","白色易溶"],
+    ["CaCl2","氯化钙","a","salt","白色易溶，可作干燥剂"],
+    ["MgCl2","氯化镁","a","salt","无色易溶"],
+    ["AlCl3","氯化铝","a","salt","无色易溶"],
+    ["ZnCl2","氯化锌","a","salt","无色易溶"],
+    ["FeCl2","氯化亚铁","a","salt","浅绿色溶液，易被氧化"],
+    ["FeCl3","氯化铁","a","salt","黄色溶液，可腐蚀铜"],
+    ["CuCl2","氯化铜","a","salt","蓝绿色溶液"],
+    ["AgCl","氯化银","s","salt","白色沉淀，难溶于水也不溶于稀硝酸"],
+    ["BaCl2","氯化钡","a","salt","白色易溶，用于检验硫酸根离子"],
+    ["Na2SO4","硫酸钠","a","salt","白色易溶"],
+    ["ZnSO4","硫酸锌","a","salt","无色溶液"],
+    ["FeSO4","硫酸亚铁","a","salt","浅绿色溶液"],
+    ["CuSO4","硫酸铜","a","salt","蓝色溶液，有毒，可用于检验蛋白质"],
+    ["Fe2(SO4)3","硫酸铁","a","salt","黄色溶液"],
+    ["BaSO4","硫酸钡","s","salt","白色沉淀，不溶于水也不溶于稀硝酸，医学钡餐"],
+    ["Na2CO3","碳酸钠（纯碱）","a","salt","白色易溶，水溶液显碱性"],
+    ["NaHCO3","碳酸氢钠（小苏打）","a","salt","白色易溶，受热易分解，遇酸剧烈放气"],
+    ["K2CO3","碳酸钾","a","salt","白色易溶"],
+    ["CaCO3","碳酸钙","s","salt","石灰石、大理石的主要成分，难溶于水"],
+    ["BaCO3","碳酸钡","s","salt","白色沉淀，能溶于酸"],
+    ["NaNO3","硝酸钠","a","salt","白色易溶"],
+    ["KNO3","硝酸钾","a","salt","白色易溶，复合肥料"],
+    ["Cu(NO3)2","硝酸铜","a","salt","蓝色溶液"],
+    ["Ca(NO3)2","硝酸钙","a","salt","无色易溶"],
+    ["AgNO3","硝酸银","a","salt","用于检验氯离子，见光易分解"],
+    ["KClO3","氯酸钾","s","salt","白色固体，二氧化锰催化加热放出氧气"],
+    ["KMnO4","高锰酸钾","s","salt","紫黑色晶体，强氧化剂，溶液呈紫红色"],
+    ["K2MnO4","锰酸钾","s","salt","墨绿色固体"],
+    ["NH4Cl","氯化铵","s","salt","白色易溶，受热易分解"],
+    ["NH4HCO3","碳酸氢铵","s","salt","白色晶体，氮肥，受热易分解"]
+];
+
+const SUBS2 = [
+    ["FeS","硫化亚铁","s","salt","黑褐色块状固体，与酸反应放出臭鸡蛋气味气体"],
+    ["KI","碘化钾","a","salt","无色易溶，可被氯气氧化出碘"],
+    ["NaBr","溴化钠","a","salt","白色易溶"],
+    ["AgBr","溴化银","s","salt","淡黄色沉淀，见光分解，用于照相底片"],
+    ["AgI","碘化银","s","salt","黄色沉淀，可用于人工降雨"],
+    ["NaAlO2","偏铝酸钠","a","salt","无色溶液"],
+    ["NaClO","次氯酸钠","a","salt","84 消毒液的有效成分，有漂白性"],
+    ["Ca(ClO)2","次氯酸钙","s","salt","漂白粉的有效成分"],
+    ["Ca(HCO3)2","碳酸氢钙","a","salt","可溶于水，使水中钙镁离子含量升高"],
+    ["Na2SiO3","硅酸钠","a","salt","水溶液俗称水玻璃，黏稠，可作黏合剂"],
+    ["Cu2S","硫化亚铜","s","salt","黑色固体"],
+    ["CuSO4·5H2O","胆矾（五水硫酸铜）","s","salt","蓝色晶体，受热失去结晶水变白"],
+    // ---------- 有机物 ----------
+    ["CH4","甲烷","g","organic","天然气的主要成分，极易燃，火焰呈明亮蓝色"],
+    ["C2H5OH","乙醇（酒精）","l","organic","无色液体，易燃，燃烧呈淡蓝色火焰"],
+    // ---------- 其他气体 ----------
+    ["NH3","氨气","g","other","无色，有刺激性气味，极易溶于水，水溶液显碱性"],
+    ["H2S","硫化氢","g","other","臭鸡蛋气味的有毒气体，溶于水显弱酸性"]
+];
+
+SUBS.push.apply(SUBS, SUBS2);
+
+// 溶液 / 固体外观颜色（用于容器液体显色）
+const SCOLOR = {
+    "CuSO4":"#2f7fd0", "CuCl2":"#2f9f7a", "Cu(NO3)2":"#2f7fd0", "CuSO4·5H2O":"#2f7fd0",
+    "FeCl2":"#4f8a63", "FeSO4":"#4f8a63",
+    "FeCl3":"#b8862f", "Fe2(SO4)3":"#b8862f",
+    "KMnO4":"#7b3fb5", "K2MnO4":"#2f7a45",
+    "Cl2":"#c8d94f", "NO2":"#b56a3f", "I2":"#6b4fa8",
+    "HClO":"#cfd8c0", "HNO3浓":"#e0d89a", "H2SO4浓":"#cfcfd8"
+};
+
+/* 反应条件定义 */
+const CONDS = [
+    { id: "room",   label: "常温",       sole: true,  desc: "不额外提供条件" },
+    { id: "ignite", label: "点燃",       sole: false, desc: "用火柴/酒精灯直接点燃" },
+    { id: "heat",   label: "加热 △",     sole: false, desc: "酒精灯持续加热" },
+    { id: "ht",     label: "高温",       sole: false, desc: "酒精喷灯强热" },
+    { id: "light",  label: "光照",       sole: false, desc: "强光照射（含强光引爆）" },
+    { id: "elec",   label: "通直流电",   sole: false, desc: "电解装置通电" },
+    { id: "cat",    label: "催化剂",     sole: false, desc: "加入催化剂（如二氧化锰、浓硫酸）" },
+    { id: "press",  label: "高压",       sole: false, desc: "加压装置" }
+];
+
+// 补充物质（上一批放不下，这里补齐）
+SUBS.push(
+    ["MgSO4","硫酸镁","a","salt","无色易溶"],
+    ["MgCO3","碳酸镁","s","salt","白色难溶沉淀，水垢的成分之一"],
+    ["Fe(NO3)2","硝酸亚铁","a","salt","浅绿色溶液"],
+    ["Na2SO3","亚硫酸钠","a","salt","白色易溶，常用作抗氧化剂"],
+    ["MnCl2","氯化锰","a","salt","淡粉色溶液"]
+);
+
+/* ---------- 高中拓展：无机部分 ---------- */
+SUBS.push(
+    ["Fe(OH)2","氢氧化亚铁","s","base","白色沉淀，极易被空气氧化，迅速变灰绿最终变红褐色"],
+    ["KSCN","硫氰酸钾","a","salt","无色溶液，检验铁离子的特效试剂"],
+    ["Fe(SCN)3","硫氰化铁","a","salt","血红色溶液，检验 Fe³⁺ 的特征产物"],
+    ["NaClO3","氯酸钠","a","salt","白色易溶，氯气与热浓碱反应的产物"],
+    ["MnSO4","硫酸锰","a","salt","淡粉色溶液，高锰酸钾被还原的产物"],
+    ["K2SO4","硫酸钾","a","salt","白色易溶，常用的钾肥"],
+    ["Na2S2O3","硫代硫酸钠","a","salt","俗称大苏打、海波，与酸反应析出硫使溶液变浑浊"],
+    ["H2SiO3","硅酸","s","acid","透明胶状沉淀（硅酸凝胶），酸性比碳酸更弱"],
+    ["CaSiO3","硅酸钙","s","salt","白色固体，炼铁造渣的产物之一"],
+    ["CuS","硫化铜","s","salt","黑色极难溶沉淀，稀酸也不能溶解"],
+    ["Al2(SO4)3","硫酸铝","a","salt","无色易溶，常用作净水剂"],
+    ["N2O4","四氧化二氮","g","oxide","无色气体，与二氧化氮之间存在可逆平衡"],
+    ["KBr","溴化钾","a","salt","无色易溶"],
+    ["HBr","溴化氢","a","acid","无色溶液，强酸，溴化氢的水溶液"],
+    ["HF","氢氟酸","a","acid","弱酸，能腐蚀玻璃和二氧化硅，必须保存在塑料瓶中"],
+    ["SiF4","四氟化硅","g","oxide","无色气体，在空气中产生白雾"],
+    ["Mg3N2","氮化镁","s","salt","淡黄色固体，镁在空气中燃烧的副产物"],
+    ["Cu2(OH)2CO3","碱式碳酸铜","s","salt","绿色固体，铜绿（孔雀石）的主要成分"]
+);
+
+/* ---------- 高中拓展：有机部分（结构简式书写） ---------- */
+SUBS.push(
+    ["CH2=CH2","乙烯","g","organic","无色稍带甜味的可燃气体，含碳碳双键，能发生加成反应"],
+    ["CH3CH3","乙烷","g","organic","无色可燃气体，饱和烃，只发生取代反应"],
+    ["CH3Cl","一氯甲烷","g","organic","无色气体，甲烷氯代的第一步产物"],
+    ["CH2Cl2","二氯甲烷","l","organic","无色液体，常用有机溶剂"],
+    ["CHCl3","三氯甲烷","l","organic","俗称氯仿，无色液体，有机溶剂"],
+    ["CCl4","四氯化碳","l","organic","无色液体，不燃，密度比水大，可作萃取剂"],
+    ["CH3CH2Cl","氯乙烷","l","organic","无色液体，乙烯与氯化氢加成的产物"],
+    ["CH2BrCH2Br","1,2-二溴乙烷","l","organic","无色液体，乙烯使溴水褪色的产物"],
+    ["Br2","溴（溴水）","l","nonmetal","深红棕色液体，溴水呈橙黄色，常用来检验不饱和烃"],
+    ["CH3CHO","乙醛","l","organic","无色有刺激性气味的液体，含醛基"],
+    ["CH3COOH","乙酸（醋酸）","l","organic","无色有刺激性气味的液体，弱酸，食醋的主要成分"],
+    ["CH3COONa","乙酸钠","a","salt","无色易溶"],
+    ["CH3COOC2H5","乙酸乙酯","l","organic","无色有果香味的油状液体，难溶于水，密度比水小"],
+    ["(CH3COO)2Ca","乙酸钙","a","salt","白色易溶，除水垢后的产物之一"],
+    ["(CH3COO)2Mg","乙酸镁","a","salt","无色易溶"],
+    ["C2H5ONa","乙醇钠","s","salt","白色固体，乙醇与钠反应的产物"],
+    ["(C2H4)n","聚乙烯","s","organic","白色蜡状固体，最常见的塑料，乙烯加聚的产物"]
+);
+
+/* ==================================================================
+   反应区
+   REACTIONS: [ 方程式, 条件, 反应类型, 实验现象, 附加标签 ]
+   条件：空字符串 = 常温；多个条件用 + 连接，如 heat+cat
+   方程式记号：> 为箭头；↑ 气体逸出；↓ 沉淀；@数字 表示该数字不写成下标
+   ================================================================== */
+
+const REACTIONS = [
+    // ---------------- 燃烧与化合 ----------------
+    ["2H2 + O2 > 2H2O","ignite","化合反应","安静燃烧并发出淡蓝色火焰，放出热量，罩在火焰上方的冷而干燥的烧杯内壁出现水雾。点燃前必须验纯，否则会爆鸣。","放热,淡蓝色火焰"],
+    ["H2 + Cl2 > 2HCl","ignite","化合反应","氢气在氯气中安静燃烧，发出苍白色火焰，瓶口出现白雾（盐酸小液滴）。","放热,白雾,苍白色火焰"],
+    ["H2 + Cl2 > 2HCl","light","化合反应","强光照射下混合气体猛烈爆炸，瓶口的塑料片被高高弹起。","爆炸,危险"],
+    ["C + O2 > CO2","ignite","化合反应","木炭在氧气中剧烈燃烧，发出白光并放出大量热，生成能使澄清石灰水变浑浊的气体。","放热,白光"],
+    ["2C + O2 > 2CO","ignite","化合反应","氧气不足时不完全燃烧，生成无色有毒的一氧化碳。冬天煤炉取暖要注意通风。","放热,不完全燃烧,危险"],
+    ["S + O2 > SO2","ignite","化合反应","在空气中发出微弱的淡蓝色火焰，在氧气中发出明亮的蓝紫色火焰，都生成有刺激性气味的气体。","刺激性气味,蓝紫色火焰"],
+    ["4P + 5O2 > 2P2O5","ignite","化合反应","红磷剧烈燃烧，发出白光并放热，产生大量白烟（五氧化二磷固体小颗粒），常用于测定空气中氧气含量。","放热,白烟,白光"],
+    ["3Fe + 2O2 > Fe3O4","ignite","化合反应","铁丝在氧气中剧烈燃烧，火星四射，放出大量热，生成黑色的四氧化三铁。瓶底需放少量水或细沙。","放热,火星四射"],
+    ["2Mg + O2 > 2MgO","ignite","化合反应","发出耀眼的强白光，放出大量热，生成白色粉末状氧化镁。可用于照明弹。","放热,耀眼白光"],
+    ["4Al + 3O2 > 2Al2O3","ignite","化合反应","铝箔剧烈燃烧，发出耀眼白光，生成白色固体；常温下铝表面也会形成致密氧化膜。","放热,白光"],
+    ["2Cu + O2 > 2CuO","heat","化合反应","紫红色的铜丝表面逐渐变黑，生成黑色氧化铜。红色变黑的经典实验。","固体变黑"],
+    ["2CO + O2 > 2CO2","ignite","化合反应","发出蓝色火焰并放热，生成能使澄清石灰水变浑浊的气体。煤气的主要成分燃烧。","蓝色火焰,放热"],
+    ["CH4 + 2O2 > CO2 + 2H2O","ignite","氧化反应","发出明亮的蓝色火焰，干冷烧杯内壁出现水雾，生成的气体使澄清石灰水变浑浊。","蓝色火焰,放热"],
+    ["C2H5OH + 3O2 > 2CO2 + 3H2O","ignite","氧化反应","发出淡蓝色火焰，放出大量热，点燃前最好先闻其气味以区分酒精与水。","淡蓝色火焰,放热"],
+    ["2Na + Cl2 > 2NaCl","ignite","化合反应","钠在氯气中剧烈燃烧，发出黄色火焰并产生大量白烟，最后得到白色固体食盐。","黄色火焰,白烟"],
+    ["2Fe + 3Cl2 > 2FeCl3","ignite","化合反应","铁丝在氯气中剧烈燃烧，产生棕黄色的烟，加水溶解后溶液呈棕黄色。","棕黄色烟,危险"],
+    ["Cu + Cl2 > CuCl2","ignite","化合反应","铜丝在氯气中燃烧，产生棕黄色烟，加水后得到蓝绿色溶液。","棕黄色烟,危险"],
+    ["2Mg + CO2 > 2MgO + C","ignite","置换反应","镁条在二氧化碳中仍然剧烈燃烧，发出白光，瓶壁附着黑色颗粒（碳）和白色固体。说明燃烧不一定需要氧气。","白光,黑色固体"],
+    ["Fe + S > FeS","heat","化合反应","铁粉与硫粉混合加热，混合物一经红热即靠自身放热继续反应，生成黑色固体，产物不能被磁铁吸引。","黑色固体,放热"],
+    ["2Cu + S > Cu2S","heat","化合反应","铜丝在硫蒸气中反应，表面生成黑色硫化亚铜。","黑色固体"],
+    // ---------------- 分解反应 ----------------
+    ["2H2O > 2H2↑ + O2↑","elec","分解反应","两极均出现气泡，正极产生氧气、负极产生氢气，正极与负极气体体积比约为 1:2，通常加少量稀硫酸增强导电性。","气体产生"],
+    ["2H2O2 > 2H2O + O2↑","cat","分解反应","加入二氧化锰后立即产生大量气泡，带火星的木条伸入试管中复燃。二氧化锰是催化剂，反应前后质量和化学性质均不变。","气体产生,放热,催化"],
+    ["2KMnO4 > K2MnO4 + MnO2 + O2↑","heat","分解反应","紫黑色固体逐渐减少并变为墨绿色，导管口有气泡冒出，带火星的木条复燃。试管口必须塞一团棉花。","气体产生"],
+    ["2KClO3 > 2KCl + 3O2↑","heat+cat","分解反应","固体逐渐熔化并持续放出氧气，带火星的木条复燃；二氧化锰作催化剂加快反应速率。","气体产生,催化"],
+    ["CaCO3 > CaO + CO2↑","ht","分解反应","坚硬的白色固体逐渐变得疏松多孔，生成的气体使澄清石灰水变浑浊。工业上煅烧石灰石制生石灰。","气体产生,吸热"],
+    ["H2CO3 > H2O + CO2↑","","分解反应","液体中有气泡逸出，原先因碳酸而变红的石蕊溶液又变回紫色。碳酸极不稳定。","气体产生"],
+    ["Cu(OH)2 > CuO + H2O","heat","分解反应","蓝色絮状沉淀逐渐变成黑色粉末，试管口有水珠凝结。","黑色固体"],
+    ["2Fe(OH)3 > Fe2O3 + 3H2O","heat","分解反应","红褐色沉淀逐渐变成红棕色粉末，试管口有水珠。","红棕色固体"],
+    ["NH4HCO3 > NH3↑ + H2O + CO2↑","heat","分解反应","白色晶体迅速消失，闻到刺激性气味，试管口有水珠。碳酸氢铵化肥要密封保存在阴凉处。","刺激性气味,气体产生"],
+    ["NH4Cl > NH3↑ + HCl↑","heat","分解反应","试管底部白色固体逐渐消失，在试管上部较冷处又重新凝成白色固体，看起来像升华，实际是分解后化合。","白色固体"],
+    ["CuSO4·@5H2O > CuSO4 + @5H2O","heat","分解反应","蓝色晶体逐渐变成白色粉末，试管口有水珠；无水硫酸铜遇水又会变蓝，常用于检验水。","白色变蓝色"],
+    ["4HNO3浓 > 4NO2↑ + O2↑ + 2H2O","light","分解反应","受光的浓硝酸缓慢分解，逐渐变黄并有红棕色气体逸出，所以必须保存在棕色试剂瓶中。","红棕色气体,危险"],
+    ["4HNO3浓 > 4NO2↑ + O2↑ + 2H2O","heat","分解反应","受热加速分解，剧烈产生红棕色刺激性气体。","红棕色气体,危险"],
+    // ---------------- 还原反应 ----------------
+    ["C + 2CuO > 2Cu + CO2↑","ht","置换反应","黑色粉末中出现光亮的红色物质，生成的气体使澄清石灰水变浑浊。实验结束时先撤导管再熄灭酒精灯。","黑色变红色,气体产生"],
+    ["H2 + CuO > Cu + H2O","heat","置换反应","黑色粉末逐渐变成光亮的红色，试管口有水珠出现。实验要「氢气早出晚归，酒精灯迟到早退」。","黑色变红色"],
+    ["CO + CuO > Cu + CO2","heat","氧化还原反应","黑色粉末逐渐变成红色，气体使澄清石灰水变浑浊。尾气中的一氧化碳必须点燃处理，不能直接排放。","黑色变红色,危险"],
+    ["Fe2O3 + 3CO > 2Fe + 3CO2","ht","氧化还原反应","红棕色粉末逐渐变为黑色，尾气使澄清石灰水变浑浊。工业炼铁的主要反应。","颜色变化,工业应用"],
+    ["Fe3O4 + 4CO > 3Fe + 4CO2","ht","氧化还原反应","黑色粉末反应后得到能被磁铁吸引的黑色粉末（铁）。","工业应用"],
+    ["C + CO2 > 2CO","ht","化合反应","红热的木炭层逐渐变薄，生成有毒的一氧化碳，该反应吸收热量。","吸热,危险"],
+    ["4NH3 + 5O2 > 4NO + 6H2O","heat+cat","氧化还原反应","氨在催化剂和加热条件下被氧化为一氧化氮，这是工业制硝酸的第一步。","工业应用"],
+    ["N2 + 3H2 > 2NH3","ht+press+cat","化合反应","氮气与氢气在高温高压、催化剂作用下生成氨气，可逆放出热量；哈伯法合成氨改善了人类粮食供给。","工业应用,放热"],
+    // ---------------- 金属与酸 ----------------
+    ["Zn + H2SO4稀 > ZnSO4 + H2↑","","置换反应","锌粒表面产生大量无色气泡，锌粒逐渐变小直至消失。实验室制取氢气的常用方法。","气体产生"],
+    ["Zn + 2HCl > ZnCl2 + H2↑","","置换反应","锌粒表面迅速产生气泡，锌粒逐渐溶解，试管外壁微热。","气体产生,放热"],
+    ["Fe + 2HCl > FeCl2 + H2↑","","置换反应","有无色气泡产生，溶液由无色逐渐变成浅绿色（亚铁离子）。铁钉表面的锈会先被酸溶解。","气体产生,浅绿色"],
+    ["Fe + H2SO4稀 > FeSO4 + H2↑","","置换反应","铁钉表面有气泡冒出，溶液逐渐变为浅绿色。","气体产生,浅绿色"],
+    ["Mg + 2HCl > MgCl2 + H2↑","","置换反应","反应非常剧烈，产生大量气泡，镁条迅速溶解，试管明显发烫。","剧烈,放热,气体产生"],
+    ["Mg + H2SO4稀 > MgSO4 + H2↑","","置换反应","剧烈反应，产生大量气泡，镁条迅速溶解，试管发烫。","剧烈,放热,气体产生"],
+    ["2Al + 6HCl > 2AlCl3 + 3H2↑","","置换反应","起初气泡较少（氧化膜先溶解），随后反应加快，铝片逐渐溶解。","气体产生"],
+    // ---------------- 金属与盐溶液 ----------------
+    ["Fe + CuSO4 > FeSO4 + Cu","","置换反应","铁钉表面覆盖一层红色的铜，蓝色溶液逐渐变为浅绿色。湿法炼铜的原理。","红色固体,溶液变浅绿"],
+    ["Zn + CuSO4 > ZnSO4 + Cu","","置换反应","锌粒表面有红色物质析出，蓝色溶液颜色逐渐变浅。","红色固体"],
+    ["Cu + 2AgNO3 > Cu(NO3)2 + 2Ag","","置换反应","铜丝表面长出银白色针状的「银树」，溶液由无色逐渐变为蓝色，是史上最早被描述的置换反应之一。","银白色固体,溶液变蓝"],
+    ["Fe + 2AgNO3 > Fe(NO3)2 + 2Ag","","置换反应","铁丝表面有银白色物质析出，溶液逐渐变为浅绿色。","银白色固体"],
+    ["Mg + CuSO4 > MgSO4 + Cu","","置换反应","镁条表面迅速析出红色固体，蓝色变浅，同时放出较多热。","放热,红色固体"],
+    ["Zn + FeCl2 > ZnCl2 + Fe","","置换反应","锌的活动性强于铁，可把铁从其盐溶液中置换出来，溶液浅绿色逐渐变浅。",""],
+    // ---------------- 金属与水 ----------------
+    ["2Na + 2H2O > 2NaOH + H2↑","","置换反应","钠浮在水面上熔成小球四处游动，发出嘶嘶声，滴有酚酞的水变红——浮、熔、游、嘶、红。不能用手直接接触钠。","剧烈,放热,危险,溶液变红"],
+    ["2K + 2H2O > 2KOH + H2↑","","置换反应","比钠更剧烈，钾熔成火球在水面燃烧并发出轻微爆鸣声，紫色火焰一闪而过。","剧烈,放热,危险,轻微爆炸"],
+    ["Ca + 2H2O > Ca(OH)2 + H2↑","","置换反应","有气泡产生，因氢氧化钙微溶，溶液逐渐变浑浊，滴入酚酞变红。","气体产生,溶液变浑浊"],
+    ["Mg + 2H2O > Mg(OH)2 + H2↑","heat","置换反应","镁与冷水反应极慢几乎看不到变化，加热后才有气泡产生，滴有酚酞的水变红。","气体产生,缓慢"],
+    ["3Fe + 4H2O > Fe3O4 + 4H2","ht","氧化还原反应","炽热的铁与水蒸气反应，表面生成黑色的四氧化三铁，同时产生能燃烧的氢气。","黑色固体,气体产生"],
+    // ---------------- 氧化物与水 ----------------
+    ["CaO + H2O > Ca(OH)2","","化合反应","放出大量热使水沸腾并冒出白汽，块状固体逐渐变成白色粉末。生石灰常被用作食品干燥剂。","放热,剧烈"],
+    ["Na2O + H2O > 2NaOH","","化合反应","白色固体溶解并放出大量热，所得溶液显强碱性。","放热"],
+    ["SO3 + H2O > H2SO4浓","","化合反应","剧烈放热，在空气中形成白雾；工业上用三氧化硫制硫酸。","放热,剧烈"],
+    ["P2O5 + 3H2O > 2H3PO4","","化合反应","白色粉末迅速溶解并放出大量热，可用作高效干燥剂。","放热"],
+    ["CO2 + H2O > H2CO3","","化合反应","外观几乎没有变化，但滴入紫色石蕊试液后溶液由紫变红；加热后又变回紫色。","石蕊变红"],
+    ["SO2 + H2O > H2SO3","","化合反应","气体溶解生成亚硫酸，能使石蕊变红，也能使品红溶液褪色。","石蕊变红"],
+    ["CuSO4 + @5H2O > CuSO4·5H2O","","化合反应","白色粉末吸水后逐渐变成蓝色晶体，常用于检验水的存在。","白色变蓝色"],
+    ["2Na2O2 + 2H2O > 4NaOH + O2↑","","氧化还原反应","淡黄色粉末迅速溶解，产生大量气泡，带火星的木条复燃并放出热。","放热,气体产生"],
+    ["2Na2O2 + 2CO2 > 2Na2CO3 + O2↑","","氧化还原反应","淡黄色粉末逐渐变白，同时产生能使带火星木条复燃的气体。呼吸面具与潜艇的供氧原理。","气体产生,放热"],
+    // ---------------- 酸性氧化物与碱 ----------------
+    ["CO2 + Ca(OH)2 > CaCO3↓ + H2O","","复分解反应","澄清石灰水逐渐变浑浊，这是检验二氧化碳的特征反应，也是石灰浆抹墙后变硬的原因。","白色沉淀,浑浊"],
+    ["CO2 + 2NaOH > Na2CO3 + H2O","","复分解反应","外观上没有明显现象，但溶液质量增加，可用气压变化来证明反应确实发生了。","无明显现象"],
+    ["SO2 + 2NaOH > Na2SO3 + H2O","","复分解反应","无明显沉淀产生，气体被碱液吸收，常用于处理含硫尾气。","无明显现象"],
+    ["CaCO3 + CO2 + H2O > Ca(HCO3)2","","化合反应","浑浊的石灰水继续通入二氧化碳后又逐渐变澄清；溶洞和硬水的形成都与此有关。","浑浊变澄清"],
+    ["SiO2 + 2NaOH > Na2SiO3 + H2O","heat","复分解反应","沙子逐渐溶解生成黏稠的水玻璃；盛碱溶液的试剂瓶不能用玻璃塞，以免被粘住。"," industrialNote"],
+    // ---------------- 中和与碱性氧化物 ----------------
+    ["NaOH + HCl > NaCl + H2O","","中和反应","放出热量但外观没有明显变化，预先滴入酚酞的红色溶液恰好褪去时即为恰好完全反应。","放热,无明显现象"],
+    ["Ca(OH)2 + 2HCl > CaCl2 + 2H2O","","中和反应","浑浊的石灰水逐渐变澄清并放热；农业上用熟石灰改良酸性土壤。","放热"],
+    ["2NaOH + H2SO4稀 > Na2SO4 + 2H2O","","中和反应","放出热量，无明显外观变化，可用 pH 试纸或指示剂判断终点。","放热"],
+    ["Cu(OH)2 + H2SO4稀 > CuSO4 + 2H2O","","中和反应","蓝色沉淀逐渐溶解消失，所得溶液呈蓝色。","沉淀溶解,溶液变蓝"],
+    ["Fe(OH)3 + 3HCl > FeCl3 + 3H2O","","中和反应","红褐色沉淀逐渐溶解，溶液变成黄色。","沉淀溶解,溶液变黄"],
+    ["Al(OH)3 + 3HCl > AlCl3 + 3H2O","","中和反应","白色胶状沉淀逐渐溶解；这正是含铝抗酸胃药中和胃酸的原理。","沉淀溶解,生活应用"],
+    ["Al(OH)3 + NaOH > NaAlO2 + 2H2O","","复分解反应","白色沉淀逐渐溶解，说明氢氧化铝既能与酸也能与强碱反应，是典型的两性氢氧化物。","沉淀溶解"],
+    ["Mg(OH)2 + 2HCl > MgCl2 + 2H2O","","中和反应","白色沉淀逐渐溶解消失，溶液变为澄清。","沉淀溶解"],
+    ["NH3·H2O + HCl > NH4Cl + H2O","","中和反应","刺激性气味减弱并放出热量，生成氯化铵。","放热"],
+    ["Fe2O3 + 6HCl > 2FeCl3 + 3H2O","","复分解反应","红棕色固体逐渐溶解，溶液由无色变为黄色，这就是除铁锈的原理，但酸不能过量以免腐蚀铁。","溶液变黄,生活应用"],
+    ["Fe2O3 + 3H2SO4稀 > Fe2(SO4)3 + 3H2O","","复分解反应","红棕色固体逐渐溶解，溶液变为黄色。","溶液变黄"],
+    ["CuO + 2HCl > CuCl2 + H2O","","复分解反应","黑色粉末逐渐溶解，溶液由无色变为蓝绿色。","固体溶解,溶液变蓝绿"],
+    ["CuO + H2SO4稀 > CuSO4 + H2O","","复分解反应","黑色粉末逐渐溶解，溶液由无色变为蓝色。","固体溶解,溶液变蓝"],
+    ["MgO + 2HCl > MgCl2 + H2O","","复分解反应","白色粉末逐渐溶解，得到澄清溶液。","固体溶解"],
+    // ---------------- 沉淀（复分解） ----------------
+    ["CuSO4 + 2NaOH > Cu(OH)2↓ + Na2SO4","","复分解反应","溶液中立即出现蓝色絮状沉淀，上层蓝色逐渐褪去。","蓝色沉淀"],
+    ["FeCl3 + 3NaOH > Fe(OH)3↓ + 3NaCl","","复分解反应","溶液中出现红褐色沉淀，黄色逐渐褪去，可用于净水。","红褐色沉淀"],
+    ["MgCl2 + 2NaOH > Mg(OH)2↓ + 2NaCl","","复分解反应","溶液中出现白色沉淀。海水提镁的中间步骤与此类似。","白色沉淀"],
+    ["AlCl3 + 3NaOH > Al(OH)3↓ + 3NaCl","","复分解反应","溶液中出现白色胶状沉淀，能吸附悬浮杂质，可用于净水。","白色沉淀"],
+    ["CuSO4 + BaCl2 > BaSO4↓ + CuCl2","","复分解反应","出现白色沉淀，溶液仍保持蓝色。","白色沉淀"],
+    ["Na2SO4 + BaCl2 > BaSO4↓ + 2NaCl","","复分解反应","出现不溶于稀硝酸的白色沉淀，这是硫酸根离子的检验方法。","白色沉淀"],
+    ["H2SO4稀 + BaCl2 > BaSO4↓ + 2HCl","","复分解反应","立即产生白色沉淀，加入稀硝酸后沉淀不溶解。","白色沉淀"],
+    ["NaCl + AgNO3 > AgCl↓ + NaNO3","","复分解反应","立即产生白色沉淀，加稀硝酸后仍不溶解，这是氯离子的检验方法。","白色沉淀"],
+    ["HCl + AgNO3 > AgCl↓ + HNO3稀","","复分解反应","立即产生白色沉淀且不溶于稀硝酸；盐酸与硝酸银互为检验。","白色沉淀"],
+    ["KI + AgNO3 > AgI↓ + KNO3","","复分解反应","立即产生黄色沉淀，可用于人工降雨中的碘化银制备。","黄色沉淀"],
+    ["NaBr + AgNO3 > AgBr↓ + NaNO3","","复分解反应","产生淡黄色沉淀，见光会逐渐变黑分解析出银。","淡黄色沉淀"],
+    ["Na2CO3 + CaCl2 > CaCO3↓ + 2NaCl","","复分解反应","溶液中出现白色沉淀。","白色沉淀"],
+    ["Na2CO3 + Ca(OH)2 > CaCO3↓ + 2NaOH","","复分解反应","立即产生白色沉淀，这是工业上用纯碱制烧碱的一步。","白色沉淀"],
+    ["Na2CO3 + BaCl2 > BaCO3↓ + 2NaCl","","复分解反应","出现白色沉淀，加稀硝酸后沉淀溶解并冒出气泡——与硫酸钡的区别。","白色沉淀"],
+    ["MgCO3 + 2HCl > MgCl2 + H2O + CO2↑","","复分解反应","白色固体逐渐溶解并产生气泡。水垢的主要成分之一。","气体产生,生活应用"],
+    // ---------------- 气体与其他 ----------------
+    ["NH3 + HCl > NH4Cl","","化合反应","两根分别蘸有浓氨水和浓盐酸的玻璃棒靠近时，在空气中产生浓厚白烟。","白烟"],
+    ["2NH4Cl + Ca(OH)2 > CaCl2 + 2NH3↑ + 2H2O","heat","复分解反应","产生有刺激性气味的气体，湿润的红色石蕊试纸变蓝；实验室制取氨气并用向下排空气法收集。","刺激性气味,石蕊变蓝"],
+    ["Cl2 + 2NaOH > NaCl + NaClO + H2O","","氧化还原反应","黄绿色气体逐渐被吸收，所得溶液无色且具有漂白性，这就是 84 消毒液的反应原理。","黄绿色褪去,生活应用"],
+    ["2Cl2 + 2Ca(OH)2 > CaCl2 + Ca(ClO)2 + 2H2O","","氧化还原反应","黄绿色逐渐褪去，得到漂白粉，其有效成分是次氯酸钙。","黄绿色褪去"],
+    ["Cl2 + H2O > HCl + HClO","","氧化还原反应","氯气溶于水得到浅黄绿色的氯水，具有漂白性，能使有色布条褪色。","黄绿色溶液"],
+    ["Cl2 + 2KI > 2KCl + I2","","置换反应","无色溶液逐渐变为褐色，说明氯的活动性强于碘，可用于比较非金属性。","溶液变色"],
+    ["MnO2 + 4HCl > MnCl2 + Cl2↑ + 2H2O","heat","氧化还原反应","黑色固体逐渐溶解，产生黄绿色有刺激性气味的气体，湿润的淀粉碘化钾试纸变蓝。实验室制取氯气。","黄绿色气体,危险"],
+    ["2KMnO4 + 16HCl > 2KCl + 2MnCl2 + 5Cl2↑ + 8H2O","","氧化还原反应","紫黑色固体迅速溶解，无需加热就剧烈产生黄绿色气体。","黄绿色气体,剧烈,危险"],
+    ["N2 + O2 > 2NO","elec","化合反应","放电条件下生成无色的一氧化氮，雷雨天后庄稼格外茂盛与此有关。","无色气体"],
+    ["2NO + O2 > 2NO2","","化合反应","无色气体接触空气后立即变成红棕色，几乎瞬间完成。","无色变红棕色"],
+    ["3NO2 + H2O > 2HNO3稀 + NO","","氧化还原反应","红棕色气体逐渐消失，水面上升约三分之二，剩余无色气体。工业制硝酸的一步。","红棕色褪去"],
+    ["Cu + 4HNO3浓 > Cu(NO3)2 + 2NO2↑ + 2H2O","","氧化还原反应","反应剧烈，铜片逐渐溶解，产生红棕色刺激性气体，溶液由无色变为蓝绿色。硝酸与金属反应不放氢气。","红棕色气体,剧烈,危险"],
+    ["3Cu + 8HNO3稀 > 3Cu(NO3)2 + 2NO↑ + 4H2O","heat","氧化还原反应","铜片逐渐溶解并有无色气泡产生，气体逸出液面后立刻变成红棕色，溶液变为蓝色。","无色变红棕色,危险"],
+    ["C + 4HNO3浓 > CO2↑ + 4NO2↑ + 2H2O","heat","氧化还原反应","黑色固体逐渐溶解，产生大量红棕色气体，体现浓硝酸的强氧化性。","红棕色气体,危险"],
+    ["CaCO3 + 2HCl > CaCl2 + H2O + CO2↑","","复分解反应","白色固体逐渐溶解并产生大量气泡，燃着的木条伸到瓶口就会熄灭。实验室制取二氧化碳。","大量气泡,固体溶解"],
+    ["Na2CO3 + 2HCl > 2NaCl + H2O + CO2↑","","复分解反应","立即产生大量气泡，比碳酸钙与盐酸反应更剧烈，反应速率快不利于收集。","大量气泡"],
+    ["NaHCO3 + HCl > NaCl + H2O + CO2↑","","复分解反应","反应极快，瞬间产生大量气泡。这就是泡沫灭火器和用小苏打做蛋糕的原理。","大量气泡,极快,生活应用"],
+    ["Na2CO3 + H2O + CO2 > 2NaHCO3","","化合反应","外观无明显变化，溶液中逐渐生成碳酸氢钠；溶解度较小时会析出晶体。","无明显现象"],
+    ["SiO2 + 2C > Si + 2CO↑","ht","置换反应","高温下得到灰黑色的硅单质并放出有毒气体，这是工业制粗硅的反应。","黑色固体,危险"],
+    ["FeS + 2HCl > FeCl2 + H2S↑","","复分解反应","黑褐色固体溶解，产生有臭鸡蛋气味的有毒气体，必须在通风处操作。","臭鸡蛋气味,危险"],
+    ["2H2S + SO2 > 3S↓ + 2H2O","","氧化还原反应","容器壁逐渐析出淡黄色固体硫，两种污染气体混合后互相消除。","淡黄色固体"]
+];
+
+/* 金属活动性顺序（K Ca Na Mg Al Zn Fe Sn Pb (H) Cu Hg Ag） */
+const METAL_ORDER = ["K","Ca","Na","Mg","Al","Zn","Fe","Sn","Pb","H","Cu","Hg","Ag","Pt","Au"];
+
+/* 盐 -> 中心金属 */
+const SALT_METAL = {
+    "CuSO4":"Cu","CuCl2":"Cu","Cu(NO3)2":"Cu","AgNO3":"Ag",
+    "FeSO4":"Fe","FeCl2":"Fe","FeCl3":"Fe","Fe2(SO4)3":"Fe",
+    "ZnSO4":"Zn","ZnCl2":"Zn","MgCl2":"Mg","MgSO4":"Mg",
+    "AlCl3":"Al","CaCl2":"Ca","Ca(NO3)2":"Ca","NaCl":"Na","Na2SO4":"Na","Na2CO3":"Na","NaNO3":"Na",
+    "KCl":"K","KNO3":"K","K2SO4":"K","KMnO4":"K","KClO3":"K","K2CO3":"K"
+};
+
+/* 经典实验一键配置 */
+const BOOK = [
+    { n:"实验室制二氧化碳", subs:[["CaCO3",1],["HCl",2]], conds:[] },
+    { n:"实验室制氧气（双氧水）", subs:[["H2O2",1]], conds:["cat"] },
+    { n:"加热高锰酸钾制氧", subs:[["KMnO4",2]], conds:["heat"] },
+    { n:"实验室制氢气", subs:[["Zn",1],["H2SO4稀",1]], conds:[] },
+    { n:"水的电解", subs:[["H2O",2]], conds:["elec"] },
+    { n:"铁钉置换铜", subs:[["Fe",1],["CuSO4",1]], conds:[] },
+    { n:"铜丝置换银", subs:[["Cu",1],["AgNO3",2]], conds:[] },
+    { n:"煅烧石灰石", subs:[["CaCO3",1]], conds:["ht"] },
+    { n:"检验二氧化碳", subs:[["CO2",1],["Ca(OH)2",1]], conds:[] },
+    { n:"石蕊遇碳酸", subs:[["CO2",1],["H2O",1]], conds:[] },
+    { n:"除铁锈", subs:[["Fe2O3",1],["HCl",6]], conds:[] },
+    { n:"灭火器原理", subs:[["NaHCO3",1],["HCl",1]], conds:[] },
+    { n:"氢气还原氧化铜", subs:[["H2",1],["CuO",1]], conds:["heat"] },
+    { n:"木炭还原氧化铜", subs:[["C",1],["CuO",2]], conds:["ht"] },
+    { n:"工业炼铁", subs:[["Fe2O3",1],["CO",3]], conds:["ht"] },
+    { n:"铁丝在氧气中燃烧", subs:[["Fe",3],["O2",2]], conds:["ignite"] },
+    { n:"镁带燃烧", subs:[["Mg",2],["O2",1]], conds:["ignite"] },
+    { n:"硫在氧气中燃烧", subs:[["S",1],["O2",1]], conds:["ignite"] },
+    { n:"红磷测定氧气含量", subs:[["P",4],["O2",5]], conds:["ignite"] },
+    { n:"蓝色絮状沉淀", subs:[["CuSO4",1],["NaOH",2]], conds:[] },
+    { n:"红褐色沉淀", subs:[["FeCl3",1],["NaOH",3]], conds:[] },
+    { n:"氯离子检验", subs:[["NaCl",1],["AgNO3",1]], conds:[] },
+    { n:"硫酸根检验", subs:[["BaCl2",1],["H2SO4稀",1]], conds:[] },
+    { n:"氢氧化钠中和盐酸", subs:[["NaOH",1],["HCl",1]], conds:[] },
+    { n:"生石灰遇水", subs:[["CaO",1],["H2O",1]], conds:[] },
+    { n:"检验水的存在", subs:[["CuSO4",1],["H2O",5]], conds:[] },
+    { n:"钠与水反应", subs:[["Na",2],["H2O",2]], conds:[] },
+    { n:"胆矾失水", subs:[["CuSO4·5H2O",1]], conds:["heat"] },
+    { n:"合成氨", subs:[["N2",1],["H2",3]], conds:["ht","press","cat"] },
+    { n:"氯化铵受热分解", subs:[["NH4Cl",1]], conds:["heat"] },
+    { n:"氨水与盐酸白烟", subs:[["NH3",1],["HCl",1]], conds:[] },
+    { n:"氯气制取", subs:[["MnO2",1],["HCl",4]], conds:["heat"] },
+    { n:"铜与浓硝酸", subs:[["Cu",1],["HNO3浓",4]], conds:[] },
+    { n:"NO 遇空气变色", subs:[["NO",2],["O2",1]], conds:[] },
+    { n:"过氧化钠供氧", subs:[["Na2O2",2],["CO2",2]], conds:[] },
+    { n:"溶洞变澄清", subs:[["CaCO3",1],["CO2",1],["H2O",1]], conds:[] },
+    { n:"铁粉与硫粉", subs:[["Fe",1],["S",1]], conds:["heat"] },
+    { n:"镁在二氧化碳中燃烧", subs:[["Mg",2],["CO2",1]], conds:["ignite"] }
+];
+/* ==================================================================
+   工具：化学式渲染与方程式解析
+   ================================================================== */
+const SUB_MAP = {};
+SUBS.forEach(function (a) {
+    SUB_MAP[a[0]] = { key: a[0], name: a[1], state: a[2], cat: a[3], desc: a[4], color: SCOLOR[a[0]] || "" };
+});
+
+const CN = { ignite: "点燃", heat: "加热 △", ht: "高温", light: "光照", elec: "通电", cat: "催化剂", press: "高压" };
+const CAT_NAME = {};
+CATS.forEach(function (c) { CAT_NAME[c.id] = c.name; });
+
+/* 把 'H2O' 渲染为 H<sub>2</sub>O；'@5' 表示不开下标 */
+function renderChem(str) {
+    return String(str).split(" ").map(function (tok) {
+        var kept = [];
+        var t = tok.replace(/@(\d+)/g, function (m, d) {
+            kept.push(d);
+            return String.fromCharCode(0xE000 + kept.length - 1);
+        });
+        var lead = "";
+        var m = /^(\d+)(?=[A-Z(])/.exec(t);
+        if (m) { lead = m[1]; t = t.slice(m[1].length); }
+        t = t.replace(/\d+/g, function (d) { return "<sub>" + d + "</sub>"; });
+        for (var i = 0; i < kept.length; i++) {
+            t = t.split(String.fromCharCode(0xE000 + i)).join(kept[i]);
+        }
+        return lead + t;
+    }).join(" ");
+}
+
+/* 单种药品的显示写法（@数字 表示不开下标） */
+const DISPLAY = { "CuSO4·5H2O": "CuSO4·@5H2O" };
+function renderKey(k) { return renderChem(DISPLAY[k] || k); }
+
+function decorate(str) {
+    return String(str)
+        .replace(/↑/g, '<span class="ud">↑</span>')
+        .replace(/↓/g, '<span class="ud">↓</span>');
+}
+
+function parseTerm(t) {
+    t = t.trim();
+    // 前导的量：数字系数，或加聚反应里的 n
+    var m = /^@?(\d+|n)/.exec(t);
+    var coef = 1, rest = t;
+    if (m) { coef = (m[1] === "n") ? 1 : parseInt(m[1], 10); rest = t.slice(m[0].length); }
+    rest = rest.replace(/@/g, "").replace(/[↑↓]/g, "");
+    return { key: rest, coef: coef };
+}
+
+/* ==================================================================
+   高中拓展反应
+   第 6 项 ion：离子方程式  第 7 项 "rev"：可逆，箭头显示为 ⇌
+   ================================================================== */
+const HS_RX = [
+    // ---------------- 铝及其化合物 ----------------
+    ["2Al + 3H2SO4稀 > Al2(SO4)3 + 3H2↑","","置换反应","铝片表面产生气泡，铝片逐渐溶解。","气体产生","2Al + 6H⁺ = 2Al³⁺ + 3H₂↑"],
+    ["2Al + 2NaOH + 2H2O > 2NaAlO2 + 3H2↑","","氧化还原反应","铝片在强碱溶液中逐渐溶解并放出气泡，而镁不能发生类似反应，因此可用强碱除去镁粉中混有的铝粉。","气体产生,放热","2Al + 2OH⁻ + 2H₂O = 2AlO₂⁻ + 3H₂↑"],
+    ["Al2O3 + 2NaOH > 2NaAlO2 + H2O","","复分解反应","白色固体逐渐溶解，体现氧化铝是两性氧化物。","固体溶解","Al₂O₃ + 2OH⁻ = 2AlO₂⁻ + H₂O"],
+    ["Al2O3 + 6HCl > 2AlCl3 + 3H2O","","复分解反应","白色固体逐渐溶解，得到澄清溶液。","固体溶解","Al₂O₃ + 6H⁺ = 2Al³⁺ + 3H₂O"],
+    ["AlCl3 + 4NaOH > NaAlO2 + 3NaCl + 2H2O","","复分解反应","滴入碱液先出现白色胶状沉淀，继续滴加后沉淀又重新溶解。氢氧化钠不足时生成沉淀，过量时生成偏铝酸钠——用量不同产物不同。","沉淀溶解","Al³⁺ + 4OH⁻ = AlO₂⁻ + 2H₂O"],
+    ["NaAlO2 + HCl + H2O > Al(OH)3↓ + NaCl","","复分解反应","滴入少量盐酸立即产生白色胶状沉淀。","白色沉淀","AlO₂⁻ + H⁺ + H₂O = Al(OH)₃↓"],
+    ["NaAlO2 + 4HCl > AlCl3 + NaCl + 2H2O","","复分解反应","盐酸过量时白色沉淀又逐渐溶解，溶液变澄清。","沉淀溶解","AlO₂⁻ + 4H⁺ = Al³⁺ + 2H₂O"],
+    ["NaAlO2 + CO2 + 2H2O > Al(OH)3↓ + NaHCO3","","复分解反应","通入二氧化碳立即出现白色胶状沉淀，且二氧化碳过量时沉淀也不溶解。工业上用这一步制氢氧化铝。","白色沉淀","AlO₂⁻ + CO₂ + 2H₂O = Al(OH)₃↓ + HCO₃⁻"],
+    ["2Al(OH)3 > Al2O3 + 3H2O","heat","分解反应","白色胶状沉淀受热逐渐失去水，变成白色粉末状氧化铝。","",""],
+    ["2Al + Fe2O3 > 2Fe + Al2O3","ht","置换反应","铝热反应：剧烈放热、发出耀眼强光，生成的铁在高温下熔化成炽热的铁水，常用于野外焊接钢轨。","耀眼白光,放热,剧烈,工业应用",""],
+    ["2Al + 3CuO > Al2O3 + 3Cu","ht","置换反应","剧烈放热，黑色粉末中出现红色固体。","放热,剧烈",""],
+    ["8Al + 3Fe3O4 > 4Al2O3 + 9Fe","ht","置换反应","铝热剂被引燃后剧烈放热，温度可达两千摄氏度以上，能熔穿钢板。","放热,剧烈,危险",""],
+    // ---------------- 钠及其化合物 ----------------
+    ["4Na + O2 > 2Na2O","","化合反应","切开钠以后银白色的断面很快变暗，常温下生成白色氧化钠，说明钠必须保存在煤油中。","固体变白",""],
+    ["2Na + O2 > Na2O2","ignite","化合反应","钠在空气中燃烧，发出黄色火焰，生成淡黄色的过氧化钠。","黄色火焰,淡黄色固体",""],
+    ["Na2O2 + SO2 > Na2SO4","","氧化还原反应","淡黄色粉末与二氧化硫接触后直接生成白色的硫酸钠，体现过氧化钠的强氧化性。","颜色变化",""],
+    ["Na2CO3 + HCl > NaHCO3 + NaCl","","复分解反应","向碳酸钠溶液中逐滴滴加盐酸，刚开始并没有气泡，因为先生成了碳酸氢钠；继续滴加才会有气体放出。","无明显现象","CO₃²⁻ + H⁺ = HCO₃⁻"],
+    ["NaHCO3 + NaOH > Na2CO3 + H2O","","复分解反应","看不到明显现象，但可以用来除去碳酸钠中混有的碳酸氢钠杂质。","无明显现象","HCO₃⁻ + OH⁻ = CO₃²⁻ + H₂O"],
+    ["2NaHCO3 > Na2CO3 + H2O + CO2↑","heat","分解反应","固体逐渐减少，试管口有水珠凝结，生成的气体使澄清石灰水变浑浊。碳酸氢钠受热比碳酸钠容易得多。","气体产生,生活应用",""],
+    ["NaOH + CO2 > NaHCO3","","化合反应","看不到明显现象，二氧化碳过量时最终生成碳酸氢钠。与 1:2 投料时生成碳酸钠形成对比。","无明显现象","CO₂ + OH⁻ = HCO₃⁻"],
+    // ---------------- 铁及其化合物 ----------------
+    ["2FeCl2 + Cl2 > 2FeCl3","","化合反应","浅绿色溶液迅速变成棕黄色，说明亚铁离子被氯气氧化成了铁离子。","溶液变色","2Fe²⁺ + Cl₂ = 2Fe³⁺ + 2Cl⁻"],
+    ["2FeCl3 + Fe > 3FeCl2","","归中反应","棕黄色溶液逐渐变成浅绿色，铁粉逐渐溶解。可用来除去氯化亚铁溶液中混有的氯化铁。","溶液变色","2Fe³⁺ + Fe = 3Fe²⁺"],
+    ["2FeCl3 + Cu > 2FeCl2 + CuCl2","","氧化还原反应","铜片逐渐被溶解，溶液由棕黄色变为蓝绿色。这是腐蚀印刷电路板的原理。","溶液变色","2Fe³⁺ + Cu = 2Fe²⁺ + Cu²⁺"],
+    ["Fe3O4 + 8HCl > FeCl2 + 2FeCl3 + 4H2O","","复分解反应","黑色固体逐渐溶解，同时得到浅绿色和棕黄色的溶液，说明四氧化三铁中既有二价铁又有三价铁。","固体溶解","Fe₃O₄ + 8H⁺ = Fe²⁺ + 2Fe³⁺ + 4H₂O"],
+    ["FeCl2 + 2NaOH > Fe(OH)2↓ + 2NaCl","","复分解反应","立即生成白色絮状沉淀，但很快就变成灰绿色，最后变成红褐色。检验亚铁离子的经典现象。","白色沉淀,迅速变色","Fe²⁺ + 2OH⁻ = Fe(OH)₂↓"],
+    ["4Fe(OH)2 + O2 + 2H2O > 4Fe(OH)3","","化合反应","白色沉淀迅速变成灰绿色，最终完全变成红褐色的氢氧化铁。做这个实验要用刚煮沸过的水配制溶液。","迅速变色,红褐色",""],
+    ["FeCl3 + 3KSCN > Fe(SCN)3 + 3KCl","","络合反应","溶液瞬间变成血红色，极其灵敏，是用来检验三价铁离子的特征反应。","血红色溶液","Fe³⁺ + 3SCN⁻ = Fe(SCN)₃"],
+    ["2FeCl3 + 2KI > 2FeCl2 + 2KCl + I2","","氧化还原反应","棕黄色溶液逐渐变为褐色并有碘析出，说明铁离子的氧化性强于碘单质。","溶液变色","2Fe³⁺ + 2I⁻ = 2Fe²⁺ + I₂"],
+    // ---------------- 氯及其化合物 ----------------
+    ["3Cl2 + 6NaOH > 5NaCl + NaClO3 + 3H2O","heat","氧化还原反应","氯气通入热的浓氢氧化钠溶液时生成氯酸钠而不是次氯酸钠——同样的药品，条件不同产物就不同。","危险","3Cl₂ + 6OH⁻ = 5Cl⁻ + ClO₃⁻ + 3H₂O"],
+    ["NaClO + 2HCl > NaCl + Cl2↑ + H2O","","氧化还原反应","立即产生黄绿色有刺激性气味的气体。84 消毒液和洁厕灵绝对不能混用，混在一起会释放氯气。","黄绿色气体,危险,生活应用","ClO⁻ + Cl⁻ + 2H⁺ = Cl₂↑ + H₂O"],
+    ["2HClO > 2HCl + O2↑","light","分解反应","次氯酸在光照下分解放出氧气，所以氯水要现配现用并避光保存，久置会变成稀盐酸。","气体产生",""],
+    ["Ca(ClO)2 + CO2 + H2O > CaCO3↓ + 2HClO","","复分解反应","出现白色沉淀并生成有漂白性的次氯酸。漂白粉在空气中既会生效也会失效，所以要密封保存。","白色沉淀","Ca²⁺ + 2ClO⁻ + CO₂ + H₂O = CaCO₃↓ + 2HClO"],
+    ["2NaCl + 2H2O > 2NaOH + H2↑ + Cl2↑","elec","氧化还原反应","两极都产生气泡，阴极得到氢气、阳极得到黄绿色氯气，溶液逐渐变成氢氧化钠溶液。这就是氯碱工业。","气体产生,工业应用","2Cl⁻ + 2H₂O = 2OH⁻ + H₂↑ + Cl₂↑"],
+    ["Cl2 + 2NaBr > 2NaCl + Br2","","置换反应","无色溶液逐渐变成橙黄色，说明氯单质的氧化性强于溴单质。","溶液变色","Cl₂ + 2Br⁻ = 2Cl⁻ + Br₂"],
+    ["Br2 + 2KI > 2KBr + I2","","置换反应","溶液由橙黄色转为褐色，可用于比较卤素单质的氧化性强弱。","溶液变色","Br₂ + 2I⁻ = 2Br⁻ + I₂"],
+    ["Cl2 + SO2 + 2H2O > H2SO4稀 + 2HCl","","氧化还原反应","氯水或溴水的颜色逐渐褪去，说明二氧化硫有还原性；两种漂白剂混合会互相消耗而失效。","黄绿色褪去","Cl₂ + SO₂ + 2H₂O = 4H⁺ + 2Cl⁻ + SO₄²⁻"],
+    // ---------------- 硫及其化合物 ----------------
+    ["Cu + 2H2SO4浓 > CuSO4 + SO2↑ + 2H2O","heat","氧化还原反应","铜片逐渐溶解，产生有刺激性气味的气体，反应后溶液稀释呈蓝色。浓硫酸在这里同时表现强氧化性和酸性，而且不放氢气。","刺激性气味,溶液变蓝,危险",""],
+    ["C + 2H2SO4浓 > CO2↑ + 2SO2↑ + 2H2O","heat","氧化还原反应","黑色固体逐渐溶解，产生大量刺激性气味的气体。两种气体都能使澄清石灰水变浑浊，要先用品红溶液检验二氧化硫。","刺激性气味,危险",""],
+    ["Zn + 2H2SO4浓 > ZnSO4 + SO2↑ + 2H2O","","氧化还原反应","锌粒溶解并放出刺激性气味的气体而不是氢气，说明浓硫酸与金属反应不放氢气。","刺激性气味,危险",""],
+    ["Na2SO3 + H2SO4浓 > Na2SO4 + SO2↑ + H2O","","复分解反应","立即产生有刺激性气味的气体。实验室常用较强酸制较弱酸的原理来制备二氧化硫。","刺激性气味","SO₃²⁻ + 2H⁺ = SO₂↑ + H₂O"],
+    ["5SO2 + 2KMnO4 + 2H2O > K2SO4 + 2MnSO4 + 2H2SO4稀","","氧化还原反应","紫红色的酸性高锰酸钾溶液逐渐褪色且不再恢复，这是检验二氧化硫还原性的经典方法（与品红的可逆褪色不同）。","紫红色褪去","5SO₂ + 2MnO₄⁻ + 2H₂O = 2Mn²⁺ + 5SO₄²⁻ + 4H⁺"],
+    ["SO2 + Br2 + 2H2O > H2SO4稀 + 2HBr","","氧化还原反应","溴水的橙黄色逐渐褪去，说明二氧化硫能把溴还原成溴离子。","溴水褪色","SO₂ + Br₂ + 2H₂O = 4H⁺ + 2Br⁻ + SO₄²⁻"],
+    ["2SO2 + O2 > 2SO3","heat+cat","化合反应","部分二氧化硫转化为三氧化硫，无论如何都留有二氧化硫——这就是可逆反应。工业制硫酸的关键一步。","可逆,工业应用","","rev"],
+    ["S + H2 > H2S","heat","化合反应","硫蒸气与氢气缓慢化合，生成有臭鸡蛋气味的气体，说明硫也有氧化性。","臭鸡蛋气味,缓慢",""],
+    ["2H2S + O2 > 2S↓ + 2H2O","ignite","氧化反应","氧气不足时燃烧，在容器壁上析出淡黄色固体硫；氧气充足时则生成二氧化硫。","淡黄色固体",""],
+    ["H2S + CuSO4 > CuS↓ + H2SO4稀","","复分解反应","蓝色溶液中立即出现黑色沉淀，即使有酸存在也不溶解，可用硫酸铜溶液吸收硫化氢尾气。","黑色沉淀","H₂S + Cu²⁺ = CuS↓ + 2H⁺"],
+    ["Na2S2O3 + H2SO4稀 > Na2SO4 + S↓ + SO2↑ + H2O","","氧化还原反应","溶液逐渐出现淡黄色浑浊，同时放出刺激性气味的气体。这是探究温度和浓度对反应速率影响的经典实验。","淡黄色固体,刺激性气味","S₂O₃²⁻ + 2H⁺ = S↓ + SO₂↑ + H₂O"],
+    // ---------------- 氮及其化合物 ----------------
+    ["2NH3 + 3CuO > 3Cu + N2 + 3H2O","heat","氧化还原反应","黑色粉末逐渐变成光亮的红色，同时放出无色气体，体现氨气的还原性。","黑色变红色",""],
+    ["NH3·H2O > NH3↑ + H2O","heat","分解反应","闻到强烈的刺激性气味，湿润的红色石蕊试纸变蓝。氨水必须密封保存在阴凉处。","刺激性气味",""],
+    ["2NO2 > N2O4","","可逆反应","红棕色的二氧化氮与无色的四氧化二氮之间存在平衡：降温时颜色变浅、升温时颜色变深，是平衡移动最直观的例子。","颜色变化,可逆","","rev"],
+    ["NO2 + SO2 > SO3 + NO","","氧化还原反应","红棕色逐渐变浅，说明二氧化氮能把二氧化硫氧化成三氧化硫。","颜色变化",""],
+    // ---------------- 硅及其化合物 ----------------
+    ["Na2SiO3 + 2HCl > H2SiO3↓ + 2NaCl","","复分解反应","无色溶液中逐渐析出白色透明的胶状沉淀，浓度大时可以形成硅酸凝胶。","白色沉淀,胶体","SiO₃²⁻ + 2H⁺ = H₂SiO₃↓"],
+    ["Na2SiO3 + CO2 + H2O > H2SiO3↓ + Na2CO3","","复分解反应","出现白色胶状沉淀，说明碳酸的酸性比硅酸强，可用于比较硅与碳的非金属性强弱。","白色沉淀","SiO₃²⁻ + CO₂ + H₂O = H₂SiO₃↓ + CO₃²⁻"],
+    ["SiO2 + CaO > CaSiO3","ht","化合反应","两种固体在高温下熔合成硅酸钙。炼铁时用它把脉石转化成炉渣除去。","工业应用",""],
+    ["SiO2 + 4HF > SiF4↑ + 2H2O","","复分解反应","玻璃表面被腐蚀得发毛，有不燃的白雾状气体产生。这正是氢氟酸能刻蚀玻璃的原因，氢氟酸只能用塑料瓶盛放。","危险",""],
+    // ---------------- 镁与铜绿 ----------------
+    ["3Mg + N2 > Mg3N2","ignite","化合反应","镁在空气中燃烧时除生成白色的氧化镁外，还会生成少量淡黄色的氮化镁，所以产物不是纯白的。","淡黄色固体",""],
+    ["Mg3N2 + 6H2O > 3Mg(OH)2↓ + 2NH3↑","","复分解反应","淡黄色固体遇水迅速水解，生成白色沉淀并放出有刺激性气味的氨气。","白色沉淀,刺激性气味",""],
+    ["2Cu + O2 + H2O + CO2 > Cu2(OH)2CO3","","化合反应","紫红色的铜在潮湿的空气中慢慢长出绿色的铜绿，需要氧气、水和二氧化碳三者同时存在才会发生。","缓慢,绿色固体",""],
+    ["Cu2(OH)2CO3 > 2CuO + H2O + CO2↑","heat","分解反应","绿色固体逐渐变成黑色，试管口有水珠，生成的气体使澄清石灰水变浑浊。","黑色固体,气体产生",""],
+    // ---------------- 电解与工业 ----------------
+    ["2NaCl > 2Na + Cl2↑","elec","分解反应","电解熔融的氯化钠，阴极得到银白色的钠，阳极得到黄绿色的氯气。工业上制取金属钠。","工业应用",""],
+    ["2Al2O3 > 4Al + 3O2↑","elec","分解反应","电解熔融的氧化铝（加入冰晶石降低熔点），得到铝单质。铝的工业化生产让它从贵重金属变成日用品。","工业应用",""],
+    ["2KMnO4 + 5H2O2 + 3H2SO4稀 > K2SO4 + 2MnSO4 + 5O2↑ + 8H2O","","氧化还原反应","紫红色迅速褪去，同时产生大量气泡，酸性高锰酸钾被双氧水还原。","紫红色褪去,大量气泡","2MnO₄⁻ + 5H₂O₂ + 6H⁺ = 2Mn²⁺ + 5O₂↑ + 8H₂O"],
+    ["H2O2 + SO2 > H2SO4稀","","氧化还原反应","两种有害物质混合后生成硫酸，可利用这条反应做烟气脱硫。","",""],
+    ["NaCl + NH3 + CO2 + H2O > NaHCO3↓ + NH4Cl","","复分解反应","溶液中慢慢析出白色晶体。侯氏制碱法的核心：先通氨气使溶液显碱性，再通二氧化碳，利用碳酸氢钠溶解度较小而析出。","白色沉淀,工业应用","Na⁺ + NH₃ + CO₂ + H₂O = NaHCO₃↓ + NH₄⁺"],
+    // ---------------- 有机（结构简式书写） ----------------
+    ["CH4 + Cl2 > CH3Cl + HCl","light","取代反应","黄绿色逐渐变浅，集气瓶内壁出现油状小液滴，瓶口有白雾。光照下的取代会连续进行，得到四种氯代甲烷的混合物，所以制不到纯净的一氯甲烷。","黄绿色褪去,油状液滴",""],
+    ["CH3Cl + Cl2 > CH2Cl2 + HCl","light","取代反应","继续光照取代，生成二氯甲烷，反应很难停在只取代一步。","",""],
+    ["CH2Cl2 + Cl2 > CHCl3 + HCl","light","取代反应","进一步取代得到三氯甲烷（氯仿）。","",""],
+    ["CHCl3 + Cl2 > CCl4 + HCl","light","取代反应","最后一步取代得到四氯化碳，甲烷分子中的氢原子被逐个替换下来。","",""],
+    ["CH4 > C + 2H2","ht","分解反应","甲烷在极高温度下裂解，生成炭黑和氢气。工业上用来制备炭黑和氢气。","黑色固体,气体产生",""],
+    ["CH2=CH2 + Br2 > CH2BrCH2Br","","加成反应","橙黄色的溴水迅速褪色，静置后底部有无色油状液体。这是检验碳碳双键最经典的方法，也可用于除去乙烷中的乙烯。","溴水褪色",""],
+    ["CH2=CH2 + H2O > C2H5OH","heat+press+cat","加成反应","乙烯与水蒸气在催化剂、加热加压条件下生成乙醇。工业上把廉价的乙烯变成酒精。","工业应用",""],
+    ["CH2=CH2 + H2 > CH3CH3","heat+cat","加成反应","碳碳双键打开，两个氢原子分别接在两个碳上，生成乙烷。","",""],
+    ["CH2=CH2 + HCl > CH3CH2Cl","cat","加成反应","乙烯与氯化氢加成生成氯乙烷，双键变成单键，只得到一种产物。","",""],
+    ["nCH2=CH2 > (C2H4)n","ht+press+cat","加聚反应","大量乙烯分子打开双键首尾相连，生成相对分子质量很大的聚乙烯。产物其实是混合物，没有固定的相对分子质量。","工业应用",""],
+    ["2C2H5OH + 2Na > 2C2H5ONa + H2↑","","置换反应","钠沉在乙醇底部，表面缓慢产生气泡，比钠与水反应缓和得多，说明乙醇羟基上的氢原子不如水分子中的氢活泼。","气体产生,缓慢",""],
+    ["2C2H5OH + O2 > 2CH3CHO + 2H2O","heat+cat","氧化反应","把铜丝在酒精灯上加热至变黑，趁热伸入乙醇后铜丝又变回红亮，并闻到刺激性气味。铜在中间起了传递氧的作用。","刺激性气味",""],
+    ["2CH3CHO + O2 > 2CH3COOH","cat","氧化反应","乙醛继续被氧化成乙酸。酒放久了变酸，背后就是这条反应。","",""],
+    ["CH3COOH + NaOH > CH3COONa + H2O","","中和反应","外观没有明显变化，需要借助酚酞判断恰好中和。乙酸是一元弱酸。","无明显现象","CH₃COOH + OH⁻ = CH₃COO⁻ + H₂O"],
+    ["2CH3COOH + Na2CO3 > 2CH3COONa + H2O + CO2↑","","复分解反应","立即产生大量气泡，说明乙酸的酸性比碳酸强，酸性强弱一目了然。","大量气泡","2CH₃COOH + CO₃²⁻ = 2CH₃COO⁻ + H₂O + CO₂↑"],
+    ["2CH3COOH + CaCO3 > (CH3COO)2Ca + H2O + CO2↑","","复分解反应","水垢逐渐溶解并冒出气泡，这就是用食醋除水垢的原理。","大量气泡,生活应用","CaCO₃ + 2CH₃COOH = Ca²⁺ + 2CH₃COO⁻ + H₂O + CO₂↑"],
+    ["2CH3COOH + Mg > (CH3COO)2Mg + H2↑","","置换反应","镁条表面产生气泡并逐渐溶解，乙酸也能与活泼金属反应放出氢气。","气体产生",""],
+    ["CH3COOH + C2H5OH > CH3COOC2H5 + H2O","heat+cat","酯化反应","加热后闻到浓郁的果香味，反应液上层浮起一层无色油状的乙酸乙酯。浓硫酸既是催化剂又是吸水剂，反应中酸脱羟基、醇脱氢。","果香味,可逆","","rev"],
+    ["CH3COOC2H5 + NaOH > CH3COONa + C2H5OH","heat","水解反应","果香味逐渐消失，上层的油状液体慢慢变少直至消失。碱性条件下水解会进行得比较彻底。","分层消失",""],
+    ["CH3COOC2H5 + H2O > CH3COOH + C2H5OH","heat+cat","水解反应","稀酸催化下乙酸乙酯只部分水解，果香味不会完全消失。酸性水解与酯化互为可逆过程。","可逆","","rev"]
+];
+REACTIONS.push.apply(REACTIONS, HS_RX);
+
+/* 基础反应补足离子方程式（按反应物组成匹配） */
+const ION_EXTRA = {
+    "NaOH + HCl": "H⁺ + OH⁻ = H₂O",
+    "Ca(OH)2 + 2HCl": "H⁺ + OH⁻ = H₂O",
+    "2NaOH + H2SO4稀": "H⁺ + OH⁻ = H₂O",
+    "CaCO3 + 2HCl": "CaCO₃ + 2H⁺ = Ca²⁺ + H₂O + CO₂↑",
+    "Na2CO3 + 2HCl": "CO₃²⁻ + 2H⁺ = H₂O + CO₂↑",
+    "NaHCO3 + HCl": "HCO₃⁻ + H⁺ = H₂O + CO₂↑",
+    "MgCO3 + 2HCl": "MgCO₃ + 2H⁺ = Mg²⁺ + H₂O + CO₂↑",
+    "FeS + 2HCl": "FeS + 2H⁺ = Fe²⁺ + H₂S↑",
+    "Zn + 2HCl": "Zn + 2H⁺ = Zn²⁺ + H₂↑",
+    "Zn + H2SO4稀": "Zn + 2H⁺ = Zn²⁺ + H₂↑",
+    "Fe + 2HCl": "Fe + 2H⁺ = Fe²⁺ + H₂↑",
+    "Fe + H2SO4稀": "Fe + 2H⁺ = Fe²⁺ + H₂↑",
+    "Mg + 2HCl": "Mg + 2H⁺ = Mg²⁺ + H₂↑",
+    "2Al + 6HCl": "2Al + 6H⁺ = 2Al³⁺ + 3H₂↑",
+    "CuSO4 + 2NaOH": "Cu²⁺ + 2OH⁻ = Cu(OH)₂↓",
+    "FeCl3 + 3NaOH": "Fe³⁺ + 3OH⁻ = Fe(OH)₃↓",
+    "MgCl2 + 2NaOH": "Mg²⁺ + 2OH⁻ = Mg(OH)₂↓",
+    "AlCl3 + 3NaOH": "Al³⁺ + 3OH⁻ = Al(OH)₃↓",
+    "Na2SO4 + BaCl2": "Ba²⁺ + SO₄²⁻ = BaSO₄↓",
+    "H2SO4稀 + BaCl2": "Ba²⁺ + SO₄²⁻ = BaSO₄↓",
+    "CuSO4 + BaCl2": "Ba²⁺ + SO₄²⁻ = BaSO₄↓",
+    "NaCl + AgNO3": "Ag⁺ + Cl⁻ = AgCl↓",
+    "HCl + AgNO3": "Ag⁺ + Cl⁻ = AgCl↓",
+    "KI + AgNO3": "Ag⁺ + I⁻ = AgI↓",
+    "NaBr + AgNO3": "Ag⁺ + Br⁻ = AgBr↓",
+    "Na2CO3 + CaCl2": "Ca²⁺ + CO₃²⁻ = CaCO₃↓",
+    "Na2CO3 + Ca(OH)2": "Ca²⁺ + CO₃²⁻ = CaCO₃↓",
+    "Na2CO3 + BaCl2": "Ba²⁺ + CO₃²⁻ = BaCO₃↓",
+    "Fe + CuSO4": "Fe + Cu²⁺ = Fe²⁺ + Cu",
+    "Zn + CuSO4": "Zn + Cu²⁺ = Zn²⁺ + Cu",
+    "Mg + CuSO4": "Mg + Cu²⁺ = Mg²⁺ + Cu",
+    "Cu + 2AgNO3": "Cu + 2Ag⁺ = Cu²⁺ + 2Ag",
+    "Fe + 2AgNO3": "Fe + 2Ag⁺ = Fe²⁺ + 2Ag",
+    "Zn + FeCl2": "Zn + Fe²⁺ = Zn²⁺ + Fe",
+    "Fe2O3 + 6HCl": "Fe₂O₃ + 6H⁺ = 2Fe³⁺ + 3H₂O",
+    "CuO + 2HCl": "CuO + 2H⁺ = Cu²⁺ + H₂O",
+    "CuO + H2SO4稀": "CuO + 2H⁺ = Cu²⁺ + H₂O",
+    "MgO + 2HCl": "MgO + 2H⁺ = Mg²⁺ + H₂O",
+    "Cu(OH)2 + H2SO4稀": "Cu(OH)₂ + 2H⁺ = Cu²⁺ + 2H₂O",
+    "Fe(OH)3 + 3HCl": "Fe(OH)₃ + 3H⁺ = Fe³⁺ + 3H₂O",
+    "Mg(OH)2 + 2HCl": "Mg(OH)₂ + 2H⁺ = Mg²⁺ + 2H₂O",
+    "NH3·H2O + HCl": "NH₃·H₂O + H⁺ = NH₄⁺ + H₂O",
+    "2Na + 2H2O": "2Na + 2H₂O = 2Na⁺ + 2OH⁻ + H₂↑",
+    "2K + 2H2O": "2K + 2H₂O = 2K⁺ + 2OH⁻ + H₂↑",
+    "Ca + 2H2O": "Ca + 2H₂O = Ca²⁺ + 2OH⁻ + H₂↑",
+    "CO2 + Ca(OH)2": "CO₂ + Ca²⁺ + 2OH⁻ = CaCO₃↓ + H₂O",
+    "CO2 + 2NaOH": "CO₂ + 2OH⁻ = CO₃²⁻ + H₂O",
+    "Cl2 + 2NaOH": "Cl₂ + 2OH⁻ = Cl⁻ + ClO⁻ + H₂O",
+    "SO2 + 2NaOH": "SO₂ + 2OH⁻ = SO₃²⁻ + H₂O",
+    "Cl2 + 2KI": "Cl₂ + 2I⁻ = 2Cl⁻ + I₂",
+    "Cl2 + H2O": "Cl₂ + H₂O ⇌ H⁺ + Cl⁻ + HClO"
+};
+
+/* 预处理：把每条反应解析成结构化对象 */
+const RX = REACTIONS.map(function (e) {
+    var parts = e[0].split(">");
+    var leftStr = parts[0].trim();
+    var rightStr = parts[1].trim();
+    var left = leftStr.split(/\s*\+\s*/).map(parseTerm);
+    var right = rightStr.split(/\s*\+\s*/).map(parseTerm);
+    var conds = e[1] ? e[1].split("+") : [];
+    var fx = e[4] ? e[4].split(",").filter(Boolean) : [];
+    var rawRight = parts[1];
+    if (rawRight.indexOf("↑") >= 0) fx.push("有气体生成");
+    if (rawRight.indexOf("↓") >= 0) fx.push("有沉淀生成");
+    return {
+        left: left, right: right, leftStr: leftStr, rightStr: rightStr,
+        conds: conds, type: e[2], phen: e[3], fx: fx,
+        ion: e[5] || ION_EXTRA[leftStr] || "", rev: e[6] === "rev",
+        leftKeys: left.map(function (x) { return x.key; }),
+        rightKeys: right.map(function (x) { return x.key; })
+    };
+});
+
+/* ==================================================================
+   状态：多容器
+   ================================================================== */
+var keepProducts = true;
+var curCat = "all";
+var keyword = "";
+var logCount = 0;
+var seed = 0;
+var vessels = [];
+var transferSel = null;   // {cid, key, all}
+var dumpSel = null;       // cid —— 正在选择「倒出全部」的目标
+var focusId = null;       // 当前选中的容器，从试剂架取药时会加到这里
+
+var LS_KEY = "chemlab_v2";
+var $ = function (id) { return document.getElementById(id); };
+var LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+/* 高中补充：更多「不反应」的教学性解释 */
+var NR_HINTS = [
+    { keys: ["Fe", "H2SO4浓"], title: "铁被钝化了", text: "常温下铁在浓硫酸中会发生<b>钝化</b>：表面立刻生成一层致密的氧化膜，阻止内部金属继续反应。<br>正因为如此，冷的浓硫酸可以用铁罐储运；但只要加热，反应又会剧烈进行。" },
+    { keys: ["Al", "H2SO4浓"], title: "铝被钝化了", text: "常温下铝遇到浓硫酸会<b>钝化</b>，表面生成致密的氧化膜把金属保护起来。<br>铝制容器可以用来装运冷的浓硫酸或浓硝酸。" },
+    { keys: ["Al", "HNO3浓"], title: "铝被钝化了", text: "常温下铝遇浓硝酸发生<b>钝化</b>，表面形成致密氧化膜。<br>这层膜一旦生成，即使把硝酸倒掉，铝也能保持一段时间不被腐蚀。" },
+    { keys: ["Fe", "HNO3浓"], title: "铁被钝化了", text: "常温下铁在浓硝酸中<b>钝化</b>，表面生成致密氧化膜。<br>加热或使用稀硝酸时，反应就能继续进行了。" },
+    { keys: ["Mg", "NaOH"], title: "镁不与碱反应", text: "镁不是两性金属，不能像铝那样溶于强碱溶液。<br>这是一个常考的对比：同样能溶于盐酸的镁和铝，只有铝还能溶于氢氧化钠溶液。" },
+    { keys: ["Cu", "NaOH"], title: "铜不与碱反应", text: "铜排在金属活动性顺序末尾，既不能从酸中置换出氢，也不与碱反应。<br>能同时与酸和强碱反应的典型金属是铝（Zn 也类似）。" },
+    { keys: ["Fe", "NaOH"], title: "铁不与碱反应", text: "铁不能与氢氧化钠溶液发生反应。<br>遇到强碱能溶解的常见金属只有铝、锌这样的两性金属。" },
+    { keys: ["SiO2", "H2O"], title: "一个重要的例外", text: "二氧化硅虽然是酸性氧化物，却<b>不溶于水也不与水反应</b>，这是酸性氧化物里的特例。<br>要得到硅酸，只能走硅酸盐加酸这条路。" },
+    { keys: ["Na2CO3", "NaOH"], title: "复分解缺条件", text: "两种物质交换成分后既没有沉淀、也没有气体或水生成，<b>不满足复分解反应发生的条件</b>。<br>可以试试往里加盐酸或氯化钙。" },
+    { keys: ["NaCl", "KNO3"], title: "复分解缺条件", text: "交换离子后得到的硝酸钠和氯化钾都可溶，<b>没有沉淀、气体或水生成</b>，所以实质上没有发生反应。<br>这四种离子在溶液里只是各顾各地游动。" },
+    { keys: ["KCl", "NaNO3"], title: "复分解缺条件", text: "四种离子交换后依然全部可溶，**没有沉淀、气体或水**，复分解反应不发生。" },
+    { keys: ["CaCO3", "NaOH"], title: "难溶盐不与碱反应", text: "碳酸钙难溶于水，与氢氧化钠之间既没有沉淀、气体也没有水生成，<br>不满足复分解反应发生的条件。" },
+    { keys: ["Cu", "H2SO4稀"], title: "排在氢之后", text: "铜排在金属活动性顺序中<b>氢之后</b>，不能置换稀硫酸中的氢。<br>但它能与浓硫酸在加热条件下反应——那条反应靠的是浓硫酸的强氧化性，不放氢气。" }
+];
+
+/* 高中补充：更多盐的中心金属 */
+SALT_METAL["Al2(SO4)3"] = "Al";
+SALT_METAL["CH3COONa"] = "Na";
+SALT_METAL["(CH3COO)2Ca"] = "Ca";
+SALT_METAL["(CH3COO)2Mg"] = "Mg";
+SALT_METAL["KBr"] = "K";
+SALT_METAL["AlCl3"] = "Al";
+
+/* 高中补充：经典实验（含多容器实验） */
+BOOK.push(
+    { n: "制 CO₂ 并检验（双容器）", vesselCount: 2,
+      v: [{ subs: [["CaCO3", 1], ["HCl", 2]], conds: [] }, { subs: [["Ca(OH)2", 1]], conds: [] }] },
+    { n: "Na₂CO₃ 逐滴加酸（用量对比）", vesselCount: 2,
+      v: [{ subs: [["Na2CO3", 1], ["HCl", 1]], conds: [] }, { subs: [["Na2CO3", 1], ["HCl", 2]], conds: [] }] },
+    { n: "AlCl₃ 加碱量不同（用量对比）", vesselCount: 2,
+      v: [{ subs: [["AlCl3", 1], ["NaOH", 3]], conds: [] }, { subs: [["AlCl3", 1], ["NaOH", 4]], conds: [] }] },
+    { n: "CO₂ 通入碱：量不同产物不同", vesselCount: 2,
+      v: [{ subs: [["CO2", 1], ["NaOH", 2]], conds: [] }, { subs: [["CO2", 1], ["NaOH", 1]], conds: [] }] },
+    { n: "浓硫酸与铜", subs: [["Cu", 1], ["H2SO4浓", 2]], conds: ["heat"] },
+    { n: "铝的两性：溶于强碱", subs: [["Al", 2], ["NaOH", 2], ["H2O", 2]], conds: [] },
+    { n: "铝热反应", subs: [["Al", 2], ["Fe2O3", 1]], conds: ["ht"] },
+    { n: "侯氏制碱法", subs: [["NaCl", 1], ["NH3", 1], ["CO2", 1], ["H2O", 1]], conds: [] },
+    { n: "Fe²⁺ 与 Fe³⁺ 的转化", subs: [["FeCl3", 2], ["Fe", 1]], conds: [] },
+    { n: "Fe³⁺ 的检验（血红色）", subs: [["FeCl3", 1], ["KSCN", 3]], conds: [] },
+    { n: "Fe²⁺ 的检验（变色）", subs: [["FeCl2", 1], ["NaOH", 2]], conds: [] },
+    { n: "腐蚀电路板", subs: [["FeCl3", 2], ["Cu", 1]], conds: [] },
+    { n: "84 与洁厕灵混用（危险）", subs: [["NaClO", 1], ["HCl", 2]], conds: [] },
+    { n: "氯碱工业（电解食盐水）", subs: [["NaCl", 2], ["H2O", 2]], conds: ["elec"] },
+    { n: "SO₂ 使高锰酸钾褪色", subs: [["SO2", 5], ["KMnO4", 2], ["H2O", 2]], conds: [] },
+    { n: "制硅酸胶体", subs: [["Na2SiO3", 1], ["HCl", 2]], conds: [] },
+    { n: "硫代硫酸钠速率实验", subs: [["Na2S2O3", 1], ["H2SO4稀", 1]], conds: [] },
+    { n: "NO₂ 与 N₂O₄ 的平衡", subs: [["NO2", 2]], conds: [] },
+    { n: "乙烯使溴水褪色", subs: [["CH2=CH2", 1], ["Br2", 1]], conds: [] },
+    { n: "酯化：乙酸 + 乙醇", subs: [["CH3COOH", 1], ["C2H5OH", 1]], conds: ["heat", "cat"] },
+    { n: "食醋除水垢", subs: [["CH3COOH", 2], ["CaCO3", 1]], conds: [] },
+    { n: "乙酸乙酯碱性水解", subs: [["CH3COOC2H5", 1], ["NaOH", 1]], conds: ["heat"] },
+    { n: "甲烷氯代（第一步）", subs: [["CH4", 1], ["Cl2", 1]], conds: ["light"] },
+    { n: "铜生成铜绿", subs: [["Cu", 2], ["O2", 1], ["H2O", 1], ["CO2", 1]], conds: [] },
+    { n: "氢氟酸刻玻璃", subs: [["SiO2", 1], ["HF", 4]], conds: [] },
+    { n: "小苏打受热分解", subs: [["NaHCO3", 2]], conds: ["heat"] },
+    { n: "碳酸氢钠除杂（加 NaOH）", subs: [["NaHCO3", 1], ["NaOH", 1]], conds: [] },
+    { n: "漂白粉在空气中失效", subs: [["Ca(ClO)2", 1], ["CO2", 1], ["H2O", 1]], conds: [] },
+    { n: "Mg 在空气中燃烧的副反应", subs: [["Mg", 3], ["N2", 1]], conds: ["ignite"] },
+    { n: "电解熔融氧化铝", subs: [["Al2O3", 2]], conds: ["elec"] }
+);
+
+/* ==================================================================
+   容器管理
+   ================================================================== */
+function newVessel() {
+    var i = seed++;
+    return { id: "v" + i, name: "容器 " + (LETTERS[i] || (i + 1)), counts: {}, conds: new Set(["room"]) };
+}
+function findV(id) {
+    for (var i = 0; i < vessels.length; i++) if (vessels[i].id === id) return vessels[i];
+    return null;
+}
+function focusV() {
+    return (focusId && findV(focusId)) || vessels[0];
+}
+function vTotal(v) {
+    var t = 0;
+    for (var k in v.counts) t += v.counts[k];
+    return t;
+}
+function condLabel(v) {
+    var label = [];
+    v.conds.forEach(function (c) { if (c !== "room") label.push(CN[c]); });
+    return label.length ? label.join(" + ") : "常温";
+}
+
+function save() {
+    try {
+        localStorage.setItem(LS_KEY, JSON.stringify({
+            seed: seed, keep: keepProducts,
+            vessels: vessels.map(function (v) {
+                return { id: v.id, name: v.name, counts: v.counts, conds: Array.from(v.conds) };
+            })
+        }));
+    } catch (e) { /* 隐私模式等不计 */ }
+}
+
+function load() {
+    try {
+        var raw = JSON.parse(localStorage.getItem(LS_KEY) || "null");
+        if (raw && raw.vessels && raw.vessels.length) {
+            vessels = raw.vessels.map(function (v) {
+                return {
+                    id: v.id, name: v.name, counts: v.counts || {},
+                    conds: new Set(v.conds && v.conds.length ? v.conds : ["room"])
+                };
+            });
+            var max = 0;
+            vessels.forEach(function (v) { max = Math.max(max, parseInt(v.id.slice(1), 10) || 0); });
+            seed = Math.max(raw.seed || 0, max + 1);
+            keepProducts = raw.keep !== false;
+            return;
+        }
+    } catch (e) { /* 读取失败则走默认 */ }
+    vessels = [newVessel(), newVessel()];
+}
+
+/* ==================================================================
+   试剂架渲染
+   ================================================================== */
+function renderCats() {
+    $("catTabs").innerHTML = CATS.map(function (c) {
+        return '<button class="cat-tab' + (c.id === curCat ? " active" : "") + '" data-cat="' + c.id + '">' + c.name + "</button>";
+    }).join("");
+}
+
+function subVisible(s) {
+    if (curCat !== "all" && s.cat !== curCat) return false;
+    if (!keyword) return true;
+    var k = keyword.toLowerCase();
+    return (s.key.toLowerCase().indexOf(k) >= 0) || (s.name.indexOf(keyword) >= 0);
+}
+
+function renderLib() {
+    var html = "";
+    SUBS.forEach(function (a) {
+        var s = SUB_MAP[a[0]];
+        if (!s || !subVisible(s)) return;
+        html += '<button class="sub-card" data-k="' + s.key + '" title="' + s.desc + '">'
+            + '<span class="sub-f">' + renderKey(s.key) + "</span>"
+            + '<span class="sub-n">' + s.name + "</span>"
+            + '<span class="state-badge state-' + s.state + '">' + STATE_CN[s.state] + "</span>"
+            + "</button>";
+    });
+    $("subGrid").innerHTML = html || '<div style="grid-column:1/-1;color:rgba(255,255,255,.25);font-size:.82em;padding:14px 4px;">没有匹配的药品</div>';
+}
+
+/* ==================================================================
+   容器渲染
+   ================================================================== */
+function chipHtml(v, k) {
+    var s = SUB_MAP[k];
+    return '<div class="chip mini" title="' + (s ? s.name : k) + '">'
+        + '<span class="chip-formula">' + renderKey(k) + "</span>"
+        + '<button class="round-btn" data-act="dec" data-k="' + k + '">−</button>'
+        + '<span class="chip-count">×' + v.counts[k] + "</span>"
+        + '<button class="round-btn" data-act="inc" data-k="' + k + '">+</button>'
+        + '<button class="round-btn tfer" data-act="move" data-k="' + k + '" title="转移到其他容器">⇄</button>'
+        + '<button class="round-btn del" data-act="kick" data-k="' + k + '" title="取出">×</button>'
+        + "</div>";
+}
+
+function renderGrid() {
+    var html = vessels.map(function (v) {
+        var keys = Object.keys(v.counts);
+        var body = keys.length
+            ? keys.map(function (k) { return chipHtml(v, k); }).join("")
+            : '<div class="empty-hint" style="padding:14px 10px;font-size:.78em;">空容器<br>从左��试剂架取用药品</div>';
+
+        var condsHtml = CONDS.map(function (c) {
+            return '<button class="cond-mini' + (v.conds.has(c.id) ? " active" : "") + '" data-cond="' + c.id + '" title="' + c.desc + '">' + c.label + "</button>";
+        }).join("");
+
+        var bar = "";
+        if (transferSel && transferSel.cid === v.id) {
+            var s = SUB_MAP[transferSel.key];
+            bar = '<div class="transfer-bar" data-tf="' + v.id + '">'
+                + "<span>把 <b>" + (s ? s.name : transferSel.key) + "</b> 转移到：</span>"
+                + '<button class="vbtn" data-act="tfall">' + (transferSel.all ? "全部份数" : "1 份") + "</button>"
+                + vessels.filter(function (o) { return o.id !== v.id; }).map(function (o) {
+                    return '<button class="vbtn" data-act="to" data-to="' + o.id + '">' + o.name + "</button>";
+                }).join("")
+                + '<button class="vbtn" data-act="tonew">＋ 新容器</button>'
+                + '<button class="vbtn del" data-act="cancel">取消</button>'
+                + "</div>";
+        }
+        if (dumpSel === v.id) {
+            bar = '<div class="transfer-bar">'
+                + "<span>把整个容器倒进：</span>"
+                + vessels.filter(function (o) { return o.id !== v.id; }).map(function (o) {
+                    return '<button class="vbtn" data-act="dumpto" data-to="' + o.id + '">' + o.name + "</button>";
+                }).join("")
+                + '<button class="vbtn" data-act="dumpnew">＋ 新容器</button>'
+                + '<button class="vbtn del" data-act="cancel">取消</button>'
+                + "</div>";
+        }
+
+        return '<div class="vessel' + (focusV().id === v.id ? " focus" : "") + '" data-vid="' + v.id + '">'
+            + '<div class="vessel-head">'
+            + '<span class="vessel-name">' + v.name + "</span>"
+            + '<span class="vessel-meta">' + (keys.length ? keys.length + " 种 / " + vTotal(v) + " 份" : "空") + "</span>"
+            + '<button class="vbtn" data-act="dump"' + (keys.length ? "" : " disabled style=\"opacity:.4\"") + ">倒出全部</button>"
+            + (vessels.length > 1 ? '<button class="vbtn del" data-act="kickv">×</button>' : "")
+            + "</div>"
+            + '<div class="vessel-body">'
+            + '<div class="flask mini" data-flask="' + v.id + '"><div class="liquid"></div><div class="sediment"></div></div>'
+            + '<div class="vessel-chips">' + body + "</div>"
+            + "</div>"
+            + '<div class="vessel-conds">' + condsHtml + "</div>"
+            + bar
+            + '<button class="vbtn react" data-act="react">在这个容器反应</button>'
+            + "</div>";
+    }).join("");
+
+    html += '<button class="add-vessel" data-act="add">＋ 新容器</button>';
+    $("vesselGrid").innerHTML = html;
+    vessels.forEach(updateFlask);
+}
+
+function updateFlask(v) {
+    var f = document.querySelector('[data-flask="' + v.id + '"]');
+    if (!f) return;
+    var liq = f.querySelector(".liquid"), sed = f.querySelector(".sediment");
+    var t = vTotal(v);
+    if (!t) { liq.style.height = "0%"; sed.style.height = "0px"; return; }
+
+    var r = 0, g = 0, b = 0, n = 0, solid = 0;
+    for (var k in v.counts) {
+        var s = SUB_MAP[k];
+        if (!s) continue;
+        if (s.state === "s") { solid += v.counts[k]; continue; }
+        if (s.color) {
+            var c = s.color.replace("#", "");
+            r += parseInt(c.substr(0, 2), 16);
+            g += parseInt(c.substr(2, 2), 16);
+            b += parseInt(c.substr(4, 2), 16);
+            n++;
+        }
+    }
+    if (n) {
+        var col = "rgba(" + Math.round(r / n) + "," + Math.round(g / n) + "," + Math.round(b / n) + ",0.55)";
+        liq.style.background = "linear-gradient(180deg, " + col + ", rgba(90,110,140,0.45))";
+    } else {
+        liq.style.background = "linear-gradient(180deg, rgba(150,180,205,0.5), rgba(100,135,170,0.32))";
+    }
+    liq.style.height = Math.min(80, 14 + t * 11) + "%";
+    sed.style.height = Math.min(24, solid * 4) + "px";
+}
+
+function renderAll() {
+    renderGrid();
+    $("keepToggle").classList.toggle("on", keepProducts);
+}
+
+/* ==================================================================
+   取用药品 / 增减 / 转移
+   ================================================================== */
+function addSub(k, n) {
+    var v = focusV();
+    v.counts[k] = (v.counts[k] || 0) + (n || 1);
+    save();
+    renderGrid();
+}
+
+function doTransfer(fromId, toId, key, all) {
+    var a = findV(fromId), b = findV(toId);
+    if (!a || !b || !a.counts[key]) return;
+    var num = all ? a.counts[key] : Math.min(1, a.counts[key]);
+    a.counts[key] -= num;
+    if (a.counts[key] <= 0) delete a.counts[key];
+    b.counts[key] = (b.counts[key] || 0) + num;
+    transferSel = null;
+    save();
+    renderGrid();
+    addLog("⇄ " + (SUB_MAP[key] ? SUB_MAP[key].name : key) + " ×" + num + "：" + a.name + " → " + b.name, false);
+}
+
+function doDump(fromId, toId) {
+    var a = findV(fromId), b = findV(toId);
+    if (!a || !b) return;
+    for (var k in a.counts) b.counts[k] = (b.counts[k] || 0) + a.counts[k];
+    var txt = a.name + " → " + b.name;
+    a.counts = {};
+    dumpSel = null;
+    save();
+    renderGrid();
+    addLog("⇄ 全部倒出：" + txt, false);
+}
+
+/* ==================================================================
+   反应引擎（对某个容器）
+   ================================================================== */
+function condOK(rx, active) {
+    return rx.conds.every(function (c) { return active.has(c); });
+}
+
+function candidates(avail, conds) {
+    var out = [];
+    RX.forEach(function (rx) {
+        if (!condOK(rx, conds)) return;
+        var n = Infinity;
+        for (var i = 0; i < rx.left.length; i++) {
+            var need = rx.left[i].coef;
+            var have = avail[rx.left[i].key] || 0;
+            n = Math.min(n, Math.floor(have / need));
+            if (n === 0) break;
+        }
+        if (n >= 1) {
+            var rest = 0;
+            rx.left.forEach(function (t) { rest += (avail[t.key] || 0) - t.coef * n; });
+            out.push({ rx: rx, n: n, rest: rest });
+        }
+    });
+    out.sort(function (a, b) { return a.rest - b.rest; });
+    return out;
+}
+
+function missingConds(avail, conds) {
+    var best = null;
+    RX.forEach(function (rx) {
+        var ok = true;
+        for (var i = 0; i < rx.left.length; i++) {
+            if ((avail[rx.left[i].key] || 0) < rx.left[i].coef) { ok = false; break; }
+        }
+        if (!ok) return;
+        var miss = rx.conds.filter(function (c) { return !conds.has(c); });
+        if (!miss.length) return;
+        if (!best || miss.length < best.length) best = miss;
+    });
+    return (best || []).map(function (c) { return CN[c]; });
+}
+
+function explainNone(avail, conds) {
+    var keys = Object.keys(avail);
+
+    for (var h = 0; h < NR_HINTS.length; h++) {
+        var hint = NR_HINTS[h];
+        if (hint.keys.every(function (k) { return avail[k] > 0; })) {
+            return { title: hint.title, text: hint.text, ok: true };
+        }
+    }
+
+    var miss = missingConds(avail, conds);
+    if (miss.length) {
+        return {
+            title: "看起来差了点火候",
+            text: "这些药品的组合本身是可以反应的，但还需要提供：<b>" + miss.join(" / ") + "</b>。<br>点亮容器中的对应条件，再点一次「在这个容器反应」。",
+            ok: true
+        };
+    }
+
+    var metals = keys.filter(function (k) { return SUB_MAP[k] && SUB_MAP[k].cat === "metal"; });
+    var acidKeys = ["HCl", "H2SO4稀", "HNO3稀", "HNO3浓", "H2SO4浓"];
+    var acids = keys.filter(function (k) { return acidKeys.indexOf(k) >= 0; });
+    var salts = keys.filter(function (k) { return SALT_METAL[k]; });
+
+    if (metals.length && acids.length) {
+        var m = metals[0];
+        var mi = METAL_ORDER.indexOf(m);
+        var hi = METAL_ORDER.indexOf("H");
+        if (mi > hi) {
+            return {
+                title: "为什么没有气泡？",
+                text: "<b>" + SUB_MAP[m].name + "</b> 在金属活动性顺序中排在<b>氢之后</b>，无法把酸中的氢置换出来，所以看不到气泡。<br>排在氢之前的金属（如 Zn、Fe、Mg）才可能与稀酸反应放出氢气。",
+                ok: false
+            };
+        }
+        if (m === "Na" || m === "K" || m === "Ca") {
+            return {
+                title: "这个组合太活泼了",
+                text: "<b>" + SUB_MAP[m].name + "</b> 过于活泼，遇到酸溶液会先和其中的水剧烈反应。<br>可以试试让它单独与水反应。",
+                ok: false
+            };
+        }
+    }
+
+    if (metals.length && salts.length) {
+        for (var i = 0; i < metals.length; i++) {
+            for (var j = 0; j < salts.length; j++) {
+                var mm = metals[i], ss = salts[j];
+                var ai = METAL_ORDER.indexOf(mm);
+                var bi = METAL_ORDER.indexOf(SALT_METAL[ss]);
+                if (ai < 0 || bi < 0) continue;
+                if (ai < bi) {
+                    return {
+                        title: "理论上可行，但未收录",
+                        text: "<b>" + SUB_MAP[mm].name + "</b> 的活动性强于 <b>" + SUB_MAP[ss].name + "</b> 中的金属，理论上可以发生置换，但本实验台暂未收录这条反应。<br>可以试试铁与硫酸铜、铜与硝酸银这类已收录的组合。",
+                        ok: false
+                    };
+                }
+                return {
+                    title: "活动性不够，换不出来",
+                    text: "<b>" + SUB_MAP[mm].name + "</b> 的活动性弱于盐溶液中的 <b>" + SUB_MAP[ss].name + " 所含金属</b>，无法把它置换出来。<br>口诀：排在前面的金属才能把后面的金属从它的盐溶液里置换出来（K、Ca、Na 除外）。",
+                    ok: false
+                };
+            }
+        }
+    }
+
+    var quiet = [
+        "容器内没有任何肉眼可见的变化。",
+        "等了三分钟，什么都没有发生。",
+        "既没有气泡，也没有沉淀，更没有颜色变化。",
+        "看起来它们相处得很融洽，谁也不搭理谁。"
+    ];
+    return {
+        title: "没有发生反应",
+        text: quiet[Math.floor(Math.random() * quiet.length)] + "<br>可能是缺少反应条件，或这组物质之间本来就不反应。<br>复分解反应需要生成<b>沉淀、气体或水</b>，置换反应则要看金属活动性顺序。",
+        ok: false
+    };
+}
+
+function doReact(vid) {
+    var v = findV(vid);
+    if (!v) return;
+    if (!Object.keys(v.counts).length) {
+        showFail("容器是空的", "先从左侧试剂架取用药品，或者点一个「经典实验」快速开始。", false, v.name);
+        return;
+    }
+
+    var avail = {};
+    for (var k in v.counts) avail[k] = v.counts[k];
+
+    var cands = candidates(avail, v.conds);
+    if (!cands.length) {
+        var e = explainNone(avail, v.conds);
+        showFail(e.title, e.text, e.ok, v.name);
+        addLog(v.name + " 无反应：" + Object.keys(v.counts).map(function (k) {
+            return SUB_MAP[k] ? SUB_MAP[k].name : k;
+        }).join(" + "), true);
+        return;
+    }
+
+    var best = cands[0];
+    var rx = best.rx, n = best.n;
+
+    rx.left.forEach(function (t) {
+        v.counts[t.key] -= t.coef * n;
+        if (v.counts[t.key] <= 0) delete v.counts[t.key];
+    });
+
+    var produced = [];
+    rx.right.forEach(function (t) {
+        if (keepProducts) v.counts[t.key] = (v.counts[t.key] || 0) + t.coef * n;
+        produced.push({ key: t.key, num: t.coef * n });
+    });
+
+    var leftOver = [];
+    rx.left.forEach(function (t) {
+        if (v.counts[t.key] > 0) leftOver.push({ key: t.key, num: v.counts[t.key] });
+    });
+
+    var again = candidates(v.counts, v.conds).length > 0;
+
+    save();
+    renderGrid();
+    showResult(rx, n, produced, leftOver, again, v.name);
+    addLog(v.name + "：" + renderChem(rx.leftStr) + " > " + renderChem(rx.rightStr), false);
+    playFx(v, rx);
+}
+
+/* ==================================================================
+   动画效果
+   ================================================================== */
+function playFx(v, rx) {
+    var f = document.querySelector('[data-flask="' + v.id + '"]');
+    if (!f) return;
+    f.className = "flask mini";
+    void f.offsetWidth;
+
+    var cls = [];
+    if (rx.fx.indexOf("有气体生成") >= 0 || rx.fx.indexOf("大量气泡") >= 0 || rx.fx.indexOf("气体产生") >= 0) cls.push("bubbling");
+    if (rx.fx.indexOf("放热") >= 0 || rx.fx.indexOf("白光") >= 0 || rx.fx.indexOf("耀眼白光") >= 0) cls.push("glow");
+    if (rx.fx.indexOf("爆炸") >= 0 || rx.fx.indexOf("耀眼白光") >= 0 || rx.fx.indexOf("白光") >= 0) cls.push("flash");
+    if (cls.length) f.className = "flask mini " + cls.join(" ");
+
+    if (cls.indexOf("bubbling") >= 0) {
+        for (var i = 0; i < 8; i++) {
+            var b = document.createElement("div");
+            b.className = "bubble";
+            b.style.left = (6 + Math.random() * 34) + "px";
+            b.style.animationDelay = (Math.random() * 1.2) + "s";
+            b.style.animationDuration = (1 + Math.random() * 0.8) + "s";
+            f.appendChild(b);
+        }
+    }
+    setTimeout(function () {
+        var nf = document.querySelector('[data-flask="' + v.id + '"]');
+        if (!nf) return;
+        nf.className = "flask mini";
+        var olds = nf.querySelectorAll(".bubble");
+        for (var j = 0; j < olds.length; j++) olds[j].parentNode.removeChild(olds[j]);
+    }, 2800);
+}
+
+/* ==================================================================
+   结果面板
+   ================================================================== */
+function showResult(rx, n, produced, leftOver, again, vName) {
+    var arrowText = rx.conds.length ? rx.conds.map(function (c) { return CN[c]; }).join("、") : "";
+    var arr = rx.rev ? '<span class="arrow">⇌</span>' : '<span class="arrow">——' + (arrowText ? arrowText + "——" : "") + "></span>";
+    var eqHtml = decorate(renderChem(rx.leftStr)) + " " + arr + " " + decorate(renderChem(rx.rightStr));
+
+    var tags = rx.fx.filter(function (v, i, a) { return v && a.indexOf(v) === i; });
+    var danger = tags.indexOf("危险") >= 0;
+
+    var html = '<div class="result-card">'
+        + '<div class="result-head">'
+        + '<span class="type-badge">' + vName + "</span>"
+        + '<span class="type-badge">' + rx.type + "</span>"
+        + (n > 1 ? '<span class="type-badge">进行 ' + n + " 组</span>" : "")
+        + (rx.rev ? '<span class="type-badge">可逆反应</span>' : "")
+        + (danger ? '<span class="warn-badge">危险 · 注意通风</span>' : "")
+        + "</div>"
+        + '<div class="eq-box">' + eqHtml + "</div>"
+        + (rx.ion ? '<div class="ion-box"><span class="ion-label">离子方程式</span>' + rx.ion + "</div>" : "")
+        + '<div class="phen-list"><div class="phen-title">实验现象</div>'
+        + '<div class="phen-text">' + rx.phen + "</div></div>"
+        + '<div class="tag-row">'
+        + tags.filter(function (t) { return t !== "危险"; }).map(function (t) {
+            var cls = (t.indexOf("放热") >= 0 || t.indexOf("剧烈") >= 0) ? " hot"
+                : (t.indexOf("气体") >= 0 || t.indexOf("气泡") >= 0) ? " gas"
+                : (t.indexOf("沉淀") >= 0 || t.indexOf("浑") >= 0) ? " pre"
+                : (t.indexOf("光") >= 0 || t.indexOf("白烟") >= 0 || t.indexOf("火焰") >= 0) ? " lig" : "";
+            return '<span class="tag ' + cls + '">' + t + "</span>";
+        }).join("")
+        + "</div>"
+        + '<div class="prod-row">'
+        + produced.map(function (p) {
+            var s = SUB_MAP[p.key];
+            return '<span class="prod-chip">' + decorate(renderKey(p.key))
+                + " <span>×" + p.num + (s ? "　" + s.name : "") + "</span></span>";
+        }).join("")
+        + "</div>"
+        + '<div class="note-line">'
+        + (keepProducts ? "产物留在 <b>" + vName + "</b> 中，可以用 ⇄ 转移到其他容器继续实验。" : "产物已被取出，容器中只剩未反应的物质。")
+        + (leftOver.length ? "<br>剩余未反应（过量）：" + leftOver.map(function (l) {
+            return decorate(renderKey(l.key)) + " ×" + l.num;
+        }).join("、") : "<br>反应物恰好完全反应，没有剩余。")
+        + (again ? "<br>这个容器里<b>仍有可反应的组合</b>，可以再点一次反应。" : "")
+        + (rx.rev ? "<br>这是<b>可逆反应</b>，反应物不可能全部转化，容器中最终仍留有未反应的物质。" : "")
+        + "</div></div>";
+
+    $("resultWrap").innerHTML = html;
+}
+
+function showFail(title, text, isHint, vName) {
+    var html = '<div class="result-card fail">'
+        + '<div class="result-head">'
+        + (vName ? '<span class="type-badge">' + vName + "</span>" : "")
+        + '<span class="type-badge">' + title + "</span>"
+        + "</div>"
+        + '<div class="phen-text">' + text + "</div>"
+        + '<div class="note-line">提示：调整<b>反应条件</b>、药品<b>份数</b>，或把药品<b>转移</b>到别的容器里去试试。</div>'
+        + "</div>";
+    $("resultWrap").innerHTML = html;
+}
+
+/* ==================================================================
+   实验记录
+   ================================================================== */
+function addLog(text, bad) {
+    if (!$("logList").dataset.init) {
+        $("logList").innerHTML = "";
+        $("logList").dataset.init = "1";
+    }
+    var now = new Date();
+    var pad = function (x) { return String(x).padStart(2, "0"); };
+    var time = pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+    var item = document.createElement("div");
+    item.className = "log-item" + (bad ? " bad" : "");
+    item.innerHTML = '<span class="log-time">' + time + '</span><span class="log-eq">' + text + "</span>";
+    $("logList").insertBefore(item, $("logList").firstChild);
+    logCount++;
+    $("logCount").textContent = "共 " + logCount + " 条";
+}
+
+/* ==================================================================
+   事件
+   ================================================================== */
+$("subGrid").addEventListener("click", function (e) {
+    var btn = e.target.closest(".sub-card");
+    if (!btn) return;
+    addSub(btn.dataset.k, 1);
+});
+
+$("catTabs").addEventListener("click", function (e) {
+    var b = e.target.closest(".cat-tab");
+    if (!b) return;
+    curCat = b.dataset.cat;
+    renderCats();
+    renderLib();
+});
+
+$("searchBox").addEventListener("input", function (e) {
+    keyword = e.target.value.trim();
+    renderLib();
+});
+
+$("keepToggle").addEventListener("click", function () {
+    keepProducts = !keepProducts;
+    $("keepToggle").classList.toggle("on", keepProducts);
+    save();
+});
+
+$("btnClearAll").addEventListener("click", function () {
+    vessels.forEach(function (v) { v.counts = {}; });
+    transferSel = null; dumpSel = null;
+    save();
+    renderGrid();
+    $("resultWrap").innerHTML = '<div class="empty-hint">所有容器已清洗干净<br>重新取用药品开始新的实验</div>';
+});
+
+$("vesselGrid").addEventListener("click", function (e) {
+    var vesselEl = e.target.closest(".vessel");
+    var btn = e.target.closest("button");
+    if (!vesselEl && (!btn || btn.dataset.act !== "add")) return;
+    var vid = vesselEl ? vesselEl.dataset.vid : null;
+    var v = vid ? findV(vid) : null;
+    if (!btn) return;
+    var act = btn.dataset.act;
+    var key = btn.dataset.k;
+
+    if (act === "add") {
+        if (vessels.length >= 10) { alert("最多同时开 10 个容器"); return; }
+        vessels.push(newVessel());
+        save(); renderGrid(); return;
+    }
+    if (!v) return;
+
+    focusId = vid;
+
+    if (act === "react") { doReact(vid); return; }
+    if (act === "inc") { v.counts[key]++; save(); renderGrid(); return; }
+    if (act === "dec") { v.counts[key]--; if (v.counts[key] <= 0) delete v.counts[key]; save(); renderGrid(); return; }
+    if (act === "kick") { delete v.counts[key]; save(); renderGrid(); return; }
+    if (act === "move") { transferSel = { cid: vid, key: key, all: false }; dumpSel = null; renderGrid(); return; }
+    if (act === "tfall") { transferSel.all = !transferSel.all; renderGrid(); return; }
+    if (act === "cancel") { transferSel = null; dumpSel = null; renderGrid(); return; }
+    if (act === "to") { doTransfer(vid, btn.dataset.to, transferSel.key, transferSel.all); return; }
+    if (act === "tonew") {
+        var nv = newVessel();
+        vessels.push(nv);
+        doTransfer(vid, nv.id, transferSel.key, transferSel.all);
+        return;
+    }
+    if (act === "dump") { dumpSel = (dumpSel === vid ? null : vid); transferSel = null; renderGrid(); return; }
+    if (act === "dumpto") { doDump(vid, btn.dataset.to); return; }
+    if (act === "dumpnew") {
+        var nv2 = newVessel();
+        vessels.push(nv2);
+        doDump(vid, nv2.id);
+        return;
+    }
+    if (act === "kickv") {
+        vessels = vessels.filter(function (o) { return o.id !== vid; });
+        transferSel = null; dumpSel = null;
+        save(); renderGrid(); return;
+    }
+    if (btn.classList.contains("cond-mini")) {
+        var id = btn.dataset.cond;
+        if (id === "room") {
+            v.conds = new Set(["room"]);
+        } else {
+            if (v.conds.has(id)) v.conds.delete(id); else v.conds.add(id);
+            v.conds.delete("room");
+            if (v.conds.size === 0) v.conds.add("room");
+        }
+        save();
+        renderGrid();
+    }
+});
+
+$("bookList").innerHTML = BOOK.map(function (b, i) {
+    return '<button class="book-btn" data-i="' + i + '">' + b.n + "</button>";
+}).join("");
+
+$("bookList").addEventListener("click", function (e) {
+    var b = e.target.closest(".book-btn");
+    if (!b) return;
+    var cfg = BOOK[+b.dataset.i];
+    var list = cfg.v ? cfg.v : [{ subs: cfg.subs, conds: cfg.conds }];
+    vessels = list.map(function (c) {
+        var nv = newVessel();
+        c.subs.forEach(function (s) { nv.counts[s[0]] = s[1]; });
+        nv.conds = new Set(c.conds && c.conds.length ? c.conds : ["room"]);
+        return nv;
+    });
+    transferSel = null; dumpSel = null;
+    save();
+    renderGrid();
+    if (vessels.length === 1) doReact(vessels[0].id);
+    else {
+        $("resultWrap").innerHTML = '<div class="empty-hint">已摆好 ' + vessels.length + ' 个容器<br>分别在各自容器里点击反应，再用 ⇄ 转移药品</div>';
+    }
+});
+
+document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { transferSel = null; dumpSel = null; renderGrid(); }
+    if (e.key === "Enter" && document.activeElement !== $("searchBox")) {
+        e.preventDefault();
+        if (vessels.length) doReact(vessels[0].id);
+    }
+});
+
+/* 头部日期 */
+(function () {
+    var W = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+    var now = new Date();
+    var txt = now.getFullYear() + " 年 " + (now.getMonth() + 1) + " 月 " + now.getDate() + " 日 · " + W[now.getDay()];
+    $("headerMeta").textContent = txt + " · 收录 " + RX.length + " 条反应";
+})();
+
+/* 初始化 */
+load();
+renderCats();
+renderLib();
+renderAll();
+</script>
+
+</body>
+</html>
