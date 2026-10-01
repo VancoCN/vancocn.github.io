@@ -143,21 +143,29 @@ def main():
         return 0
 
     print("当前线上版本: %s" % version)
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
 
-    if any(e["version"] == version for e in data["history"]):
+    # 版本已收录：CDN 直链只有约 30 天有效期，所以即使版本没变也要顺手刷新
+    existing = next((e for e in data["history"] if e["version"] == version), None)
+    if existing is not None:
+        existing["url"] = url
+        existing["url_fetched_at"] = now
         append_check(data, "unchanged", version)
         save(data)
-        print("无变化，已记入日志。")
+        print("无变化，已刷新直链并记入日志。")
         return 0
 
     meta = probe_meta(url)
-    now = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
     data["history"].append({
         "version": version,
         "first_seen": now,
         "size": meta["size"],
         "size_human": human_size(meta["size"]),
         "last_modified": meta["last_modified"],
+        # 官方 CDN 直链，指向 lowiro 自己的服务器；本站不保存 APK 本体。
+        # 实测响应头 Cache-Control: max-age=2628000, immutable（约 30 天有效）
+        "url": url,
+        "url_fetched_at": now,
     })
     append_check(data, "new_version", version)
     save(data)

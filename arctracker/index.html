@@ -401,9 +401,16 @@ tr:last-child td { border-bottom: none; }
 <!-- ==================== 获取 ==================== -->
 <div class="category-title">获取</div>
 <div class="card-list">
+    <a href="https://arcaea.lowiro.com/" class="tool-card" id="dlBtn" target="_blank" rel="noopener noreferrer">
+        <div class="card-title">下载最新版</div>
+        <div class="card-desc" id="dlDesc">取链接中…</div>
+        <div class="card-play-btn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16l-6-6h4V4h4v6h4l-6 6zm-6 2h12v2H6v-2z"/></svg>
+        </div>
+    </a>
     <a href="https://arcaea.lowiro.com/" class="tool-card" target="_blank" rel="noopener noreferrer">
         <div class="card-title">前往官网</div>
-        <div class="card-desc">由官方判断你的地区是否提供 APK 下载</div>
+        <div class="card-desc">官方页面，可查看公告与更新说明</div>
         <div class="card-play-btn">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
         </div>
@@ -421,12 +428,14 @@ tr:last-child td { border-bottom: none; }
         <p><strong>“首次观测”不等于官方发布时间。</strong>它是本站第一次探测到该版本的时间，
         受轮询间隔限制，可能晚于真实发布时刻。GitHub Actions 的定时任务也不保证准点。</p>
 
-        <p><strong>为什么没有下载直链？</strong>接口返回的地址带有一次性 <code>token</code> 会失效，
-        存下来就成了死链；而且官方会按访问者的地区决定是否提供 APK，直接公开直链等于绕过这一层判断。</p>
+        <p><strong>下载链接从哪来？</strong>每次检查时从官方公开接口实时取出，指向 lowiro 自己的 CDN
+        （<code>arcaea-static.lowiro-cdn.net</code>）。实测其响应头为
+        <code>max-age=2628000, immutable</code>，约 30 天内有效；本站每天更新多次，基本不会撞上失效。
+        点下载是直接从官方服务器取文件，本站不做中转。</p>
 
-        <p><strong>本站不提供、不存储、不分发任何 APK 或游戏资产。</strong>
-        页面仅收录版本号、观测时间、文件体积等事实性元数据。Arcaea 为 lowiro limited 所有，
-        本站为非官方、非商业项目。</p>
+        <p><strong>本站不存储、不分发任何 APK 或游戏资产。</strong>
+        页面仅收录版本号、观测时间、文件体积等事实性元数据，外加一条指向官方 CDN 的下载链接。
+        Arcaea 为 lowiro limited 所有，本站为非官方、非商业项目。</p>
     </div>
 </div>
 
@@ -435,10 +444,6 @@ tr:last-child td { border-bottom: none; }
 <script src="versions.js"></script>
 <script>
 (function () {
-    var data = window.ARC_VERSIONS || {};
-    var wrap = document.getElementById('table-wrap');
-    var logWrap = document.getElementById('log-wrap');
-
     var LOG_LIMIT = 50;
     var STATUS = {
         new_version: { text: '发现新版本', cls: 'st-new' },
@@ -461,62 +466,90 @@ tr:last-child td { border-bottom: none; }
         });
     }
 
-    /* ---------- 检查日志：不管有没有版本数据都渲染 ---------- */
-    var logs = data.checks || [];
-    if (!logs.length) {
-        logWrap.innerHTML = '<div class="empty">还没有检查记录。跑一次工作流后这里就会有内容。</div>';
-    } else {
-        var shown = logs.slice(0, LOG_LIMIT);
-        var lrows = shown.map(function (e) {
-            var s = STATUS[e.status] || { text: e.status, cls: 'st-ok' };
+    function boot(raw) {
+        var data = raw || {};
+        var wrap = document.getElementById('table-wrap');
+        var logWrap = document.getElementById('log-wrap');
+
+        /* ---------- 检查日志：不管有没有版本数据都渲染 ---------- */
+        var logs = data.checks || [];
+        if (!logs.length) {
+            logWrap.innerHTML = '<div class="empty">还没有检查记录。跑一次工作流后这里就会有内容。</div>';
+        } else {
+            var shown = logs.slice(0, LOG_LIMIT);
+            var lrows = shown.map(function (e) {
+                var s = STATUS[e.status] || { text: e.status, cls: 'st-ok' };
+                return '<tr>'
+                    + '<td>' + fmt(e.time) + '</td>'
+                    + '<td class="' + s.cls + '">' + s.text + '</td>'
+                    + '<td>' + (e.version ? esc(e.version) : '—') + '</td>'
+                    + '<td class="log-msg">' + (e.message ? esc(e.message) : '') + '</td>'
+                    + '</tr>';
+            }).join('');
+            var note = logs.length > LOG_LIMIT
+                ? '仅显示最近 ' + LOG_LIMIT + ' 条，共 ' + logs.length + ' 条（留档上限 300 条）'
+                : '共 ' + logs.length + ' 条';
+            logWrap.innerHTML = '<table><thead><tr>'
+                + '<th>检查时间</th><th>结果</th><th>观测版本</th><th class="th-msg">备注</th>'
+                + '</tr></thead><tbody>' + lrows + '</tbody></table>'
+                + '<div class="log-note">' + note + '</div>';
+        }
+
+        /* ---------- 版本信息 ---------- */
+        if (!data.history || !data.history.length) {
+            document.getElementById('latest').textContent = '暂无数据';
+            document.getElementById('latestLabel').textContent = '等待首次采集';
+            document.getElementById('seenTitle').textContent = '尚未运行';
+            document.getElementById('seen').textContent = '在 Actions 里手动 Run workflow 一次';
+            document.getElementById('size').textContent = '—';
+            document.getElementById('count').textContent = '0';
+            document.getElementById('headerMeta').textContent = '暂无数据';
+            document.getElementById('dlDesc').textContent = '等待首次采集后再提供';
+            wrap.innerHTML = '<div class="empty">还没有版本记录，请查看上方检查日志。</div>';
+            return;
+        }
+
+        var hist = data.history;
+        document.getElementById('latest').textContent = data.latest || hist[0].version;
+        document.getElementById('seenTitle').textContent = '首次观测';
+        document.getElementById('seen').textContent = fmt(hist[0].first_seen) + '（本地时间）';
+        document.getElementById('size').textContent = hist[0].size_human || '—';
+        document.getElementById('count').textContent = hist.length;
+        document.getElementById('headerMeta').textContent = '最后检查 ' + fmt(data.updated_at);
+
+        // 下载按钮：只在拿到 https 直链时才替换 href，避免异常数据被拼成 javascript: 之类
+        var dl = document.getElementById('dlBtn');
+        var dlDesc = document.getElementById('dlDesc');
+        var u = hist[0].url;
+        if (u && /^https:\/\//.test(u)) {
+            dl.href = u;
+            dlDesc.textContent = 'v' + hist[0].version
+                + (hist[0].size_human ? ' · ' + hist[0].size_human : '')
+                + ' · 链接获取于 ' + fmt(hist[0].url_fetched_at)
+                + '（官方 CDN，约 30 天有效）';
+        } else {
+            dlDesc.textContent = '暂无可用直链，请从官网获取';
+        }
+
+        var rows = hist.map(function (e) {
             return '<tr>'
-                + '<td>' + fmt(e.time) + '</td>'
-                + '<td class="' + s.cls + '">' + s.text + '</td>'
-                + '<td>' + (e.version ? esc(e.version) : '—') + '</td>'
-                + '<td class="log-msg">' + (e.message ? esc(e.message) : '') + '</td>'
+                + '<td>' + esc(e.version) + '</td>'
+                + '<td>' + fmt(e.first_seen) + '</td>'
+                + '<td>' + (e.size_human || '—') + '</td>'
                 + '</tr>';
         }).join('');
-        var note = logs.length > LOG_LIMIT
-            ? '仅显示最近 ' + LOG_LIMIT + ' 条，共 ' + logs.length + ' 条（留档上限 300 条）'
-            : '共 ' + logs.length + ' 条';
-        logWrap.innerHTML = '<table><thead><tr>'
-            + '<th>检查时间</th><th>结果</th><th>观测版本</th><th class="th-msg">备注</th>'
-            + '</tr></thead><tbody>' + lrows + '</tbody></table>'
-            + '<div class="log-note">' + note + '</div>';
+
+        wrap.innerHTML = '<table><thead><tr>'
+            + '<th>版本号</th><th>首次观测</th><th>文件大小</th>'
+            + '</tr></thead><tbody>' + rows + '</tbody></table>';
     }
 
-    /* ---------- 版本信息 ---------- */
-    if (!data.history || !data.history.length) {
-        document.getElementById('latest').textContent = '暂无数据';
-        document.getElementById('latestLabel').textContent = '等待首次采集';
-        document.getElementById('seenTitle').textContent = '尚未运行';
-        document.getElementById('seen').textContent = '在 Actions 里手动 Run workflow 一次';
-        document.getElementById('size').textContent = '—';
-        document.getElementById('count').textContent = '0';
-        document.getElementById('headerMeta').textContent = '暂无数据';
-        wrap.innerHTML = '<div class="empty">还没有版本记录，请查看上方检查日志。</div>';
-        return;
-    }
-
-    var hist = data.history;
-    document.getElementById('latest').textContent = data.latest || hist[0].version;
-    document.getElementById('seenTitle').textContent = '首次观测';
-    document.getElementById('seen').textContent = fmt(hist[0].first_seen) + '（本地时间）';
-    document.getElementById('size').textContent = hist[0].size_human || '—';
-    document.getElementById('count').textContent = hist.length;
-    document.getElementById('headerMeta').textContent = '最后检查 ' + fmt(data.updated_at);
-
-    var rows = hist.map(function (e) {
-        return '<tr>'
-            + '<td>' + esc(e.version) + '</td>'
-            + '<td>' + fmt(e.first_seen) + '</td>'
-            + '<td>' + (e.size_human || '—') + '</td>'
-            + '</tr>';
-    }).join('');
-
-    wrap.innerHTML = '<table><thead><tr>'
-        + '<th>版本号</th><th>首次观测</th><th>文件大小</th>'
-        + '</tr></thead><tbody>' + rows + '</tbody></table>';
+    // 优先 fetch 最新 JSON（带随机参数，绕开 Pages 约 10 分钟的 CDN 缓存）；
+    // 本地 file:// 打开时 fetch 会被跨域拦掉，退回 <script> 注入的 versions.js
+    fetch('versions.json?_=' + Date.now(), { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)); })
+        .then(boot)
+        .catch(function () { boot(window.ARC_VERSIONS); });
 })();
 </script>
 
