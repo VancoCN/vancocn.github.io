@@ -310,6 +310,13 @@ tr:last-child td { border-bottom: none; }
 
 .log-msg { font-size: 0.82em; color: #7c7c90; word-break: break-all; }
 
+.lnk {
+    color: #8fa8d8;
+    text-decoration: none;
+    border-bottom: 1px dotted rgba(143, 168, 216, 0.45);
+}
+.lnk:hover { color: #bed0f2; }
+
 .log-note {
     margin-top: 14px;
     font-size: 0.74em;
@@ -351,7 +358,7 @@ tr:last-child td { border-bottom: none; }
     .card-play-btn { width: 38px; height: 38px; }
     .glass-card { padding: 22px 20px; }
     th, td { padding: 10px 6px; font-size: 0.9em; }
-    .log-msg, .th-msg { display: none; }
+    .log-msg, .th-msg, .log-link, .th-link { display: none; }
 }
 </style>
 </head>
@@ -466,6 +473,12 @@ tr:last-child td { border-bottom: none; }
         });
     }
 
+    // 日志里的链接只作留档，照样只接受 https，避免异常数据拼出 javascript:
+    function linkCell(u) {
+        if (!u || !/^https:\/\//.test(u)) return '—';
+        return '<a class="lnk" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">直链</a>';
+    }
+
     function boot(raw) {
         var data = raw || {};
         var wrap = document.getElementById('table-wrap');
@@ -483,6 +496,7 @@ tr:last-child td { border-bottom: none; }
                     + '<td>' + fmt(e.time) + '</td>'
                     + '<td class="' + s.cls + '">' + s.text + '</td>'
                     + '<td>' + (e.version ? esc(e.version) : '—') + '</td>'
+                    + '<td class="log-link">' + linkCell(e.url) + '</td>'
                     + '<td class="log-msg">' + (e.message ? esc(e.message) : '') + '</td>'
                     + '</tr>';
             }).join('');
@@ -490,7 +504,7 @@ tr:last-child td { border-bottom: none; }
                 ? '仅显示最近 ' + LOG_LIMIT + ' 条，共 ' + logs.length + ' 条（留档上限 300 条）'
                 : '共 ' + logs.length + ' 条';
             logWrap.innerHTML = '<table><thead><tr>'
-                + '<th>检查时间</th><th>结果</th><th>观测版本</th><th class="th-msg">备注</th>'
+                + '<th>检查时间</th><th>结果</th><th>观测版本</th><th class="th-link">链接</th><th class="th-msg">备注</th>'
                 + '</tr></thead><tbody>' + lrows + '</tbody></table>'
                 + '<div class="log-note">' + note + '</div>';
         }

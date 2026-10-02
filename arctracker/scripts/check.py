@@ -89,12 +89,17 @@ def load():
     return {"latest": None, "updated_at": None, "history": [], "checks": []}
 
 
-def append_check(data, status, version=None, message=None):
-    """每次检查都留一条日志，无论有没有新版本、成功还是失败。"""
+def append_check(data, status, version=None, message=None, url=None):
+    """每次检查都留一条日志，无论有没有新版本、成功还是失败。
+
+    url 记的是「本次检查时接口返回的那个链接」，只作留档、不关心它过不过期；
+    页面上的下载按钮始终取 history 里最新版本那条（每次运行都会刷新，见 main）。
+    """
     entry = {
         "time": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
         "status": status,  # new_version | unchanged | error
         "version": version,
+        "url": url,
     }
     if message:
         entry["message"] = message[:200]
@@ -150,7 +155,7 @@ def main():
     if existing is not None:
         existing["url"] = url
         existing["url_fetched_at"] = now
-        append_check(data, "unchanged", version)
+        append_check(data, "unchanged", version, url=url)
         save(data)
         print("无变化，已刷新直链并记入日志。")
         return 0
@@ -167,7 +172,7 @@ def main():
         "url": url,
         "url_fetched_at": now,
     })
-    append_check(data, "new_version", version)
+    append_check(data, "new_version", version, url=url)
     save(data)
     print("已记录新版本: %s (首次观测 %s, 体积 %s)" % (version, now, human_size(meta["size"])))
     return 0
