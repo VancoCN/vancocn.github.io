@@ -317,6 +317,49 @@ tr:last-child td { border-bottom: none; }
 }
 .lnk:hover { color: #bed0f2; }
 
+/* 日志区：只占约 10 行高度，多余的滚动查看 */
+.log-box { position: relative; }
+
+.log-scroll {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    /* 无 JS 时的兜底，JS 会按真实行高重新校准 */
+    max-height: 470px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+.log-scroll::-webkit-scrollbar { width: 6px; }
+.log-scroll::-webkit-scrollbar-track { background: transparent; }
+.log-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 99px;
+}
+.log-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.26); }
+
+/* 表头吸顶，滚动时不跟着走 */
+.log-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: rgba(22, 22, 28, 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* 底部渐隐，提示下面还有内容 */
+.log-box.has-more::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 8px;
+    bottom: 0;
+    height: 44px;
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(10, 10, 15, 0) 0%, rgba(10, 10, 15, 0.6) 100%);
+    border-radius: 0 0 12px 12px;
+}
+
 .log-note {
     margin-top: 14px;
     font-size: 0.74em;
@@ -387,7 +430,7 @@ tr:last-child td { border-bottom: none; }
         <div class="version-tags">
             <span class="version-tag">文件大小 <b id="size">—</b></span>
             <span class="version-tag">历史版本 <b id="count">—</b></span>
-            <span class="version-tag">轮询间隔 <b>6 小时</b></span>
+            <span class="version-tag">检查频率 <b>每天 7 次</b></span>
         </div>
         <div class="version-hint" id="hint">版本号由 GitHub Actions 定时轮询官方接口获得</div>
     </div>
@@ -433,7 +476,7 @@ tr:last-child td { border-bottom: none; }
         由 GitHub Actions 定时轮询，仅在发现新版本号时追加一条留档。</p>
 
         <p><strong>“首次观测”不等于官方发布时间。</strong>它是本站第一次探测到该版本的时间，
-        受轮询间隔限制，可能晚于真实发布时刻。GitHub Actions 的定时任务也不保证准点。</p>
+        受检查频率限制，可能晚于真实发布时刻。GitHub Actions 的定时任务也不保证准点。</p>
 
         <p><strong>下载链接从哪来？</strong>每次检查时从官方公开接口实时取出，指向 lowiro 自己的 CDN
         （<code>arcaea-static.lowiro-cdn.net</code>）。实测其响应头为
@@ -451,7 +494,8 @@ tr:last-child td { border-bottom: none; }
 <script src="versions.js"></script>
 <script>
 (function () {
-    var LOG_LIMIT = 50;
+    var LOG_LIMIT = 300;       // 与 check.py 的留档上限一致，全部渲染
+    var LOG_VISIBLE_ROWS = 10; // 列表默认高度约等于 10 行
     var STATUS = {
         new_version: { text: '发现新版本', cls: 'st-new' },
         unchanged:   { text: '无变化',     cls: 'st-ok' },
@@ -479,6 +523,66 @@ tr:last-child td { border-bottom: none; }
         return '<a class="lnk" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">直链</a>';
     }
 
+    // 日志区高度：先量真实行高，再把容器卡到「约 10 行」，超出的滚动查看
+    var lastTotal = 0;
+
+    function fitLogHeight(total) {
+        if (total != null) lastTotal = total;
+        var box = document.getElementById('logBox');
+        var sc = document.getElementById('logScroll');
+        var note = document.getElementById('logNote');
+        if (!box || !sc || !note) return;
+
+        var tbl = sc.querySelector('table');
+        var rows = tbl ? tbl.querySelectorAll('tbody tr') : null;
+        if (!rows || !rows.length) return;
+
+        var head = tbl.querySelector('thead');
+        var headH = head ? head.getBoundingClientRect().height : 0;
+        // 取均值，避免个别折行的行拉偏整体估算
+        var unit = rows.length > LOG_VISIBLE_ROWS
+            ? (rows[LOG_VISIBLE_ROWS].offsetTop - rows[0].offsetTop) / LOG_VISIBLE_ROWS
+            : rows[0].getBoundingClientRect().height;
+
+        sc.style.maxHeight = 'none';
+        var full = sc.scrollHeight;
+        var limit = Math.round(headH + unit * LOG_VISIBLE_ROWS);
+        sc.style.maxHeight = full > limit ? limit + 'px' : 'none';
+
+        var more = sc.scrollHeight - sc.clientHeight > 2;
+        logCanScroll = more;
+        updateFade();
+        note.textContent = more
+            ? '共 ' + lastTotal + ' 条 · 向下滚动查看更多（留档上限 300 条）'
+            : '共 ' + lastTotal + ' 条';
+    }
+
+    // 底部渐隐只在「下面还有内容」时出现，滚到底就撤掉
+    var logCanScroll = false;
+
+    function updateFade() {
+        var box = document.getElementById('logBox');
+        var sc = document.getElementById('logScroll');
+        if (!box || !sc) return;
+        var atEnd = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 2;
+        box.classList.toggle('has-more', logCanScroll && !atEnd);
+    }
+
+    document.addEventListener('scroll', function (e) {
+        if (e.target && e.target.id === 'logScroll') updateFade();
+    }, true);
+
+    var rzTimer;
+    window.addEventListener('resize', function () {
+        clearTimeout(rzTimer);
+        rzTimer = setTimeout(function () { fitLogHeight(); }, 150);
+    });
+
+    // 自定字体加载完会改变行高，加载好后重新量一次
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () { fitLogHeight(); }).catch(function () {});
+    }
+
     function boot(raw) {
         var data = raw || {};
         var wrap = document.getElementById('table-wrap');
@@ -500,13 +604,13 @@ tr:last-child td { border-bottom: none; }
                     + '<td class="log-msg">' + (e.message ? esc(e.message) : '') + '</td>'
                     + '</tr>';
             }).join('');
-            var note = logs.length > LOG_LIMIT
-                ? '仅显示最近 ' + LOG_LIMIT + ' 条，共 ' + logs.length + ' 条（留档上限 300 条）'
-                : '共 ' + logs.length + ' 条';
-            logWrap.innerHTML = '<table><thead><tr>'
+            logWrap.innerHTML = '<div class="log-box" id="logBox">'
+                + '<div class="log-scroll" id="logScroll"><table><thead><tr>'
                 + '<th>检查时间</th><th>结果</th><th>观测版本</th><th class="th-link">链接</th><th class="th-msg">备注</th>'
-                + '</tr></thead><tbody>' + lrows + '</tbody></table>'
-                + '<div class="log-note">' + note + '</div>';
+                + '</tr></thead><tbody>' + lrows + '</tbody></table></div>'
+                + '<div class="log-note" id="logNote"></div>'
+                + '</div>';
+            fitLogHeight(logs.length);
         }
 
         /* ---------- 版本信息 ---------- */
