@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>In Falsus 存档解析</title>
+<link rel="icon" href="https://vancocn.github.io/favicon.ico" type="image/x-icon">
+<!-- 预加载字体 -->
+<link rel="preload" href="https://vancocn.github.io/alfyt.ttf" as="font" type="font/ttf" crossorigin>
+<style>
+/* ==================== 自定义字体 ==================== */
+@font-face {
+    font-family: "AlfytFont";
+    src: url("https://vancocn.github.io/alfyt.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ==================== 全局重置 ==================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: "AlfytFont", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "PingFang SC", "Microsoft YaHei", sans-serif;
+    min-height: 100vh;
+    color: #e8e8e8;
+    padding: 20px 40px 60px;
+    position: relative;
+    z-index: 0;
+    font-size: 15px;
+    line-height: 1.6;
+    background-color: #0a0a0f;
+    background-image:
+        radial-gradient(1200px 700px at 15% -10%, rgba(90, 90, 150, 0.16), transparent 60%),
+        radial-gradient(900px 600px at 100% 0%, rgba(140, 90, 150, 0.12), transparent 55%);
+    background-attachment: fixed;
+}
+
+/* ==================== 噪点层 ==================== */
+.noise-overlay {
+    position: fixed;
+    inset: 0;
+    opacity: 0.04;
+    z-index: -1;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* ==================== 页头 ==================== */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 5px;
+}
+
+.page-title {
+    font-size: 2.4em;
+    font-weight: 700;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #ffffff 0%, #a0a0c0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.header-meta {
+    font-size: 0.85em;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 2px;
+}
+
+.header-line {
+    border-top: 2px solid rgba(255,255,255,0.12);
+    margin-bottom: 40px;
+}
+
+.category-title {
+    font-size: 1.4em;
+    font-weight: 700;
+    margin-top: 35px;
+    margin-bottom: 16px;
+    color: #b0b0d0;
+    letter-spacing: 1px;
+    padding-left: 12px;
+    border-left: 3px solid rgba(160, 160, 220, 0.6);
+}
+
+/* ==================== 玻璃卡片 ==================== */
+.tool-card, .panel-card, .stat, .mini-card {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow:
+        0 4px 24px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.08),
+        inset 0 -1px 0 rgba(0,0,0,0.2);
+}
+
+.tool-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 26px;
+    border-radius: 18px;
+    text-decoration: none;
+    color: #e0e0e0;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.tool-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        105deg,
+        transparent 0%,
+        rgba(255,255,255,0.04) 40%,
+        rgba(255,255,255,0.1) 50%,
+        rgba(255,255,255,0.04) 60%,
+        transparent 100%
+    );
+    transition: left 0.7s ease;
+}
+
+.tool-card:hover::before { left: 100%; }
+
+.tool-card:hover {
+    transform: translateY(-3px) scale(1.01);
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.22);
+    box-shadow:
+        0 12px 40px rgba(0,0,0,0.4),
+        0 0 20px rgba(160,160,220,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.15),
+        inset 0 -1px 0 rgba(0,0,0,0.15);
+}
+
+.tool-card:active { transform: translateY(-1px) scale(0.998); }
+
+#drop { cursor: pointer; }
+#drop.over {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(160,160,220,0.45);
+}
+
+.upload-main { flex: 1; min-width: 0; }
+
+.card-title {
+    font-size: 1.25em;
+    font-weight: 600;
+    color: #f0f0f0;
+}
+
+.card-desc {
+    flex: 1;
+    margin: 4px 20px 0 0;
+    font-size: 0.92em;
+    color: #999;
+    transition: color 0.3s;
+}
+
+.tool-card:hover .card-desc { color: #c0c0c0; }
+
+.card-play-btn {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.tool-card:hover .card-play-btn {
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.25);
+    transform: scale(1.1);
+}
+
+.card-play-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: #bbb;
+    transition: fill 0.3s;
+}
+
+.tool-card:hover .card-play-btn svg { fill: #fff; }
+
+#file { display: none; }
+
+.save-path {
+    margin-top: 12px;
+    font-size: 0.78em;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 1px;
+    word-break: break-all;
+    font-family: ui-monospace, Consolas, monospace;
+}
+
+.status {
+    margin-top: 16px;
+    font-size: 0.88em;
+    color: #8a8a9e;
+    letter-spacing: 1px;
+    min-height: 22px;
+}
+.status.err { color: #e09a9a; }
+
+/* ==================== 数字区 ==================== */
+.stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 14px;
+}
+
+.stat {
+    padding: 18px 20px;
+    border-radius: 18px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.stat:hover {
+    transform: translateY(-3px) scale(1.01);
+    border-color: rgba(255,255,255,0.2);
+    box-shadow:
+        0 12px 40px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.15),
+        inset 0 -1px 0 rgba(0,0,0,0.15);
+}
+
+.stat .v {
+    font-size: 2.1em;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(135deg, #ffffff 0%, #a0a0c0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat .k {
+    margin-top: 6px;
+    font-size: 0.76em;
+    color: #8a8a9e;
+    letter-spacing: 2px;
+}
+
+/* ==================== 标签页 ==================== */
+.tab-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.tab {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.82em;
+    color: #8f8fa6;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 99px;
+    padding: 6px 15px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s;
+    user-select: none;
+}
+
+.tab:hover {
+    color: #dcdcea;
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.18);
+}
+
+.tab.on {
+    color: #fff;
+    background: rgba(255,255,255,0.16);
+    border-color: rgba(160,160,220,0.45);
+    box-shadow: 0 0 14px rgba(160,160,220,0.12);
+}
+
+.tab .n { opacity: 0.65; font-size: 0.9em; margin-left: 6px; }
+
+/* ==================== 面板 ==================== */
+.panel-card {
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.panel-inner { padding: 20px 24px; }
+
+.bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 14px;
+}
+.spacer { flex: 1; }
+
+input[type=search], select {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #e8e8e8;
+    border-radius: 99px;
+    padding: 7px 16px;
+    font-size: 0.85em;
+    font-family: inherit;
+    letter-spacing: 1px;
+    outline: none;
+    transition: all 0.3s;
+}
+input[type=search] { min-width: 210px; }
+input[type=search]:focus, select:focus {
+    background: rgba(255,255,255,0.09);
+    border-color: rgba(160,160,220,0.5);
+}
+input[type=search]::placeholder { color: rgba(255,255,255,0.28); }
+select option { background: #16161f; color: #e8e8e8; }
+
+.btn {
+    padding: 7px 18px;
+    border-radius: 99px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.06);
+    color: #cfcfe4;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+}
+.btn:hover {
+    background: rgba(255,255,255,0.14);
+    border-color: rgba(255,255,255,0.22);
+    color: #fff;
+}
+
+.note {
+    color: #7c7c90;
+    font-size: 0.8em;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+.empty {
+    padding: 40px 16px;
+    text-align: center;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 1px;
+}
+
+/* ==================== 表格 ==================== */
+.table-wrap {
+    max-height: 68vh;
+    overflow: auto;
+    border-radius: 12px;
+}
+.table-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+.table-wrap::-webkit-scrollbar-track { background: transparent; }
+.table-wrap::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.12);
+    border-radius: 99px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+}
+
+thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    text-align: left;
+    font-weight: 600;
+    color: #8a8a9e;
+    letter-spacing: 1px;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    background: #15151f;
+    white-space: nowrap;
+}
+
+td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    vertical-align: top;
+}
+
+tbody tr:hover { background: rgba(255,255,255,0.035); }
+
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.mono {
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.85em;
+    color: #7c7c90;
+    letter-spacing: 0;
+}
+.dim { color: rgba(255,255,255,0.28); }
+.nowrap { white-space: nowrap; }
+
+/* ==================== 小卡片 / 标签 ==================== */
+h2.sec {
+    font-size: 1.1em;
+    font-weight: 700;
+    margin: 26px 0 12px;
+    color: #b0b0d0;
+    letter-spacing: 1px;
+    padding-left: 12px;
+    border-left: 3px solid rgba(160, 160, 220, 0.6);
+}
+
+.grid2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+}
+
+.mini-card {
+    padding: 14px 16px;
+    border-radius: 14px;
+}
+.mini-card .t {
+    font-weight: 600;
+    font-size: 0.9em;
+    margin-bottom: 4px;
+    color: #e0e0e0;
+}
+.mini-card .m { color: #8a8a9e; font-size: 0.8em; }
+
+.pill {
+    display: inline-block;
+    font-size: 0.78em;
+    color: #8f8fa6;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 99px;
+    padding: 3px 12px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+.pill.g { color: #9fd8b8; border-color: rgba(159,216,184,0.28); }
+.pill.y { color: #e2ca89; border-color: rgba(226,202,137,0.28); }
+.pill.r { color: #ee9999; border-color: rgba(238,153,153,0.28); }
+.pill.b { color: #9ab8dc; border-color: rgba(154,184,220,0.28); }
+.pill.p { color: #c2a6de; border-color: rgba(194,166,222,0.28); }
+
+details { margin-top: 6px; }
+summary {
+    cursor: pointer;
+    color: #8a8a9e;
+    font-size: 0.8em;
+    letter-spacing: 1px;
+    user-select: none;
+}
+summary:hover { color: #dcdcea; }
+
+.kv {
+    display: grid;
+    grid-template-columns: 88px 1fr;
+    gap: 2px 10px;
+    font-size: 0.8em;
+    margin-top: 8px;
+}
+.kv .k { color: #7c7c90; }
+
+svg { max-width: 100%; }
+
+/* ==================== 页脚 ==================== */
+.footer {
+    margin-top: 60px;
+    text-align: center;
+    color: rgba(255,255,255,0.2);
+    font-size: 0.85em;
+    letter-spacing: 1px;
+}
+.footer a { color: rgba(255,255,255,0.35); text-decoration: none; }
+.footer a:hover { color: rgba(255,255,255,0.6); }
+
+/* ==================== 响应式 ==================== */
+@media (max-width: 900px) {
+    body { padding: 18px 24px 40px; }
+    .stat-row { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+}
+
+@media (max-width: 600px) {
+    body { padding: 16px 18px 40px; }
+    .page-title { font-size: 1.8em; }
+    .card-title { font-size: 1.1em; }
+    .card-desc { font-size: 0.85em; margin: 4px 8px 0 0; }
+    .card-play-btn { width: 38px; height: 38px; }
+    .stat .v { font-size: 1.8em; }
+    .panel-inner { padding: 16px 14px; }
+    input[type=search] { min-width: 150px; }
+}
+</style>
+</head>
+<body>
+<div class="noise-overlay"></div>
+
+<div class="page-header">
+    <div class="page-title">In Falsus 存档解析</div>
+    <div class="header-meta">SAVESTATE V3 · 本地解析 · 不上传</div>
+</div>
+<div class="header-line"></div>
+
+<div class="category-title">载入存档</div>
+<div class="tool-card" id="drop">
+    <div class="upload-main">
+        <div class="card-title">拖入或点击选择 .sav 文件</div>
+        <div class="card-desc">文件只在你的浏览器里解析，不会上传到任何服务器</div>
+    </div>
+    <div class="card-play-btn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 16V8.8l-3.1 3.1L6.5 10.5 12 5l5.5 5.5-1.4 1.4L13 8.8V16h-2zM5 18.5h14V20H5v-1.5z"/></svg>
+    </div>
+    <input type="file" id="file" accept=".sav">
+</div>
+<div class="save-path">%USERPROFILE%\AppData\LocalLow\lowiro\infalsus\&lt;SteamID64&gt;\release\savestate_V3.sav</div>
+
+<div class="status" id="status"></div>
+<div id="out"></div>
+
+<div class="footer">解析逻辑移植自 <a href="https://github.com/REDDRAGON-HL/InFalsus-SaveData-Parser" target="_blank" rel="noopener">InFalsus-SaveData-Parser</a> · 数据表来自 InFalsus-Resource · 仅供个人学习研究使用</div>
+
+<script id="db">window.IFDB={"songs":[[0,"",""],[0,"",""],[2,"alamode","à la mode"],[3,"alterededge","Altered Edge"],[0,"",""],[5,"bethere","Be There"],[6,"chaoticismlegacy","Chaoticism Legacy"],[7,"chronomia","Chronomia"],[8,"chronophobia","Chronophobia"],[9,"codeleviathan","code:Leviathan"],[10,"coldsea","Cold Sea"],[11,"cryogenic","Cryogenic"],[12,"cyaegha","Cyaegha"],[13,"destroyer","Destr0yer"],[14,"enigma","Enigma"],[15,"everything","Everything"],[16,"exceedmind","EXCEED MIND LIMIT"],[17,"fallingshadow","Falling Shadow"],[18,"falsequre","Falsequre"],[19,"ffff","FFFF"],[20,"fochaos","F0 CHA0S"],[21,"greyscalecity","Greyscale City"],[22,"hanabi","Hanabi"],[23,"hyalouyne","Hyaloüyne"],[24,"init","init()"],[25,"kirapico","Kirapico Riot: Kirapicorin"],[26,"kiretsu","KIRETSU"],[27,"latentduality","Latent Duality"],[28,"lfdy","Live Fast Die Young"],[29,"lightsout","Lights Out"],[30,"memoire","Mémoire"],[31,"minerva","Minerva"],[32,"mirinae","MIRINAE"],[33,"moondiver","M / O / O / N / D / I / V / E / R"],[34,"moonsliders","Moonsliders"],[35,"mydeadlysins","My Deadly Sins"],[36,"newvision","New Vision"],[37,"noctidea","Noct Idea"],[38,"nowiknow","Now I know"],[39,"outerjustice","Outer Justice"],[40,"papillonblanc","papillon blanc"],[41,"phylaxron","PhylaXron"],[42,"primevaltexture","Primeval Texture"],[43,"reconnect","Reconnect"],[44,"reflection","Re:Flection"],[45,"scarletespada","Scarlet Espada"],[46,"selfconfrontation","Self-confrontatioN"],[47,"shadowsofunknown","Shadows of Unknown"],[48,"shouldhavebeen","should have been"],[49,"sinutopia","Sin Utopia"],[50,"sunanokioku","Memories in Noise"],[51,"tactom","TACTOM"],[52,"thingsitreasure","Things I Treasure"],[53,"toccatafunebre","Toccata Funebre"],[54,"tokonagi","▓"],[55,"trajectoryofhope","Trajectory of Hope"],[56,"transparency","Transparency"],[57,"vesper","Vesper"],[58,"withtruth","With Truth"],[59,"worldender","World Ender"],[60,"yggthrasir","yggthrasir"],[61,"zetta","Zetta"],[62,"zfc","ZFC"],[63,"forbiddensouls","Forbidden Souls"],[64,"ghostray","Ghost Ray"],[65,"wonderroom","WonderRoom2.0"],[0,"",""],[67,"deepintothevibe","Deep Into The Vibe"],[68,"cylin","cylin"],[69,"ordirehv","Ordirehv"],[70,"rainshower","Rainshower"],[0,"",""],[72,"albedo","Albedo"],[73,"neonvision","NEONViSION"],[74,"tutorialevolong","Albedo"],[75,"tutorialevoshort","Albedo"],[76,"tutorialmin","Albedo"],[0,"",""],[0,"",""],[0,"",""],[0,"",""],[0,"",""],[82,"kuukaku","Hollow"],[0,"",""],[84,"monitoring","Monitoring"],[0,"",""],[86,"roki","Roki"],[87,"lostonesweeping","Lost One's Weeping"],[88,"nonbreathoblige","Non-breath oblige"],[89,"kakushicommand","Apparently there's a cheat code to happiness"]],"recipe":[[1,"A Warm Gaze \nSeeking Others","找寻伙伴的温暖目光","找尋夥伴的溫暖目光"],[2,"Austere Advisor","冷酷的督导","冷酷的督導"],[3,"4AM","凌晨四点","凌晨四點"],[4,"At The End","终焉尽头","終焉盡頭"],[5,"Orchestrator of Anarchy","无序的指挥者","無序的指揮者"],[6,"An Aberrant Freedom","脱离常轨的自由","脫離常軌的自由"],[7,"Class Idol","班花","班花"],[9,"Last Days of Summer","夏日的最后时光","夏日的最後時光"],[10,"New Friend","新朋友","新朋友"],[11,"Sea of Disorder","混浊的大海","混濁的大海"],[12,"The Doubt Inside","心中的疑虑","心中的疑慮"],[13,"Birth of a New Day","崭新黎明","嶄新黎明"],[14,"Aeon Record","永恒记录仪","永恆記錄儀"],[15,"Across the City","穿行于城市中","穿梭於城市中"],[16,"Unusual Attire","非日常服装","非日常服裝"],[17,"A Crack in the Everyday","日常的一丝裂痕","日常的一絲裂痕"],[18,"Witful Friend","机灵的朋友","機靈的朋友"],[19,"Nothing Grows Here","不毛之处","不毛之處"],[33,"Required Force","必要的武力","必要的武力"],[34,"Brief Respite","片刻的安宁","片刻的安寧"],[35,"Path to Reality","通往现实之路","通往現實之路"],[36,"Underneath This Sky","天穹之下","天穹之下"],[37,"Natural Leadership","天生的领袖","天生的領袖"],[38,"Lost Garden of Bonds","羁绊的失落花园","羈絆的失落花園"],[39,"A Forgiving Embrace","重归于好的拥抱","重修舊好的擁抱"],[40,"Bound by \nHeaven and Earth","天之枷，地之锁","天之枷，地之鎖\n"],[41,"First Drop of Abyss","窥见深渊","窺見深淵"],[42,"Into Monochrome","褪作黑白","褪作黑白"],[53,"Nia: Path to Reality","妮雅：通往现实之路","妮雅：通往現實之路"],[54,"Mei: 4AM","梅：凌晨四点","梅：凌晨四點"],[55,"Ayame: A Warm Gaze\nSeeking Others","菖蒲：找寻伙伴的温暖目光","菖蒲：找尋夥伴的溫暖目光"],[56,"Iris: Lost Garden of Bonds","埃利斯：羁绊的失落花园","埃利斯：羈絆的失落花園"],[57,"Story: First Drop of Abyss","斯多丽：窥见深渊","斯多麗：窺見深淵"],[22,"Nia: Path to Reality","妮雅：通往现实之路","妮雅：通往現實之路"],[23,"Mei: 4AM","梅：凌晨四点","梅：凌晨四點"],[24,"Ayame: A Warm Gaze\nSeeking Others","菖蒲：找寻伙伴的温暖目光","菖蒲：找尋夥伴的溫暖目光"],[25,"Iris: Lost Garden of Bonds","埃利斯：羁绊的失落花园","埃利斯：羈絆的失落花園"],[26,"Story: First Drop of Abyss","斯多丽：深渊的第一滴","斯多麗：窺見深淵"],[58,"One's Disdain","自惭形秽","自慚形穢"],[59,"Searching Shadows","追寻飘渺的身影","追尋飄渺的身影"],[60,"Always by Your Side","永远陪在你身旁","永遠陪在你身旁"],[61,"Unsightly Confession","丑陋的告白","醜陋的告白"],[62,"The Price of Self-Worth","自我的价值","自我的價值"],[63,"True Colors","本色","本色"],[64,"New Day, New Conviction","新的一天，新的决心","新的一天，新的決心"],[65,"Disorder's Throne","混沌的王座","混沌的王座"],[66,"Anguish and Hate","痛楚与憎恨","痛楚與憎恨"],[67,"Indomitable Power","不屈之力","不屈之力"],[68,"Command","命令","命令"],[69,"Defeat","",""],[70,"Unparalleled","无双","無雙"],[71,"Graduation","毕业","畢業"],[72,"Hero","英雄","英雄"],[73,"Mei: 4AM","梅：凌晨四点","梅：凌晨四點"],[74,"Nia: Path to Reality","妮雅：通往现实之路","妮雅：通往現實之路"]],"trait":[[1,"DO NOT USE","",""],[2,"Opening Surge","开幕攻击","開幕攻擊"],[3,"Opening Surge II","开幕攻击 II","開幕攻擊 II"],[4,"Opening Surge III","开幕攻击 III","開幕攻擊 III"],[5,"Closing Surge","终幕攻击","終幕攻擊"],[6,"Closing Surge II","终幕攻击 II","終幕攻擊 II"],[7,"Closing Surge III","终幕攻击 III","終幕攻擊 III"],[8,"Onset Surge","突入攻击","突入攻擊"],[9,"Onset Surge II","突入攻击 II","突入攻擊 II"],[10,"Onset Surge III","突入攻击 III","突入攻擊 III"],[11,"Recurring Surge III","周期攻击 III","週期攻擊 III"],[12,"Echoing Surge III","回响攻击 III","迴響攻擊 III"],[13,"Lingering Surge","余波攻击","餘波攻擊"],[14,"Lingering Surge II","余波攻击 II","餘波攻擊 II"],[15,"Lingering Surge III","余波攻击 III","餘波攻擊 III"],[16,"Inner Distress","内在压迫","內在壓迫"],[17,"Ranged Inner Distress","范围内在压迫","範圍內在壓迫"],[18,"Inner Vulnerability III","内在削弱","內在削弱"],[19,"Ranged Inner Vulnerability III","范围内在削弱","範圍內在削弱"],[20,"Inner Digression III","内在眩惑","內在眩惑"],[21,"Ranged Inner Digression III","范围内在眩惑","範圍內在眩惑"],[22,"Opening Recovery","开幕回复","開幕回復"],[23,"Opening Recovery II","开幕回复 II","開幕回復 II"],[24,"Opening Recovery III","开幕回复 III","開幕回復 III"],[25,"Closing Recovery","终幕回复","終幕回復"],[26,"Closing Recovery II","终幕回复 II","終幕回復 II"],[27,"Closing Recovery III","终幕回复 III","終幕回復 III"],[28,"Onset Recovery","突入回复","突入回復"],[29,"Onset Recovery II","突入回复 II","突入回復 II"],[30,"Onset Recovery III","突入回复 III","突入回復 III"],[31,"Recurring Recovery III","周期回复 III","週期回復 III"],[32,"Echoing Recovery III","回响回复 III","迴響回復 III"],[33,"Lingering Recovery","余波回复","餘波回復"],[34,"Lingering Recovery II","余波回复 II","餘波回復 II"],[35,"Lingering Recovery III","余波回复 III","餘波回復 III"],[36,"Inner Amplification III","内在增强 III","內在增強 III"],[37,"Outer Amplification III","外部增强 III","外部增強 III"],[38,"Ranged Outer Amplification III","外围增强 III","外圍增強 III"],[39,"Ranged Inner Amplification III","范围内在增强 III","範圍內在增強 III"],[40,"Inner Rigor","精神强化","精神強化"],[41,"Inner Rigor II","精神强化 II","精神強化 II"],[42,"Inner Rigor III","精神强化 III","精神強化 III"],[43,"Ranged Inner Rigor","范围精神强化","範圍精神強化"],[44,"Ranged Inner Rigor II","范围精神强化 II","範圍精神強化 II"],[45,"Ranged Inner Rigor III","范围精神强化 III","範圍精神強化 III"],[46,"Inner Concentration","集中强化","集中強化"],[47,"Inner Concentration II","集中强化 II","集中強化 II"],[48,"Inner Concentration III","集中强化 III","集中強化 III"],[49,"Ranged Inner Concentration","范围集中强化","範圍集中強化"],[50,"Ranged Inner Concentration II","范围集中强化 II","範圍集中強化 II"],[51,"Ranged Inner Concentration III","范围集中强化 III","範圍集中強化 III"],[52,"Opening Full Recovery","开幕完全回复","開幕完全回復"],[53,"Inner Aegis","精神庇护","精神庇護"],[54,"Ranged Inner Turmoil","范围精神祸乱","範圍精神禍亂"],[55,"Border Burst","极限爆发","極限爆發"],[56,"Ranged Border Burst","范围极限爆发","範圍極限爆發"],[59,"UNUSED","",""],[60,"UNUSED","",""],[61,"UNUSED","",""],[62,"UNUSED","",""],[63,"Border Surge III","极限攻击 III","極限攻擊 III"],[64,"Border Recovery III","极限回复 III","極限回復 III"],[69,"Opening Surge++","开幕攻击++","開幕攻擊++"],[70,"Opening Recovery++","开幕回复++","開幕回復++"],[71,"Inner Concentration++","集中强化++","集中強化++"],[72,"Inner Rigor++","精神强化++","精神強化++"],[65,"Triple Closing Burst","三重终幕爆发","三重終幕爆發"],[66,"Ranged Chromatic Isolation: Red","范围色彩隔离：红色","範圍色彩隔離：紅色"],[67,"Inner Critical Focus","明锐聚焦","明銳對焦"],[68,"Inner Impudence","飞扬跋扈","飛揚跋扈"],[73,"Opening Surge 0","开幕攻击 0","開幕攻擊 0"],[74,"Opening Recovery 0","开幕回复 0","開幕回復 0"],[75,"Inner Concentration 0","集中强化 0","集中強化 0"],[76,"Ranged Inner Rigor 0","范围精神强化 0","範圍精神強化 0"]],"iota":[[1,"r-1-1",1,1,1,""],[2,"r-1-2",1,1,2,""],[3,"r-1-3",1,1,3,""],[4,"y-1-1",1,2,1,""],[5,"y-1-2",1,2,2,""],[6,"y-1-3",1,2,3,""],[7,"g-1-1",1,3,1,""],[8,"g-1-2",1,3,2,""],[9,"g-1-3",1,3,3,""],[10,"b-1-1",1,4,1,""],[11,"b-1-2",1,4,2,""],[12,"b-1-3",1,4,3,""],[13,"p-1-1",1,5,1,""],[14,"p-1-2",1,5,2,""],[15,"p-1-3",1,5,3,""],[16,"r-2-1",2,1,5,""],[17,"r-2-2",2,1,5,""],[18,"r-2-3",2,1,5,""],[19,"y-2-1",2,2,4,""],[20,"y-2-2",2,2,5,""],[21,"y-2-3",2,2,6,""],[22,"g-2-1",2,3,4,""],[23,"g-2-2",2,3,5,""],[24,"g-2-3",2,3,5,""],[25,"b-2-1",2,4,4,""],[26,"b-2-2",2,4,5,""],[27,"b-2-3",2,4,6,""],[28,"p-2-1",2,5,5,""],[29,"p-2-2",2,5,5,""],[30,"p-2-3",2,5,5,""],[31,"r-3-1",3,1,6,""],[32,"r-3-2",3,1,8,""],[33,"y-3-1",3,2,6,""],[34,"y-3-2",3,2,8,""],[35,"g-3-1",3,3,6,""],[36,"g-3-2",3,3,7,""],[37,"b-3-1",3,4,6,""],[38,"b-3-2",3,4,6,""],[39,"p-3-1",3,5,6,""],[40,"p-3-2",3,5,7,""]],"story":[[416876656,0],[416909336,1],[416909344,2],[416911392,3],[416913408,4],[416913424,5],[416913440,6],[416915464,7],[416915480,8],[416942096,9],[416942104,10],[416942112,11],[416944128,12],[416946176,13],[416948224,14],[416950280,15],[416950296,16],[416974848,17],[417400832,18],[417402880,19],[417404928,20],[417404944,21],[417406992,22],[417433600,23],[417433608,24],[417433624,25],[417435672,26],[417564672,27],[417564704,28],[417566752,29],[420087824,30],[420546568,31],[420579344,32],[420612120,33],[420614160,34],[420616216,35],[420644872,36],[420646920,37],[420648968,38],[421070872,39],[421103640,40],[421136384,41],[421138432,42],[421660672,43],[421662720,44],[421664792,45],[421666824,46],[421668872,47],[421670920,48],[421693448,49],[422184960,50],[422610960,51],[424151048,52],[424183840,53],[424216576,54],[424216600,55],[424249344,56],[424249376,57],[424251392,58],[424251424,59],[424282128,60],[424284176,61],[424286208,62],[424288264,63],[424347660,64],[424347676,65],[424413208,66],[425920524,67],[426379276,68],[427952144,69],[427954192,70],[427954208,71],[427984912,72],[428509216,73],[428511256,74],[429000736,75],[429002784,76],[429524992,77],[429527040,78],[429527064,79],[429529104,80],[429557768,81],[429590544,82],[429983760,83],[430049296,84],[430051328,85],[430051344,86],[430475288,87],[430477336,88],[430479472,89],[430481432,90],[430508056,91],[431032348,92],[431622172,93],[433195016,94],[433197064,95],[433199112,96],[433260544,97],[433326080,98],[433653764,99],[433686528,100],[433686564,101],[433719328,102],[433721368,103],[434210832,104],[436832260,105],[437389336,106],[437391368,107],[437848068,108],[439486480,109],[439519240,110],[439521288,111],[441026568,112],[441059332,113],[442107940,114],[442664960,115],[443156480,116],[443222016,117],[444172300,118],[444270596,119],[445188132,120],[445253652,121],[445712400,122],[445777936,123],[445810704,124],[446760968,125],[448399360,126],[450562048,127],[450564096,128],[454166552,129],[454166560,130],[454168584,131],[454199304,132],[454264840,133],[454297600,134],[454592520,135],[454592528,136],[454594568,137],[454625304,138],[454658056,139],[454690832,140],[454692896,141],[454694928,142],[454696984,143],[454723600,144],[454725640,145],[454727688,146],[455346208,147],[455706640,148],[455708688,149],[455710744,150],[455712776,151],[455739392,152],[455772184,153],[455772192,154],[455774240,155],[455776288,156],[455837696,157],[455837728,158],[456165408,159],[456198144,160],[456263680,161],[456263712,162],[456265728,163],[456267776,164],[456269824,165],[456271872,166],[456273920,167],[456275968,168],[456296448,169],[456329216,170],[456331264,171],[456333312,172],[457705472,173],[457705488,174],[457705496,175],[457705504,176],[457771008,177],[457803784,178],[457836576,179],[457869344,180],[457902096,181],[458328064,182],[459966496,183],[459999264,184],[460001312,185],[460032016,186],[460032024,187],[460034048,188],[460036112,189],[460064776,190],[460066832,191],[462424064,192],[462555144,193],[462557184,194],[463603728,195],[466749456,196],[466751504,197],[467699712,198],[467798032,199],[467800080,200],[467802128,201],[471500832,202],[471502880,203],[473565200,204],[476710936,205],[477235200,206],[477235208,207],[477237248,208],[477239296,209],[478283808,210],[484673560,211],[484706320,212],[484708368,213],[554174576,214],[554176512,215],[554240008,216],[554242056,217],[556861552,218],[556927088,219],[556929040,220],[556931096,221],[556933144,222],[556935176,223],[556937216,224],[556959776,225],[556961792,226],[556963848,227],[556965888,228],[556967936,229],[556970016,230],[556972040,231],[556992624,232],[565839896,233],[567937032,234],[648185968,235]],"recipeInfo":[[1,"1-1-a","Cafe Time"],[2,"1-1-i","Freya"],[3,"1-1-m","Frustration"],[4,"1-1-n","Flashforward"],[5,"1-2-m","Io"],[6,"1-2-n","First Lie"],[7,"2-1-a","School Idol"],[9,"2-1-m","Park Bonding"],[10,"2-1-n","First Friend"],[11,"2-1-s","Harrow"],[12,"2-2-a",""],[13,"2-2-i","Rekindle"],[14,"2-2-s","Box"],[15,"2b-1-a","Shopping"],[16,"2b-1-i","Maid"],[17,"2b-1-m","Apprehended"],[18,"2b-1-n","Fell"],[19,"2b-1-s","Story Past"],[33,"3-1-i",""],[34,"3-1-m",""],[35,"3-1-n",""],[36,"3-1-s",""],[37,"3-2-a",""],[38,"3-2-i",""],[39,"3-2-m",""],[40,"3-2-n",""],[41,"3-2-s",""],[42,"3-3-a",""],[58,"4-1-a",""],[59,"4-1-m",""],[60,"4-1-s",""],[61,"4-2-a",""],[62,"4-2-i",""],[63,"4-2-m",""],[64,"4-2-n",""],[65,"4-2-s",""],[66,"4-3-a",""],[67,"4-3-i",""],[68,"4-3-m",""],[70,"4-3-s",""],[71,"4b-1-n",""],[72,"4-3-n",""]],"bonus":[["0c8da6f9-ad0b-450e-bef9-3867c77796d3",1,0,10,2],["333b0817-90b8-4081-ac77-509f60a8c881",1,1,4,2],["6269e3a3-3106-4436-a267-9506b072f5e5",1,2,1,2],["6319fe9a-772a-4eba-af00-15bb458e5216",1,3,1,2],["daabdfe0-2582-42af-861c-6a0295dd23af",1,4,1,2],["e2115810-6998-4148-a706-86cb592cfe55",1,5,1,2],["f59350e1-b122-4c04-b931-75f3324a894a",1,6,10,2],["1f5fc10b-d96f-4f68-88c3-4556e8e6551a",2,0,1,2],["49caf08d-6a91-4c7f-ba2c-24019be6a479",2,1,1,2],["812a0f67-c5a4-4483-be3a-c050793c49dd",2,2,12,2],["c08749bd-e45b-48b8-875b-154525347a84",2,3,4,2],["d7a84c52-bc14-4a0a-aced-4a4e2fff9078",2,4,2,2],["eae16791-f8ec-4c38-8139-b16d26d39b15",2,5,2,2],["0531875d-adf0-43e6-85c4-b7d57a5a783c",3,0,1,2],["29dd773c-43c9-4cf3-aa3c-fd104ab91aa7",3,1,4,2],["5d24eaf8-1360-4402-87b5-c010becb055f",3,2,1,2],["9ae3d0c0-024a-4734-98f7-65c0e511ccc5",3,3,3,2],["a692d0c4-b118-419a-a01d-c5eb5db1dd15",3,4,6,2],["dd813cae-2201-42a7-8f4b-90d0a83c3dd6",3,5,3,2],["1924e9c7-d03a-4a89-9631-807947b0bd4f",4,0,8,2],["24f91183-e35b-4d47-9418-68f895a50fae",4,1,2,2],["6b53b089-733b-493d-b502-0c42edc1e013",4,2,2,2],["92dca739-88b1-42a0-9b8b-072e71b85457",4,3,1,2],["d1c33eb2-fd23-4a5e-b463-6309bf47fc5f",4,4,5,2],["fd7d16e2-95d4-4386-9eb4-53eae06b443d",4,5,1,2],["5cba9915-4878-40a2-8157-1529620a5fe4",5,0,6,2],["71a7b9b5-9709-4b89-ad02-6e34c8ae3de1",5,1,5,2],["7e097cb0-908c-4bf1-b38a-f0ef4031299a",5,2,6,1],["ad03f406-17dc-4117-82ab-6aef51f0e6e2",5,3,6,2],["debf89f1-e8f3-4cc0-b698-621a66293043",5,4,6,1],["3f83214b-3578-4fc0-91b4-bb9f58068291",6,0,7,2],["684f7dbc-94bb-4a1c-9f78-c755d6096d31",6,1,2,2],["8a112eec-f525-4118-b1d7-73f0370d058a",6,2,1,2],["acfe8851-4436-42b2-882d-dc96adc8d03c",6,3,2,2],["b90ab44b-306f-49ea-b294-49ab4127ae42",6,4,7,2],["e13d5ded-024f-4896-a859-83b17ca743f5",6,5,8,1],["e400224c-73ae-4a47-9180-dfe9183eb17e",6,6,7,2],["2bb9b7cb-65d5-4b88-bccf-7e7d61cd0230",7,0,8,2],["75a13cf3-6695-452c-8632-5ae76e39a340",7,1,8,1],["e43b9913-9978-4ffe-be2a-9022e6c40ad2",7,2,8,2],["e9b35de3-66c2-4bb8-9caa-e8ffee854db2",7,3,8,3],["ed2325b3-0b1f-4a3c-a927-210458c08e74",7,4,8,1],["fbbd5c05-1f37-4805-a2e5-cb64cca84299",7,5,8,2],["11274ac0-7ff1-4146-953d-df1173fa09e7",9,0,2,2],["145ce089-41d9-4130-a497-c12c15011c2d",9,1,3,2],["83003ed8-6c15-410c-a7c8-51dabc0a4140",9,2,5,2],["cf7d709c-a22d-452a-8e70-29494ad796d7",9,3,5,2],["e55b82b3-933b-4878-bfff-00a4778ec1d8",9,4,3,1],["00691965-b539-4b3b-b60c-e300c365403c",10,0,8,2],["4704b3fe-1acd-41cd-a698-2f22b72422d0",10,1,7,1],["4e045ea8-9861-44bb-8701-3828ea52cbec",10,2,8,2],["8f5422a1-654f-478f-9cfb-7731b6222934",10,3,9,2],["b96a2e40-16c3-4bff-aaed-9a4e3cb391e5",10,4,7,2],["186cd287-5382-48ba-8acc-b4902c285251",11,0,11,2],["27c5429c-d11e-48b5-a378-a5f9a6ae05db",11,1,9,2],["3aeb745d-1184-448e-9a94-89015d206518",11,2,3,1],["7271df5f-fb6d-4849-9052-721692fa3d04",11,3,11,1],["7eae0fc4-db81-4141-b6ee-8f5f2880e7a1",11,4,1,2],["a31d74ee-acc6-48ab-84e6-d4bea8ede4d3",11,5,3,2],["f9256824-0943-4757-9f8d-22ee875ce97b",11,6,11,1],["4ae03d5a-6833-47ff-8168-4fec82c10b2c",12,0,3,1],["527b01ff-491e-4316-92f7-be7666d8ae2b",12,1,10,2],["79266198-c896-4ccd-b938-d6ab8db0d406",12,2,10,2],["93a75538-92e5-4780-bc01-1fe8673fba0e",12,3,10,3],["aafafb4f-192b-4ab8-a900-450482b0d6f4",12,4,3,3],["caecfeba-eb3a-48d6-8b92-b11907494ad6",12,5,3,1],["d3732283-145f-4b76-802a-38e8932c957e",12,6,10,2],["e65bc3e9-2867-43de-bf06-dcc578cfb923",12,7,10,1],["0250fc22-6768-4d48-ae7c-5c12fb2071a0",13,0,9,3],["32b3993b-fbfb-43c7-b947-0f6438c55707",13,1,9,2],["60f8d1f5-c0e5-4981-ac08-e102657a376e",13,2,9,3],["9b127e40-9948-4ced-bb43-628381f62d18",13,3,9,2],["a4596214-5dbb-4de7-adb0-3a377f446dc2",13,4,9,2],["bbcfd939-2677-49ef-9b6a-84a9dc8c113a",13,5,9,2],["16d48a03-c40e-439e-9e69-7e7ff4a238a3",14,0,2,1],["1981af25-d12e-4363-bf5c-19761cc1c64b",14,1,28,3],["518d1854-1bdd-48ae-af70-2400536fc5bb",14,2,9,1],["72945915-8e18-4a5a-9c73-a2b167cae337",14,3,7,1],["baa09eb6-2fed-4899-af19-0fb6a008b987",14,4,2,1],["c31da64a-4648-4195-b1d0-25cc40d1af8a",14,5,9,2],["374662cb-05ee-4a40-9f25-94173475368f",15,0,9,1],["6f785942-0315-421c-994f-1b62cf8080c9",15,1,10,2],["8d01c5d2-9fdc-4587-81b6-472a29f62ab9",15,2,4,1],["8f791977-f004-4544-ad75-bcb87a633ea8",15,3,6,2],["a4acf03e-a413-4f9d-90ea-a97ef9fc2259",15,4,9,1],["ae52ec02-2699-4aad-8ec7-dce0592fbf8b",15,5,10,2],["bb090ba4-db08-455b-851a-984bb6bfdcb7",15,6,3,1],["c8ec1742-5dda-4a04-963b-e1ba770e8925",15,7,9,1],["d3958112-7341-4f3d-b1ea-c0ae43830c7d",15,8,8,2],["4a9440f5-b65d-4e14-9025-baf5643b432a",16,0,1,1],["4bc65ecb-0367-4b90-a498-0cabd8798059",16,1,10,1],["5b49533e-7525-4842-9e79-18319f6926a3",19,5,6,2],["8399df94-0a7a-407b-990a-766300bf29ab",16,3,18,1],["8844561d-54ad-4275-bdb7-ff7b837730e4",16,4,18,2],["ba5210df-5d39-42ca-9603-1320b5a135bb",16,5,10,2],["dd5d166e-e789-4604-bca1-07fd8f611444",16,6,3,1],["0f5f29df-f763-47bd-8d20-e5ea0680f570",17,0,5,3],["4f284711-fcf6-49e3-ba34-ea7760576d15",17,1,1,1],["59f55b92-989c-4a31-a7d0-3a3ca625c42a",17,2,5,3],["6ec21393-bac4-49dd-b677-5611d58848be",17,4,2,1],["b130a96a-0cff-4596-91ba-aab6fda711c2",17,5,1,1],["b14a6bfd-637c-4d64-83bd-05dbe17945fd",17,6,6,1],["c2eb259f-7755-485b-9587-23828e928814",17,7,2,1],["f4b0408b-d9a0-4b42-85c5-caa2c70dae73",17,8,6,1],["fb7ba612-d9d4-4fda-a9a6-044c5c82b287",17,9,6,2],["06e8afef-e98f-4519-8414-b4ec340d37f3",18,0,9,2],["45b244b4-45b2-4253-bdbb-1f603d1debd9",18,1,12,2],["46e50fec-cb80-4ef5-b80e-c278e15d7c87",18,2,9,1],["53e3f22b-38af-4f35-b290-cac35b04d64e",18,3,7,2],["84a195e2-d4ef-44b4-8d45-2eca872344dd",18,5,12,1],["0d316efe-92e9-4434-a74f-66b8a5b71ab1",19,0,16,1],["1da8ec9e-b95c-42cd-8ad6-1ea607d63e10",19,1,15,3],["3c1fe5c6-172e-4cb8-bfdc-482bd6e01938",19,2,4,2],["5240590e-23b9-470a-b77f-8fe4a5610ec0",19,3,4,1],["54dad09d-e2da-4f55-a7d9-2010388a5a55",19,4,13,1],["9e074811-3a54-49d7-a5fd-e9738a3b3b7e",19,6,4,1],["9f855c0a-26af-4172-b4cb-aba0447985fa",19,7,15,2],["db73ab8a-2ca6-4761-9327-f41c2c63aed1",19,8,13,1],["29f6d406-bf84-4115-a629-1c5f6a843da6",33,0,9,2],["3a6946a6-057a-499d-b461-fd91b1917431",33,1,11,2],["5aef3382-baec-4d7b-8ee6-5fd1cb7c7c69",33,2,11,2],["a7179e3e-47d2-4633-8148-12780fcfa7f3",33,3,11,3],["ccf71cfb-4a23-436d-a78a-2ed3903c5013",33,4,11,1],["e0c0d159-c88b-44c3-8951-fdf0e590bd64",33,5,12,2],["0b51164f-c558-4cf8-958d-a51841b685f9",34,0,5,2],["40e96d83-5856-4053-bd66-aa7b443fd35d",34,1,4,1],["6135dccd-a99c-49e4-a090-13946062d9fa",34,2,8,2],["81ac24ac-7cf3-44bc-bdb6-4625e9d9b524",34,3,5,2],["a2f70fed-dddf-42d2-b7d1-508124ef883f",34,4,5,2],["ab4084e4-f28d-49dd-88ff-20fc2cdf45d5",34,5,4,1],["ebe34c47-6cc9-4782-af9a-3362aef7f7af",34,6,6,2],["fab20b46-de07-4fc7-abbe-be664be55c95",34,7,6,1],["0fc52eaf-98e9-4fde-808c-eee4871f46e1",35,0,11,2],["13e85cad-ddbd-4862-97f2-c8113634809a",35,1,10,2],["26b0bbb2-bd36-4ded-ac59-ca5d5a635196",35,2,11,2],["60852239-e170-4bc3-8eea-a16b1b36a150",35,3,9,2],["97eb16ba-a07a-4d45-9550-62d1ad20fb2c",35,4,10,2],["23006c5e-8d43-4607-a48e-437861f0d084",36,0,14,1],["31e32c94-37d9-4632-ba1c-f97d2b5baf30",36,1,1,1],["862c6c83-487b-46bf-bf17-47d2327d12d0",36,2,1,1],["93f40f87-9ea0-484a-92a7-d55e2d8ed3ac",36,3,1,1],["a0b606e3-9aa9-4dc0-86dd-9fff2d3d34c5",36,4,14,1],["dc091315-c2ee-47f6-8e06-d5042630bc96",36,5,5,2],["e032cb9c-f0f5-406e-b1a0-f31dcc424c0b",36,6,1,1],["e10ddb22-c549-4e33-9675-edf53d208f71",36,7,12,1],["e2b7b640-5436-4ddd-9a57-1fe46d863ec0",36,8,5,2],["faf138da-15f4-4bdb-a7fe-947afcc73552",36,9,13,3],["24e45543-93de-400e-b3c2-e89a24ebb54c",37,0,9,1],["480a8962-36b1-4ebb-9d9a-025ec248eb3c",37,1,9,3],["9a13db29-454a-4de3-8a6f-9cbfe2d20bf3",37,2,9,2],["aa97d8f7-da5c-4746-bfd4-fda19611f828",37,3,9,1],["b8abc88a-556b-42c6-8b43-7fea8aa7e919",37,4,9,3],["d1bbe7e2-686c-4e1a-8124-c12d2797e653",37,5,12,2],["ef9cacce-bd43-415f-8f57-04970006d03d",37,6,9,1],["164de10a-c2a5-4452-8489-8648c54fafab",38,0,1,2],["26c171c7-01b5-4888-bed8-ad41e94c548d",38,1,15,2],["2a57f18a-4640-479b-80d1-672e8ab14e4f",38,2,1,1],["39967a40-fe49-481e-ae58-26b4c5a9b3aa",41,2,6,2],["61681131-0062-4d52-bc6b-db91a8bdc613",41,4,1,1],["671b73ec-22a1-4c88-8f2d-042eb00a09f0",41,5,8,1],["7a931ca0-1332-4f0f-a6f7-f1a72692d9ce",38,6,1,2],["7be65788-9cbe-4427-b06d-12aa75f28185",41,6,6,1],["851e12be-8b82-433f-baae-c2d155b2d1ec",41,7,1,1],["8c886891-a169-4fbf-a412-69a7dc59a9b4",38,9,1,1],["96cc4ec3-104c-41d7-9ca0-8004cdff4093",38,10,1,1],["a0e35ec1-3ce0-4e43-8871-85b618249048",38,11,9,1],["aac42603-e791-424e-84fb-80c82a402bfc",41,9,2,1],["abb72f43-66fb-422a-bd0e-2f556c2dd04c",38,13,1,2],["ae0bba5c-4fe0-4242-bed5-3317ede2f9fd",41,11,10,1],["e03f0efe-19cc-426f-900a-b85a6ae2d8be",41,12,1,1],["eeeaf04a-4b7c-4060-bd1b-31037f14edc1",38,16,1,1],["ff988cc9-b965-42a4-9ec4-60305f7e5a68",41,14,1,1],["370de893-1756-488d-b893-1a2a3c96999a",39,0,7,2],["42a38ba3-9e44-4ae0-b979-bd0cb8bc484c",39,1,7,2],["65bd9274-10cd-4826-97b0-8561b073a886",39,2,4,1],["84c1f224-aac1-4a88-89c0-c0074592c073",39,3,7,2],["86e8a8bc-2357-4b82-8f84-c7aa9df8bdb1",39,4,7,3],["eb4c1d45-846a-4575-acff-f958b30380fa",39,5,3,2],["ecf8baf2-16ae-4345-a2b7-5bbb59a4937e",39,6,3,2],["074b4f5f-b12d-4a17-af3e-b75553ad2f4d",40,0,1,1],["0bc032a0-8754-497f-b1f8-1b77ea203d6b",40,1,1,1],["0dc0111e-4e10-4803-a006-3c83ddbf280b",40,2,8,3],["2ac7a516-4ac4-47ff-8b67-52a3a1b26b79",40,3,9,1],["33bb08b7-0571-4760-b27e-92867435775c",40,4,10,2],["4b56cd85-35d8-42c0-9165-260162681334",40,5,2,1],["4fb27ed1-d6bb-45ab-b040-0a5cc7447d0c",40,6,1,1],["54e33f8e-6c16-4073-8cb0-cbc487ad36ac",40,7,8,1],["9088465a-9f4f-47b0-b08b-69406d0d91bd",40,8,2,1],["a33f35c5-4c01-4b57-8483-3b1682cf89af",40,9,9,2],["d0dfa1b0-41f0-4673-ba75-ae8e92c1bf3a",40,10,11,2],["0666c791-0d46-46d0-abc7-eaadaefb2a3e",41,0,5,2],["0be4ca3f-97cf-4a75-bddb-0ef14547913d",41,1,1,1],["4938c0ab-5697-49bb-a911-1ab64e12536d",41,3,15,3],["8b825a4f-25c4-4810-8e2e-fc18307329cf",41,8,5,2],["aaea80d8-4b98-49d6-a62f-42216b9010bb",41,10,9,2],["fcbae59b-cccc-4321-a7d7-af0f23a5cf2f",41,13,1,1],["1db8ee20-bfd4-4505-9e7c-1e2e41ab1429",42,0,7,2],["39a2b5e3-cf55-4a2e-af51-1cd20794792f",42,1,7,2],["6dc75190-a221-4dfc-8ee8-02e37e8fad96",42,2,9,3],["8962cac9-56fa-4973-b1dc-a77b5e8d128f",42,3,7,2],["a70adfe7-e199-4f9e-b4e3-bb391c5ffefb",42,4,7,2],["e1aa2a47-3e1e-4a23-807a-64a0c7f5109b",42,5,7,1],["ea65c7ef-340b-4b87-889f-112979394a9a",42,6,7,1],["08669154-edf8-480a-bb54-c41ac370ee7e",58,0,3,1],["1416d652-65db-46ac-bc12-b58aa8bccf90",58,1,8,2],["174a2425-2fef-4c5e-8136-278507186db5",58,2,3,1],["47a974c4-cc47-410e-aa7a-d48c9b340100",58,3,10,1],["56da9c46-d544-4305-a415-8f10ed4a0073",58,4,10,2],["77ff846a-ec8a-44f0-820a-e5a930df38db",58,5,1,1],["96f2970b-4933-4aa8-917b-b16d7b9b32ba",58,6,3,1],["9f52d2bd-1faa-4eef-8960-6072a1c96c0d",58,7,8,1],["abb10be4-fbaf-4ffe-9c53-0de9957e4b19",58,8,5,2],["aff05940-2212-4196-a22b-18dfc870b247",58,9,5,2],["d42199a6-ec0a-474a-b8c9-f321d7bc0252",58,10,3,1],["06709e31-6090-4a50-a67b-97af40632f5c",59,0,2,1],["25e3e481-d586-4f79-b569-5c1fd76019ae",59,1,1,2],["3de00977-75d5-464f-b297-464cb8e15194",59,2,2,1],["580d9a09-38db-42a7-9609-f6c8737d1be9",59,3,2,1],["641dc0ab-1199-4f37-87a7-0284b1f564d8",59,4,2,1],["7b176858-629a-4f09-84d2-9b4670bcf78b",59,5,8,2],["86658575-f99e-4e50-92b6-48518ff011f2",59,6,2,2],["a6e9bf6a-3b7c-476a-b796-dd1a469440f5",59,7,2,2],["b33efc1b-33ad-4a8a-a363-f2c6fdff8df5",59,8,1,3],["c70c8263-00be-465d-a797-324ac879300b",59,9,1,2],["ca98a9be-56bd-45a6-9fbc-da99d0a4f17a",59,10,8,2],["122814ca-e1bb-4e2d-ba63-0bf3c24e91fd",60,0,4,1],["279a65b8-269d-4a28-a646-888b530e3198",60,1,11,1],["4401a7c4-4d64-4168-a8df-3eed689bf042",60,2,7,2],["513b4063-3aff-42d5-befc-843aa59d36f6",60,3,4,1],["77e1b080-fc9c-4ac9-815a-68341ac87bf9",60,4,7,2],["8a35a886-3f06-4a79-a24e-fc8ed27980d7",60,5,7,2],["929aa0ad-f998-48aa-b90f-801a38cc7ab5",60,6,4,1],["9b5c0ec9-b73a-49f5-83c1-d1bafb066d8e",60,7,4,1],["9d9af90f-37a6-46c2-9ec9-9e9fe8b8ed01",60,8,4,1],["a55f9df4-4bea-4254-bc14-8ba9a93d5210",60,9,4,1],["ad00544f-197a-4de9-b038-ba79ded483ce",60,10,4,2],["c4b0b0ae-52f4-4e05-8b9d-039f4bd26562",60,11,7,1],["d97c23e1-9fd5-47ee-99d9-b7e9b1e354ac",60,12,7,2],["f8be2d14-42d4-4ced-aafb-2a311a7d2620",60,13,7,1],["0f27c5e9-e63a-499f-a880-0c6f3634ee76",61,0,1,1],["0f68c467-a361-41fe-aba3-a2633ec77361",61,1,1,1],["194c32f6-62a6-46ee-937f-fde10ba90541",61,2,1,1],["1edb7fed-33cd-42f3-9490-c2c9a9ab7e0b",61,3,1,2],["2f668b20-9771-4ca1-8678-6f4b10fb7d96",61,4,1,1],["30393518-1d7e-481e-9475-7645443d87c7",61,5,1,1],["4587d2e9-4970-4165-b07c-819c04a14356",61,6,1,1],["493f82af-ee5e-423e-8580-c4add7c9c3c7",61,7,1,2],["4b0818c3-141d-43ca-a41c-5ec73d00611e",61,8,1,1],["671b02cb-a298-4e79-a367-c2b24252963f",61,9,1,2],["6d5cedbc-1fd5-471f-9272-e3282d736919",61,10,1,1],["748f6b9c-8061-47de-8926-397ff2b33c52",61,11,1,1],["7a52abdb-a29d-43f8-8022-50413619f3f1",61,12,1,1],["868d82d8-e2df-4bdf-b137-92a9a6714000",61,13,1,1],["8a03d858-c585-42f7-a7b5-a99674d83330",61,14,1,1],["90d7288e-5073-45cc-9094-72fbd9280811",61,15,1,1],["95163b9e-ad90-45f5-8956-3d93d9242dc3",61,16,1,1],["9b2c9431-4257-468e-ab29-aa1034e8dd46",61,17,1,1],["9d65cc93-c0b6-4106-bb38-49ff185da4c9",61,18,1,2],["b6d3007f-931a-46c0-a3b5-e751032ba636",61,19,1,1],["eae63190-aad5-4e5c-8c3d-597cfb19ce47",61,20,1,1],["ff3d7606-5499-421c-97b8-3102b84b5800",61,21,1,1],["73ff91c2-d9ad-4fca-9849-b1e4d08bfae6",62,0,13,2],["849735ff-0024-4a8e-89b2-8e772756cb04",62,1,6,1],["9fb43d07-0305-45f1-a0e0-33da383dde7e",62,2,13,3],["b9db944c-4551-4e5b-83b3-e8839e0f93ac",62,3,8,2],["e2dbfba8-2e6f-437c-825e-4ade8c93e8a6",62,4,6,2],["e68ef57e-4a68-4122-b573-06183e91d97a",62,5,6,2],["f52ed1f0-a03a-48df-bb9e-b6b9a665355c",62,6,6,2],["03689788-0f0b-4cf4-ae74-ca5c9896c440",63,0,12,4],["0c20b7a3-c728-424f-89d2-2a05536e2260",63,1,1,2],["11f75d9e-d511-4295-86ca-53a082895c8e",63,2,1,1],["35e2b3f9-16db-467b-8bc8-d5184e1ce5a3",63,3,12,4],["89e167ea-f170-44d2-b98b-2bcbcd6594e4",63,4,1,1],["bf2b704b-46f5-4bc5-95d4-b598d65b32c8",63,5,5,1],["ca536401-fb7a-435a-a720-28f8217adc43",63,6,1,2],["103d1946-cca9-4124-b556-d56bf72038e1",64,0,7,2],["1dfd0116-c721-41c9-a8ad-fe55e017a788",64,1,1,2],["3859a090-0eab-478f-abea-149f1c0f5ac5",64,2,6,2],["7a2f5643-9d55-468f-bcd9-9d33eca7b9ce",64,3,7,2],["8056b49a-3314-4d3c-9e3c-e92897717c1c",64,4,7,1],["947c2054-02f9-4dfb-aafb-8308c123c5a4",64,5,1,1],["aad1854d-098b-4bfe-89cf-45cd4e56877e",64,6,1,1],["b580c44f-04a0-48bd-920c-f472d36b79f8",64,7,6,1],["ea5c9622-17ce-46b7-8d5b-7d0f523cf75c",64,8,7,2],["343a64b4-1533-489b-9825-274bf6899400",65,0,7,2],["72176aad-6cad-46f5-85e4-ff7b02317c98",65,1,12,3],["72b60aab-5b71-48f5-8812-6263cfddd015",65,2,6,2],["ce322b6d-347c-43e2-bfa0-97fe740cafd6",65,3,12,3],["d66a0e02-0e87-4725-a558-d50f792e4a5f",65,4,9,2],["e2713e35-7525-4f19-a8de-67517b6db773",65,5,9,2],["e54198db-7afa-428f-a2cf-8c0b8b004c2d",65,6,18,2],["f407d7a4-3a7f-45c2-847d-2cda909d083d",65,7,6,2],["26e9a1bc-3748-41db-b55d-e084678890f2",66,0,3,1],["3099640a-b711-4b4c-a6f1-67ae43f3818b",66,1,4,2],["4042b952-c8d2-4b0f-ac63-2ea1b4043c15",66,2,6,2],["4e38babb-dade-4a5f-8b69-d46eb56002e4",66,3,6,2],["cf297b37-6341-4331-8803-2c69d5af6bd2",66,4,5,2],["dd74575d-c202-4b6f-8d30-9eac96e56325",66,5,3,2],["e673b9c5-1e4b-41e1-932e-32f3407ec296",66,6,12,2],["e9cf8ba2-1958-4dbf-91fd-8d42beca5722",66,7,6,2],["fd1fe117-8273-4382-8640-c792e022787f",66,8,5,3],["18c1eab5-0176-4216-acb4-1a5a789dd399",67,0,6,2],["1bd9e753-36b0-4ae4-92c1-4c31eda8b74b",67,1,9,2],["4c2dc6f8-2427-45a6-939f-e4f91640b724",67,2,9,2],["62fcd21d-2ea2-410b-b88e-6a00754a3709",67,3,9,2],["66055b4b-e80e-45a9-be8b-8a11e225de3b",67,4,9,3],["a5986041-ff6a-4889-a585-8ffb93ec47b1",67,5,6,2],["d59ae6b1-1924-48be-ac8d-10f3650348d6",67,6,24,4],["7056d3a2-10ff-4e1c-933c-e94b12732fb9",68,0,8,2],["790b1923-b22f-481f-9a33-272a07c9f0ab",68,1,1,1],["84b029cf-390a-41d4-9164-db48a45138ba",68,2,2,2],["9127de55-959f-4f23-a0a2-c9f0b2d7ffe1",68,3,2,2],["97d96f66-36ef-41a4-9bae-949759d0f5c5",68,4,6,3],["bddf30a5-e589-46db-a3dd-2a835d8289ab",68,5,6,2],["bf470d70-4f49-4d07-bf1a-130826dacdb7",68,6,8,3],["f2dff77c-15fc-4929-b2eb-a0e4808fa983",68,7,4,1],["f976c4a8-ebf6-4495-8943-a6456d1e49c3",68,8,10,3],["27a5a7a7-9e0b-42fd-bac8-d021966b4aba",70,0,4,2],["32e031e9-9bfb-451d-a1a1-c0045829ebcf",70,1,31,2],["35db57c7-0c62-4ceb-883a-425a2c8db1d3",70,2,14,2],["3ef27f2b-0451-4584-839b-cb7bfe3bc891",70,3,1,2],["631c2e15-3e1f-4a8c-b7b2-02aa8a46eada",70,4,4,2],["64f7ec68-baae-410f-9b77-dc642731c69c",70,5,3,2],["7bddc936-9e96-48f0-9f59-56f8b7b4e0b3",70,6,9,2],["7c14f23d-7fb9-4f5f-9e81-1543a9878160",70,7,9,2],["7d11792e-fd39-419f-a628-3c7d9c3e7145",70,8,4,2],["c4f87ad1-836a-4307-b93a-7ca446b9040d",70,9,4,2],["c7ab0144-0f35-4eac-b785-732cca053237",70,10,7,2],["3fff4123-39d0-4e73-a7a8-9c2211bc4c65",71,0,14,3],["5ed74060-52b0-4ce7-aa6d-4258c9010487",71,1,13,2],["79845f4d-0e73-49c2-ae77-585f861993b1",71,2,14,1],["e0e337c6-7ac4-4e1d-89fe-194e9863336b",71,3,13,4],["e37e5e76-a2fe-4ee5-992d-ad058082c821",71,4,12,3],["2129fe6a-1b51-4301-ad56-203cad4107cf",72,0,3,2],["22a8c632-d2a3-49b9-8e6e-918b59f28f3a",72,1,1,3],["4b80bb79-b3e3-4601-9d35-246cd7fa1bb4",72,2,1,3],["6706f17d-b3bf-4311-ac3e-05e833b08b5f",72,3,15,3],["6dbf8d67-8c26-4b30-ba45-bdd2a914eae5",72,4,3,1],["7c6294d4-ff68-4f04-b6a9-dffb19217f41",72,5,1,3],["7cb11dbb-fe2f-4702-af9d-e23d53bec268",72,6,9,2],["846fa5ac-54d8-4ab0-b47e-64a67ee23355",72,7,15,3],["9555bd94-d0d5-4ed5-80f2-3f7477f2924f",72,8,9,2],["9c5d1c5e-f935-4cc3-8b82-85bdf55e3c5f",72,9,15,2],["9f971e51-f3f2-4442-a23c-e765a9e0d327",72,10,1,2],["b6864a97-4754-4e1d-9422-b7a36f71830a",72,11,1,1],["b77e17a8-2b0b-485a-80bf-62c986e70dff",72,12,1,1],["c3398796-52a2-4106-a523-da4e9e5a2e10",72,13,15,3],["c96fa26a-a17c-4a19-bcef-a6bc63c95259",72,14,7,2],["c99d4ac5-3713-40ba-8dd6-fe1e33f625f5",72,15,14,3]]};</script>
+<script id="parser">
+/* ==========================================================================
+   解析器：与 savefile.py + memorypack.py 一一对应
+   ========================================================================== */
+var IF = (function () {
+  'use strict';
+
+  var RECORD_PAYLOAD = 99;      // 成绩记录里歌名之后那段定长载荷
+  var HISTORY_RECORD = 96;      // history 每条 96 字节
+  var HISTORY_SLOTS = 1024;     // history 1024 槽
+  var DIFFICULTY_FLAGS = [1, 2, 4, 8];
+  var COUNT_BLOCK_BASE = 0x0D;  // 四个判定计数块起点
+  var COUNT_BLOCK_SIZE = 16;    // 每块 16 字节 = 8 个 u16
+  var COUNT_FIELDS = ['none', 'miss', 'nearEarly', 'nearLate',
+                      'perfectEarly', 'perfectLate', 'shiny', 'unused'];
+  var BLOCK_KEYS = ['tap', 'hold', 'skyArea', 'flick'];
+  var CARD_SIZE = 64;
+  var DECK_RECORD = 24, DECK_SLOTS = 5;
+  var IOTA_SIZE = 16, IOTA_TRAIT_SLOTS = [5, 7, 9], IOTA_TRAIT_VOID = 0xFF;
+
+  /* ---------- 数据表 ---------- */
+  var DB = window.IFDB || {};
+  var SONG_NAME = {}, SONG_TITLE = {}, CARD_NAMES = {}, TRAIT_NAMES = {},
+      IOTA_TABLE = {}, STORY_MAP = {}, BONUS_MAP = {}, RECIPE_INFO = {};
+
+  (function initDB() {
+    (DB.songs || []).forEach(function (r) { SONG_NAME[r[0]] = r[1]; SONG_TITLE[r[0]] = r[2]; });
+    (DB.recipe || []).forEach(function (r) {
+      CARD_NAMES[r[0]] = {
+        English: r[1], SimplifiedChinese: r[2], TraditionalChinese: r[3]
+      };
+    });
+    (DB.trait || []).forEach(function (r) { TRAIT_NAMES[r[0]] = r[1] || r[2] || ''; });
+    (DB.iota || []).forEach(function (r) {
+      IOTA_TABLE[r[0]] = { IdStr: r[1], Tier: r[2], Color: r[3], Size: r[4], Title: r[5] };
+    });
+    (DB.story || []).forEach(function (r) { STORY_MAP[r[0]] = r[1]; });
+    (DB.recipeInfo || []).forEach(function (r) { RECIPE_INFO[r[0]] = { idStr: r[1], name: r[2] }; });
+    (DB.bonus || []).forEach(function (r) {
+      BONUS_MAP[r[0]] = { recipeId: r[1], areaIndex: r[2], cells: r[3], effects: r[4] };
+    });
+  })();
+
+  /* ---------- MemoryPack 字符串 ---------- */
+  function stringAt(u8, dv, len, off) {
+    if (off + 8 > len) return null;
+    var neg = dv.getInt32(off, true), n = dv.getInt32(off + 4, true);
+    if (n <= 0 || n > 256 || off + 8 + n > len) return null;
+    if (neg !== -(n + 1)) return null;
+    var s = '';
+    for (var i = 0; i < n; i++) {
+      var c = u8[off + 8 + i];
+      if (c < 32 || c >= 127) return null;
+      s += String.fromCharCode(c);
+    }
+    return s;
+  }
+
+  function scanStrings(u8, dv, len) {
+    var out = [], i = 0;
+    while (i + 8 <= len) {
+      var s = stringAt(u8, dv, len, i);
+      if (s !== null) { out.push([i, s]); i += 8 + s.length; }
+      else i++;
+    }
+    return out;
+  }
+
+  /* ---------- 成绩记录数组 ---------- */
+  function elementAt(u8, dv, len, off) {
+    if (off + 1 >= len) return null;
+    var name = stringAt(u8, dv, len, off + 1);
+    if (name === null) return null;
+    var pay = off + 1 + 8 + name.length;
+    if (pay + RECORD_PAYLOAD > len) return null;
+    var sid1 = dv.getUint16(pay, true), dif1 = dv.getUint8(pay + 2);
+    var sid2 = dv.getUint16(pay + 3, true), dif2 = dv.getUint8(pay + 5);
+    if (sid1 !== sid2 || dif1 !== dif2 || DIFFICULTY_FLAGS.indexOf(dif1) < 0) return null;
+    return { name: name, pay: pay };
+  }
+
+  function findRecords(u8, dv, len) {
+    var best = null;
+    for (var start = 0; start < len - 16; start++) {
+      var first = elementAt(u8, dv, len, start);
+      if (!first) continue;
+      var recs = [], pos = start, got;
+      while (true) {
+        got = elementAt(u8, dv, len, pos);
+        if (!got) break;
+        recs.push(got);
+        pos = got.pay + RECORD_PAYLOAD;
+      }
+      if (recs.length < 3) continue;
+      var cnt = start >= 4 ? dv.getInt32(start - 4, true) : -1;
+      if (cnt !== recs.length) continue;
+      if (!best || recs.length > best[1].length) best = [start - 4, recs];
+    }
+    return best;
+  }
+
+  function decodeRecord(u8, dv, off, name, bare) {
+    var shift = bare ? 3 : 0;
+    var u16 = function (o) { return dv.getUint16(off + o - shift, true); };
+    var sid = dv.getUint16(off, true), dif = dv.getUint8(off + 2);
+    var blocks = {};
+    for (var k = 0; k < BLOCK_KEYS.length; k++) {
+      var base = COUNT_BLOCK_BASE + k * COUNT_BLOCK_SIZE, b = {};
+      for (var j = 0; j < COUNT_FIELDS.length; j++) b[COUNT_FIELDS[j]] = u16(base + j * 2);
+      blocks[BLOCK_KEYS[k]] = b;
+    }
+    var ts = Number(dv.getBigInt64(off + 0x5B - shift, true));
+    var pl = u8.subarray(off, off + RECORD_PAYLOAD - shift);
+    var hex = '';
+    for (var i = 0; i < pl.length; i++) hex += ('0' + pl[i].toString(16)).slice(-2);
+    return {
+      songId: sid,
+      baseName: SONG_NAME[sid] || name || '',
+      difficultyFlag: dif,
+      difficultyIndex: Math.log(dif) / Math.LN2 | 0,
+      score: Number(dv.getBigInt64(off + 0x53 - shift, true)),
+      maxCombo: u16(0x09),
+      lamp: dv.getUint8(off + 0x06 - shift),
+      resultClear: u16(0x07),
+      paceValue: dv.getInt16(off + 0x0b - shift, true),
+      secondsSinceEpochUtc: ts,
+      counts: blocks,
+      payloadHex: hex
+    };
+  }
+
+  /* ---------- history ---------- */
+  function looksLikeHistory(dv, len, o) {
+    if (o < 0 || o + HISTORY_RECORD > len) return false;
+    var sid = dv.getUint16(o, true);
+    var dif = dv.getUint8(o + 2), lamp = dv.getUint8(o + 3), clr = dv.getUint8(o + 4);
+    var score = Number(dv.getBigInt64(o + 0x50, true));
+    return (sid >= 1 && sid <= 4096 && DIFFICULTY_FLAGS.indexOf(dif) >= 0 &&
+            lamp <= 2 && clr <= 4 && score >= 0 && score < 1e9);
+  }
+
+  function emptyHistorySlot(u8, len, o) {
+    if (o < 0 || o + HISTORY_RECORD > len) return false;
+    for (var i = o; i < o + HISTORY_RECORD; i++) if (u8[i]) return false;
+    return true;
+  }
+
+  function findHistory(u8, dv, len) {
+    var regions = [], o = 0;
+    while (o + HISTORY_RECORD <= len) {
+      if (!emptyHistorySlot(u8, len, o)) { o++; continue; }
+      var z = 0, p = o;
+      while (emptyHistorySlot(u8, len, p)) { z++; p += HISTORY_RECORD; }
+      if (z >= 64) regions.push([z, p]);
+      o = p;
+    }
+    if (!regions.length) return null;
+    regions.sort(function (a, b) { return b[0] - a[0]; });
+
+    var cands = [];
+    regions.slice(0, 12).forEach(function (rg) {
+      var p = rg[1];
+      for (var delta = 0; delta < HISTORY_RECORD; delta++) {
+        var start = p - HISTORY_SLOTS * HISTORY_RECORD + delta;
+        if (start < 0) continue;
+        var count = 0;
+        for (var k = 0; k < HISTORY_SLOTS; k++) {
+          if (looksLikeHistory(dv, len, start + k * HISTORY_RECORD)) count++;
+        }
+        if (count >= 8) cands.push([count, start]);
+      }
+    });
+    if (!cands.length) return null;
+    cands.sort(function (a, b) { return b[0] - a[0] || a[1] - b[1]; });
+    return [cands[0][1], HISTORY_SLOTS];
+  }
+
+  function decodeHistory(u8, dv, len, found) {
+    var start = found[0], slots = found[1], out = [];
+    for (var k = 0; k < slots; k++) {
+      var o = start + k * HISTORY_RECORD;
+      if (emptyHistorySlot(u8, len, o) || !looksLikeHistory(dv, len, o)) continue;
+      out.push(decodeRecord(u8, dv, o, null, true));
+    }
+    return out;
+  }
+
+  /* ---------- 卡牌 / 卡组 ---------- */
+  function findCards(dv, len) {
+    var best = null;
+    for (var start = 0; start < len - 4; start++) {
+      var count = dv.getInt32(start, true);
+      if (count < 1 || count > 4096) continue;
+      var end = start + 4 + count * CARD_SIZE;
+      if (end + 8 > len) continue;
+      var slots = [];
+      for (var k = 0; k < count; k++) {
+        var o = start + 4 + k * CARD_SIZE;
+        if (dv.getUint32(o, true)) slots.push([k, o]);
+      }
+      var owned = dv.getInt32(end, true);
+      if (owned !== slots.length || owned <= 0 || owned > count) continue;
+      if (!best || slots.length > best[1].length) best = [start, slots];
+    }
+    return best;
+  }
+
+  function findDecks(dv, len, base) {
+    if (base + 8 > len) return null;
+    var owned = dv.getInt32(base, true), n = dv.getInt32(base + 4, true);
+    if (n < 0 || n > 4096) return null;
+    var recs = [];
+    for (var k = 0; k < n; k++) {
+      var o = base + 8 + k * DECK_RECORD;
+      if (o + DECK_RECORD > len) break;
+      var slots = [];
+      for (var j = 0; j < DECK_SLOTS; j++) slots.push(dv.getInt32(o + j * 4, true));
+      var assigned = dv.getInt32(o + DECK_SLOTS * 4, true);
+      if (slots.every(function (s) { return s < 0; }) && !assigned) continue;
+      recs.push({ index: k, cardSlots: slots, assigned: !!assigned });
+    }
+    return { cardCount: owned, count: n, records: recs };
+  }
+
+  function utcText(ts) {
+    if (!(ts > 1000000000 && ts < 4000000000)) return '';
+    return new Date(ts * 1000).toISOString().replace('T', ' ').slice(0, 19);
+  }
+
+  function decodeCard(u8, dv, slot, off) {
+    var cardId = dv.getUint32(off, true), recipeId = dv.getUint32(off + 4, true);
+    var packed = dv.getUint32(off + 8, true), color = dv.getUint32(off + 12, true);
+    var atk = dv.getFloat64(off + 0x10, true), dfn = dv.getFloat64(off + 0x18, true);
+    var slotTypes = [u8[off + 0x28], u8[off + 0x29], u8[off + 0x2A]];
+    var traitIds = [u8[off + 0x2E], u8[off + 0x2F], u8[off + 0x30]];
+    var traits = traitIds.filter(function (t) { return t !== 0 && t !== IOTA_TRAIT_VOID; });
+    var created = dv.getUint32(off + 0x34, true);
+    var name = CARD_NAMES[recipeId] || {};
+    return {
+      slot: slot, cardId: cardId, recipeId: recipeId,
+      tier: packed & 0xFF, isSR: packed >> 8, color: color,
+      attack: Math.round(atk * 1000) / 1000, defense: Math.round(dfn * 1000) / 1000,
+      hasTrait: traits.length > 0,
+      traitIds: traitIds, traitSlotTypes: slotTypes,
+      createdAt: created, createdAtText: utcText(created),
+      nameEnglish: name.English || '', nameSimplified: name.SimplifiedChinese || '',
+      nameTraditional: name.TraditionalChinese || ''
+    };
+  }
+
+  /* ---------- 剧情 ---------- */
+  function findStory(dv, len) {
+    var recs = [];
+    for (var o = 0; o < len - 16; o++) {
+      var a = dv.getUint32(o, true), b = dv.getUint32(o + 4, true);
+      var value = dv.getUint32(o + 8, true), flags = dv.getUint32(o + 12, true);
+      if (a !== b || (flags & ~0x101)) continue;
+      if (a < 0x10000000 || a > 0x1FFFFFFF) continue;
+      if (value <= 0 || value >= 1e6) continue;
+      recs.push([o, a, value, flags]);
+    }
+    if (recs.length < 8) return null;
+    var groups = [], cur = [recs[0]];
+    for (var i = 1; i < recs.length; i++) {
+      if (recs[i][0] - cur[cur.length - 1][0] <= 64) cur.push(recs[i]);
+      else { groups.push(cur); cur = [recs[i]]; }
+    }
+    groups.push(cur);
+    var best = groups[0];
+    groups.forEach(function (g) { if (g.length > best.length) best = g; });
+    return best.length >= 8 ? best : null;
+  }
+
+  function decodeStory(recs) {
+    return recs.map(function (r) {
+      return {
+        offset: r[0], id: r[1], idHex: '0x' + r[1].toString(16),
+        storyIndex: STORY_MAP[r[1]] === undefined ? null : STORY_MAP[r[1]],
+        maxLineCountRead: r[2], isRead: !!(r[3] & 1),
+        hasPlayedSongChallenge: !!((r[3] >> 8) & 1)
+      };
+    });
+  }
+
+  /* ---------- 六边形网格 ---------- */
+  function findHexGrids(dv, len, minCells) {
+    minCells = minCells || 8;
+    var grids = [], cur = null;
+    for (var o = 3; o < len - 8; o += 8) {
+      var q = dv.getInt16(o, true), r = dv.getInt16(o + 2, true);
+      var s = dv.getInt16(o + 4, true), un = dv.getInt16(o + 6, true);
+      if (q + r + s === 0 && un === 0 && Math.abs(q) < 300 && Math.abs(r) < 300 && Math.abs(s) < 300) {
+        if (!cur) cur = { offset: o, cells: [] };
+        cur.cells.push([q, r, s]);
+      } else {
+        if (cur && cur.cells.length >= minCells) grids.push(cur);
+        cur = null;
+      }
+    }
+    if (cur && cur.cells.length >= minCells) grids.push(cur);
+    return grids.filter(function (g) {
+      var n = 0;
+      g.cells.forEach(function (c) { if (c[0] || c[1] || c[2]) n++; });
+      return n >= 4;
+    });
+  }
+
+  function decodeHexGrids(grids) {
+    return grids.map(function (g) {
+      return {
+        offset: g.offset, cellCount: g.cells.length,
+        cells: g.cells.length <= 2000 ? g.cells.map(function (c) {
+          return { q: c[0], r: c[1], s: c[2] };
+        }) : null
+      };
+    });
+  }
+
+  /* ---------- 粒子库存 ---------- */
+  function iotaFields(t) {
+    return [(t >>> 20) & 0xFFF, (t >>> 10) & 0x3FF, (t >>> 8) & 3];
+  }
+
+  function iotaSlotOk(dv, len, off) {
+    if (off < 0 || off + IOTA_SIZE > len) return false;
+    var t = dv.getUint32(off, true), v1 = dv.getUint32(off + 4, true);
+    var v2 = dv.getUint32(off + 8, true), n = dv.getUint32(off + 12, true);
+    if (t === 0 && v1 === 0 && v2 === 0 && n === 0) return true;
+    var id = (t >>> 20) & 0xFFF;
+    return (t & 0xFF) === 0 && id >= 1 && id <= 40 && n % 256 === 0 && n > 0 && n <= 0xFFFFFF;
+  }
+
+  function findIotas(dv, len) {
+    var best = null, off = 0;
+    while (off + IOTA_SIZE <= len) {
+      if (!iotaSlotOk(dv, len, off) || iotaSlotOk(dv, len, off - IOTA_SIZE)) { off += 4; continue; }
+      var recs = [], p = off;
+      while (p + IOTA_SIZE <= len && iotaSlotOk(dv, len, p)) { recs.push(p); p += IOTA_SIZE; }
+      var used = 0;
+      recs.forEach(function (o) { if (dv.getUint32(o + 12, true)) used++; });
+      if (used >= 8 && (!best || used > best[2])) best = [off, recs, used];
+      off = p;
+    }
+    return best ? [best[0], best[1]] : [null, []];
+  }
+
+  function decodeIotas(u8, dv, found) {
+    var base = found[0], recs = found[1], stacks = [];
+    recs.forEach(function (off) {
+      var t = dv.getUint32(off, true), n = dv.getUint32(off + 12, true);
+      if (!n) return;
+      var f = iotaFields(t), baseId = f[0], potency = f[1], freeSlots = f[2];
+      var info = IOTA_TABLE[baseId] || {};
+      var tids = [];
+      IOTA_TRAIT_SLOTS.forEach(function (i) {
+        var v = u8[off + i];
+        if (v !== 0 && v !== IOTA_TRAIT_VOID) tids.push(v);
+      });
+      stacks.push({
+        offset: off, baseIotaId: baseId, baseIotaName: info.IdStr || null,
+        baseIotaTitle: info.Title || '',
+        baseColor: info.Color === undefined ? null : info.Color,
+        baseTier: info.Tier === undefined ? null : info.Tier,
+        baseSize: info.Size === undefined ? null : info.Size,
+        potency: potency, traitIds: tids,
+        traitNames: tids.map(function (x) { return TRAIT_NAMES[x] || null; }),
+        freeTraitSlots: freeSlots, traitCount: 3 - freeSlots, count: n >>> 8
+      });
+    });
+    return {
+      base: base, slots: recs.length, used: stacks.length,
+      total: stacks.reduce(function (a, s) { return a + s.count; }, 0),
+      stacks: stacks
+    };
+  }
+
+  /* ---------- 主入口 ---------- */
+  function parse(buf, fileName) {
+    var len = buf.byteLength;
+    var u8 = new Uint8Array(buf), dv = new DataView(buf);
+
+    var found = findRecords(u8, dv, len);
+    var highscores = [];
+    if (found) found[1].forEach(function (r) {
+      highscores.push(decodeRecord(u8, dv, r.pay, r.name, false));
+    });
+
+    var foundHist = findHistory(u8, dv, len);
+    var history = foundHist ? decodeHistory(u8, dv, len, foundHist) : [];
+
+    var strings = scanStrings(u8, dv, len);
+    var names = {};
+    highscores.forEach(function (r) { names[r.baseName] = 1; });
+    var guids = [], recipes = [], others = [];
+    strings.forEach(function (p) {
+      var s = p[1];
+      if (s.length === 36 && s.split('-').length === 5) guids.push(s);
+      else if (names[s]) return;
+      else if (/\d/.test(s) && s.indexOf('-') >= 0) recipes.push(s);
+      else others.push(s);
+    });
+
+    var cards = [], decks = null, cardCount = null;
+    var foundCards = findCards(dv, len);
+    if (foundCards) {
+      var cstart = foundCards[0], slots = foundCards[1];
+      var ccount = dv.getInt32(cstart, true);
+      decks = findDecks(dv, len, cstart + 4 + ccount * CARD_SIZE);
+      slots.forEach(function (p) { cards.push(decodeCard(u8, dv, p[0], p[1])); });
+      cardCount = decks ? decks.cardCount : slots.length;
+      if (decks) decks = { count: decks.count, records: decks.records };
+    }
+
+    var storyRecs = findStory(dv, len);
+    var hexGrids = decodeHexGrids(findHexGrids(dv, len));
+    var iotas = findIotas(dv, len);
+
+    return {
+      file: fileName || '', size: len,
+      recordArrayOffset: found ? found[0] : null,
+      highscores: highscores,
+      history: history,
+      cards: cards,
+      cardCount: cardCount,
+      decks: decks,
+      iotas: iotas[0] !== null ? decodeIotas(u8, dv, iotas) : null,
+      storyProgress: storyRecs ? decodeStory(storyRecs) : [],
+      hexGrids: hexGrids,
+      guids: guids,
+      bonusAreas: guids.map(function (g) {
+        var m = BONUS_MAP[g] || {}, ri = RECIPE_INFO[m.recipeId] || {};
+        return {
+          guid: g,
+          recipeId: m.recipeId === undefined ? null : m.recipeId,
+          recipeIdStr: ri.idStr || null, recipeName: ri.name || null,
+          areaIndex: m.areaIndex === undefined ? null : m.areaIndex,
+          cells: m.cells === undefined ? null : m.cells,
+          effects: m.effects === undefined ? null : m.effects
+        };
+      }),
+      recipeIds: recipes,
+      strings: strings.map(function (p) { return { offset: p[0], text: p[1] }; })
+    };
+  }
+
+  return {
+    parse: parse,
+    SONG_NAME: SONG_NAME, SONG_TITLE: SONG_TITLE, TRAIT_NAMES: TRAIT_NAMES,
+    IOTA_TABLE: IOTA_TABLE, RECIPE_INFO: RECIPE_INFO,
+    COUNT_FIELDS: COUNT_FIELDS, BLOCK_KEYS: BLOCK_KEYS
+  };
+})();
+</script>
+<script id="ui">
+(function () {
+  'use strict';
+  var S = null, tab = 'overview', q = '', filter = '', moreHistory = false, moreStrings = false;
+
+  var LAMP = ['—', 'Fail', 'Clear'];
+  var RESULT = ['—', 'DiveFailed', 'DiveCleared', 'FullLink', 'PerfectDive'];
+  var CN = { tap: 'Tap', hold: 'Hold', skyArea: 'Field', flick: 'Flick' };
+  var FIELD_CN = {
+    shiny: 'EXACT+', perfectEarly: 'EXACT 早', perfectLate: 'EXACT 晚',
+    nearEarly: 'NEAR 早', nearLate: 'NEAR 晚', miss: 'MISS',
+    none: '未判定', unused: '保留'
+  };
+  var COLOR_CN = { 1: '红', 2: '黄', 3: '绿', 4: '蓝', 5: '紫' };
+  var COLOR_PILL = { 1: 'r', 2: 'y', 3: 'g', 4: 'b', 5: 'p' };
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) {
+    return String(s === null || s === undefined ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function n(v) { return (v === null || v === undefined) ? '<span class="dim">-</span>' : Number(v).toLocaleString('zh-CN'); }
+  function hexs(v) { return '0x' + Number(v).toString(16); }
+  function tick() { return new Promise(function (r) { setTimeout(r, 0); }); }
+
+  /* ---------- 上传 ---------- */
+  var drop = $('drop'), input = $('file');
+  drop.addEventListener('click', function () { input.click(); });
+  input.addEventListener('change', function () { if (input.files[0]) handle(input.files[0]); });
+  ['dragenter', 'dragover'].forEach(function (e) {
+    drop.addEventListener(e, function (ev) { ev.preventDefault(); drop.classList.add('over'); });
+  });
+  ['dragleave', 'drop'].forEach(function (e) {
+    drop.addEventListener(e, function (ev) { ev.preventDefault(); drop.classList.remove('over'); });
+  });
+  drop.addEventListener('drop', function (ev) {
+    var f = ev.dataTransfer.files[0];
+    if (f) handle(f);
+  });
+
+  async function handle(file) {
+    $('status').className = 'status';
+    $('status').textContent = '读取 ' + file.name + ' …';
+    $('out').innerHTML = '';
+    try {
+      var buf = await file.arrayBuffer();
+      $('status').textContent = '解析中（' + (buf.byteLength / 1024).toFixed(0) + ' KB），请稍候…';
+      await tick();
+      var t0 = performance.now();
+      S = IF.parse(buf, file.name);
+      q = ''; filter = ''; moreHistory = false; moreStrings = false; tab = 'overview';
+      $('status').textContent = '解析完成，用时 ' + Math.round(performance.now() - t0) + ' ms';
+      render();
+    } catch (err) {
+      $('status').className = 'status err';
+      $('status').textContent = '解析失败：' + (err && err.message ? err.message : err);
+      console.error(err);
+    }
+  }
+
+  /* ---------- 布局 ---------- */
+  var TABS = [
+    ['overview', '概览'], ['scores', '成绩'], ['history', '历史'], ['cards', '卡牌'],
+    ['decks', '卡组'], ['iotas', '粒子'], ['story', '剧情'], ['grids', '网格'],
+    ['bonus', '加成区域'], ['strings', '字符串']
+  ];
+  function tabCount(k) {
+    if (!S) return '';
+    var m = {
+      scores: S.highscores.length, history: S.history.length, cards: S.cards.length,
+      decks: S.decks ? S.decks.records.length : 0,
+      iotas: S.iotas ? S.iotas.used : 0, story: S.storyProgress.length,
+      grids: S.hexGrids.length, bonus: S.bonusAreas.length, strings: S.strings.length
+    };
+    return m[k] === undefined ? '' : m[k];
+  }
+
+  function render() {
+    if (!S) return;
+    var html = '<div class="category-title">总览</div>';
+    html += '<div class="stat-row">' + statCards() + '</div>';
+    html += '<div class="category-title">分项明细</div>';
+    html += '<div class="tab-row">' + TABS.map(function (t) {
+      return '<div class="tab' + (t[0] === tab ? ' on' : '') + '" data-t="' + t[0] + '">' +
+        t[1] + (tabCount(t[0]) !== '' ? '<span class="n">' + tabCount(t[0]) + '</span>' : '') + '</div>';
+    }).join('') + '</div>';
+    html += '<div class="panel-card"><div class="panel-inner">' +
+      '<div id="barbox">' + barHTML() + '</div>' +
+      '<div id="panel">' + panel() + '</div></div></div>';
+    $('out').innerHTML = html;
+    bindAll();
+  }
+
+  function bindAll() {
+    Array.prototype.forEach.call($('out').querySelectorAll('.tab'), function (el) {
+      el.addEventListener('click', function () {
+        tab = el.getAttribute('data-t'); q = ''; filter = '';
+        render();
+      });
+    });
+    var se = $('q');
+    if (se) {
+      se.value = q;
+      se.addEventListener('input', function () { q = se.value; refreshPanel(); });
+    }
+    var fl = $('fl');
+    if (fl) {
+      fl.value = filter;
+      fl.addEventListener('change', function () { filter = fl.value; refreshPanel(); });
+    }
+    var ex = $('export');
+    if (ex) ex.addEventListener('click', exportJSON);
+    bindMore();
+  }
+
+  function bindMore() {
+    Array.prototype.forEach.call($('out').querySelectorAll('#panel [data-more]'), function (el) {
+      el.addEventListener('click', function () {
+        var k = el.getAttribute('data-more');
+        if (k === 'history') moreHistory = true;
+        if (k === 'strings') moreStrings = true;
+        refreshPanel();
+      });
+    });
+  }
+
+  // 只重建表格，工具栏保持不动（输入框不失焦）
+  function refreshPanel() {
+    var box = $('panel');
+    if (box) box.innerHTML = panel();
+    bindMore();
+  }
+
+  function statCards() {
+    var io = S.iotas;
+    var items = [
+      [(S.size / 1024).toFixed(0) + ' KB', '存档大小'],
+      [S.highscores.length, '成绩记录'],
+      [S.history.length, 'history 局数'],
+      [S.cardCount === null ? '-' : S.cardCount, '持有卡牌'],
+      [io ? io.total : 0, '粒子总数'],
+      [S.storyProgress.length, '剧情记录'],
+      [S.hexGrids.length, '网格段数'],
+      [S.bonusAreas.length, '已解锁加成区域']
+    ];
+    return items.map(function (i) {
+      return '<div class="stat"><div class="v">' + i[0] + '</div><div class="k">' + i[1] + '</div></div>';
+    }).join('');
+  }
+
+  // 工具栏单独渲染，搜索时只重建表格，输入框不会失焦
+  var BAR = {
+    overview: {},
+    scores: { search: '搜索曲名 / songId' },
+    history: { search: '搜索曲名 / songId' },
+    cards: {
+      search: '搜索卡名 / id',
+      filters: [['', '全部颜色'], ['1', '红'], ['2', '黄'], ['3', '绿'], ['4', '蓝'], ['5', '紫']]
+    },
+    decks: { search: '搜索遭遇编号' },
+    iotas: { search: '搜索粒子', filters: [['', '全部'], ['trait', '仅带特性']] },
+    story: { search: '搜索 id / 下标' },
+    grids: { filters: [['', '全部'], ['big', '≥20 格']] },
+    bonus: {
+      search: '搜索配方 / GUID',
+      filters: [['', '全部'], ['named', '能对上配方表'], ['unnamed', '未匹配']]
+    },
+    strings: { search: '搜索字符串' }
+  };
+
+  function barHTML() {
+    var opts = BAR[tab] || {};
+    var h = '<div class="bar">';
+    if (opts.search) h += '<input type="search" id="q" placeholder="' + opts.search + '">';
+    if (opts.filters) {
+      h += '<select id="fl">' + opts.filters.map(function (f) {
+        return '<option value="' + f[0] + '">' + f[1] + '</option>';
+      }).join('') + '</select>';
+    }
+    h += '<div class="spacer"></div><button class="btn" id="export">导出 JSON</button>';
+    return h + '</div>';
+  }
+
+  function tbl(cols, rows, empty) {
+    if (!rows.length) return '<div class="empty">' + (empty || '没有数据') + '</div>';
+    return '<div class="table-wrap"><table><thead><tr>' +
+      cols.map(function (c) {
+        return '<th' + (c.num ? ' class="num"' : '') + '>' + c.label + '</th>';
+      }).join('') + '</tr></thead><tbody>' +
+      rows.map(function (r) { return '<tr>' + r + '</tr>'; }).join('') +
+      '</tbody></table></div>';
+  }
+  function td(v, cls) { return '<td' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</td>'; }
+
+  /* ---------- 各面板 ---------- */
+  function panel() {
+    var f = PANELS[tab];
+    return '<div id="panel">' + f() + '</div>';
+  }
+
+  function songLabel(r) {
+    var t = IF.SONG_TITLE[r.songId];
+    return esc(r.baseName || ('songId ' + r.songId)) + (t ? ' <span class="dim">' + esc(t) + '</span>' : '');
+  }
+
+  function countsDetail(c) {
+    var h = '<div class="kv" style="grid-template-columns:70px repeat(4,1fr);margin-top:8px">';
+    h += '<div class="k"></div>' + IF.BLOCK_KEYS.map(function (b) {
+      return '<div class="k">' + CN[b] + '</div>';
+    }).join('');
+    IF.COUNT_FIELDS.forEach(function (fname) {
+      h += '<div class="k">' + FIELD_CN[fname] + '</div>';
+      IF.BLOCK_KEYS.forEach(function (b) {
+        h += '<div class="num">' + c[b][fname] + '</div>';
+      });
+    });
+    return h + '</div>';
+  }
+
+  var PANELS = {};
+
+  PANELS.overview = function () {
+    var io = S.iotas;
+    var decks = S.decks;
+    var h = '<div class="grid2">';
+    h += '<div class="mini-card"><div class="t">文件</div><div class="m mono">' + esc(S.file) +
+      '</div><div class="m">' + S.size.toLocaleString('zh-CN') + ' 字节</div></div>';
+    h += '<div class="mini-card"><div class="t">成绩记录数组</div><div class="m mono">' +
+      (S.recordArrayOffset === null ? '未定位到' : hexs(S.recordArrayOffset)) + '</div></div>';
+    h += '<div class="mini-card"><div class="t">歌曲</div><div class="m">成绩 ' + S.highscores.length +
+      ' 条 · history ' + S.history.length + ' 局</div></div>';
+    h += '<div class="mini-card"><div class="t">卡牌</div><div class="m">' +
+      (S.cardCount === null ? '-' : S.cardCount) + ' 张 · 卡组 ' +
+      (decks ? decks.records.length + '/' + decks.count : '-') + ' 条</div></div>';
+    h += '<div class="mini-card"><div class="t">粒子</div><div class="m">' +
+      (io ? io.used + ' 堆 / ' + io.total + ' 个（' + io.slots + ' 槽 @' + hexs(io.base) + '）' : '未定位到') +
+      '</div></div>';
+    h += '<div class="mini-card"><div class="t">其他</div><div class="m">剧情 ' + S.storyProgress.length +
+      ' 条 · 网格 ' + S.hexGrids.length + ' 段 · 字符串 ' + S.strings.length + ' 条</div></div>';
+    h += '</div>';
+
+    var recent = S.history.slice(-8).reverse();
+    if (recent.length) {
+      h += '<h2 class="sec" style="margin-top:20px">最近的几局</h2>';
+      h += tbl([
+        { label: '曲名' }, { label: '难度' }, { label: '分数', num: true },
+        { label: 'maxCombo', num: true }, { label: '结果' }, { label: 'Pace', num: true }
+      ], recent.map(function (r) {
+        return td(songLabel(r)) + td('难度 ' + (r.difficultyIndex + 1)) +
+          td(n(r.score), 'num') + td(n(r.maxCombo), 'num') +
+          td('<span class="pill ' + (r.resultClear >= 3 ? 'g' : r.resultClear === 1 ? 'r' : '') + '">' +
+            RESULT[r.resultClear] + '</span>') + td(n(r.paceValue), 'num');
+      }));
+    }
+
+    var named = S.bonusAreas.filter(function (b) { return b.recipeIdStr; });
+    h += '<h2 class="sec" style="margin-top:20px">已解锁配方加成区域</h2>' +
+      '<div class="note">' + S.bonusAreas.length + ' 个，其中 ' + named.length +
+      ' 个能对上配方表。' + (named.length ? '涉及配方：' +
+        named.slice(0, 14).map(function (b) {
+          return '<span class="pill">' + esc(b.recipeName || b.recipeIdStr) + '</span>';
+        }).join(' ') + (named.length > 14 ? ' …' : '') : '') + '</div>';
+    if (S.recipeIds.length) {
+      h += '<h2 class="sec" style="margin-top:18px">已解锁配方 id</h2><div class="note mono">' +
+        S.recipeIds.slice(0, 24).map(esc).join(', ') +
+        (S.recipeIds.length > 24 ? ' … 共 ' + S.recipeIds.length + ' 个' : '') + '</div>';
+    }
+    return h;
+  };
+
+  PANELS.scores = function () {
+    var rows = S.highscores.filter(function (r) {
+      if (!q) return true;
+      var s = (r.baseName + ' ' + IF.SONG_TITLE[r.songId] + ' ' + r.songId).toLowerCase();
+      return s.indexOf(q.toLowerCase()) >= 0;
+    });
+    return '<div class="note">highscores 只更新 score 与 resultClear，其余字段是该谱面第一次成绩。</div>' +
+      tbl([
+        { label: '曲名' }, { label: 'songId', num: true }, { label: '难度' },
+        { label: '分数', num: true }, { label: 'maxCombo', num: true },
+        { label: 'Lamp' }, { label: '结果' }, { label: 'Pace', num: true },
+        { label: 'EXACT+ T/H/F/L', num: true }, { label: '明细' }
+      ], rows.map(function (r) {
+        var e = IF.BLOCK_KEYS.map(function (b) { return r.counts[b].shiny; });
+        return td(songLabel(r)) + td(r.songId, 'num') + td('难度 ' + (r.difficultyIndex + 1)) +
+          td(n(r.score), 'num') + td(n(r.maxCombo), 'num') +
+          td('<span class="pill ' + (r.lamp === 2 ? 'g' : r.lamp === 1 ? 'r' : '') + '">' + LAMP[r.lamp] + '</span>') +
+          td('<span class="pill ' + (r.resultClear >= 3 ? 'g' : r.resultClear === 1 ? 'r' : '') + '">' + RESULT[r.resultClear] + '</span>') +
+          td(n(r.paceValue), 'num') + td(e.join(' / '), 'num') +
+          td('<details><summary>展开</summary>' + countsDetail(r.counts) + '</details>');
+      }), '没有定位到成绩记录数组');
+  };
+
+  PANELS.history = function () {
+    var rows = S.history.filter(function (r) {
+      if (!q) return true;
+      var s = (r.baseName + ' ' + IF.SONG_TITLE[r.songId] + ' ' + r.songId).toLowerCase();
+      return s.indexOf(q.toLowerCase()) >= 0;
+    });
+    var shown = rows.slice().reverse();
+    var limit = 200;
+    var view = moreHistory ? shown : shown.slice(0, limit);
+    var h = '<div class="note">共 ' + rows.length + ' 局（槽位上限 1024），按存档顺序倒序显示。</div>';
+    h += tbl([
+      { label: '曲名' }, { label: 'songId', num: true }, { label: '难度' },
+      { label: '分数', num: true }, { label: 'maxCombo', num: true },
+      { label: 'Lamp' }, { label: '结果' }, { label: 'Pace', num: true },
+      { label: 'EXACT+ T/H/F/L', num: true }, { label: '明细' }
+    ], view.map(function (r) {
+      var e = IF.BLOCK_KEYS.map(function (b) { return r.counts[b].shiny; });
+      return td(songLabel(r)) + td(r.songId, 'num') + td('难度 ' + (r.difficultyIndex + 1)) +
+        td(n(r.score), 'num') + td(n(r.maxCombo), 'num') +
+        td('<span class="pill ' + (r.lamp === 2 ? 'g' : r.lamp === 1 ? 'r' : '') + '">' + LAMP[r.lamp] + '</span>') +
+        td('<span class="pill ' + (r.resultClear >= 3 ? 'g' : r.resultClear === 1 ? 'r' : '') + '">' + RESULT[r.resultClear] + '</span>') +
+        td(n(r.paceValue), 'num') + td(e.join(' / '), 'num') +
+        td('<details><summary>展开</summary>' + countsDetail(r.counts) +
+          '<div class="mono" style="margin-top:6px">time=' +
+          (r.secondsSinceEpochUtc > 0 ? new Date(r.secondsSinceEpochUtc * 1000).toISOString().replace('T', ' ').slice(0, 19) : '-') +
+          '</div></details>');
+    }), '没有定位到 history');
+    if (!moreHistory && shown.length > limit) {
+      h += '<div style="margin-top:12px"><button class="btn" data-more="history">显示全部 ' + shown.length + ' 局</button></div>';
+    }
+    return h;
+  };
+
+  PANELS.cards = function () {
+    var rows = S.cards.filter(function (c) {
+      if (filter && String(c.color) !== filter) return false;
+      if (!q) return true;
+      var s = (c.nameSimplified + ' ' + c.nameEnglish + ' ' + c.recipeId + ' ' + c.cardId).toLowerCase();
+      return s.indexOf(q.toLowerCase()) >= 0;
+    });
+    return '<div class="note">共 ' + S.cards.length + ' 条记录，持有 ' +
+      (S.cardCount === null ? '-' : S.cardCount) + ' 张。</div>' +
+      tbl([
+        { label: '槽' , num: true}, { label: '卡名' }, { label: 'CardId', num: true },
+        { label: '配方', num: true }, { label: '等级', num: true }, { label: '颜色' },
+        { label: 'SR' }, { label: '攻击', num: true }, { label: '防御', num: true },
+        { label: '特性' }, { label: '创建时间' }
+      ], rows.map(function (c) {
+        var traits = c.traitIds.map(function (t, i) {
+          if (t === 0xFF || t === 0) return null;
+          return (IF.TRAIT_NAMES[t] || ('#' + t));
+        }).filter(Boolean);
+        return td(c.slot, 'num') +
+          td(esc(c.nameSimplified || c.nameEnglish || ('recipe ' + c.recipeId)) +
+            (c.nameEnglish && c.nameSimplified ? ' <span class="dim">' + esc(c.nameEnglish) + '</span>' : '')) +
+          td(c.cardId, 'num') + td(c.recipeId, 'num') + td(c.tier + 1, 'num') +
+          td('<span class="pill ' + (COLOR_PILL[c.color] || '') + '">' + (COLOR_CN[c.color] || c.color) + '</span>') +
+          td(c.isSR ? '<span class="pill y">SR</span>' : '<span class="dim">-</span>') +
+          td(c.attack.toFixed(1), 'num') + td(c.defense.toFixed(1), 'num') +
+          td(traits.length ? traits.map(esc).join(' / ') : '<span class="dim">无</span>') +
+          td('<span class="mono">' + (c.createdAtText || '-') + '</span>');
+      }), '没有定位到卡牌数组');
+  };
+
+  PANELS.decks = function () {
+    if (!S.decks) return '<div class="empty">没有定位到卡组</div>';
+    var byId = {};
+    S.cards.forEach(function (c) { byId[c.cardId] = c; });
+    var rows = S.decks.records.filter(function (r) {
+      if (!q) return true;
+      return String(r.index).indexOf(q) >= 0;
+    });
+    return '<div class="note">' + S.decks.records.length + ' 条非空 / 共 ' + S.decks.count +
+      ' 个遭遇槽位。-1 表示空槽（含已删除的卡牌）。</div>' +
+      tbl([
+        { label: '遭遇', num: true }, { label: '已指派' }, { label: '卡组（5 槽）' }
+      ], rows.map(function (r) {
+        var cells = r.cardSlots.map(function (s) {
+          if (s < 0) return '<span class="pill">空</span>';
+          var c = byId[s];
+          return '<span class="pill">' + esc(c ? (c.nameSimplified || c.nameEnglish) : ('#' + s)) + '</span>';
+        });
+        return td('#' + r.index, 'num') +
+          td(r.assigned ? '<span class="pill g">是</span>' : '<span class="dim">否</span>') +
+          td(cells.join(' '));
+      }), '没有非空卡组');
+  };
+
+  PANELS.iotas = function () {
+    if (!S.iotas) return '<div class="empty">没有定位到粒子库存</div>';
+    var io = S.iotas;
+    var rows = io.stacks.filter(function (s) {
+      if (filter === 'trait' && !s.traitIds.length) return false;
+      if (!q) return true;
+      var s2 = ((s.baseIotaName || '') + ' ' + (s.baseIotaTitle || '') + ' ' + s.baseIotaId).toLowerCase();
+      return s2.indexOf(q.toLowerCase()) >= 0;
+    }).sort(function (a, b) { return b.count - a.count; });
+    var agg = {};
+    io.stacks.forEach(function (s) {
+      var k = s.baseIotaName || ('#' + s.baseIotaId);
+      agg[k] = (agg[k] || 0) + s.count;
+    });
+    var aggs = Object.keys(agg).sort(function (a, b) { return agg[b] - agg[a]; });
+    var h = '<div class="note">' + io.used + ' 堆 / 共 ' + io.total + ' 个粒子 · 数组 @' +
+      hexs(io.base) + ' · ' + io.slots + ' 槽位</div>';
+    h += '<div class="note" style="margin-top:6px">按种类合计：' +
+      aggs.slice(0, 16).map(function (k) {
+        return '<span class="pill">' + esc(k) + ' ' + agg[k] + '</span>';
+      }).join(' ') + (aggs.length > 16 ? ' …' : '') + '</div>';
+    h += tbl([
+      { label: '偏移' }, { label: '粒子' }, { label: '名称' }, { label: '色' },
+      { label: '阶', num: true }, { label: '格', num: true }, { label: '效能', num: true },
+      { label: '数量', num: true }, { label: '特性' }, { label: '空槽', num: true }
+    ], rows.map(function (s) {
+      var names = s.traitIds.map(function (t, i) {
+        return esc(s.traitNames[i] || ('#' + t));
+      });
+      return td('<span class="mono">' + hexs(s.offset) + '</span>') +
+        td(esc(s.baseIotaName || ('#' + s.baseIotaId))) +
+        td('<span class="dim">' + esc(s.baseIotaTitle) + '</span>') +
+        td('<span class="pill ' + (COLOR_PILL[s.baseColor] || '') + '">' +
+          (COLOR_CN[s.baseColor] || '-') + '</span>') +
+        td(n(s.baseTier), 'num') + td(n(s.baseSize), 'num') + td(n(s.potency), 'num') +
+        td('<b>' + s.count + '</b>', 'num') +
+        td(names.length ? names.join(' / ') : '<span class="dim">-</span>') +
+        td(s.freeTraitSlots, 'num');
+    }), '库存是空的');
+    return h;
+  };
+
+  PANELS.story = function () {
+    var rows = S.storyProgress.filter(function (r) {
+      if (!q) return true;
+      return (r.idHex + ' ' + r.id + ' ' + r.storyIndex).toLowerCase().indexOf(q.toLowerCase()) >= 0;
+    });
+    return '<div class="note">共 ' + S.storyProgress.length + ' 条剧情进度</div>' +
+      tbl([
+        { label: '下标', num: true }, { label: 'id' }, { label: '已读到行', num: true },
+        { label: '已读' }, { label: '歌曲挑战' }, { label: '偏移' }
+      ], rows.map(function (r) {
+        return td(r.storyIndex === null ? '<span class="dim">-</span>' : r.storyIndex, 'num') +
+          td('<span class="mono">' + r.idHex + '</span>') +
+          td(n(r.maxLineCountRead), 'num') +
+          td(r.isRead ? '<span class="pill g">是</span>' : '<span class="dim">否</span>') +
+          td(r.hasPlayedSongChallenge ? '<span class="pill b">是</span>' : '<span class="dim">否</span>') +
+          td('<span class="mono">' + hexs(r.offset) + '</span>');
+      }), '没有定位到剧情进度');
+  };
+
+  PANELS.grids = function () {
+    var rows = S.hexGrids.slice().sort(function (a, b) { return b.cellCount - a.cellCount; });
+    if (filter === 'big') rows = rows.filter(function (g) { return g.cellCount >= 20; });
+    var view = rows.slice(0, 24);
+    var h = '';
+    h += '<div class="note">共 ' + S.hexGrids.length + ' 段网格，显示前 ' + view.length +
+      ' 段（按格子数降序）</div>';
+    if (!view.length) return h + '<div class="empty">没有网格</div>';
+    h += '<div class="grid2">' + view.map(function (g) {
+      return '<div class="mini-card"><div class="t">@' + hexs(g.offset) + ' · ' + g.cellCount +
+        ' 格</div>' + hexSVG(g) + '</div>';
+    }).join('') + '</div>';
+    return h;
+  };
+
+  function hexSVG(g) {
+    if (!g.cells) return '<div class="m dim">格子过多（>2000），未展开</div>';
+    var size = 9, pts = g.cells.map(function (c) {
+      return [size * 1.5 * c.q, size * Math.sqrt(3) * (c.r + c.q / 2)];
+    });
+    var xs = pts.map(function (p) { return p[0]; }), ys = pts.map(function (p) { return p[1]; });
+    var minx = Math.min.apply(null, xs) - size, maxx = Math.max.apply(null, xs) + size;
+    var miny = Math.min.apply(null, ys) - size, maxy = Math.max.apply(null, ys) + size;
+    var w = maxx - minx, hh = maxy - miny, scale = Math.min(1, 210 / Math.max(w, hh));
+    var poly = [];
+    for (var i = 0; i < 6; i++) {
+      var a = Math.PI / 180 * 60 * i;
+      poly.push((size * 0.92 * Math.cos(a)).toFixed(2) + ',' + (size * 0.92 * Math.sin(a)).toFixed(2));
+    }
+    var body = pts.map(function (p) {
+      return '<polygon points="' + poly.join(' ') + '" transform="translate(' +
+        (p[0] - minx) + ',' + (p[1] - miny) + ')" fill="rgba(160,160,220,.30)" stroke="rgba(200,200,255,.65)" stroke-width="1"/>';
+    }).join('');
+    return '<svg viewBox="0 0 ' + w.toFixed(1) + ' ' + hh.toFixed(1) + '" width="100%" height="' +
+      Math.max(60, Math.min(190, hh * scale)).toFixed(0) + '" style="display:block;margin-top:6px">' +
+      '<g>' + body + '</g></svg>';
+  }
+
+  PANELS.bonus = function () {
+    var rows = S.bonusAreas.filter(function (b) {
+      if (filter === 'named' && !b.recipeIdStr) return false;
+      if (filter === 'unnamed' && b.recipeIdStr) return false;
+      if (!q) return true;
+      return ((b.recipeName || '') + ' ' + (b.recipeIdStr || '') + ' ' + b.guid).toLowerCase().indexOf(q.toLowerCase()) >= 0;
+    });
+    return '<div class="note">共 ' + S.bonusAreas.length + ' 个已解锁的配方加成区域</div>' +
+      tbl([
+        { label: '配方' }, { label: 'id' }, { label: '名称' }, { label: '区域#', num: true },
+        { label: '格数', num: true }, { label: '效果数', num: true }, { label: 'GUID' }
+      ], rows.map(function (b) {
+        return td(b.recipeIdStr ? '<span class="pill">' + esc(b.recipeIdStr) + '</span>' : '<span class="dim">-</span>') +
+          td(n(b.recipeId), 'num') + td(esc(b.recipeName || '-')) +
+          td(n(b.areaIndex), 'num') + td(n(b.cells), 'num') + td(n(b.effects), 'num') +
+          td('<span class="mono">' + esc(b.guid) + '</span>');
+      }), '没有 GUID');
+  };
+
+  PANELS.strings = function () {
+    var rows = S.strings.filter(function (s) {
+      if (!q) return true;
+      return s.text.toLowerCase().indexOf(q.toLowerCase()) >= 0;
+    });
+    var limit = 500;
+    var view = moreStrings ? rows : rows.slice(0, limit);
+    var h = '<div class="note">共 ' + S.strings.length + ' 条，' +
+      (moreStrings ? '已显示全部' : '显示前 ' + view.length + ' 条') + '</div>';
+    h += tbl([
+      { label: '偏移' }, { label: '文本' }
+    ], view.map(function (s) {
+      return td('<span class="mono">' + hexs(s.offset) + '</span>') + td(esc(s.text));
+    }), '没有字符串');
+    if (!moreStrings && rows.length > limit) {
+      h += '<div style="margin-top:12px"><button class="btn" data-more="strings">显示全部 ' + rows.length + ' 条</button></div>';
+    }
+    return h;
+  };
+
+  /* ---------- 导出 ---------- */
+  function exportJSON() {
+    var blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (S.file ? S.file.replace(/\.sav$/i, '') : 'save') + '_export.json';
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  }
+})();
+</script>
+</body>
+</html>
