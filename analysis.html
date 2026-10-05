@@ -154,17 +154,44 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            background: rgba(255,255,255,0.02);
+            /* 半透明玻璃底衬 + 内侧高光，让拖拽框从页面背景里"托"起来 */
+            background-color: rgba(255,255,255,0.035);
+            background-image: linear-gradient(180deg,
+                rgba(255,255,255,0.05) 0%,
+                rgba(255,255,255,0.012) 55%,
+                rgba(160,160,220,0.03) 100%);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.09),
+                inset 0 -1px 0 rgba(0,0,0,0.22),
+                0 6px 22px rgba(0,0,0,0.28);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
 
         .drop-zone:hover {
             border-color: rgba(160,160,220,0.55);
-            background: rgba(160,160,220,0.06);
+            background-color: rgba(160,160,220,0.07);
+            background-image: linear-gradient(180deg,
+                rgba(160,160,220,0.12) 0%,
+                rgba(160,160,220,0.04) 60%,
+                rgba(160,160,220,0.07) 100%);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.14),
+                inset 0 -1px 0 rgba(0,0,0,0.2),
+                0 10px 30px rgba(0,0,0,0.36);
         }
 
         .drop-zone.dragover {
             border-color: rgba(160,160,220,0.9);
-            background: rgba(160,160,220,0.12);
+            background-color: rgba(160,160,220,0.14);
+            background-image: linear-gradient(180deg,
+                rgba(160,160,220,0.2) 0%,
+                rgba(160,160,220,0.07) 60%,
+                rgba(160,160,220,0.13) 100%);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.2),
+                0 0 0 4px rgba(160,160,220,0.09),
+                0 14px 38px rgba(0,0,0,0.45);
             transform: scale(1.008);
         }
 
@@ -1104,6 +1131,56 @@ svg { max-width: 100%; }
 }
 
 /* ---------- 公式卡 ---------- */
+/* ---------- 公式区折叠 ---------- */
+.if-fc-toggle {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    margin-bottom: 6px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: #c8c8dc;
+    font-family: inherit;
+    font-size: 0.82em;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.25s, border-color 0.25s, color 0.25s;
+}
+.if-fc-toggle:hover {
+    background: rgba(160,160,220,0.12);
+    border-color: rgba(160,160,220,0.4);
+    color: #fff;
+}
+.if-fc-chev {
+    width: 13px;
+    height: 13px;
+    flex: 0 0 13px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transform: rotate(-90deg);
+    transition: transform 0.3s ease;
+}
+.if-fc-toggle.open .if-fc-chev { transform: rotate(0deg); }
+.if-fc-toggle-txt { flex: 1; }
+.if-fc-hint {
+    font-size: 0.85em;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.5px;
+    font-variant-numeric: tabular-nums;
+}
+.if-fc-body {
+    display: none;
+    padding-top: 4px;
+}
+.if-fc-body.open { display: block; }
+
 .if-fc-head {
     display: flex;
     align-items: center;
@@ -3622,6 +3699,8 @@ var IF = (function () {
 (function () {
   'use strict';
   var S = null, tab = 'overview', q = '', filter = '', moreHistory = false, moreStrings = false;
+  /* 公式区默认折起，用户点标题才展开 */
+  var FML_OPEN = false;
 
   var LAMP = ['—', 'Fail', 'Clear'];
   var RESULT = ['—', 'DiveFailed', 'DiveCleared', 'FullLink', 'PerfectDive'];
@@ -3717,6 +3796,14 @@ var IF = (function () {
       '<div id="panel">' + panel() + '</div></div></div>';
     $('ifOut').innerHTML = html;
     bindAll();
+    /* 公式折叠开关 */
+    var fcT = $("ifFcToggle");
+    if (fcT) {
+      fcT.addEventListener("click", function () {
+        FML_OPEN = !FML_OPEN;
+        render();
+      });
+    }
   }
 
   function bindAll() {
@@ -3849,6 +3936,15 @@ var IF = (function () {
       '<span class="if-path">RatingEngine.Recalculate()</span>' +
       '</div>';
 
+    /* 折叠开关：默认折起，点一下才展开 */
+    var toggle = '<button type="button" class="if-fc-toggle' + (FML_OPEN ? ' open' : '') +
+      '" id="ifFcToggle" aria-expanded="' + (FML_OPEN ? 'true' : 'false') + '">' +
+      '<svg class="if-fc-chev" viewBox="0 0 12 12" aria-hidden="true">' +
+      '<path d="M2.5 4.5L6 8l3.5-3.5"/></svg>' +
+      '<span class="if-fc-toggle-txt">评级公式详情</span>' +
+      '<span class="if-fc-hint">' + (FML_OPEN ? '点击收起' : '点击展开') + '</span>' +
+      '</button>';
+
     var items = FML.map(function (f, i) {
       var h = '<div class="if-fc-item">' +
         '<div class="if-fc-hd"><span class="if-fc-n">' + (i + 1) + '</span>' +
@@ -3871,8 +3967,10 @@ var IF = (function () {
       return '<span class="if-lg"><b>' + l[0] + '</b>' + l[1] + '</span>';
     }).join('');
 
-    return head + '<div class="if-fc-list">' + items + '</div>' +
-      '<div class="if-fc-legend">' + legend + '</div>';
+    return head + toggle +
+      '<div class="if-fc-body' + (FML_OPEN ? ' open' : '') + '" id="ifFcBody">' +
+      '<div class="if-fc-list">' + items + '</div>' +
+      '<div class="if-fc-legend">' + legend + '</div></div>';
   }
 
   function statCards() {
