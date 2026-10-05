@@ -1443,19 +1443,23 @@ svg { max-width: 100%; }
 <!-- ==================== InFalsus 存档解析 ==================== -->
 <section class="panel" id="panel-sav" hidden>
     <div class="drop-zone" id="ifDrop">
-        <svg class="dz-icon" viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
+        <svg class="dz-icon" viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg>
         <div class="dz-title">拖拽 .sav 存档到这里，或点击选择</div>
         <div class="dz-sub">解析 In Falsus 存档（SAVESTATE V3）：概览 · 评级 · 成绩 · 历史 · 卡牌 · 卡组 · 粒子 · 剧情 · 网格 · 加成区域 · 字符串<br>文件只在你的浏览器里解析，不会上传到任何服务器</div>
         <input type="file" id="ifFile" accept=".sav" hidden>
     </div>
     <div class="pe-hint" id="ifPath" style="margin-top:12px">存档路径：%USERPROFILE%\AppData\LocalLow\lowiro\infalsus\&lt;SteamID64&gt;\release\savestate_V3.sav</div>
+
     <div class="status" id="ifStatus"></div>
+
     <div id="ifOut"></div>
-    <div class="note" style="margin-top:22px">
+
+    <div class="note">
         <b>说明</b><br>
+        · 纯本地解析，文件不会离开你的设备；本页<b>只做只读分析</b>，不会修改任何字节<br>
+        · 解析范围：SAVESTATE V3 存档头 · 评级 · 成绩记录 · 历史对局 · 持有卡牌 · 卡组 · 粒子 · 剧情进度 · 网格 · 加成区域 · 内嵌字符串<br>
         · 解析逻辑移植自 <a href="https://github.com/REDDRAGON-HL/InFalsus-SaveData-Parser" target="_blank" rel="noopener">InFalsus-SaveData-Parser</a>，数据表来自 InFalsus-Resource，仅供个人学习研究使用<br>
-        · 支持 SAVESTATE V3 存档，涵盖概览 / 评级 / 成绩 / 历史 / 卡牌 / 卡组 / 粒子 / 剧情 / 网格 / 加成区域 / 字符串<br>
-        · 解析全程在本地完成，本页只做只读分析，不会修改你的存档
+        · 各分项表格标题可点击排序；分项明细支持关键字过滤与导出 JSON
     </div>
 </section>
 
