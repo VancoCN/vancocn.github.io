@@ -509,6 +509,32 @@
         .ta:focus { border-color: rgba(160,160,220,0.5); }
         .crypto-hint { font-size: 0.78em; color: rgba(255,255,255,0.3); text-align: right; letter-spacing: 0.5px; }
 
+        /* ==================== 文字重复 ==================== */
+        .num-field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .num-input {
+            width: 130px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; padding: 9px 12px; color: #dcdcea; font-family: inherit;
+            font-size: 0.95em; outline: none; font-variant-numeric: tabular-nums;
+        }
+        .num-input:focus { border-color: rgba(160,160,220,0.5); }
+        .num-input::-webkit-outer-spin-button,
+        .num-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .num-input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+        .quick-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .quick-btn {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 99px; padding: 6px 14px; color: #c8c8dc; font-family: inherit;
+            font-size: 0.82em; cursor: pointer; transition: all 0.2s;
+        }
+        .quick-btn:hover { background: rgba(160,160,220,0.16); border-color: rgba(160,160,220,0.4); color: #fff; }
+        .quick-btn.active { background: rgba(160,160,220,0.22); border-color: rgba(160,160,220,0.55); color: #fff; }
+        .opt-text-input {
+            flex: 1; min-width: 140px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; padding: 9px 12px; color: #dcdcea; font-family: inherit;
+            font-size: 0.9em; outline: none;
+        }
+        .opt-text-input:focus { border-color: rgba(160,160,220,0.5); }
+
         /* ==================== 等宽字体 ==================== */
         .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
 
@@ -640,6 +666,7 @@
     <button class="tab" data-tab="font" data-page-node-id="8FU9JN5TmqD45U1QKMUjT7">字体转换</button>
     <button class="tab" data-tab="lang" data-page-node-id="QFeGYozf3xXrK8re4EbtnP">MO / PO</button>
     <button class="tab" data-tab="crypto" data-page-node-id="hx1NnUU4UPloRQLAchSoze">加解密</button>
+    <button class="tab" data-tab="repeat" data-page-node-id="Rk7PwZq3Nv5TbXc2LmYd">文字重复</button>
 </div>
 
 <!-- ==================== 音频 ==================== -->
@@ -1021,6 +1048,86 @@
             · 解密：将 Base 字符串还原为字节后，再按 UTF-8 解码为文本；若字节流不是合法 UTF-8，则提供二进制下载<br data-page-node-id="2wWeXy6a5GXiSqI7VPcvA3">
             · Base16 即 Hex；Base85 采用 Adobe ASCII85 字符集（不含 &lt;~ ~&gt; 包裹符）；Base91 采用 Henke 标准字符集<br data-page-node-id="YmlxWqvsWmhXqVQns1FZbf">
             · 支持拖拽文本文件到输入框自动读取
+        </div>
+    </div>
+</section>
+
+<section class="panel" id="panel-repeat" hidden data-page-node-id="Wq2mZx8LvT4KbYc7Nhd3P">
+    <div class="panel-card glass" data-page-node-id="Yt6BnKq1SxJfR9vMwZc2H">
+        <div class="crypto-box" data-page-node-id="Kd3WqXp7VnB2mZc8Rt5Yf">
+            <div class="crypto-label" data-page-node-id="Pw9XnQb2LcV6mZr4TkS8d">输入文本</div>
+            <textarea class="ta" id="repIn" placeholder="在此输入要重复的文字…"></textarea>
+            <div class="crypto-hint" id="repInHint" data-page-node-id="Hv4MqZx9BnC2wRt7YkL3p">0 字符</div>
+        </div>
+
+        <div class="opt-row" style="margin-top:20px;" data-page-node-id="Zt7RwQb3NmV9cZx2LkP4s">
+            <span class="opt-label" data-page-node-id="Yc5BnMx8QvR2wZt7LkD9p">重复次数</span>
+            <div class="num-field" data-page-node-id="Jf3WqZp6MnX9cVb2RtK7y">
+                <input type="number" class="num-input" id="repTimes" min="1" max="100000" step="1" value="3" data-page-node-id="Bn8MqZx2CvR5wZt7LkP3d">
+                <span class="opt-label" style="min-width:auto;" data-page-node-id="Qw4MzX9BnC2vRt7YkL5p">次</span>
+            </div>
+        </div>
+
+        <div class="opt-row" data-page-node-id="Mx9QwZb2NcV6mZr4TkS8d">
+            <span class="opt-label" data-page-node-id="Zt3BnMx8QvR2wZc7LkP9d">快捷选择</span>
+            <div class="quick-row" id="repQuick" data-page-node-id="Wp6KqZx1MnB9cVt4RtL2y">
+                <button class="quick-btn" data-n="2" data-page-node-id="Kf9MzX3BnC7wRt2YvQ5p">2 次</button>
+                <button class="quick-btn active" data-n="3" data-page-node-id="Rq2BwZx6MnC9vTt4LkH8d">3 次</button>
+                <button class="quick-btn" data-n="5" data-page-node-id="Tv5MzX9BnC3wRt7YvQ2p">5 次</button>
+                <button class="quick-btn" data-n="10" data-page-node-id="Wn8BwZx2MnC6vTt9LkH4d">10 次</button>
+                <button class="quick-btn" data-n="50" data-page-node-id="Yq3MzX7BnC5wRt3YvQ8p">50 次</button>
+                <button class="quick-btn" data-n="100" data-page-node-id="Zr6BwZx9MnC4vTt2LkH7d">100 次</button>
+                <button class="quick-btn" data-n="1000" data-page-node-id="Bt9MzX4BnC8wRt6YvQ1p">1000 次</button>
+            </div>
+        </div>
+
+        <div class="opt-row" data-page-node-id="Cv2BwZx7MnC9vTt5LkR3d">
+            <span class="opt-label" data-page-node-id="Qw8MzX1BnC4wRt9YvK6p">重复方式</span>
+            <div class="seg" id="repMode" data-page-node-id="Er5TnYq8BvC3wZx1MnK7d">
+                <button class="seg-btn active" data-v="all" data-page-node-id="Ty9BwZx4MnC7vTt2LkH6d">整体重复</button>
+                <button class="seg-btn" data-v="line" data-page-node-id="Ur3MzX8BnC6wRt5YvQ9p">逐行重复</button>
+                <button class="seg-btn" data-v="char" data-page-node-id="Wv7BwZx2MnC9vTt4LkJ8d">逐字重复</button>
+            </div>
+        </div>
+
+        <div class="opt-row" data-page-node-id="Xy4MzQb9BnC2wZt7LkR5d">
+            <span class="opt-label" data-page-node-id="Zt6BwZx3MnC8vTt1LkH9d">分隔符</span>
+            <div class="seg" id="repSep" data-page-node-id="Yu2QwZx7MnB5cVt9RtK4d">
+                <button class="seg-btn active" data-v="" data-page-node-id="Av8MzX5BnC1wRt3YvQ7p">无</button>
+                <button class="seg-btn" data-v=" " data-page-node-id="Bw4QwZx9MnC6vTt2LkB6d">空格</button>
+                <button class="seg-btn" data-v="\n" data-page-node-id="Cx7MzX2BnC9wRt4YvQ8p">换行</button>
+                <button class="seg-btn" data-v="-" data-page-node-id="Dy1BwZx6MnC3vTt8LkH2d">短横线</button>
+                <button class="seg-btn" data-v="," data-page-node-id="Ez5QwZx3MnB8vTt5LkJ9d">逗号</button>
+                <button class="seg-btn" data-v="__custom__" data-page-node-id="Fx8MzYb1MnC7wRt2YvQ6p">自定义</button>
+            </div>
+        </div>
+
+        <div class="opt-row" id="repCustomRow" hidden data-page-node-id="Fa3MzX8BnC6wRt1YvQ4p">
+            <span class="opt-label" data-page-node-id="Gb9BwZx2MnC7vTt6LkR8d">自定义分隔符</span>
+            <input type="text" class="opt-text-input" id="repCustomSep" placeholder="在此输入自定义分隔符" data-page-node-id="Hc4QwZx7MnB1cVt3RtK9d">
+        </div>
+
+        <button class="run-btn" id="repRun" data-page-node-id="Jd6MzX3BnC9wRt2YvQ7p">生 成 结 果</button>
+        <div class="status" id="repStatus" data-page-node-id="Ke8BwZx5MnC2vTt9LkH4d"></div>
+
+        <div class="crypto-box" style="margin-top:20px;" data-page-node-id="Lf2QwZx9MnB7cVt1RtK6d">
+            <div class="crypto-label" data-page-node-id="Mg5MzX4BnC1wRt8YvQ3p">输出结果</div>
+            <textarea class="ta" id="repOut" readonly placeholder="结果将显示在这里…"></textarea>
+            <div class="crypto-hint" id="repOutHint" data-page-node-id="Nh9BwZx6MnC4vTt2LkJ7d">0 字符</div>
+        </div>
+
+        <div class="opt-row" style="border-top:none;padding-top:10px;" data-page-node-id="Pj3MzX7BnC8wRt5YvQ1p">
+            <button class="run-btn" id="repCopy" style="width:auto;flex:1;margin-top:0;background:rgba(255,255,255,0.08);" data-page-node-id="Qk6BwZx2MnC9vTt4LkR8d">复 制 结 果</button>
+            <button class="run-btn" id="repDown" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08);" data-page-node-id="Rl9MzX4BnC3wRt7YvQ6p">下 载 结 果</button>
+        </div>
+
+        <div class="note" data-page-node-id="Sm2QwZx8MnB5cVt9RtK1d">
+            <b data-page-node-id="Tn6MzX3BnC9wRt4YvQ8p">说明</b><br data-page-node-id="Uo1BwZx7MnC2vTt6LkH9d">
+            · 整体重复：把整段文本连续拼接 N 次；例：输入「测试」、3 次 → 测试测试测试<br data-page-node-id="Vp4QzX9MnB7cVt2RtK5d">
+            · 逐行重复：文本每行各重复 N 次；逐字重复：每个字符各重复 N 次<br data-page-node-id="Wq8MzX5BnC1wRt9YvQ3p">
+            · 分隔符会在每次重复之间插入；选「无」时紧密相连<br data-page-node-id="Xr2QwZx6MnB8vTt4LkJ7d">
+            · 支持从文件读取：把 .txt 拖进输入框即可<br data-page-node-id="Ys5MzX9BnC4wRt2YvQ8p">
+            · 结果超过 500 万字符时会提示截断，避免浏览器卡死
         </div>
     </div>
 </section>
@@ -4202,6 +4309,151 @@ $("cryptoDown").addEventListener("click", () => {
   if (cryptoOut._bytes) download(new Blob([cryptoOut._bytes], { type: "application/octet-stream" }), "decoded.bin");
   else download(new Blob([cryptoOut.value], { type: "text/plain;charset=utf-8" }), "encoded.txt");
   cryptoStatus.className = "status ok"; cryptoStatus.textContent = "已开始下载";
+});
+
+/* ==================== 文字重复面板 ==================== */
+const repIn = $("repIn"), repOut = $("repOut");
+const repStatus = $("repStatus");
+const repInHint = $("repInHint"), repOutHint = $("repOutHint");
+const repTimes = $("repTimes");
+const REP_MAX_LEN = 5000000; // 结果最大字符数，防止浏览器卡死
+
+let repMode = bindSeg("repMode", v => { repMode = v; });
+let repSep = bindSeg("repSep", v => {
+  repSep = v;
+  $("repCustomRow").hidden = v !== "__custom__";
+});
+
+function updateRepHints() {
+  repInHint.textContent = repIn.value.length + " 字符";
+  repOutHint.textContent = repOut.value.length + " 字符";
+}
+repIn.addEventListener("input", updateRepHints);
+
+/* 快捷次数按钮 */
+$("repQuick").addEventListener("click", e => {
+  const btn = e.target.closest(".quick-btn");
+  if (!btn) return;
+  repTimes.value = btn.dataset.n;
+  syncQuickBtns();
+});
+
+function syncQuickBtns() {
+  const v = String(repTimes.value);
+  $("repQuick").querySelectorAll(".quick-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.n === v);
+  });
+}
+repTimes.addEventListener("input", syncQuickBtns);
+
+/* 拖拽 txt 文件到输入框 */
+repIn.addEventListener("dragover", e => { e.preventDefault(); repIn.style.borderColor = "rgba(160,160,220,0.55)"; });
+repIn.addEventListener("dragleave", e => { e.preventDefault(); repIn.style.borderColor = ""; });
+repIn.addEventListener("drop", async e => {
+  e.preventDefault(); repIn.style.borderColor = "";
+  const files = Array.from(e.dataTransfer.files);
+  if (!files.length) return;
+  try { repIn.value = await files[0].text(); updateRepHints(); }
+  catch (err) { repStatus.className = "status err"; repStatus.textContent = "读取文件失败"; }
+});
+
+function currentSep() {
+  if (repSep !== "__custom__") {
+    // HTML 属性里的 \n 是字面两个字符，需还原为真正的换行
+    return repSep === "\\n" ? "\n" : repSep;
+  }
+  return $("repCustomSep").value.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
+}
+
+function buildRepeat(text, times, mode, sep) {
+  const parts = [];
+  if (mode === "line") {
+    const lines = text.split(/\r\n|\r|\n/);
+    for (const line of lines) {
+      const one = [];
+      for (let i = 0; i < times; i++) one.push(line);
+      parts.push(one.join(sep));
+    }
+    return parts.join("\n");
+  }
+  if (mode === "char") {
+    // 用Array.from 正确处理 emoji / 代理对
+    const chars = Array.from(text);
+    for (const ch of chars) {
+      const one = [];
+      for (let i = 0; i < times; i++) one.push(ch);
+      parts.push(one.join(sep));
+    }
+    return parts.join(sep);
+  }
+  // 整体重复
+  for (let i = 0; i < times; i++) parts.push(text);
+  return parts.join(sep);
+}
+
+$("repRun").addEventListener("click", () => {
+  const text = repIn.value;
+  if (!text) { repStatus.className = "status err"; repStatus.textContent = "请输入内容"; return; }
+
+  let times = parseInt(repTimes.value, 10);
+  if (isNaN(times) || times < 1) {
+    repStatus.className = "status err"; repStatus.textContent = "重复次数必须是大于等于 1 的整数";
+    return;
+  }
+  if (times > 100000) {
+    repStatus.className = "status err"; repStatus.textContent = "重复次数过大（上限 100000）";
+    return;
+  }
+  times = Math.min(times, 100000);
+
+  const sep = currentSep();
+  const mode = repMode;
+
+  // 预估长度，提前拦截，避免生成超大字符串卡死页面
+  const sepLen = sep.length;
+  const unitCount = mode === "all" ? times
+                  : mode === "line"  ? text.split(/\r\n|\r|\n/).length * times
+                  : Array.from(text).length * times;
+  const est = text.length * (mode === "all" ? times : 1) + sepLen * Math.max(0, unitCount - (mode === "all" ? 1 : 0));
+
+  if (est > REP_MAX_LEN) {
+    repStatus.className = "status err";
+    repStatus.textContent = "预计结果约 " + fmtBytes(est * 3) + "，超过 " + fmtBytes(REP_MAX_LEN * 3) + " 上限，请减少次数";
+    return;
+  }
+
+  repStatus.className = "status"; repStatus.textContent = "生成中…";
+  setTimeout(() => {
+    try {
+      let result = buildRepeat(text, times, mode, sep);
+      let truncated = false;
+      if (result.length > REP_MAX_LEN) {
+        result = result.slice(0, REP_MAX_LEN);
+        truncated = true;
+      }
+      repOut.value = result;
+      updateRepHints();
+      repStatus.className = truncated ? "status" : "status ok";
+      repStatus.textContent = truncated
+        ? "完成（结果过长，已截断至 " + REP_MAX_LEN + " 字符）"
+        : "完成 · 共 " + result.length + " 字符";
+    } catch (err) {
+      repStatus.className = "status err";
+      repStatus.textContent = "失败：" + (err && err.message ? err.message : err);
+    }
+  }, 0);
+});
+
+$("repCopy").addEventListener("click", async () => {
+  if (!repOut.value) { repStatus.className = "status err"; repStatus.textContent = "没有可复制的内容"; return; }
+  try { await navigator.clipboard.writeText(repOut.value); repStatus.className = "status ok"; repStatus.textContent = "已复制到剪贴板"; }
+  catch (e) { repStatus.className = "status err"; repStatus.textContent = "复制失败"; }
+});
+
+$("repDown").addEventListener("click", () => {
+  if (!repOut.value) { repStatus.className = "status err"; repStatus.textContent = "没有可下载的内容"; return; }
+  download(new Blob([repOut.value], { type: "text/plain;charset=utf-8" }), "repeated.txt");
+  repStatus.className = "status ok"; repStatus.textContent = "已开始下载";
 });
 
 
