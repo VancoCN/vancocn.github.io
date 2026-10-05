@@ -657,7 +657,7 @@
 /* ==================== 自定义字体 ==================== */
 
 
-/* ==================== 全局重置 ==================== */
+/* ==================== 全局重置 ==================== */
 
 /* ==================== 噪点层 ==================== */
 .if-noise-overlay {
@@ -712,7 +712,10 @@
 }
 
 /* ==================== 玻璃卡片 ==================== */
-.if-tool-card, .if-panel-card, .if-stat, .if-mini-card, .if-rat-hero, .if-fc-item, .if-fc-head {
+/* 注：原 tool-card / card-title / card-desc / card-play-btn / save-path 系列已删除——
+   上传框改用宿主的 .drop-zone 结构（与 PE / MIDI 面板保持一致），
+   这些类名不再被任何 HTML 或 JS 引用。 */
+.if-panel-card, .if-stat, .if-mini-card, .if-rat-hero, .if-fc-item, .if-fc-head {
     background: rgba(255, 255, 255, 0.06);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -720,116 +723,7 @@
     box-shadow:
         0 4px 24px rgba(0,0,0,0.3),
         inset 0 1px 0 rgba(255,255,255,0.08),
-        inset 0 -1px 0 rgba(0,0,0,0.2);
-}
-
-.if-tool-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 26px;
-    border-radius: 18px;
-    text-decoration: none;
-    color: #e0e0e0;
-    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-    position: relative;
-    overflow: hidden;
-}
-
-.if-tool-card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        105deg,
-        transparent 0%,
-        rgba(255,255,255,0.04) 40%,
-        rgba(255,255,255,0.1) 50%,
-        rgba(255,255,255,0.04) 60%,
-        transparent 100%
-    );
-    transition: left 0.7s ease;
-}
-
-.if-tool-card:hover::before { left: 100%; }
-
-.if-tool-card:hover {
-    transform: translateY(-3px) scale(1.01);
-    background: rgba(255,255,255,0.1);
-    border-color: rgba(255,255,255,0.22);
-    box-shadow:
-        0 12px 40px rgba(0,0,0,0.4),
-        0 0 20px rgba(160,160,220,0.08),
-        inset 0 1px 0 rgba(255,255,255,0.15),
-        inset 0 -1px 0 rgba(0,0,0,0.15);
-}
-
-.if-tool-card:active { transform: translateY(-1px) scale(0.998); }
-
-#drop { cursor: pointer; }
-#drop.if-over {
-    background: rgba(255,255,255,0.12);
-    border-color: rgba(160,160,220,0.45);
-}
-
-.if-upload-main { flex: 1; min-width: 0; }
-
-.if-card-title {
-    font-size: 1.25em;
-    font-weight: 600;
-    color: #f0f0f0;
-}
-
-.if-card-desc {
-    flex: 1;
-    margin: 4px 20px 0 0;
-    font-size: 0.92em;
-    color: #999;
-    transition: color 0.3s;
-}
-
-.if-tool-card:hover .if-card-desc { color: #c0c0c0; }
-
-.if-card-play-btn {
-    width: 44px;
-    height: 44px;
-    flex: 0 0 auto;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s;
-}
-
-.if-tool-card:hover .if-card-play-btn {
-    background: rgba(255,255,255,0.18);
-    border-color: rgba(255,255,255,0.25);
-    transform: scale(1.1);
-}
-
-.if-card-play-btn svg {
-    width: 20px;
-    height: 20px;
-    fill: #bbb;
-    transition: fill 0.3s;
-}
-
-.if-tool-card:hover .if-card-play-btn svg { fill: #fff; }
-
-#file { display: none; }
-
-.if-save-path {
-    margin-top: 12px;
-    font-size: 0.78em;
-    color: rgba(255,255,255,0.25);
-    letter-spacing: 1px;
-    word-break: break-all;
-    font-family: ui-monospace, Consolas, monospace;
+        inset 0 -1px 0 rgba(255,255,255,0.2);
 }
 
 .if-status {
@@ -1420,9 +1314,6 @@ svg { max-width: 100%; }
 
 @media (max-width: 600px) {
     .if-page-title { font-size: 1.8em; }
-    .if-card-title { font-size: 1.1em; }
-    .if-card-desc { font-size: 0.85em; margin: 4px 8px 0 0; }
-    .if-card-play-btn { width: 38px; height: 38px; }
     .if-stat .if-v { font-size: 1.8em; }
     .if-panel-inner { padding: 16px 14px; }
     input[type=search] { min-width: 150px; }
@@ -1551,19 +1442,14 @@ svg { max-width: 100%; }
 
 <!-- ==================== InFalsus 存档解析 ==================== -->
 <section class="panel" id="panel-sav" hidden>
-    <div class="category-title" style="margin-top:0">载入存档</div>
-    <div class="tool-card" id="ifDrop">
-        <div class="upload-main">
-            <div class="card-title">拖入或点击选择 .sav 文件</div>
-            <div class="card-desc">In Falsus 存档只在你的浏览器里解析，不会上传到任何服务器</div>
-        </div>
-        <div class="card-play-btn">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 16V8.8l-3.1 3.1L6.5 10.5 12 5l5.5 5.5-1.4 1.4L13 8.8V16h-2zM5 18.5h14V20H5v-1.5z"/></svg>
-        </div>
-        <input type="file" id="ifFile" accept=".sav">
+    <div class="drop-zone" id="ifDrop">
+        <svg class="dz-icon" viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
+        <div class="dz-title">拖拽 .sav 存档到这里，或点击选择</div>
+        <div class="dz-sub">解析 In Falsus 存档（SAVESTATE V3）：概览 · 评级 · 成绩 · 历史 · 卡牌 · 卡组 · 粒子 · 剧情 · 网格 · 加成区域 · 字符串<br>文件只在你的浏览器里解析，不会上传到任何服务器</div>
+        <input type="file" id="ifFile" accept=".sav" hidden>
     </div>
-    <div class="if-save-path">%USERPROFILE%\AppData\LocalLow\lowiro\infalsus\&lt;SteamID64&gt;\release\savestate_V3.sav</div>
-    <div class="if-status" id="ifStatus"></div>
+    <div class="pe-hint" id="ifPath" style="margin-top:12px">存档路径：%USERPROFILE%\AppData\LocalLow\lowiro\infalsus\&lt;SteamID64&gt;\release\savestate_V3.sav</div>
+    <div class="status" id="ifStatus"></div>
     <div id="ifOut"></div>
     <div class="note" style="margin-top:22px">
         <b>说明</b><br>
@@ -3758,10 +3644,14 @@ var IF = (function () {
   drop.addEventListener('click', function () { input.click(); });
   input.addEventListener('change', function () { if (input.files[0]) handle(input.files[0]); });
   ['dragenter', 'dragover'].forEach(function (e) {
-    drop.addEventListener(e, function (ev) { ev.preventDefault(); drop.classList.add('if-over'); });
+    drop.addEventListener(e, function (ev) { ev.preventDefault(); drop.classList.add('dragover'); });
   });
   ['dragleave', 'drop'].forEach(function (e) {
-    drop.addEventListener(e, function (ev) { ev.preventDefault(); drop.classList.remove('if-over'); });
+    drop.addEventListener(e, function (ev) {
+      ev.preventDefault();
+      if (e === 'dragleave' && drop.contains(ev.relatedTarget)) return;
+      drop.classList.remove('dragover');
+    });
   });
   drop.addEventListener('drop', function (ev) {
     var f = ev.dataTransfer.files[0];
@@ -3769,7 +3659,7 @@ var IF = (function () {
   });
 
   async function handle(file) {
-    $('ifStatus').className = 'if-status';
+    $('ifStatus').className = 'status';
     $('ifStatus').textContent = '读取 ' + file.name + ' …';
     $('ifOut').innerHTML = '';
     try {
@@ -3780,10 +3670,11 @@ var IF = (function () {
       S = IF.parse(buf, file.name);
       RC = null;
       q = ''; filter = ''; moreHistory = false; moreStrings = false; tab = 'rating';
+      $('ifStatus').className = 'status ok';
       $('ifStatus').textContent = '解析完成，用时 ' + Math.round(performance.now() - t0) + ' ms';
       render();
     } catch (err) {
-      $('ifStatus').className = 'if-status if-err';
+      $('ifStatus').className = 'status err';
       $('ifStatus').textContent = '解析失败：' + (err && err.message ? err.message : err);
       console.error(err);
     }
@@ -4046,7 +3937,11 @@ var IF = (function () {
       rows.map(function (r) { return '<tr>' + r + '</tr>'; }).join('') +
       '</tbody></table></div>';
   }
-  function td(v, cls) { return '<td' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</td>'; }
+  function td(v, cls) {
+    // 调用点传入的是未加前缀的裸类名（如 'num'），在此统一补 if- 前缀
+    if (cls) cls = String(cls).split(/\s+/).map(function (c) { return c && c.indexOf('if-') !== 0 ? 'if-' + c : c; }).join(' ');
+    return '<td' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</td>';
+  }
 
   /* ---------- 各面板 ---------- */
   function panel() {
