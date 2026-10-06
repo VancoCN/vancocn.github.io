@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>同舟Bloxd-API 全量汇总站</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <style>
+    /* 引入3D立体字体 */
+    @font-face {
+      font-family: dzt1;
+      src: url('https://vanco.neocities.org/BoutiqueBitmap9x9_3D%EF%BC%88%E7%AB%8B%E4%BD%93%E7%89%88%EF%BC%89.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'BoutiqueBitmap9x9';
+      src: url('https://vanco.neocities.org/BoutiqueBitmap9x9_1.9.ttf') format('truetype');
+      font-display: swap;
+    }
+    :root {
+      --bg-main: #f5f5f5; --bg-card: #ffffff;
+      --text-main: #333333; --text-secondary: #666666; --title-gradient: #222,#000;
+      --border-main: #eee; --border-light: #ddd;
+      --shadow-main: rgba(0,0,0,0.09); --shadow-deep: rgba(0,0,0,0.15);
+      --mask-bg: rgba(0,0,0,.55); --link-color: #3b82f6;
+      --error-btn: #ef4444; --error-btn-hover: #dc2626;
+      --transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      --sidebar-bg: rgba(255,255,255,0.92); --sidebar-border: rgba(255,255,255,0.5);
+      --sidebar-width: 380px;
+      --btn-bg: rgba(0,0,0,0.07); --btn-hover: rgba(0,0,0,0.15);
+      --favorite-color: #f97316; --favorite-hover: #ea580c;
+    }
+    .dark-mode {
+      --bg-main: #121212; --bg-card: #1e1e1e;
+      --text-main: #f5f5f5;
+      --text-secondary: #bbbbbb;
+      --title-gradient: #ffffff,#cccccc;
+      --border-main: #333; --border-light: #444;
+      --shadow-main: rgba(0,0,0,0.3); --shadow-deep: rgba(0,0,0,0.45);
+      --mask-bg: rgba(0,0,0,.85); --link-color: #60a5fa;
+      --error-btn: #b91c1c; --error-btn-hover: #991b1b;
+      --sidebar-bg: rgba(30,30,30,0.92); --sidebar-border: rgba(68,68,68,0.6);
+      --btn-bg: rgba(255,255,255,0.08); --btn-hover: rgba(255,255,255,0.16);
+      --favorite-color: #fb923c; --favorite-hover: #f97316;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'BoutiqueBitmap9x9', monospace;
+      background: var(--bg-main); color: var(--text-main); margin: 0;
+      transition: background 0.4s ease, color 0.4s ease; overflow-x: hidden;
+      line-height: 1.6 !important;
+    }
+    .layout { display: flex; min-height: 100vh; padding-top: 0; } /* 移除顶部80px内边距 */
+    .sidebar {
+      position: fixed; left: 0; top: 0; width: var(--sidebar-width); height: 100vh;
+      background: var(--sidebar-bg); backdrop-filter: blur(20px);
+      border-right: 1.5px solid var(--sidebar-border);
+      padding: 90px 28px 40px; overflow-y: auto; z-index: 999;
+      box-shadow: 12px 0 40px rgba(0,0,0,0.12);
+    }
+    .dark-mode .sidebar { box-shadow: 12px 0 40px rgba(0,0,0,0.4); }
+.main-content {
+  flex: 1;
+  padding: 20px 40px 120px;
+  margin-left: var(--sidebar-width);
+  background: transparent;
+  position: relative;
+}
+.main-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--bg-main);
+  opacity: 0.92;
+  z-index: -1;
+}
+    .section-title {
+      font-size: 16px; font-weight: bold; color: var(--text-secondary); margin: 32px 0 16px; padding-left: 4px;
+    }
+    #searchInput {
+      width: 100%; padding: 16px 20px; margin: 8px 0;
+      background: var(--btn-bg); color: var(--text-main);
+      border: none; border-radius: 20px; font-size: 16px; outline: none;
+    }
+    #searchInput:focus { background: var(--btn-hover); }
+    .btn-row { display: flex; gap: 12px; margin: 10px 0; }
+    .btn-capsule {
+      flex: 1; padding: 18px 10px !important; min-height: 56px !important;
+      background: var(--btn-bg); color: var(--text-main);
+      border: none; border-radius: 20px; font-size: 15px; font-weight: bold;
+      text-align: center; cursor: pointer; transition: var(--transition);
+      backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center;
+    }
+    .btn-capsule:hover { background: var(--btn-hover); transform: translateY(-2px); }
+    .btn-capsule.active { background: #000 !important; color: white !important; }
+    .btn-capsule.favorite { background: var(--favorite-color); color: white; }
+    .btn-capsule.favorite:hover { background: var(--favorite-hover); }
+    .btn-capsule.red { background: var(--error-btn); color: white; }
+    .btn-capsule.red:hover { background: var(--error-btn-hover); }
+    #themeToggle, #logBtn, #tutorialServerBtn, #sidebarReportBugBtn, #agreementBtn { margin: 18px 0 !important; }
+    #clientSubMenu, #particlesSubMenu {
+      position: absolute; bottom: 100%; left: -28px; right: -28px; margin-bottom: 10px;
+      background: var(--bg-card); border: 1.5px solid var(--border-light);
+      border-radius: 16px; overflow: hidden; box-shadow: 0 -12px 35px var(--shadow-deep); z-index: 99999;
+    }
+    .sub-tab {
+      padding: 20px 28px; cursor: pointer; transition: background 0.2s;
+      background: var(--bg-card); color: var(--text-main); font-size: 16px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .sub-tab:last-child { border-bottom: none; }
+    .sub-tab:hover { background: var(--btn-hover); }
+    .divider { height: 1px; background: var(--border-main); margin: 36px 0; opacity: 0.5; }
+    .copyright-info {
+      padding: 16px 0 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.5;
+      border-top: 1px solid var(--border-light);
+      margin-top: 16px;
+    }
+    .tag {
+      display: inline-block; padding: 7px 16px; border-radius: 20px; font-size: 12px; font-weight: 900;
+      color: white; margin-left: 10px; margin-bottom: 6px; position: relative; padding-left: 26px;
+    }
+    .tag::before { content: ""; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; background: #fff; border-radius: 50%; }
+    .tag.api { background: #ef4444; }
+    .tag.callbacks { background: #8b5cf6; }
+    .tag.client-option { background: #06b6d4; }
+    .tag.soundnames { background: #10b981; }
+    .tag.entitysettings { background: #f97316; }
+    .tag.particles { background: #a855f7; }
+    .api-card {
+      position: relative; background: var(--bg-card); border-radius: 20px; padding: 36px 40px 96px !important;
+      margin: 24px auto; max-width: 880px; box-shadow: 0 10px 30px var(--shadow-main);
+      border: 1.5px solid var(--border-light); animation: cardFadeIn 0.7s ease-out forwards;
+      overflow: hidden;
+    }
+    @keyframes cardFadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    .api-card:hover { transform: translateY(-10px) scale(1.015); box-shadow: 0 25px 60px var(--shadow-deep); }
+    .code-block {
+      margin: 24px 0; border-radius: 16px; overflow: hidden;
+      background: #0d1117; border: 1px solid #30363d; box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    }
+    .code-content {
+      padding: 20px; background: #0d1117; color: #c9d1d9; font-family: 'BoutiqueBitmap9x9', monospace;
+      font-size: 15px; line-height: 1.6; overflow-x: auto; white-space: pre;
+    }
+    .copy-btn-rect {
+      position: absolute; left: 40px; bottom: 24px; background: #000; color: white;
+      padding: 14px 28px; border-radius: 16px; font-size: 16px; font-weight: bold;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3); cursor: pointer;
+      transition: all 0.38s cubic-bezier(0.34,1.56,0.64,1) !important;
+      transform: translateY(0);
+    }
+    .copy-btn-rect:hover { background: #222; transform: translateY(-9px) scale(1.05) !important; box-shadow: 0 18px 40px rgba(0,0,0,0.4) !important; }
+   
+/* 小星星收藏按钮 —— 完美融入整体UI */
+.favorite-btn {
+  position: absolute;
+  left: calc(40px + 180px + 12px);  /* 复制按钮左边距40px + 按钮宽度约180px + 间距12px */
+  bottom: 24px;
+  width: 48px;
+  height: 48px;
+  background: white;                    /* 未收藏：白色底 */
+  color: #333;                          /* 未收藏：黑色星星 */
+  border: 1.5px solid var(--border-light);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  z-index: 10;
+}
+.favorite-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+}
+.favorite-btn.favorited {
+  background: #000;                     /* 已收藏：黑色底 */
+  color: white;                         /* 已收藏：白色星星 */
+  border-color: transparent;
+}
+.favorite-btn.favorited:hover {
+  background: #222;
+}
+
+/* 移动端横排 */
+@media (max-width: 1024px) {
+  .btn-group {
+    position: absolute;
+    left: 40px;
+    bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .favorite-btn {
+    position: static;
+    margin: 0;
+  }
+  .copy-btn-rect {
+    position: static;
+    width: auto;
+    padding: 14px 24px;
+  }
+  .api-card {
+    padding-bottom: 100px !important;
+  }
+}
+    #copyToast, #tempToast {
+      position: fixed; top: 30px; left: 50%; transform: translateX(-50%) translateY(-20px);
+      background: rgba(0,0,0,.92); color: white; padding: 16px 36px; border-radius: 16px;
+      font-size: 16px; z-index: 99999; opacity: 0; box-shadow: 0 12px 35px rgba(0,0,0,0.4);
+      transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    }
+    #copyToast.show, #tempToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .mask { position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: var(--mask-bg); backdrop-filter: blur(12px); opacity: 0; visibility: hidden; transition: opacity 0.4s ease; }
+    .mask.show { opacity: 1; visibility: visible; }
+    .mask.removing { opacity: 0; }
+    .mask-content {
+      background: var(--bg-card); border-radius: 24px; padding: 48px 56px; max-width: 840px; width: 90%;
+      max-height: 86vh; overflow-y: auto; transform: scale(0.85); opacity: 0; box-shadow: 0 25px 80px rgba(0,0,0,0.35);
+      border: 1.5px solid var(--border-light); color: var(--text-main); transition: all 0.4s ease;
+    }
+    .mask.show .mask-content { transform: scale(1); opacity: 1; }
+    .mask.removing .mask-content { transform: scale(0.9); opacity: 0; }
+    #backToTop {
+      position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: var(--error-btn);
+      border-radius: 50%; color: white; border: none; font-size: 20px; cursor: pointer;
+      box-shadow: 0 8px 20px rgba(239,68,68,0.4); opacity: 0; transition: opacity 0.3s ease;
+      z-index: 998; display: flex; align-items: center; justify-content: center;
+    }
+    #backToTop.show { opacity: 1; }
+    #backToTop:hover { background: var(--error-btn-hover); transform: translateY(-5px); }
+    @media (max-width: 1024px) {
+      .layout { flex-direction: column; padding-top: 0; } /* 移动端也移除内边距 */
+      .sidebar { position: relative; width: 100%; height: auto; padding: 20px; border-right: none; border-bottom: 1.5px solid var(--sidebar-border); }
+      .main-content { margin-left: 0; }
+      .btn-row { flex-direction: column; }
+      .btn-capsule { margin: 8px 0; }
+      #clientSubMenu, #particlesSubMenu { left: 0; right: 0; }
+      /* 移动端收藏按钮调整 */
+      .btn-group {
+        position: relative;
+        left: auto;
+        bottom: auto;
+        width: 100%;
+        margin-top: 16px;
+      }
+      .favorite-btn {
+        width: 48px;
+        height: 48px;
+      }
+      .copy-btn-rect {
+        flex: 1;
+        text-align: center;
+      }
+      .api-card { padding-bottom: 130px !important; }
+    }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.35); }
+    .dark-mode ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); }
+    .dark-mode ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.32); }
+    .sidebar::-webkit-scrollbar { width: 6px; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 3px; }
+    .dark-mode .sidebar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); }
+    .dark-mode .sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+    /* 新增：自定义背景图半透明样式 */
+    .main-content.custom-bg::before {
+      background: var(--custom-bg-image) center/cover fixed no-repeat !important;
+      opacity: 0.5 !important; /* 强制50%透明度 */
+    }
+    /* 强制标题使用3D立体字体 */
+    .main-content h1 {
+      font-family: dzt1, 'BoutiqueBitmap9x9', monospace !important;
+      /* 可选：添加文字阴影增强3D效果（根据字体效果调整） */
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.5),
+                   -1px -1px 0 rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <div class="sidebar" id="sidebar">
+    <div class="section-title">搜索与筛选</div>
+    <input type="text" id="searchInput" placeholder="输入关键词、ID、中文...">
+    <!-- 修改：全部和收藏占一行 -->
+    <div class="btn-row">
+      <div class="btn-capsule active" data-type="all">全部</div>
+      <div class="btn-capsule" data-type="favorite">收藏</div>
+    </div>
+    <div class="btn-row">
+      <div class="btn-capsule" data-type="api">API</div>
+      <div class="btn-capsule" data-type="callbacks">Callbacks</div>
+    </div>
+    <div class="btn-row">
+      <div class="btn-capsule" data-type="soundnames">Soundnames</div>
+      <div class="btn-capsule" data-type="entitysettings">Entity Settings</div>
+    </div>
+    <div class="btn-row">
+      <div class="btn-capsule" id="tabParticles">Particles <i class="fa fa-caret-down" style="margin-left:6px;font-size:14px;"></i></div>
+    </div>
+    <div class="btn-row">
+      <div class="btn-capsule" id="tabClientOptions">Client Options <i class="fa fa-caret-down" style="margin-left:6px;font-size:14px;"></i></div>
+    </div>
+    <div class="divider"></div>
+    <div class="section-title">自定义</div>
+    <input type="text" id="bgUrlInput" placeholder="输入背景图URL（留空则清除）" style="width:100%; padding:16px 20px; margin:8px 0; background:var(--btn-bg); color:var(--text-main); border:none; border-radius:20px; font-size:14px; outline:none;">
+    <div class="btn-capsule" id="applyBgBtn" style="margin-top:6px;">应用</div>
+    <div class="divider"></div>
+    <div class="section-title">功能</div>
+    <div class="btn-capsule" id="themeToggle"><i class="fa fa-moon-o" id="themeIcon"></i> 日夜模式</div>
+    <div class="btn-capsule" id="logBtn"><i class="fa fa-history"></i> 更新日志</div>
+    <div class="btn-capsule" id="tutorialServerBtn"><i class="fa fa-graduation-cap" style="margin-right:8px;"></i>教学服务器</div>
+    <div class="btn-capsule" id="agreementBtn"><i class="fa fa-file-text-o" style="margin-right:8px;"></i>用户协议</div>
+    <div class="btn-capsule red" id="sidebarReportBugBtn"><i class="fa fa-bug"></i> 报错反馈</div>
+    <div class="copyright-info">
+      <p>© 2025 同舟Bloxd</p>
+      <p>made by Vanco</p>
+    </div>
+  </div>
+  <div class="main-content" id="mainContent">
+    <div style="text-align:center; margin-bottom:40px;">
+      <h1 style="font-size:48px; background:linear-gradient(90deg,var(--title-gradient)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">
+        同舟Bloxd-API 全量汇总站
+      </h1>
+      <div style="margin-top:16px; color:var(--text-secondary); font-size:18px;">
+        共 <strong id="cmdCount">0</strong> 条 · 当前显示 <strong id="displayCount">0</strong> 条
+      </div>
+    </div>
+    <div id="cmdCards"></div>
+  </div>
+</div>
+<!-- 弹窗区域（保持原样） -->
+<div id="confirmMask" class="mask show">
+  <div class="mask-content">
+    <h1 style="text-align:center;">提示</h1>
+    <p>当前版本可能存在一些关于代码解释的错误</p>
+    <p>详细请查看《用户协议》:<a href="javascript:showAgreement()" style="color:var(--link-color);text-decoration:underline;">点击此处</a></p>
+    <p>测试阶段如发现错误请及时上报,这会帮助我们做得更好</p>
+    <p>注：本页面请尽量使用电脑端访问</p>
+    <div style="margin-top:30px;text-align:center;">
+      <button onclick="window.close()" style="padding:10px 24px;margin:0 10px;border:1px solid var(--border-light);border-radius:12px;background:var(--bg-card);color:var(--text-main);cursor:pointer;">离开</button>
+      <button id="btnYes" style="padding:10px 24px;margin:0 10px;background:#000;color:white;border:none;border-radius:12px;cursor:pointer;">进入</button>
+    </div>
+  </div>
+</div>
+<div id="agreementMask" class="mask">
+  <div class="mask-content">
+    <h2 style="text-align:center;">用户协议</h2>
+    <p>1. 本站所有api来源均为官方github文档<br>2. 所有json文件使用grok ai录入，如有错误欢迎反馈<br>3. 一切解释权归同舟组织所有，版权归属同舟组织<br>4. 禁止以任何形式获取本站代码及json文件<br>5. 当前版本为demo，不代表最终品质<br>6. 禁止以任何形式盗取、使用本站代码与json文件</p>
+    <div style="text-align:center;margin-top:20px;"><button id="agreementConfirm" style="padding:10px 30px;background:#000;color:white;border:none;border-radius:12px;cursor:pointer;">确认</button></div>
+  </div>
+</div>
+<div id="thanksMask" class="mask">
+  <div class="mask-content">
+    <h2 style="text-align:center;">致谢名单</h2>
+    <p style="font-size:16px;line-height:2;text-align:center;">感谢所有为本站贡献的个人和组织：</p>
+    <h3 style="text-align:center;">由 Vanco 制作的公益站点</h3>
+    <h3 style="text-align:center;">Snowdi - json错误查询</h3>
+    <h3 style="text-align:center;">GWBLOXD - json错误查询</h3>
+    <h3 style="text-align:center;">卖冬梅的小卖部 - json错误查询</h3>
+    <h3 style="text-align:center;">yang_2345 - 宣传</h3>
+    <h2 style="text-align:center;">所有用户 - 感谢您的支持！</h2>
+    <div style="text-align:center;margin-top:20px;"><button id="thanksConfirm" style="padding:10px 30px;background:#000;color:white;border:none;border-radius:12px;cursor:pointer;">关闭</button></div>
+  </div>
+</div>
+<div id="logMask" class="mask">
+  <div class="mask-content" style="padding:40px 50px;">
+    <h2 style="text-align:center;margin-bottom:32px;font-size:32px;">更新日志</h2>
+    <div style="max-height:68vh;overflow-y:auto;padding-right:8px;display:flex;flex-direction:column;gap:18px;">
+      <div style="background:var(--bg-card);border:1.5px solid var(--border-light);border-radius:20px;padding:24px 28px;box-shadow:0 8px 25px var(--shadow-main);transition:all 0.3s;position:relative;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <span style="font-size:19px;font-weight:bold;color:var(--text-main);">2025/12/11</span>
+            <span style="margin-left:10px;font-size:15px;padding:4px 10px;background:rgba(99,102,241,0.15);color:var(--link-color);border-radius:8px;">Release 2.0.0</span>
+          </div>
+          <span style="font-size:12px;padding:5px 14px;border-radius:20px;color:white;background:#10b981;">常规更新</span>
+        </div>
+        <div style="color:var(--text-secondary);line-height:1.8;font-size:15.5px;">
+          版本升级为Release<br>
+          允许自定义背景图
+        </div>
+      </div>
+      <div style="background:var(--bg-card);border:1.5px solid var(--border-light);border-radius:20px;padding:24px 28px;box-shadow:0 8px 25px var(--shadow-main);transition:all 0.3s;position:relative;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <span style="font-size:19px;font-weight:bold;color:var(--text-main);">2025/12/5</span>
+            <span style="margin-left:10px;font-size:15px;padding:4px 10px;background:rgba(99,102,241,0.15);color:var(--link-color);border-radius:8px;">demo 1.0.7</span>
+          </div>
+          <span style="font-size:12px;padding:5px 14px;border-radius:20px;color:white;background:#10b981;">优化</span>
+        </div>
+        <div style="color:var(--text-secondary);line-height:1.8;font-size:15.5px;">
+          报错反馈改为发送邮件<br>
+          Particles Example 新增示例代码复制功能
+        </div>
+      </div>
+      <div style="background:var(--bg-card);border:1.5px solid var(--border-light);border-radius:20px;padding:24px 28px;box-shadow:0 8px 25px var(--shadow-main);transition:all 0.3s;position:relative;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <span style="font-size:19px;font-weight:bold;color:var(--text-main);">2025/12/5</span>
+            <span style="margin-left:10px;font-size:15px;padding:4px 10px;background:rgba(99,102,241,0.15);color:var(--link-color);border-radius:8px;">demo 1.0.6</span>
+          </div>
+          <span style="font-size:12px;padding:5px 14px;border-radius:20px;color:white;background:#f59e0b;">优化</span>
+        </div>
+        <div style="color:var(--text-secondary);line-height:1.8;font-size:15.5px;">修改滚动条样式</div>
+      </div>
+      <div style="background:var(--bg-card);border:1.5px solid var(--border-light);border-radius:20px;padding:24px 28px;box-shadow:0 8px 25px var(--shadow-main);transition:all 0.3s;position:relative;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <span style="font-size:19px;font-weight:bold;color:var(--text-main);">2025/12/5</span>
+            <span style="margin-left:10px;font-size:15px;padding:4px 10px;background:rgba(99,102,241,0.15);color:var(--link-color);border-radius:8px;">demo 1.0.5</span>
+          </div>
+          <span style="font-size:12px;padding:5px 14px;border-radius:20px;color:white;background:#10b981;">常规更新</span>
+        </div>
+        <div style="color:var(--text-secondary);line-height:1.8;font-size:15.5px;">新增 Particles 下拉菜单（粒子名称 + 示例代码）</div>
+      </div>
+      <div style="background:var(--bg-card);border:1.5px solid var(--border-light);border-radius:20px;padding:24px 28px;box-shadow:0 8px 25px var(--shadow-main);transition:all 0.3s;position:relative;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <span style="font-size:19px;font-weight:bold;color:var(--text-main);">2025/12/4</span>
+            <span style="margin-left:10px;font-size:15px;padding:4px 10px;background:rgba(99,102,241,0.15);color:var(--link-color);border-radius:8px;">demo 1.0.4</span>
+          </div>
+          <span style="font-size:12px;padding:5px 14px;border-radius:20px;color:white;background:#10b981;">常规更新</span>
+        </div>
+        <div style="color:var(--text-secondary);line-height:1.8;font-size:15.5px;">支持entity settings搜索</div>
+      </div>
+      <div style="background:var(--bg-card);border:1.5px solid var(--border-light);border-radius:20px;padding:24px 28px;box-shadow:0 8px 25px var(--shadow-main);transition:all 0.3s;position:relative;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <span style="font-size:19px;font-weight:bold;color:var(--text-main);">2025/12/3</span>
+            <span style="margin-left:10px;font-size:15px;padding:4px 10px;background:rgba(99,102,241,0.15);color:var(--link-color);border-radius:8px;">demo 1.0.3</span>
+          </div>
+          <span style="font-size:12px;padding:5px 14px;border-radius:20px;color:white;background:#10b981;">常规更新</span>
+        </div>
+        <div style="color:var(--text-secondary);line-height:1.8;font-size:15.5px;">ui二改(控制栏居左)</div>
+      </div>
+      <div style="background:var(--bg-card);border:1.5px solid var(--border-light);border-radius:20px;padding:24px 28px;box-shadow:0 8px 25px var(--shadow-main);transition:all 0.3s;position:relative;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <span style="font-size:19px;font-weight:bold;color:var(--text-main);">2025/12/2</span>
+            <span style="margin-left:10px;font-size:15px;padding:4px 10px;background:rgba(99,102,241,0.15);color:var(--link-color);border-radius:8px;">demo 1.0.2</span>
+          </div>
+          <span style="font-size:12px;padding:5px 14px;border-radius:20px;color:white;background:#10b981;">常规更新</span>
+        </div>
+        <div style="color:var(--text-secondary);line-height:1.8;font-size:15.5px;">支持soundnames搜索<br>修改全站ui</div>
+      </div>
+      <div style="background:var(--bg-card);border:1.5px solid var(--border-light);border-radius:20px;padding:24px 28px;box-shadow:0 8px 25px var(--shadow-main);transition:all 0.3s;position:relative;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <span style="font-size:19px;font-weight:bold;color:var(--text-main);">2025/12/1</span>
+            <span style="margin-left:10px;font-size:15px;padding:4px 10px;background:rgba(99,102,241,0.15);color:var(--link-color);border-radius:8px;">demo 1.0.1</span>
+          </div>
+          <span style="font-size:12px;padding:5px 14px;border-radius:20px;color:white;background:#10b981;">常规更新</span>
+        </div>
+        <div style="color:var(--text-secondary);line-height:1.8;font-size:15.5px;">修bug...还是有很多</div>
+      </div>
+      <div style="background:var(--bg-card);border:1.5px solid var(--border-light);border-radius:20px;padding:24px 28px;box-shadow:0 8px 25px var(--shadow-main);transition:all 0.3s;position:relative;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <span style="font-size:19px;font-weight:bold;color:var(--text-main);">2025/11/30</span>
+            <span style="margin-left:10px;font-size:15px;padding:4px 10px;background:rgba(99,102,241,0.15);color:var(--link-color);border-radius:8px;">demo 1.0.0</span>
+          </div>
+          <span style="font-size:12px;padding:5px 14px;border-radius:20px;color:white;background:#ef4444;">第一条</span>
+        </div>
+        <div style="color:var(--text-secondary);line-height:1.8;font-size:15.5px;">更新日志从这里开始:)</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:36px;"><button id="logConfirm" style="padding:12px 36px;background:#000;color:white;border:none;border-radius:16px;cursor:pointer;font-size:16px;">关闭</button></div>
+  </div>
+</div>
+<div id="copyToast">已复制到剪贴板！</div>
+<div id="tempToast">未开放,请等待正式开放</div>
+<!-- 新增收藏提示 -->
+<div id="favoriteToast" style="position: fixed; top: 30px; left: 50%; transform: translateX(-50%) translateY(-20px);
+    background: rgba(0,0,0,0.92); color: white; padding: 16px 36px; border-radius: 16px;
+    font-size: 16px; z-index: 99999; opacity: 0; box-shadow: 0 12px 35px rgba(0,0,0,0.4);
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);">操作成功！</div>
+<button id="backToTop" title="回到顶部"><i class="fa fa-rocket"></i></button>
+<script>
+  const container = document.getElementById('cmdCards');
+  const toast = document.getElementById('copyToast');
+  const tempToast = document.getElementById('tempToast');
+  const favoriteToast = document.getElementById('favoriteToast');
+  const countEl = document.getElementById('cmdCount');
+  const displayCountEl = document.getElementById('displayCount');
+  const searchInput = document.getElementById('searchInput');
+  const clientBtn = document.getElementById('tabClientOptions');
+  const particlesBtn = document.getElementById('tabParticles');
+  let allData = [], currentFilter = 'all', currentSubFilter = null;
+  const backToTop = document.getElementById('backToTop');
+ 
+  // ========== 收藏功能核心逻辑 ==========
+  // 从localStorage获取收藏列表
+  function getFavorites() {
+    const favStr = localStorage.getItem('bloxdApiFavorites');
+    return favStr ? JSON.parse(favStr) : [];
+  }
+  // 保存收藏列表到localStorage
+  function saveFavorites(favorites) {
+    localStorage.setItem('bloxdApiFavorites', JSON.stringify(favorites));
+  }
+  // 切换收藏状态
+  function toggleFavorite(itemName, btn) {
+    const favorites = getFavorites();
+    const index = favorites.indexOf(itemName);
+    let toastText = '';
+   
+    if (index > -1) {
+      // 取消收藏
+      favorites.splice(index, 1);
+      toastText = '已取消收藏';
+      // 更新按钮样式
+      btn.classList.remove('favorited');
+      btn.querySelector('i').classList.remove('fa-star');
+      btn.querySelector('i').classList.add('fa-star-o');
+      btn.title = '加入收藏';
+    } else {
+      // 添加收藏
+      favorites.push(itemName);
+      toastText = '已加入收藏';
+      // 更新按钮样式
+      btn.classList.add('favorited');
+      btn.querySelector('i').classList.remove('fa-star-o');
+      btn.querySelector('i').classList.add('fa-star');
+      btn.title = '取消收藏';
+    }
+   
+    saveFavorites(favorites);
+    showFavoriteToast(toastText);
+    // 更新收藏计数显示
+    if (currentFilter === 'favorite') {
+      updateView();
+    }
+  }
+  // 检查是否已收藏
+  function isFavorited(itemName) {
+    return getFavorites().includes(itemName);
+  }
+  // 显示收藏提示
+  function showFavoriteToast(text) {
+    favoriteToast.textContent = text;
+    favoriteToast.classList.add('show');
+    setTimeout(() => favoriteToast.classList.remove('show'), 2000);
+  }
+  // =====================================
+ 
+  // 定义Particles示例代码（保留格式）
+  const particlesExampleCode = `let [x, y, z] = thisPos
+y += 1
+api.playParticleEffect({
+    dir1: [-1, -1, -1],
+    dir2: [1, 1, 1],
+    pos1: [x, y, z],
+    pos2: [x + 1, y + 1, z + 1],
+    texture: "bubble",
+    minLifeTime: 0.2,
+    maxLifeTime: 0.6,
+    minEmitPower: 2,
+    maxEmitPower: 2,
+    minSize: 0.25,
+    maxSize: 0.35,
+    manualEmitCount: 20,
+    gravity: [0, -10, 0],
+    colorGradients: [
+        {
+            timeFraction: 0,
+            minColor: [60, 60, 150, 1],
+            maxColor: [200, 200, 255, 1],
+        },
+    ],
+    velocityGradients: [
+        {
+            timeFraction: 0,
+            factor: 1,
+            factor2: 1,
+        },
+    ],
+    blendMode: 1,
+})`;
+  // 主题切换
+  if (localStorage.getItem('bloxdTheme') === 'dark') {
+    document.body.classList.add('dark-mode');
+    document.getElementById('themeIcon').classList.replace('fa-moon-o', 'fa-sun-o');
+  }
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    document.getElementById('themeIcon').classList.toggle('fa-moon-o', !isDark);
+    document.getElementById('themeIcon').classList.toggle('fa-sun-o', isDark);
+    localStorage.setItem('bloxdTheme', isDark ? 'dark' : 'light');
+  });
+ 
+  // 报错反馈邮件功能（核心）
+  function openFeedbackMail() {
+    const to = "Vanco_Personal@163.com";
+    const subject = "【同舟Bloxd-API站点】错误反馈（来自用户）";
+    const body = encodeURIComponent(`@Vanco
+我在使用「同舟Bloxd-API 全量汇总站」时发现了问题，麻烦看一下～
+【问题描述】
+（请在这里详细描述你遇到的问题、期望的表现等）
+——————————
+自动设备信息（方便排查,您也可以选择删掉）：
+时间：${new Date().toLocaleString('zh-CN')}
+页面 URL：${location.href}
+浏览器：${navigator.userAgent}
+语言：${navigator.language}
+屏幕分辨率：${screen.width}×${screen.height}
+站点版本：demo 1.0.7（2025.12.5）
+感谢您的反馈!(*^▽^*)`);
+    const mailtoLink = `mailto:${to}?subject=${subject}&body=${body}`;
+    location.href = mailtoLink;
+    // 兜底方案
+    setTimeout(() => {
+      if (!document.hasFocus()) {
+        window.open(mailtoLink, '_blank');
+      }
+    }, 400);
+  }
+ 
+  // 绑定两个报错反馈按钮
+  document.getElementById('sidebarReportBugBtn').addEventListener('click', openFeedbackMail);
+ 
+  // 弹窗控制
+  function closeMask(id) { 
+    const mask = document.getElementById(id);
+    mask.classList.add('removing');
+    setTimeout(() => {
+      mask.classList.remove('show', 'removing');
+    }, 400); 
+  }
+  document.getElementById('btnYes').onclick = () => closeMask('confirmMask');
+  document.getElementById('agreementConfirm').onclick = () => closeMask('agreementMask');
+  document.getElementById('thanksConfirm').onclick = () => closeMask('thanksMask');
+  document.getElementById('logConfirm').onclick = () => closeMask('logMask');
+  document.getElementById('logBtn').onclick = () => document.getElementById('logMask').classList.add('show');
+  function showAgreement() { document.getElementById('agreementMask').classList.add('show'); }
+ 
+  // 教学服务器
+  document.getElementById('tutorialServerBtn').onclick = () => {
+    window.open('https://bloxd.io/play/classic/bloxd命令方块', '_blank');
+  };
+  // ========== 新增：自定义背景图功能（强制50%透明度） ==========
+  const bgUrlInput = document.getElementById('bgUrlInput');
+  const applyBgBtn = document.getElementById('applyBgBtn');
+  const mainContent = document.querySelector('.main-content');
+  function initBackground() {
+    const savedUrl = localStorage.getItem('customBgUrl');
+    if (savedUrl) {
+      bgUrlInput.value = savedUrl;
+      applyBackground(savedUrl);
+    }
+  }
+  initBackground();
+  function applyBackground(url) {
+    // 移除自定义背景类和样式
+    mainContent.classList.remove('custom-bg');
+    mainContent.style.removeProperty('--custom-bg-image');
+   
+    if (!url.trim()) {
+      localStorage.removeItem('customBgUrl');
+      showToast('背景图已清除');
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      // 添加自定义背景类，设置背景图变量（强制50%透明度）
+      mainContent.classList.add('custom-bg');
+      mainContent.style.setProperty('--custom-bg-image', `url(${url})`);
+      localStorage.setItem('customBgUrl', url);
+      showToast('背景图已应用');
+    };
+    img.onerror = () => {
+      localStorage.removeItem('customBgUrl');
+      bgUrlInput.value = '';
+      showToast('背景图链接无效或无法加载', true);
+    };
+    img.src = url;
+  }
+  function showToast(text, isError = false) {
+    const t = tempToast;
+    t.textContent = text;
+    t.style.backgroundColor = isError ? 'var(--error-btn)' : 'rgba(0,0,0,0.92)';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+  applyBgBtn.addEventListener('click', () => {
+    applyBackground(bgUrlInput.value.trim());
+  });
+  bgUrlInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      applyBgBtn.click();
+    }
+  });
+  // ==========================================
+  // 渲染卡片
+  function render(list) {
+    container.innerHTML = '';
+    displayCountEl.textContent = list.length || 0;
+    if (!list || list.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:120px;color:var(--text-secondary);font-size:18px;"><h2>未找到匹配的内容</h2></div>';
+      return;
+    }
+    list.forEach((cmd, i) => {
+      const realId = allData.indexOf(cmd) + 1;
+      let tag = '';
+      if (cmd.source === 'callback') tag = '<span class="tag callbacks">CALLBACKS</span>';
+      else if (cmd.source === 'clientoptions' || cmd.source === 'clientoptionsparams') tag = '<span class="tag client-option">CLIENT OPTIONS</span>';
+      else if (cmd.source === 'soundnames') tag = '<span class="tag soundnames">SOUNDNAMES</span>';
+      else if (cmd.source === 'entitysettings') tag = '<span class="tag entitysettings">ENTITY SETTINGS</span>';
+      else if (cmd.source === 'particles') tag = '<span class="tag particles">PARTICLES</span>';
+      else tag = '<span class="tag api">API</span>';
+     
+      // 检查是否已收藏
+      const favorited = isFavorited(cmd.name);
+      const favoriteIcon = favorited ? 'fa-star' : 'fa-star-o';
+      const favoriteText = favorited ? '取消收藏' : '加入收藏';
+      const favoriteClass = favorited ? 'favorited' : '';
+     
+      const card = document.createElement('div');
+      card.className = 'api-card';
+      // 修复动画延迟设置，确保延迟递增
+      card.style.animationDelay = `${Math.min(i * 0.05, 1)}s`;
+      
+      // 创建按钮组容器
+      let btnGroup = `<div class="btn-group">
+        <div class="copy-btn-rect" data-code="${btoa(unescape(encodeURIComponent(cmd.example||cmd.name||'')))}">${cmd.source === 'particles' || cmd.source === 'soundnames' ? '复制名称' : '复制代码'}</div>
+        <div class="favorite-btn ${favoriteClass}" data-name="${cmd.name}" title="${favoriteText}">
+          <i class="fa ${favoriteIcon}"></i>
+        </div>
+      </div>`;
+      
+      if (cmd.source === 'particles') {
+        const zh = cmd.zhname || cmd.zhName || '暂无翻译';
+        card.innerHTML = `
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px;">
+            <span style="background:var(--bg-main);padding:6px 14px;border-radius:10px;font-size:14px;border:1px solid var(--border-light);">ID: ${realId}</span>
+            ${tag}
+            <h2 style="font-size:26px;margin:0;color:var(--text-main);">${cmd.name}</h2>
+            <span style="color:var(--text-secondary);font-size:18px;margin-left:6px;">（${zh}）</span>
+          </div>
+          <p style="line-height:1.8;margin:16px 0;color:var(--text-secondary);"><strong>中文翻译：</strong>${zh}</p>
+          <span style="color:#d946ef;font-size:15px;font-weight:600;margin-top:16px;display:block;">Particles 需要依靠 playParticleEffect 等 API 使用</span>
+          ${btnGroup}
+        `;
+      } else if (cmd.source === 'soundnames') {
+        const zh = cmd.zhname || cmd.zhName || '暂无翻译';
+        card.innerHTML = `
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px;">
+            <span style="background:var(--bg-main);padding:6px 14px;border-radius:10px;font-size:14px;border:1px solid var(--border-light);">ID: ${realId}</span>
+            ${tag}
+            <h2 style="font-size:26px;margin:0;color:var(--text-main);">${cmd.name}</h2>
+            <span style="color:var(--text-secondary);font-size:18px;margin-left:6px;">（${zh}）</span>
+          </div>
+          <p style="line-height:1.8;margin:16px 0;color:var(--text-secondary);"><strong>中文翻译：</strong>${zh}</p>
+          <span style="color:#f59e0b;font-size:15px;font-weight:600;margin-top:16px;display:block;">Soundnames 需要依靠 playSound、broadcastSound 等 API 使用</span>
+          ${btnGroup}
+        `;
+      } else {
+        card.innerHTML = `
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px;">
+            <span style="background:var(--bg-main);padding:6px 14px;border-radius:10px;font-size:14px;border:1px solid var(--border-light);">ID: ${realId}</span>
+            ${tag}
+            <h2 style="font-size:26px;margin:0;color:var(--text-main);">${cmd.name}</h2>
+            ${cmd.zhName ? `<span style="color:var(--text-secondary);font-size:18px;margin-left:6px;">（${cmd.zhName}）</span>` : ''}
+          </div>
+          ${cmd.desc ? `<p style="line-height:1.75;margin:16px 0;"><strong>说明：</strong><br>${cmd.desc.replace(/\\n/g,'<br>')}</p>` : ''}
+          ${cmd.params ? `<p style="line-height:1.7;color:var(--text-secondary);"><strong>参数：</strong><br>${cmd.params.replace(/\\n/g,'<br>')}</p>` : ''}
+          ${cmd.example ? `<p style="margin:24px 0 8px;"><strong>示例代码：</strong></p><div class="code-block"><div class="code-content">${(cmd.example||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div></div>` : ''}
+          ${btnGroup}
+        `;
+      }
+      container.appendChild(card);
+     
+      // 绑定收藏按钮事件
+      const favoriteBtn = card.querySelector('.favorite-btn');
+      favoriteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleFavorite(cmd.name, favoriteBtn);
+      });
+    });
+   
+    // 绑定复制按钮事件
+    document.querySelectorAll('.copy-btn-rect').forEach(btn => {
+      btn.onclick = () => {
+        const code = decodeURIComponent(escape(atob(btn.dataset.code)));
+        navigator.clipboard.writeText(code).then(() => {
+          toast.classList.add('show');
+          setTimeout(() => toast.classList.remove('show'), 2000);
+        });
+      };
+    });
+  }
+ 
+  // 数据加载
+  Promise.all([
+    fetch('api-data.json').then(r => r.ok ? r.json() : []),
+    fetch('callback-data.json').then(r => r.ok ? r.json() : []),
+    fetch('clientOptions-data.json').then(r => r.ok ? r.json() : []),
+    fetch('clientOptionsParams-data.json').then(r => r.ok ? r.json() : []),
+    fetch('soundname.json').then(r => r.ok ? r.json() : []),
+    fetch('entitySettings.json').then(r => r.ok ? r.json() : []),
+    fetch('particles.json').then(r => r.ok ? r.json() : [])
+  ]).then(([api, cb, co, cop, sounds, entitySettings, particles]) => {
+    api.forEach(i => i.source = 'api');
+    cb.forEach(i => i.source = 'callback');
+    co.forEach(i => i.source = 'clientoptions');
+    cop.forEach(i => i.source = 'clientoptionsparams');
+    sounds.forEach(i => i.source = 'soundnames');
+    entitySettings.forEach(i => i.source = 'entitysettings');
+    particles.forEach(i => i.source = 'particles');
+    allData = [...api, ...cb, ...co, ...cop, ...sounds, ...entitySettings, ...particles];
+    countEl.textContent = allData.length;
+    render(allData);
+  }).catch(err => {
+    console.error(err);
+    container.innerHTML = '<div style="text-align:center;color:#ef4444;padding:100px;">加载失败！<br>请确保所有 json 文件在同目录</div>';
+  });
+ 
+  // 筛选逻辑
+  function updateView() {
+    let list = allData.slice();
+   
+    // 收藏筛选
+    if (currentFilter === 'favorite') {
+      const favorites = getFavorites();
+      list = list.filter(cmd => favorites.includes(cmd.name));
+    }
+    // 其他筛选
+    else if (currentFilter === 'api') list = list.filter(x => x.source === 'api');
+    else if (currentFilter === 'callbacks') list = list.filter(x => x.source === 'callback');
+    else if (currentFilter === 'soundnames') list = list.filter(x => x.source = 'soundnames');
+    else if (currentFilter === 'entitysettings') list = list.filter(x => x.source === 'entitysettings');
+    else if (currentSubFilter) list = list.filter(x => x.source === currentSubFilter);
+   
+    // 搜索过滤
+    const kw = searchInput.value.trim().toLowerCase();
+    if (kw) {
+      list = list.filter(cmd => {
+        const realId = (allData.indexOf(cmd) + 1).toString();
+        const zh = (cmd.zhname || cmd.zhName || '').toLowerCase();
+        return realId.includes(kw) || cmd.name.toLowerCase().includes(kw) || zh.includes(kw) || (cmd.desc || '').toLowerCase().includes(kw);
+      });
+    }
+   
+    render(list);
+  }
+ 
+  // 普通筛选按钮
+  document.querySelectorAll('.btn-capsule[data-type]').forEach(btn => {
+    if (btn.id !== 'tabClientOptions' && btn.id !== 'tabParticles') {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.btn-capsule[data-type], #tabClientOptions, #tabParticles').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('clientSubMenu')?.remove();
+        document.getElementById('particlesSubMenu')?.remove();
+        currentFilter = btn.dataset.type;
+        currentSubFilter = null;
+        updateView();
+      });
+    }
+  });
+ 
+  // Particles 下拉菜单（包含示例代码复制功能）
+  particlesBtn.addEventListener('click', function(e) {
+    if (e.target.closest('.sub-tab')) return;
+    const menu = document.getElementById('particlesSubMenu');
+    if (menu) { menu.remove(); return; }
+    document.querySelectorAll('.btn-capsule[data-type], #tabClientOptions, #tabParticles').forEach(b => b.classList.remove('active'));
+    particlesBtn.classList.add('active');
+    const newMenu = document.createElement('div');
+    newMenu.id = 'particlesSubMenu';
+    newMenu.innerHTML = `
+      <div class="sub-tab" data-type="particles">Particles（粒子名称）</div>
+      <div class="sub-tab" data-type="particles-example">Particles Example（示例代码）</div>
+    `;
+    particlesBtn.appendChild(newMenu);
+    newMenu.querySelectorAll('.sub-tab').forEach((sub, idx) => {
+      sub.addEventListener('click', () => {
+        newMenu.remove();
+        particlesBtn.classList.add('active');
+       
+        // 粒子名称筛选
+        if (idx === 0) {
+          currentSubFilter = 'particles';
+          currentFilter = 'all';
+          updateView();
+        }
+        // 示例代码复制
+        else if (idx === 1) {
+          // 复制示例代码到剪贴板
+          navigator.clipboard.writeText(particlesExampleCode).then(() => {
+            // 显示自定义提示
+            const t = tempToast;
+            t.textContent = '示例代码已复制';
+            t.style.backgroundColor = 'rgba(0,0,0,0.92)';
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+           
+            // 重置筛选
+            currentSubFilter = null;
+            currentFilter = 'all';
+            updateView();
+          }).catch(err => {
+            console.error('复制失败:', err);
+            showToast('复制失败，请手动复制', true);
+          });
+        }
+      });
+    });
+  });
+ 
+  // Client Options 下拉菜单
+  clientBtn.addEventListener('click', function(e) {
+    if (e.target.closest('.sub-tab')) return;
+    const menu = document.getElementById('clientSubMenu');
+    if (menu) { menu.remove(); return; }
+    document.querySelectorAll('.btn-capsule[data-type], #tabClientOptions, #tabParticles').forEach(b => b.classList.remove('active'));
+    clientBtn.classList.add('active');
+    const newMenu = document.createElement('div');
+    newMenu.id = 'clientSubMenu';
+    newMenu.innerHTML = `
+      <div class="sub-tab" data-type="clientoptions">Client Option API</div>
+      <div class="sub-tab" data-type="clientoptionsparams">Client Options Params</div>
+    `;
+    clientBtn.appendChild(newMenu);
+    newMenu.querySelectorAll('.sub-tab').forEach(sub => {
+      sub.addEventListener('click', () => {
+        currentFilter = 'all';
+        currentSubFilter = sub.dataset.type;
+        updateView();
+        newMenu.remove();
+        clientBtn.classList.add('active');
+      });
+    });
+  });
+ 
+  // 点击空白关闭下拉
+  document.addEventListener('click', e => {
+    if (!clientBtn.contains(e.target) && !particlesBtn.contains(e.target)) {
+      document.getElementById('clientSubMenu')?.remove();
+      document.getElementById('particlesSubMenu')?.remove();
+    }
+  });
+ 
+  // 回到顶部
+  window.addEventListener('scroll', () => {
+    backToTop.classList.toggle('show', window.scrollY > 300);
+  });
+  backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+ 
+  // 搜索
+  searchInput.addEventListener('input', updateView);
+ 
+  // 修复按钮上浮动画 - 在DOM加载完成后应用初始样式
+  document.addEventListener('DOMContentLoaded', function() {
+    // 为所有按钮应用过渡动画
+    const buttons = document.querySelectorAll('.btn-capsule');
+    buttons.forEach(button => {
+      button.style.transition = 'transform 0.2s ease, background 0.2s ease';
+    });
+  });
+ 
+  // 用户协议按钮事件
+  document.getElementById('agreementBtn').addEventListener('click', function() {
+    document.getElementById('agreementMask').classList.add('show');
+  });
+</script>
+</body>
+</html>
