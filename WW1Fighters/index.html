@@ -20221,7 +20221,7 @@ s.showTaskInfo = function() {
       function e() {
         this.versionTxt = null, this.content = null, e.__super.call(this),
         // JSON 里的 "v2.0.0" 是原版样例残留 -> 运行时用 WB_VERSION 覆盖，并改成通栏居中样式
-        window.WB_VERSION = window.WB_VERSION || "1.2.27",
+        window.WB_VERSION = window.WB_VERSION || "1.2.28",
         this.versionTxt && (this.versionTxt.text = "v" + window.WB_VERSION, this.versionTxt.width = 1334, this.versionTxt.align = "center", this.versionTxt.color = "#9a9a9a", this.versionTxt.fontSize = 16)
       }
       n(e, "ui.SplashUIUI", t);
@@ -22670,8 +22670,11 @@ s.showTaskInfo = function() {
           }, this.__wbCheatUp = function(e2) {
             self.onCheatDragEnd(e2)
           }, window.addEventListener("wheel", this.__wbCheatWheel, !1), wrap.on("mousedown", this, self.onCheatDragStart);
-          // 行助手
-          var mkRow = function(idx, label, desc, on, toggle) {
+          // 三项（回调同时存一份，供 canvas 原生兜底命中用）
+          // ★ cb 注册挪到 mkRow 内部，闭包抓到 sync，否则兜底路径 sync 是 undefined，
+          //   row 视觉不会刷新（要关掉重开才看见新状态，2026-10-11 修复）
+          this.__wbCheatRows = [], this.__wbCheatRowCbs = [];
+          var mkRow = function(idx, label, desc, on, toggleName) {
             var row = new Gi;
             row.size(W - 40, 62), row.pos(0, idx * 68), row.mouseEnabled = !0;
             var rg = row.graphics;
@@ -22686,45 +22689,37 @@ s.showTaskInfo = function() {
             var st = new us;
             st.font = "SimHei", st.fontSize = 15, st.bold = !0, st.align = "right", st.width = 100, st.x = W - 40 - 114, st.y = 21, row.addChild(st);
             var sync = function() {
-                var v = on();
-                l1.color = v ? "#ffd75e" : "#8fb0c8", st.text = v ? "已开启" : "已关闭", st.color = v ? "#7ee08a" : "#6d8ba3", paint(),
-                  // 开过一次之后整块面板要亮出「成就已关闭」警告
-                  warn.visible = y.wbCheatOn();
-              };
+              var v = on();
+              l1.color = v ? "#ffd75e" : "#8fb0c8", st.text = v ? "已开启" : "已关闭", st.color = v ? "#7ee08a" : "#6d8ba3", paint(),
+                // 开过一次之后整块面板要亮出「成就已关闭」警告
+                warn.visible = y.wbCheatOn();
+            };
+            // Laya click 路径 + canvas 原生兜底都走同一份闭包 sync
             row.on("click", self, function() {
-              self.__wbCheatDragging || toggle(sync)
-            }), sync();
+              self.__wbCheatDragging || self[toggleName](sync)
+            });
+            self.__wbCheatRowCbs[idx] = function() {
+              return self[toggleName](sync)
+            };
+            self.__wbCheatRows.push({
+              sync: sync
+            });
+            sync();
             return {
               sync: sync
             }
           };
-          // 三项（回调同时存一份，供 canvas 原生兜底命中用）
-          this.__wbCheatRows = [], this.__wbCheatRowCbs = [];
-          this.__wbCheatRowCbs.push(function(sync) {
-            self.toggleChapter(sync)
-          }), this.__wbCheatRows.push(mkRow(0, "章节全解", "解锁全部章节与关卡", function() {
+          mkRow(0, "章节全解", "解锁全部章节与关卡", function() {
             return !!y.storage.__wb_chapterOn
-          }, this.__wbCheatRowCbs[0]));
-          this.__wbCheatRowCbs.push(function(sync) {
-            self.toggleMoney(sync)
-          }), this.__wbCheatRows.push(mkRow(1, "货币增加", "金币 / 银币 / 军功 各 +999999999", function() {
+          }, "toggleChapter"), mkRow(1, "货币增加", "金币 / 银币 / 军功 各 +999999999", function() {
             return !!y.storage.__wb_moneyOn
-          }, this.__wbCheatRowCbs[1]));
-          this.__wbCheatRowCbs.push(function(sync) {
-            self.toggleHpLock(sync)
-          }), this.__wbCheatRows.push(mkRow(2, "血量锁定", "自机血量锁定为满血", function() {
+          }, "toggleMoney"), mkRow(2, "血量锁定", "自机血量锁定为满血", function() {
             return !!y.storage.__wb_hpLock
-          }, this.__wbCheatRowCbs[2]));
-          this.__wbCheatRowCbs.push(function(sync) {
-            self.toggleHeat(sync)
-          }), this.__wbCheatRows.push(mkRow(3, "发动机不过热", "自机引擎不再过热，可一直保持极速", function() {
+          }, "toggleHpLock"), mkRow(3, "发动机不过热", "自机引擎不再过热，可一直保持极速", function() {
             return !!y.storage.__wb_heatOn
-          }, this.__wbCheatRowCbs[3]));
-          this.__wbCheatRowCbs.push(function(sync) {
-            self.toggleAmmo(sync)
-          }), this.__wbCheatRows.push(mkRow(4, "弹药无限", "自机机炮与航弹不再消耗备弹", function() {
+          }, "toggleHeat"), mkRow(4, "弹药无限", "自机机炮与航弹不再消耗备弹", function() {
             return !!y.storage.__wb_ammoOn
-          }, this.__wbCheatRowCbs[4]));
+          }, "toggleAmmo");
           // 关闭按钮（ScaleButton 默认 anchor .5 -> 置 0 后 x/y 才是左上角）
           var cb = new hn("main/btn2Skin.png", "返 回");
           cb.size(160, 40), cb.anchorX = cb.anchorY = 0, cb.labelSize = 17, cb.labelFont = "SimHei", cb.labelColors = "#ffffff,#ffffff,#ffffff,#888888", cb.x = (W - 160) / 2, cb.y = H - 114, cb.on("click", this, this.closeCheatMenu), sp.addChild(cb);
