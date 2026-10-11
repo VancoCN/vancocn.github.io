@@ -1317,12 +1317,17 @@ var Laya = window.Laya = function(t) {
       },
       // 作弊闸门：未使用过作弊的存档第一次开作弊要先确认（原生弹窗），
       // 确认后 __wbCheat = true，成就永久关闭；已作弊存档直接放行不再重复提示。
+      // 双触发去重要分开两条路径：
+      //  ① 已作弊存档走「时间戳」防 mousedown+click 同次手势进来两次（fn 跑两次会 toggle 互相抵消）
+      //  ② 弹窗路径走「布尔 busy」防 confirm/cancel 之前再叠加弹窗
       t.wbCheatGate = function(e) {
         if (!t.storage) return;
-        // 已作弊存档直接放行（避免每次点都弹确认窗）
-        if (t.wbCheatOn()) return e && e.call && e.call(), void 0;
-        // 闸门去重：canvas 原生 mousedown 兜底 + Laya click 会让一次点击里两次进闸门，
-        // 不去重就会叠两层弹窗 + 确认后 wbSetCheat 第二次触发 fn 把 toggle 反向抵消（2026-10-11 修复）
+        if (t.wbCheatOn()) {
+          var now2 = Date.now();
+          if (t.__wbCheatGateDirectAt && now2 - t.__wbCheatGateDirectAt < 200) return;
+          t.__wbCheatGateDirectAt = now2;
+          return e && e.call && e.call(), void 0;
+        }
         if (t.__wbCheatGateBusy) return;
         t.__wbCheatGateBusy = !0;
         var i2 = new ur("使用作弊后存档将无法使用成就功能\n\n是否继续？");
@@ -20216,7 +20221,7 @@ s.showTaskInfo = function() {
       function e() {
         this.versionTxt = null, this.content = null, e.__super.call(this),
         // JSON 里的 "v2.0.0" 是原版样例残留 -> 运行时用 WB_VERSION 覆盖，并改成通栏居中样式
-        window.WB_VERSION = window.WB_VERSION || "1.2.26",
+        window.WB_VERSION = window.WB_VERSION || "1.2.27",
         this.versionTxt && (this.versionTxt.text = "v" + window.WB_VERSION, this.versionTxt.width = 1334, this.versionTxt.align = "center", this.versionTxt.color = "#9a9a9a", this.versionTxt.fontSize = 16)
       }
       n(e, "ui.SplashUIUI", t);
