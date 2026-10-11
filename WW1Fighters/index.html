@@ -1319,10 +1319,17 @@ var Laya = window.Laya = function(t) {
       // 确认后 __wbCheat = true，成就永久关闭；已作弊存档直接放行不再重复提示。
       t.wbCheatGate = function(e) {
         if (!t.storage) return;
+        // 已作弊存档直接放行（避免每次点都弹确认窗）
         if (t.wbCheatOn()) return e && e.call && e.call(), void 0;
+        // 闸门去重：canvas 原生 mousedown 兜底 + Laya click 会让一次点击里两次进闸门，
+        // 不去重就会叠两层弹窗 + 确认后 wbSetCheat 第二次触发 fn 把 toggle 反向抵消（2026-10-11 修复）
+        if (t.__wbCheatGateBusy) return;
+        t.__wbCheatGateBusy = !0;
         var i2 = new ur("使用作弊后存档将无法使用成就功能\n\n是否继续？");
         b.popUpDialog(i2), i2.confirmHandle = _.create(t, function() {
-          t.wbSetCheat(), t.wbAchToastNote("成就功能已关闭"), e && e.call && e.call()
+          t.__wbCheatGateBusy = !1, t.wbSetCheat(), t.wbAchToastNote("成就功能已关闭"), e && e.call && e.call()
+        }), i2.cancelHandle = _.create(t, function() {
+          t.__wbCheatGateBusy = !1
         })
       },
       // 小型居中提示（比 showMessage 更醒目，用于告知成就被关闭）
@@ -20209,7 +20216,7 @@ s.showTaskInfo = function() {
       function e() {
         this.versionTxt = null, this.content = null, e.__super.call(this),
         // JSON 里的 "v2.0.0" 是原版样例残留 -> 运行时用 WB_VERSION 覆盖，并改成通栏居中样式
-        window.WB_VERSION = window.WB_VERSION || "1.2.24",
+        window.WB_VERSION = window.WB_VERSION || "1.2.26",
         this.versionTxt && (this.versionTxt.text = "v" + window.WB_VERSION, this.versionTxt.width = 1334, this.versionTxt.align = "center", this.versionTxt.color = "#9a9a9a", this.versionTxt.fontSize = 16)
       }
       n(e, "ui.SplashUIUI", t);
