@@ -388,7 +388,10 @@ var Laya = window.Laya = function(t) {
     }()),
     l = function() {
       function t(t, e, i, s, n, r, a) {
-        this.title = "", this.index = 0, this.money = 0, this.state = 0, this.bGlod = !0, this.selected = !1, this.wnd = null, this.title = t, this.index = e, this.money = i, this.state = s, this.bGlod = n, this.selected = r, this.wnd = a
+        this.title = "", this.index = 0, this.money = 0, this.state = 0, this.bGlod = !0, this.selected = !1,
+        // 第六章《帝国苍穹》默认隐藏，需 UNLOCKchapter6 序列码（需管理员）才能解锁（2026-10-11）
+        this.hidden = !1,
+        this.wnd = null, this.title = t, this.index = e, this.money = i, this.state = s, this.bGlod = n, this.selected = r, this.wnd = a
       }
       return n(t, "com.ocean.data.MissionData"), t
     }(),
@@ -396,7 +399,9 @@ var Laya = window.Laya = function(t) {
       function t() {
         this.pilotName = "飞行员", this.createTime = Date.now(), this.killCount = 0, this.assistCount = 0, this.crashCount = 0, this.buildingCount = 0, this.flyTime = [0, 0, 0, 0], this.gold = 100, this.silver = 45e3, this.honour = 0, this.totalCost = 0, this.recDate = -1, this.garageNum = 5, this.garageList = [], this.americaTree = [], this.germanTree = [], this.missionCfg = [], this.selectIndex = 0, this.bNovice = !1,
         // 作弊相关：新号默认全部关闭、成就可用
-        this.__wbCheat = !1, this.__wbCheatApplied = !0, this.__wb_cheatMenu = !1, this.__wb_chapterOn = !1, this.__wb_moneyOn = !1, this.__wb_hpLock = !1, this.__wb_heatOn = !1, this.__wb_ammoOn = !1, this.__wbAchQueue = [], this.garageList = [{
+        this.__wbCheat = !1, this.__wbCheatApplied = !0, this.__wb_cheatMenu = !1, this.__wb_chapterOn = !1, this.__wb_moneyOn = !1, this.__wb_hpLock = !1, this.__wb_heatOn = !1, this.__wb_ammoOn = !1, this.__wbAchQueue = [],
+        // 序列码系统：管理员权限 + 作弊豁免 + 第六章《帝国苍穹》隐藏标记（2026-10-11）
+        this.__wb_admin = !1, this.__wb_noCheatPun = !1, this.__wb_chapter6Unlock = !1, this.garageList = [{
           id: "plane2",
           bDouble: !0,
           upgrade: [0, 0, 0, 0]
@@ -1095,6 +1100,10 @@ var Laya = window.Laya = function(t) {
             t.storage.__wb_cheatMenu = !1, t.storage.__wbCheatApplied = !0
         }
         null == t.storage.__wbAchQueue && (t.storage.__wbAchQueue = []);
+        // 序列码系统：老存档补默认值（2026-10-11 加）
+        null == t.storage.__wb_admin && (t.storage.__wb_admin = !1),
+        null == t.storage.__wb_noCheatPun && (t.storage.__wb_noCheatPun = !1),
+        null == t.storage.__wb_chapter6Unlock && (t.storage.__wb_chapter6Unlock = !1);
         var e = i.loader.getRes("res/cfg/GunCfg.json");
         com.ocean.ui.DataManager.setJsonData("gunCfg", e);
         var s = i.loader.getRes("res/cfg/MissionCfg.json");
@@ -1284,9 +1293,16 @@ var Laya = window.Laya = function(t) {
       }, t.wbSetCheat = function() {
         t.storage && (t.storage.__wbCheat = !0, t.saveData())
       },
+      // 成就拦截判定（2026-10-11）：wbCheatOn 仍报告「是否开过作弊」（用于 wbCheatGate 早退判断），
+      // 而 wbIsCheatBlocked 才是成就解锁的真正闸门——开了作弊但用 NOCHEATPUN 序列码赦免后
+      // (storage.__wb_noCheatPun = true) 就放行；wbAchEval 内的循环每一项仍走 wbAchTry，
+      // 所以只改 wbAchTry 一处即可旁路所有 wbAchEval / wbAchOnWin 调用。
+      t.wbIsCheatBlocked = function() {
+        return !!(t.storage && t.storage.__wbCheat && !t.storage.__wb_noCheatPun)
+      },
       // 成就解锁入口：作弊存档直接拒绝（返回 false = 没解锁）
       t.wbAchTry = function(e, i) {
-        return t.wbCheatOn() ? !1 : t.wbAchUnlock(e, i)
+        return t.wbIsCheatBlocked() ? !1 : t.wbAchUnlock(e, i)
       },
       t.wbAchGet = function() {
         var e = t.storage && t.storage.__wbAch;
@@ -21561,6 +21577,7 @@ s.showTaskInfo = function() {
       }
       n(e, "com.ocean.ui.MissionChapter", t);
       var s = e.prototype;
+      // 第六章隐藏标记：序列化时持久化 hidden 字段，避免刷新/回主菜单后丢失
       return s.onRoll = function(t) {
         this.lightMc.visible || (this.chapterName.color = t ? "#ffffff" : "#aaaaaa", this.moneyTxt.color = t ? "#ffffff" : "#aaaaaa")
       }, s.onClick = function() {
@@ -21588,7 +21605,14 @@ s.showTaskInfo = function() {
       }, r(0, s, "dataSource", t.prototype._$get_dataSource, function(t) {
         i.superSet(An, this, "dataSource", t);
         var e = t;
-        e && (this.chapterName.text = e.title, this.lightMc.visible = e.selected, 0 == e.state ? (this.moneyTxt.visible = !1, this.chapterName.color = this.lightMc.visible ? "#FFFFFF" : "#888888", this.goldMc.visible = !1, this.lockMc.visible = !1) : (this.moneyTxt.visible = !0, this.moneyTxt.text = String(e.money), this.chapterName.color = "#888888", this.goldMc.visible = !0, this.goldMc.skin = "main/money" + e.state + ".png", this.lockMc.visible = !0))
+        if (!e) return;
+        // 第六章隐藏：dataSource.hidden 时整格不可见（2026-10-11）
+        if (e.hidden) {
+          this.visible = false;
+          return
+        }
+        this.visible = true;
+        this.chapterName.text = e.title, this.lightMc.visible = e.selected, 0 == e.state ? (this.moneyTxt.visible = !1, this.chapterName.color = this.lightMc.visible ? "#FFFFFF" : "#888888", this.goldMc.visible = !1, this.lockMc.visible = !1) : (this.moneyTxt.visible = !0, this.moneyTxt.text = String(e.money), this.chapterName.color = "#888888", this.goldMc.visible = !0, this.goldMc.skin = "main/money" + e.state + ".png", this.lockMc.visible = !0)
       }), e
     }(An),
     er = function(t) {
@@ -21614,6 +21638,9 @@ s.showTaskInfo = function() {
           var n = t[s];
           n.state = (y.storage.missionCfg[s] || { state: n.state }).state
         }
+        // 第六章《帝国苍穹》默认隐藏：UNLOCKchapter6 序列码（需管理员）可解锁（2026-10-11）
+        // 不删数组、只置 hidden=true → dataSource setter 设 visible=false → 章节列表里那一格留空但其他章节位置不变
+        y.storage.__wb_chapter6Unlock || (t[6].hidden = true);
         t[6].money2 = 120, // 第六章：银币 49000 + 金币 120（state 3 = 双币同时支付）
 
         this.chapterList.array = t, this.on("select", this, this.onSelectChapter), this.itemArr = [this.map1, this.map2, this.map3, this.map4, this.map5, this.map6, this.map7, this.map8, this.map9, this.map10, this.map11, this.map12];
@@ -22546,6 +22573,88 @@ s.showTaskInfo = function() {
         var e = this.decodeSave(t);
         if (null == e) return b.showMessage("存档字符串无效或已损坏！"), void 0;
         this.applySave(e), alert("导入成功！\n\n金币 " + e.gold + " ／ 银币 " + e.silver + " ／ 军功 " + e.honour + "\n机库 " + e.garage.length + " 架\n关卡进度已恢复\n\n点「确定」后重新载入游戏"), location.reload()
+      },
+      // ===== 序列码验证（2026-10-11）=====
+      // 跟导出/导入风格一致：用 window.prompt 接收输入（在弹窗里输入序列码），回车后由 tryRedeemCode 解析。
+      // 序列码清单（大小写不敏感，输入时统一大写）：
+      //   ADMINVANCOCN   — 提权为管理员（使用其他序列码的钥匙；新号任何时候都能用）
+      //   UNLOCKchapter6 — 解锁当前被隐藏的第六章《帝国苍穹》（需管理员）
+      //   UNLOCKjaplanes — 直接解锁日系飞机，无需通关（需管理员）
+      //   UNLOCKenplanes — 直接解锁英系飞机，无需通关（需管理员）
+      //   NOCHEATPUN     — 作弊豁免：本存档被标记为作弊也能继续解锁成就（需管理员）
+      //   INFSTORAGE     — 把剩余机库扩到 999（需管理员）
+      s.onSerialCodeClick = function() {
+        var raw = prompt("请输入序列码（大小写不敏感）：\n\n可用序列码请参考游戏更新说明。\n\n" + (y.storage.__wb_admin ? "当前存档已是管理员" : "当前存档不是管理员（需先输入 ADMINVANCOCN 提权）"), "");
+        if (null == raw) return;
+        raw = String(raw).trim();
+        if (!raw) return;
+        this.tryRedeemCode(raw)
+      },
+      s.tryRedeemCode = function(raw) {
+        var e = y.storage, code = String(raw || "").trim(), lc = code.toLowerCase(), msg = "", ok = false;
+        if ("adminvancocn" === lc) {
+          if (e.__wb_admin) msg = "已是管理员，无需重复提权", ok = true;
+          else e.__wb_admin = !0, y.saveData(), msg = "提权成功！当前存档已设为管理员\n（其他序列码需要管理员才能使用）", ok = true;
+        } else if ("unlockchapter6" === lc) {
+          if (!e.__wb_admin) msg = "需要管理员权限（先输入 ADMINVANCOCN 提权）";
+          else {
+            // missionCfg 至少 10 项；老存档可能只有 9 项——补齐
+            for (e.missionCfg = e.missionCfg || []; e.missionCfg.length < 10;) e.missionCfg.push({
+              state: 0,
+              curGate: 1
+            });
+            e.missionCfg[6].state = 0;
+            e.missionCfg[6].curGate = 12;
+            e.__wb_chapter6Unlock = !0;
+            y.saveData();
+            msg = "第六章《帝国苍穹》已解锁（重新进入章节列表可见）", ok = true;
+            // MissionUI 若已构造过（玩家从章节列表里输码），立即刷新章节列表的隐藏标记
+            try {
+              var mi = com.ocean.ui.UIManager.wndMap[com.ocean.ui.MissionUI];
+              if (mi && mi.chapterList && mi.chapterList.array && mi.chapterList.array[6]) {
+                mi.chapterList.array[6].hidden = false;
+                mi.chapterList.refresh && mi.chapterList.refresh()
+              }
+            } catch (e2) {}
+          }
+        } else if ("unlockjaplanes" === lc) {
+          if (!e.__wb_admin) msg = "需要管理员权限（先输入 ADMINVANCOCN 提权）";
+          else {
+            var cnt = 0;
+            (e.japanTree || []).forEach(function(it) {
+              it && 4 !== it.state && (it.state = 4, cnt++);
+            });
+            y.saveData(), msg = cnt > 0 ? "日系飞机已全部解锁（" + cnt + " 架加入机库）" : "日系飞机已全部解锁", ok = true
+          }
+        } else if ("unlockenplanes" === lc) {
+          if (!e.__wb_admin) msg = "需要管理员权限（先输入 ADMINVANCOCN 提权）";
+          else {
+            var cnt2 = 0;
+            (e.britainTree || []).forEach(function(it) {
+              it && 4 !== it.state && (it.state = 4, cnt2++);
+            });
+            y.saveData(), msg = cnt2 > 0 ? "英系飞机已全部解锁（" + cnt2 + " 架加入机库）" : "英系飞机已全部解锁", ok = true
+          }
+        } else if ("nocheatpun" === lc) {
+          if (!e.__wb_admin) msg = "需要管理员权限（先输入 ADMINVANCOCN 提权）";
+          else {
+            e.__wb_noCheatPun = !0;
+            y.saveData();
+            // 触发一次全量重算——作弊豁免开启后立即尝试解锁之前因作弊被拒的成就
+            y.wbAchEval(true);
+            msg = "作弊豁免已开启！本存档被标记为作弊也能继续解锁成就", ok = true
+          }
+        } else if ("infstorage" === lc) {
+          if (!e.__wb_admin) msg = "需要管理员权限（先输入 ADMINVANCOCN 提权）";
+          else {
+            var curList = e.garageList || [], curNum = e.garageNum || 5, surplus = 999 - (curNum - curList.length);
+            surplus > 0 && (e.garageNum = curNum + surplus);
+            y.saveData();
+            msg = "机库容量已扩到 999 剩余空位（实际剩余 " + (e.garageNum - curList.length) + "）", ok = true
+          }
+        } else msg = "未知序列码「" + code + "」";
+        b.showMessage(msg);
+        return ok
       }, s.onGarageChange = function() {
         if (this.curID != $n.instance.selID) {
           if (this.curID = $n.instance.selID, this.curXML = $n.instance.curPlaneCfg, null == this.curXML) return;
@@ -22967,9 +23076,10 @@ s.showTaskInfo = function() {
           },
           BW2 = 160, BH = 44, BOT_Y = n - 58, GAP = 16,
           pairW = 2 * BW2 + GAP, bx0 = (s - pairW) / 2;
-        // 中下：导出 / 导入 放在一起
+        // 中下：导出 / 导入 / 序列码验证 放在一起（左→右）；右下角作弊选项
         mkBtn.call(this, "导出存档", bx0, BOT_Y, this.onExportClick, BW2, BH);
         mkBtn.call(this, "导入存档", bx0 + BW2 + GAP, BOT_Y, this.onImportClick, BW2, BH);
+        mkBtn.call(this, "序列码验证", bx0 + 2 * (BW2 + GAP), BOT_Y, this.onSerialCodeClick, BW2, BH);
         // 右下角：成就列表下方
         mkBtn.call(this, "作弊选项", W - 280, BOT_Y, this.showCheatMenu, 250, BH);
         // 右上角：× 关闭
