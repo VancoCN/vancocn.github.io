@@ -679,6 +679,27 @@
         .po-ta:focus { border-color: rgba(160,160,220,0.55); }
         .po-ta:disabled { opacity: 0.5; }
         .po-hd-box { margin-top: 14px; }
+
+        /* ---------- 夜雀食堂编辑器 ---------- */
+        .tml-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 2px; }
+        .tml-field { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px 14px; }
+        .tml-field label { display: block; font-size: 0.8em; color: #a8a8c0; letter-spacing: 1px; margin-bottom: 8px; }
+        .num-input {
+            width: 100%; padding: 9px 12px; border-radius: 9px;
+            border: 1px solid rgba(255,255,255,0.13); background: rgba(20,20,32,0.75);
+            color: #dcdcea; font-family: inherit; font-size: 0.95em; outline: none;
+            transition: border-color 0.25s;
+        }
+        .num-input:focus { border-color: rgba(160,160,220,0.55); }
+        .num-input::-webkit-outer-spin-button, .num-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .num-input[type=number] { -moz-appearance: textfield; }
+        .tml-addbar { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+        .tml-del {
+            margin-left: auto; padding: 5px 12px; border-radius: 8px;
+            border: 1px solid rgba(255,143,143,0.3); background: transparent;
+            color: #ff8f8f; font-family: inherit; font-size: 0.8em; cursor: pointer; transition: all 0.25s;
+        }
+        .tml-del:hover { background: rgba(255,143,143,0.12); }
     
         /* ==================== InFalsus 存档解析（移植自 InfalsusSaveAnalysis.html） ==================== */
 /* ==================== 自定义字体 ==================== */
@@ -1416,6 +1437,7 @@ svg { max-width: 100%; }
     <button class="tab active" data-tab="pe">PE 解析</button>
     <button class="tab" data-tab="midi">MIDI 解析</button>
     <button class="tab" data-tab="sav">InFalsus 存档</button>
+    <button class="tab" data-tab="tml">夜雀食堂存档</button>
 </div>
 
 <!-- ==================== PE 解析 ==================== -->
@@ -1519,24 +1541,74 @@ svg { max-width: 100%; }
 
 <!-- ==================== InFalsus 存档解析 ==================== -->
 <section class="panel" id="panel-sav" hidden>
-    <div class="drop-zone" id="ifDrop">
-        <svg class="dz-icon" viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg>
-        <div class="dz-title">拖拽 .sav 存档到这里，或点击选择</div>
-        <div class="dz-sub">解析 In Falsus 存档（SAVESTATE V3）：概览 · 评级 · 成绩 · 历史 · 卡牌 · 卡组 · 粒子 · 剧情 · 网格 · 加成区域 · 字符串<br>文件只在你的浏览器里解析，不会上传到任何服务器</div>
-        <input type="file" id="ifFile" accept=".sav" hidden>
+    <div class="panel-card glass">
+        <div class="drop-zone" id="ifDrop">
+            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg>
+            <div class="dz-title">拖拽 .sav 存档到这里，或点击选择</div>
+            <div class="dz-sub">解析 In Falsus 存档（SAVESTATE V3）：概览 · 评级 · 成绩 · 历史 · 卡牌 · 卡组 · 粒子 · 剧情 · 网格 · 加成区域 · 字符串<br>文件只在你的浏览器里解析，不会上传到任何服务器</div>
+            <input type="file" id="ifFile" accept=".sav" hidden>
+        </div>
+        <div class="pe-hint" id="ifPath" style="margin-top:12px">存档路径：%USERPROFILE%\AppData\LocalLow\lowiro\infalsus\&lt;SteamID64&gt;\release\savestate_V3.sav</div>
+
+        <div class="status" id="ifStatus"></div>
+
+        <div id="ifOut"></div>
+
+        <div class="note">
+            <b>说明</b><br>
+            · 纯本地解析，文件不会离开你的设备；本页<b>只做只读分析</b>，不会修改任何字节<br>
+            · 解析范围：SAVESTATE V3 存档头 · 评级 · 成绩记录 · 历史对局 · 持有卡牌 · 卡组 · 粒子 · 剧情进度 · 网格 · 加成区域 · 内嵌字符串<br>
+            · 解析逻辑移植自 <a href="https://github.com/REDDRAGON-HL/InFalsus-SaveData-Parser" target="_blank" rel="noopener">InFalsus-SaveData-Parser</a>，数据表来自 InFalsus-Resource，仅供个人学习研究使用<br>
+            · 各分项表格标题可点击排序；分项明细支持关键字过滤与导出 JSON
+        </div>
     </div>
-    <div class="pe-hint" id="ifPath" style="margin-top:12px">存档路径：%USERPROFILE%\AppData\LocalLow\lowiro\infalsus\&lt;SteamID64&gt;\release\savestate_V3.sav</div>
+</section>
 
-    <div class="status" id="ifStatus"></div>
+<!-- ==================== 夜雀食堂（Touhou Mystia's Izakaya）存档编辑 ==================== -->
+<section class="panel" id="panel-tml" hidden>
+    <div class="panel-card glass">
+        <div class="drop-zone" id="tmlDrop">
+            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg>
+            <div class="dz-title">拖拽 .memory 存档到这里，或点击选择</div>
+            <div class="dz-sub">解析《东方夜雀食堂》Touhou Mystia's Izakaya 存档：基本属性 · 食材 · 酒水 · 菜谱 · 客人好感 · 全部字段<br>纯浏览器端解析与编辑，修改后可直接下载覆盖原存档（请先备份！）</div>
+            <input type="file" id="tmlFile" accept=".memory,.json,application/json" hidden>
+        </div>
 
-    <div id="ifOut"></div>
+        <div class="file-list" id="tmlFiles"></div>
 
-    <div class="note">
-        <b>说明</b><br>
-        · 纯本地解析，文件不会离开你的设备；本页<b>只做只读分析</b>，不会修改任何字节<br>
-        · 解析范围：SAVESTATE V3 存档头 · 评级 · 成绩记录 · 历史对局 · 持有卡牌 · 卡组 · 粒子 · 剧情进度 · 网格 · 加成区域 · 内嵌字符串<br>
-        · 解析逻辑移植自 <a href="https://github.com/REDDRAGON-HL/InFalsus-SaveData-Parser" target="_blank" rel="noopener">InFalsus-SaveData-Parser</a>，数据表来自 InFalsus-Resource，仅供个人学习研究使用<br>
-        · 各分项表格标题可点击排序；分项明细支持关键字过滤与导出 JSON
+        <div id="tmlView" hidden>
+            <div class="opt-row">
+                <span class="opt-label">编辑对象</span>
+                <div class="seg" id="tmlCat">
+                    <button class="seg-btn active" data-v="basic">基本属性</button>
+                    <button class="seg-btn" data-v="ing">食材</button>
+                    <button class="seg-btn" data-v="bev">酒水</button>
+                    <button class="seg-btn" data-v="recipe">菜谱</button>
+                    <button class="seg-btn" data-v="guest">客人好感</button>
+                    <button class="seg-btn" data-v="all">全部字段</button>
+                </div>
+            </div>
+
+            <div id="tmlBody" style="margin-top:18px"></div>
+
+            <div class="opt-row" style="border-top:none;padding-top:6px;margin-top:14px">
+                <button class="run-btn" id="tmlDownload" style="width:auto;flex:1;margin-top:0">下 载 修 改 后 存 档</button>
+                <button class="run-btn" id="tmlNew" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08)">下 载 初 始 存 档</button>
+                <button class="run-btn" id="tmlCopy" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08)">复 制 JSON</button>
+                <button class="run-btn" id="tmlReupload" style="width:auto;flex:1;margin-top:0;margin-left:10px;background:rgba(255,255,255,0.08)">重 新 选 择 文 件</button>
+            </div>
+        </div>
+
+        <div class="status" id="tmlStatus"></div>
+
+        <div class="note">
+            <b>说明</b><br>
+            · 纯本地编辑，文件不会离开你的设备；修改后的存档<b>请务必先备份原文件</b>再覆盖<br>
+            · 结构化编辑支持：基本属性（金钱 / 等级 / 经验）、食材、酒水；菜谱、客人好感与其余字段可在对应分类中直接编辑 JSON<br>
+            · 食材 / 酒水已按 <b>ID → 中文名</b> 直接显示（来源 izakaya.cc，覆盖当前版本全部 DLC；游戏内部 ID 为分段整数，即存档 key）。如某物品名称不符，把正确对照告诉我即可修正<br>
+            · 菜谱 / 客人等模块在原开源编辑器（foxwhite25/TMLSaveEditor）中尚未实现，本页以通用方式开放全部可改字段<br>
+            · 下载得到的文件即为标准 .memory（JSON），可直接放回游戏存档目录
+        </div>
     </div>
 </section>
 
@@ -4474,6 +4546,358 @@ var IF = (function () {
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
   }
 })();
+
+/* ==================== 夜雀食堂（Touhou Mystia's Izakaya）存档编辑 ==================== */
+(function () {
+  'use strict';
+  var drop = $('tmlDrop'), input = $('tmlFile'), status = $('tmlStatus'),
+      view = $('tmlView'), body = $('tmlBody'), fileList = $('tmlFiles');
+
+  var DATA = null;          // 当前编辑中的存档对象
+  var FNAME = 'save.memory';
+
+  /* 食材 / 酒水 ID → 中文名 映射。
+     来源：izakaya.cc（AnYiEE/touhou-mystia-izakaya-assistant），直接从当前游戏抽取，含全部 DLC。
+     游戏内部物品 ID 为分段整数（本体 0…，DLC1 1000…，DLC2 2000…，…联动 11000…），即存档 storagePartial 里的 key。
+     食材与酒水各自独立命名空间。未在此表中的 ID 会自动回退为「食材 <id> / 酒水 <id>」。 */
+  var TML_NAMES = {
+    ing: {
+      '0': '鸡蛋',
+      '1': '猪肉',
+      '2': '牛肉',
+      '3': '鹿肉',
+      '4': '野猪肉',
+      '5': '豆腐',
+      '6': '土豆',
+      '7': '洋葱',
+      '8': '南瓜',
+      '9': '萝卜',
+      '10': '海苔',
+      '11': '鳟鱼',
+      '12': '八目鳗',
+      '13': '三文鱼',
+      '14': '金枪鱼',
+      '15': '黑毛猪肉',
+      '16': '和牛',
+      '17': '蘑菇',
+      '18': '松露',
+      '19': '极上金枪鱼',
+      '20': '河豚',
+      '21': '桃子',
+      '22': '白果',
+      '23': '虾',
+      '24': '蜂蜜',
+      '25': '蝉蜕',
+      '26': '幻昙华',
+      '27': '露水',
+      '28': '竹笋',
+      '29': '黄油',
+      '30': '面粉',
+      '31': '竹子',
+      '32': '糯米',
+      '33': '月光草',
+      '34': '冰块',
+      '35': '辣椒',
+      '36': '葡萄',
+      '1000': '黄瓜',
+      '1001': '章鱼',
+      '1002': '海胆',
+      '1003': '黑盐',
+      '1004': '奶油',
+      '1005': '螃蟹',
+      '2000': '并蒂莲',
+      '2001': '柠檬',
+      '2002': '芝士',
+      '3000': '莲子',
+      '3001': '地瓜',
+      '3002': '松子',
+      '3003': '板栗',
+      '4000': '梅子',
+      '4001': '红豆',
+      '4002': '鲜花',
+      '4003': '香椿',
+      '4004': '西红柿',
+      '5000': '可可豆',
+      '5001': '西蓝花',
+      '5002': '噗噗呦果',
+      '5003': '薜荔',
+      '5004': '银耳',
+      '5005': '强效辣椒素',
+      '11000': '金箔',
+      '11001': '椰子',
+      '11002': '仙人掌',
+      '11003': '大葱',
+      '11004': '大蒜',
+      '11005': '玉米',
+      '11006': '炼乳',
+      '11007': '棉花糖',
+    },
+    bev: {
+      '0': '绿茶',
+      '1': '果味High Ball',
+      '2': '果味SOUR',
+      '3': '淇',
+      '4': '超ZUN啤酒',
+      '5': '日月星',
+      '6': '梅酒',
+      '7': '天狗踊',
+      '8': '猩红恶魔',
+      '9': '神之麦',
+      '10': '水獭祭',
+      '11': '晓',
+      '12': '雀酒',
+      '13': '红魔馆红茶',
+      '14': '阿芙加朵',
+      '15': '红雾',
+      '16': '尼格罗尼',
+      '17': '教父',
+      '18': '风祝',
+      '19': '冬酿',
+      '20': '十四夜',
+      '21': '火鼠裘',
+      '22': '玉露茶',
+      '23': '月面火箭',
+      '24': '牛奶',
+      '25': '红柚果汁',
+      '26': '波子汽水',
+      '27': '冰山毛玉冻柠',
+      '28': '大冰棍儿!',
+      '1000': '大吟酿',
+      '1001': '咖啡',
+      '1002': '妖精雨露',
+      '1003': '古法奶油冰沙',
+      '1004': '普通健身茶',
+      '2000': '鬼杀',
+      '2001': '气保健',
+      '2002': '古明地冰激凌',
+      '3000': '杨枝甘露',
+      '3001': '麒麟',
+      '4000': '天地无用',
+      '4001': '伶人醉',
+      '5000': '海的女儿',
+      '5001': '魔界咖啡',
+      '5002': '莫吉托爆浆球',
+      '5003': '太空啤酒',
+      '5004': '卫星冰咖啡',
+      '11000': '姜汁汽水',
+      '11001': '根汁啤酒',
+      '11002': '地瓜烧',
+      '11003': '不动的姆Q',
+    }
+  };
+
+  function say(msg, cls) { status.className = 'status ' + (cls || ''); status.textContent = msg; }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]);
+    });
+  }
+  function num(v, def) { var n = Number(v); return isFinite(n) ? n : def; }
+
+  bindDropZone(drop, input, function (fs) { if (fs.length) parseFile(fs[0]); });
+
+  function parseFile(file) {
+    FNAME = file.name || 'save.memory';
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var obj = JSON.parse(String(reader.result));
+        if (!obj || typeof obj !== 'object' || Array.isArray(obj)) throw new Error('文件内容不是有效的 JSON 对象');
+        DATA = obj;
+        if (!DATA.playerPartial || typeof DATA.playerPartial !== 'object' || Array.isArray(DATA.playerPartial)) DATA.playerPartial = {};
+        if (!DATA.storagePartial || typeof DATA.storagePartial !== 'object' || Array.isArray(DATA.storagePartial)) DATA.storagePartial = {};
+        say('解析成功：' + (DATA.realSaveTimeCode ? ('上次保存 ' + DATA.realSaveTimeCode) : FNAME), 'ok');
+        renderFileList();
+        view.hidden = false;
+        renderCat();
+      } catch (e) {
+        DATA = null; view.hidden = true; fileList.innerHTML = '';
+        say('解析失败：' + e.message, 'err');
+      }
+    };
+    reader.onerror = function () { say('读取文件失败', 'err'); };
+    reader.readAsText(file);
+  }
+
+  function ingCount() { var s = DATA.storagePartial.ingredients; return s && typeof s === 'object' && !Array.isArray(s) ? Object.keys(s).length : 0; }
+  function bevCount() { var s = DATA.storagePartial.beverages; return s && typeof s === 'object' && !Array.isArray(s) ? Object.keys(s).length : 0; }
+
+  function renderFileList() {
+    fileList.innerHTML = '';
+    if (!DATA) return;
+    var it = document.createElement('div'); it.className = 'file-item';
+    var meta = '已解析 · 食材 ' + ingCount() + ' · 酒水 ' + bevCount() +
+               (DATA.realSaveTimeCode ? ' · ' + esc(DATA.realSaveTimeCode) : '');
+    it.innerHTML = '<div class="fi-icon">MEM</div>' +
+      '<div class="fi-main"><div class="fi-name">' + esc(FNAME) + '</div>' +
+      '<div class="fi-meta done">' + meta + '</div></div>' +
+      '<button class="fi-del" title="清除">✕</button>';
+    it.querySelector('.fi-del').addEventListener('click', clearAll);
+    fileList.appendChild(it);
+  }
+
+  function clearAll() {
+    DATA = null; FNAME = 'save.memory';
+    fileList.innerHTML = ''; view.hidden = true; body.innerHTML = '';
+    say('');
+  }
+
+  function nameOf(kind, k) { var m = TML_NAMES[kind]; return (m && m[k]) ? m[k] : ((kind === 'bev' ? '酒水 ' : '食材 ') + k); }
+
+  function renderCat(cat) {
+    if (!DATA) return;
+    if (!cat) {
+      var a = document.querySelector('#tmlCat .seg-btn.active');
+      cat = a ? a.dataset.v : 'basic';
+    }
+    if (cat === 'basic') return renderBasic();
+    if (cat === 'ing') return renderMap('食材', ['storagePartial', 'ingredients'], 'ing');
+    if (cat === 'bev') return renderMap('酒水', ['storagePartial', 'beverages'], 'bev');
+    if (cat === 'recipe') return renderJson('菜谱', 'recipePartial');
+    if (cat === 'guest') return renderJson('客人好感', 'guestPartial');
+    if (cat === 'all') return renderJson('全部字段', null);
+  }
+
+  function renderBasic() {
+    var pp = DATA.playerPartial;
+    var fields = [['金钱', 'fund'], ['等级', 'level'], ['经验', 'exp']];
+    var html = '<div class="tml-grid">';
+    fields.forEach(function (f) {
+      html += '<div class="tml-field"><label>' + f[0] + '</label>' +
+        '<input class="num-input" type="number" data-k="' + f[1] + '" value="' +
+        (pp[f[1]] != null ? esc(pp[f[1]]) : 0) + '"></div>';
+    });
+    html += '</div>' +
+      '<div class="note" style="margin-top:14px;border-left-color:rgba(160,160,220,0.5)">直接修改后即时写回存档；切到其它分类或下载时自动包含这些改动。</div>';
+    body.innerHTML = html;
+    body.querySelectorAll('.num-input').forEach(function (inp) {
+      inp.addEventListener('input', function () { pp[inp.dataset.k] = num(inp.value, 0); });
+    });
+  }
+
+  function renderMap(title, path, kind) {
+    var o = DATA;
+    for (var i = 0; i < path.length; i++) {
+      if (!o[path[i]] || typeof o[path[i]] !== 'object' || Array.isArray(o[path[i]])) o[path[i]] = {};
+      o = o[path[i]];
+    }
+    var keys = Object.keys(o);
+    var html = '<div class="pe-subhead">' + title + '（' + keys.length + ' 项）' +
+      ((Object.keys(TML_NAMES.ing || {}).length + Object.keys(TML_NAMES.bev || {}).length) ? '' : ' · 当前按 ID 显示') + '</div>';
+    html += '<div class="pe-table-wrap"><table class="pe"><thead><tr>' +
+      '<th>ID</th><th>名称</th><th>数量</th><th></th></tr></thead><tbody>';
+    keys.forEach(function (k) {
+      html += '<tr><td class="if-mono">' + esc(k) + '</td><td>' + esc(nameOf(kind, k)) + '</td>' +
+        '<td><input class="num-input" type="number" data-k="' + esc(k) + '" value="' + (o[k] != null ? esc(o[k]) : 0) + '" style="width:120px"></td>' +
+        '<td><button class="tml-del" data-k="' + esc(k) + '">删除</button></td></tr>';
+    });
+    html += '</tbody></table></div>';
+    html += '<div class="tml-addbar">' +
+      '<input class="num-input" id="tmlAddId" placeholder="物品 ID" style="width:130px">' +
+      '<input class="num-input" id="tmlAddCnt" placeholder="数量" style="width:110px">' +
+      '<button class="po-mini" id="tmlAdd">添加</button>' +
+      '<button class="po-mini" id="tmlFill">全部 +50</button>' +
+      '</div>';
+    body.innerHTML = html;
+
+    body.querySelectorAll('input[data-k]').forEach(function (inp) {
+      inp.addEventListener('input', function () { o[inp.dataset.k] = num(inp.value, 0); });
+    });
+    body.querySelectorAll('.tml-del').forEach(function (b) {
+      b.addEventListener('click', function () {
+        delete o[b.dataset.k]; renderMap(title, path, kind);
+        say('已删除 ' + nameOf(kind, b.dataset.k), 'ok');
+      });
+    });
+    body.querySelector('#tmlAdd').addEventListener('click', function () {
+      var k = (body.querySelector('#tmlAddId').value || '').trim();
+      var cnt = body.querySelector('#tmlAddCnt').value;
+      if (!k) { say('请填写物品 ID', 'err'); return; }
+      if (Object.prototype.hasOwnProperty.call(o, k)) { say('该 ID 已存在', 'err'); return; }
+      if (!/^[A-Za-z0-9_]+$/.test(k)) { say('ID 只能含字母、数字、下划线', 'err'); return; }
+      o[k] = num(cnt, 0);
+      say('已添加 ' + nameOf(kind, k), 'ok');
+      renderMap(title, path, kind);
+    });
+    body.querySelector('#tmlFill').addEventListener('click', function () {
+      keys.forEach(function (k) { o[k] = (Number(o[k]) || 0) + 50; });
+      renderMap(title, path, kind); say('已为全部 ' + title + ' +50', 'ok');
+    });
+  }
+
+  function renderJson(title, key) {
+    var src = key ? (DATA[key] !== undefined ? DATA[key] : {}) : DATA;
+    var html = '<div class="pe-subhead">' + title + (key ? '（' + esc(key) + '）' : '（完整存档）') + '</div>' +
+      '<textarea class="po-ta" id="tmlJson" spellcheck="false">' + esc(JSON.stringify(src, null, 2)) + '</textarea>' +
+      '<div class="opt-row" style="border-top:none;padding-top:8px;margin-top:10px">' +
+      '<button class="run-btn" id="tmlApply" style="width:auto;flex:1;margin-top:0;background:rgba(255,255,255,0.08)">应 用 修 改</button></div>';
+    body.innerHTML = html;
+    body.querySelector('#tmlApply').addEventListener('click', function () {
+      try {
+        var parsed = JSON.parse(body.querySelector('#tmlJson').value);
+        if (key) { if (parsed === null || typeof parsed !== 'object') throw new Error('必须是对象或数组'); }
+        else { if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('必须是 JSON 对象'); }
+        if (key) DATA[key] = parsed; else DATA = parsed;
+        renderFileList();
+        say('已应用「' + title + '」', 'ok');
+      } catch (e) { say('JSON 解析失败：' + e.message, 'err'); }
+    });
+  }
+
+  function doDownload() {
+    if (!DATA) { say('请先选择并解析存档', 'err'); return; }
+    var blob = new Blob([JSON.stringify(DATA, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var name = FNAME.replace(/\.json$/i, '');
+    if (!/\.memory$/i.test(name)) name += '.memory';
+    var a = document.createElement('a'); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    say('已导出 ' + name + '（记得先备份原存档！）', 'ok');
+  }
+  function doCopy() {
+    if (!DATA) { say('请先选择并解析存档', 'err'); return; }
+    var txt = JSON.stringify(DATA, null, 2);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(function () { say('已复制到剪贴板', 'ok'); },
+        function () { fallbackCopy(txt); });
+    } else fallbackCopy(txt);
+  }
+  function fallbackCopy(txt) {
+    var ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); say('已复制到剪贴板', 'ok'); }
+    catch (e) { say('复制失败，请手动复制', 'err'); }
+    ta.remove();
+  }
+
+  bindSeg('tmlCat', renderCat);
+  renderCat('basic');
+  $('tmlDownload').addEventListener('click', doDownload);
+  $('tmlCopy').addEventListener('click', doCopy);
+  $('tmlReupload').addEventListener('click', function () { input.click(); });
+  $('tmlNew').addEventListener('click', doNew);
+
+  // 生成一份全新的初始存档（不依赖上传），载入编辑器并触发下载
+  function makeNewSave() {
+    return {
+      playerPartial: { fund: 0, level: 1, exp: 0 },
+      storagePartial: { ingredients: {}, beverages: {} },
+      recipePartial: {},
+      guestPartial: {},
+      realSaveTimeCode: 0
+    };
+  }
+  function doNew() {
+    DATA = makeNewSave();
+    FNAME = 'new_save.memory';
+    renderFileList();
+    view.hidden = false;
+    renderCat();
+    say('已生成初始存档，可直接编辑后下载（记得先备份原存档！）', 'ok');
+    doDownload();
+  }
+})();
+
 </script>
 
 </body>
