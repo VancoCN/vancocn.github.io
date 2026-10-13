@@ -1584,7 +1584,7 @@ svg { max-width: 100%; }
                     <button class="seg-btn" data-v="ing">食材</button>
                     <button class="seg-btn" data-v="bev">酒水</button>
                     <button class="seg-btn" data-v="recipe">菜谱</button>
-                    <button class="seg-btn" data-v="guest">客人好感</button>
+                    <button class="seg-btn" data-v="guest">伙伴</button>
                     <button class="seg-btn" data-v="all">全部字段</button>
                 </div>
             </div>
@@ -1604,9 +1604,9 @@ svg { max-width: 100%; }
         <div class="note">
             <b>说明</b><br>
             · 纯本地编辑，文件不会离开你的设备；修改后的存档<b>请务必先备份原文件</b>再覆盖<br>
-            · 结构化编辑支持：基本属性（金钱 / 等级 / 经验）、食材、酒水；菜谱、客人好感与其余字段可在对应分类中直接编辑 JSON<br>
-            · 食材 / 酒水已按 <b>ID → 中文名</b> 直接显示（来源 izakaya.cc，覆盖当前版本全部 DLC；游戏内部 ID 为分段整数，即存档 key）。如某物品名称不符，把正确对照告诉我即可修正<br>
-            · 菜谱 / 客人等模块在原开源编辑器（foxwhite25/TMLSaveEditor）中尚未实现，本页以通用方式开放全部可改字段<br>
+            · 结构化编辑支持：基本属性（金钱 / 等级 / 经验）、食材、酒水、菜谱、伙伴；其余字段在「全部字段」里直接编辑 JSON<br>
+            · 食材 / 酒水 / 菜谱 / 伙伴均已按 <b>ID → 中文名</b> 显示（来源 izakaya.cc，覆盖当前版本全部 DLC；游戏内部 ID 为分段整数，即存档 key）。如某名称不符，把正确对照告诉我即可修正<br>
+            · 菜谱 = <code>storagePartial.recipes</code>（菜品 ID 数组）；伙伴 = <code>storagePartial.unlockedPartners</code>（伙伴 ID 数组，「职务」取自 <code>playerPartial.historyPartnerSelection</code>）。注意：游戏里的「客人好感 kizuna」并非数值字段，而是靠事件/任务字符串推进，本页不提供改写<br>
             · 下载得到的文件即为标准 .memory（JSON），可直接放回游戏存档目录
         </div>
     </div>
@@ -4686,6 +4686,228 @@ var IF = (function () {
     }
   };
 
+  /* 菜谱 ID → 中文名 映射（来源 izakaya.cc，含 DLC）。存档 storagePartial.recipes 是菜品 ID 数组。 */
+  var TML_RECIPES = {
+    '0': '豆腐味噌',
+    '1': '力量汤',
+    '2': '猪肉鳟鱼熏',
+    '3': '烤八目鳗',
+    '4': '能量串',
+    '5': '二天一流',
+    '6': '饭团',
+    '7': '温暖饭团',
+    '8': '樱落雪',
+    '9': '炒肉丝',
+    '10': '冷豆腐',
+    '11': '红烧鳗鱼',
+    '12': '土豆可乐饼',
+    '13': '野味加农',
+    '14': '猪肉盖浇饭',
+    '15': '牛肉盖浇饭',
+    '16': '炸八目鳗',
+    '17': '蔬菜专辑',
+    '18': '白雪',
+    '19': '豆腐锅',
+    '20': '杂炊',
+    '21': '刺身拼盘',
+    '22': '大奢宴',
+    '23': '岩浆',
+    '24': '露水煮蛋',
+    '25': '幻昙花糕',
+    '26': '秘制小鱼干',
+    '27': '凉菜雕花',
+    '28': '桃花羹',
+    '29': '诗礼银杏',
+    '30': '真·海鲜味噌汤',
+    '31': '烤蘑菇',
+    '32': '煮豆腐',
+    '33': '炸猪肉排',
+    '34': '黄油牛排',
+    '35': '炙猪肉饭团',
+    '36': '豚骨拉面',
+    '37': '香炸蝉蜕',
+    '38': '赛熊掌',
+    '39': '北极甜虾蜜桃色拉',
+    '40': '油豆腐',
+    '41': '华光玉煎包',
+    '42': '毛玉三色冰激凌',
+    '43': '不死鸟',
+    '44': '月光团子',
+    '45': '竹笋炒肉',
+    '46': '白桃生八桥',
+    '47': '月之恋人',
+    '48': '麻薯',
+    '49': '水煮鱼',
+    '50': '月饼',
+    '51': '蓬莱玉枝',
+    '52': '猪鹿蝶',
+    '53': '臭豆腐',
+    '54': '竹取姬',
+    '55': '麻婆豆腐',
+    '56': '热松饼',
+    '57': '惠灵顿牛排',
+    '58': '班尼迪克蛋',
+    '59': '流水素面',
+    '60': '意式烩饭',
+    '61': '白果萝卜排骨汤',
+    '62': '香煎三文鱼',
+    '63': '奶油炖菜',
+    '64': '蜜汁叉烧',
+    '65': '司康饼',
+    '66': '竹筒蒸蛋',
+    '67': '毛玉熔岩豆腐',
+    '68': '猩红恶魔蛋糕',
+    '69': '无意识妖怪慕斯',
+    '70': '水饺',
+    '71': '汤圆',
+    '72': '炸虾天妇罗',
+    '1000': '黄金酥鱼饼',
+    '1001': '全肉盛宴',
+    '1002': '腌黄瓜',
+    '1003': '奶油焗蟹',
+    '1004': '拟尻子玉',
+    '1005': '大阪烧',
+    '1006': '章鱼烧',
+    '1007': '海胆刺身',
+    '1008': '蘑菇肉片',
+    '1009': '秘制鲜菌煲',
+    '1010': '蘑女的舞踏烩',
+    '1011': '奶香蘑菇汤',
+    '1012': '普通小蛋糕',
+    '1013': '七色羊羹',
+    '1014': '手握寿司',
+    '1015': '南瓜虾盅',
+    '1016': '幻想佛跳墙',
+    '1017': '丧气芝士条',
+    '2000': '阴郁水果派',
+    '2001': '绝叫关东煮',
+    '2002': '脆旋风',
+    '2003': '仰望天花板派',
+    '2004': '兜甲蒸糕',
+    '2005': '狮子头',
+    '2006': '巨人玉子烧',
+    '2007': '大江户船祭',
+    '2008': '樱花布丁',
+    '2009': '提神布丁',
+    '2010': '燃尽布丁',
+    '2011': '猫饭',
+    '2012': '三文鱼天妇罗',
+    '2013': '鱼跃龙门',
+    '2014': '芝士蛋',
+    '2015': '一击☆必杀',
+    '2016': '地狱激辛警告！',
+    '2017': '烤地瓜',
+    '3000': '瘦马团子',
+    '3001': '惊吓！大冒险',
+    '3002': '比斯开湾饼干',
+    '3003': '海盗熏肉',
+    '3004': '罗汉上素',
+    '3005': '云山棉花糖',
+    '3006': '圣白莲子糕',
+    '3007': '幻想星莲船',
+    '3008': '松子糕',
+    '3009': '白鹿贞松',
+    '3010': '太极八卦鱼肚',
+    '3011': '蜜饯栗子',
+    '3012': '天师板栗焖菇',
+    '3013': '荷花鱼米盏',
+    '3014': '拔丝地瓜',
+    '3015': '香煎双菇肉卷',
+    '3016': '什锦天妇罗',
+    '3017': '炸番茄条',
+    '4000': '蜜桃红烧肉',
+    '4001': '逆转天地！',
+    '4002': '红豆大福',
+    '4003': '铜锣烧',
+    '4004': '汉宫藏娇',
+    '4005': '石锅竹笋炖肉',
+    '4006': '竹筒粉蒸肉',
+    '4007': '翠竹迎春',
+    '4008': '梅子茶泡饭',
+    '4009': '海胆蒸蛋',
+    '4010': '幻想风靡',
+    '4011': '绿野仙菇',
+    '4012': '花鸟风月',
+    '4013': '幽梦',
+    '4014': '香椿煎饼',
+    '4015': '毒瘴花园',
+    '4016': '小小的甜蜜「毒药」',
+    '4017': '鳗鱼嫩蛋丼',
+    '5000': '竹筒烧醉虾',
+    '5001': '牛肉鸳鸯火锅',
+    '5002': '猫咪可露丽',
+    '5003': '猫咪披萨',
+    '5004': '猫咪戏水',
+    '5005': '长发公主',
+    '5006': '海胆信玄饼',
+    '5007': '疯帽子茶会',
+    '5008': '桃花琉璃卷',
+    '5009': '荷塘月色',
+    '5010': '龙吟桃子',
+    '5011': '分子蛋',
+    '5012': '生命之源',
+    '5013': '火星',
+    '5014': '养心粥',
+    '5015': '胡辣汤',
+    '5016': '至尊海鲜面',
+    '5017': '山泉双色果盘',
+    '11000': '鱼饼',
+    '11001': '白果灵盅',
+    '11002': '恶魔的甜甜圈',
+    '11003': '正义执行雕塑',
+    '11004': '超位·业火烧烤宴',
+    '11005': '甜心三明治',
+    '11006': '毛茸茸蘑菇汤',
+    '11007': '血色下午茶',
+    '11008': '月见饼',
+    '11009': '玉色良汤',
+    '11010': '星月桃子糕',
+    '11011': '樱绯星屑缀玉烩饭',
+    '11012': '黯月魔境慕斯',
+    '11013': '烬色魔纹千层酥',
+    '11014': '肉汁奶酪薯条',
+    '11015': '俄罗斯酸辣汤',
+    '11016': '奶油甜煎饼卷',
+    '11017': '烤玉米',
+    '11018': '俄罗斯冻汤',
+    '11019': '西班牙冷汤',
+    '11020': '板栗饼',
+    '11021': '胜春朝',
+    '11022': '秋神的工作',
+    '11023': '南瓜派',
+    '11024': '芝士玉米焗红薯',
+    '11025': '惊吓万圣夜',
+    '11026': '八云豆包饭',
+    '11027': '八云海鲜煲',
+    '11028': '血池',
+    '11029': '椰子麻薯',
+    '12000': '三色花见团子',
+    '12001': '梦鲸幻境酒冻',
+    '12002': '西红柿炒鸡蛋',
+    '12003': '大酥山',
+    '12004': '飞刀串串烧',
+  };
+
+  /* 伙伴 ID → 中文名 映射（来源 izakaya.cc）。存档 storagePartial.unlockedPartners 是伙伴 ID 数组。 */
+  var TML_PARTNERS = {
+    '14': '幽谷响子',
+    '18': '本居小铃',
+    '19': '高丽野阿吽',
+    '20': '十六夜咲夜',
+    '21': '铃仙',
+    '39': '魂魄妖梦',
+    '1006': '键山雏',
+    '1007': '梦子',
+    '2007': '琪斯美',
+    '2008': '小野塚小町',
+    '3006': '云居一轮',
+    '3008': '宫古芳香',
+    '4009': '拉尔瓦',
+    '4010': '赤蛮奇',
+    '5006': '哆来咪',
+    '5007': '萨拉',
+  };
+
   function say(msg, cls) { status.className = 'status ' + (cls || ''); status.textContent = msg; }
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (c) {
@@ -4721,12 +4943,14 @@ var IF = (function () {
 
   function ingCount() { var s = DATA.storagePartial.ingredients; return s && typeof s === 'object' && !Array.isArray(s) ? Object.keys(s).length : 0; }
   function bevCount() { var s = DATA.storagePartial.beverages; return s && typeof s === 'object' && !Array.isArray(s) ? Object.keys(s).length : 0; }
+  function recipeCount() { var r = DATA.storagePartial.recipes; return Array.isArray(r) ? r.length : 0; }
+  function partnerCount() { var p = DATA.storagePartial.unlockedPartners; return Array.isArray(p) ? p.length : 0; }
 
   function renderFileList() {
     fileList.innerHTML = '';
     if (!DATA) return;
     var it = document.createElement('div'); it.className = 'file-item';
-    var meta = '已解析 · 食材 ' + ingCount() + ' · 酒水 ' + bevCount() +
+    var meta = '已解析 · 食材 ' + ingCount() + ' · 酒水 ' + bevCount() + ' · 菜谱 ' + recipeCount() + ' · 伙伴 ' + partnerCount() +
                (DATA.realSaveTimeCode ? ' · ' + esc(DATA.realSaveTimeCode) : '');
     it.innerHTML = '<div class="fi-icon">MEM</div>' +
       '<div class="fi-main"><div class="fi-name">' + esc(FNAME) + '</div>' +
@@ -4743,6 +4967,8 @@ var IF = (function () {
   }
 
   function nameOf(kind, k) { var m = TML_NAMES[kind]; return (m && m[k]) ? m[k] : ((kind === 'bev' ? '酒水 ' : '食材 ') + k); }
+  function recipeName(k) { return TML_RECIPES[k] || ('菜谱 ' + k); }
+  function partnerName(k) { return TML_PARTNERS[k] || ('伙伴 ' + k); }
 
   function renderCat(cat) {
     if (!DATA) return;
@@ -4753,8 +4979,8 @@ var IF = (function () {
     if (cat === 'basic') return renderBasic();
     if (cat === 'ing') return renderMap('食材', ['storagePartial', 'ingredients'], 'ing');
     if (cat === 'bev') return renderMap('酒水', ['storagePartial', 'beverages'], 'bev');
-    if (cat === 'recipe') return renderJson('菜谱', 'recipePartial');
-    if (cat === 'guest') return renderJson('客人好感', 'guestPartial');
+    if (cat === 'recipe') return renderRecipes();
+    if (cat === 'guest') return renderPartners();
     if (cat === 'all') return renderJson('全部字段', null);
   }
 
@@ -4844,6 +5070,77 @@ var IF = (function () {
     });
   }
 
+  function renderRecipes() {
+    var arr = DATA.storagePartial.recipes;
+    if (!Array.isArray(arr)) { arr = []; DATA.storagePartial.recipes = arr; }
+    var html = '<div class="pe-subhead">菜谱（' + arr.length + ' 道 · storagePartial.recipes 是菜品 ID 数组）</div>';
+    html += '<div class="pe-table-wrap"><table class="pe"><thead><tr>' +
+      '<th>序号</th><th>ID</th><th>名称</th><th></th></tr></thead><tbody>';
+    arr.forEach(function (id, idx) {
+      var k = String(id);
+      html += '<tr><td class="if-mono">' + (idx + 1) + '</td><td class="if-mono">' + esc(k) + '</td><td>' + esc(recipeName(k)) + '</td>' +
+        '<td><button class="tml-del" data-i="' + idx + '">删除</button></td></tr>';
+    });
+    html += '</tbody></table></div>';
+    html += '<div class="tml-addbar">' +
+      '<input class="num-input" id="tmlAddRid" placeholder="菜品 ID" style="width:130px">' +
+      '<button class="po-mini" id="tmlAddR">添加菜谱</button>' +
+      '<span class="note" style="margin:0">ID 即菜谱编号，名称来自 izakaya.cc（含 DLC）</span></div>';
+    body.innerHTML = html;
+    body.querySelectorAll('.tml-del').forEach(function (b) {
+      b.addEventListener('click', function () {
+        arr.splice(Number(b.dataset.i), 1); renderRecipes();
+        say('已删除该菜谱', 'ok');
+      });
+    });
+    body.querySelector('#tmlAddR').addEventListener('click', function () {
+      var v = (body.querySelector('#tmlAddRid').value || '').trim();
+      if (v === '') { say('请填写菜品 ID', 'err'); return; }
+      if (!/^[0-9]+$/.test(v)) { say('菜品 ID 必须是数字', 'err'); return; }
+      if (arr.indexOf(Number(v)) >= 0) { say('该菜谱已存在', 'err'); return; }
+      arr.push(Number(v)); renderRecipes();
+      say('已添加 ' + recipeName(v), 'ok');
+    });
+  }
+
+  function renderPartners() {
+    var arr = DATA.storagePartial.unlockedPartners;
+    if (!Array.isArray(arr)) { arr = []; DATA.storagePartial.unlockedPartners = arr; }
+    var sel = (DATA.playerPartial && Array.isArray(DATA.playerPartial.historyPartnerSelection))
+      ? DATA.playerPartial.historyPartnerSelection : [];
+    var roleOf = {};
+    sel.forEach(function (p) { if (p && p.Item1 != null) roleOf[p.Item1] = p.Item2; });
+    var html = '<div class="pe-subhead">已解锁伙伴（' + arr.length + ' 位 · storagePartial.unlockedPartners 是伙伴 ID 数组）</div>';
+    html += '<div class="pe-table-wrap"><table class="pe"><thead><tr>' +
+      '<th>ID</th><th>伙伴</th><th>职务</th><th></th></tr></thead><tbody>';
+    arr.forEach(function (id, idx) {
+      var k = String(id);
+      html += '<tr><td class="if-mono">' + esc(k) + '</td><td>' + esc(partnerName(k)) + '</td><td>' +
+        esc(roleOf[id] || '—') + '</td>' +
+        '<td><button class="tml-del" data-i="' + idx + '">删除</button></td></tr>';
+    });
+    html += '</tbody></table></div>';
+    html += '<div class="tml-addbar">' +
+      '<input class="num-input" id="tmlAddPid" placeholder="伙伴 ID" style="width:130px">' +
+      '<button class="po-mini" id="tmlAddP">解锁伙伴</button>' +
+      '<span class="note" style="margin:0">ID 即伙伴编号，名称来自 izakaya.cc</span></div>';
+    body.innerHTML = html;
+    body.querySelectorAll('.tml-del').forEach(function (b) {
+      b.addEventListener('click', function () {
+        arr.splice(Number(b.dataset.i), 1); renderPartners();
+        say('已移除该伙伴', 'ok');
+      });
+    });
+    body.querySelector('#tmlAddP').addEventListener('click', function () {
+      var v = (body.querySelector('#tmlAddPid').value || '').trim();
+      if (v === '') { say('请填写伙伴 ID', 'err'); return; }
+      if (!/^[0-9]+$/.test(v)) { say('伙伴 ID 必须是数字', 'err'); return; }
+      if (arr.indexOf(Number(v)) >= 0) { say('该伙伴已解锁', 'err'); return; }
+      arr.push(Number(v)); renderPartners();
+      say('已解锁 ' + partnerName(v), 'ok');
+    });
+  }
+
   function doDownload() {
     if (!DATA) { say('请先选择并解析存档', 'err'); return; }
     var blob = new Blob([JSON.stringify(DATA, null, 2)], { type: 'application/json' });
@@ -4880,10 +5177,9 @@ var IF = (function () {
   // 生成一份全新的初始存档（不依赖上传），载入编辑器并触发下载
   function makeNewSave() {
     return {
-      playerPartial: { fund: 0, level: 1, exp: 0 },
-      storagePartial: { ingredients: {}, beverages: {} },
-      recipePartial: {},
-      guestPartial: {},
+      fileVersion: 'BetaV102',
+      playerPartial: { fund: 0, level: 1, exp: 0, gameDate: { day: 1 } },
+      storagePartial: { ingredients: {}, beverages: {}, recipes: [], unlockedPartners: [] },
       realSaveTimeCode: 0
     };
   }
