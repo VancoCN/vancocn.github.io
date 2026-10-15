@@ -5509,82 +5509,114 @@ var IF = (function () {
     });
   }
 
-  function renderRecipes() {
-    var arr = DATA.storagePartial.recipes;
-    if (!Array.isArray(arr)) { arr = []; DATA.storagePartial.recipes = arr; }
-    var html = '<div class="pe-subhead">菜谱（' + arr.length + ' 道 · storagePartial.recipes 是菜品 ID 数组）</div>';
-    html += '<div class="pe-table-wrap"><table class="pe"><thead><tr>' +
-      '<th>序号</th><th>ID</th><th>名称</th><th></th></tr></thead><tbody>';
-    arr.forEach(function (id, idx) {
-      var k = String(id);
-      html += '<tr><td class="if-mono">' + (idx + 1) + '</td><td class="if-mono">' + esc(k) + '</td><td>' + esc(recipeName(k)) + '</td>' +
-        '<td><button class="tml-del" data-i="' + idx + '">删除</button></td></tr>';
+  /* 数组型「全部展示 + 勾选」编辑器：适用于 storagePartial.recipes / unlockedPartners 这类「ID 数组」容器。
+     全量列出表中条目（+ 存档中已存在但表中未收录的未知条目），勾选 = 启用（加入数组），取消 = 移除。
+     DLC 安全阀同样生效：未激活 DLC 的内容默认拦截。 */
+  function renderArrToggles(title, key, table, nameFn, opts) {
+    opts = opts || {};
+    if (!Array.isArray(DATA.storagePartial[key])) DATA.storagePartial[key] = [];
+    var arr = DATA.storagePartial[key];
+    var have = {};
+    arr.forEach(function (x) { have[String(x)] = true; });
+    var ids = Object.keys(table);
+    Object.keys(have).forEach(function (k) { if (ids.indexOf(k) < 0) ids.push(k); });
+    ids.sort(function (a, b) {
+      var x = Number(a), y = Number(b);
+      if (isFinite(x) && isFinite(y) && x !== y) return x - y;
+      return String(a) < String(b) ? -1 : 1;
     });
-    html += '</tbody></table></div>';
-    html += '<div class="tml-addbar">' +
-      '<input class="num-input" id="tmlAddRid" placeholder="菜品 ID" style="width:130px">' +
-      '<button class="po-mini" id="tmlAddR">添加菜谱</button>' +
-      '<span class="note" style="margin:0">ID 即菜谱编号，名称来自 izakaya.cc（含 DLC）</span></div>';
+    var ownCnt = 0, blockedCnt = 0;
+    ids.forEach(function (k) { if (have[k]) ownCnt++; else if (dlcMissing(k)) blockedCnt++; });
+    var html = '<div class="pe-subhead">' + title + '（已启用 ' + ownCnt + ' / 共 ' + ids.length + ' 项' +
+      (blockedCnt ? ' · <span style="color:#ffd699">' + blockedCnt + ' 项属未激活 DLC</span>' : '') + '）</div>';
+    html += '<div class="pe-table-wrap"><table class="pe"><thead><tr>' +
+      '<th style="width:56px">启用</th><th>ID</th><th>名称</th>' +
+      (opts.extraCol ? '<th>' + esc(opts.extraCol) + '</th>' : '') +
+      '<th>归属</th><th>状态</th></tr></thead><tbody>';
+    ids.forEach(function (k) {
+      var on = !!have[k];
+      var miss = on ? null : dlcMissing(k);
+      html += '<tr class="' + (on ? '' : 'tgl-row-off') + '">' +
+        '<td><input type="checkbox" class="tgl-chk" data-k="' + esc(k) + '"' + (on ? ' checked' : '') + '></td>' +
+        '<td class="if-mono">' + esc(k) + '</td>' +
+        '<td>' + esc(nameFn(k)) + '</td>' +
+        (opts.extraCol ? '<td>' + esc(opts.extraOf ? (opts.extraOf(k) || '—') : '—') + '</td>' : '') +
+        '<td class="if-mono" style="opacity:.65">' + esc(dlcLabel(dlcOfId(k))) + '</td>' +
+        '<td style="font-size:.86em">' + (on ? '<span style="color:#9fdca0">已启用</span>' :
+          (miss ? '<span style="color:#ffd699">需 ' + esc(dlcLabel(miss)) + '</span>' : '<span style="opacity:.55">未启用</span>')) + '</td></tr>';
+    });
+    html += '</tbody></table></div>' +
+      '<div class="tml-addbar">' +
+      '<button class="po-mini" id="tmlArrAll">全部启用</button>' +
+      '<button class="po-mini" id="tmlArrNone">全部取消</button>' +
+      '<span class="note" style="margin:0">' + esc(opts.note || '勾选 = 启用，取消 = 移除') + '</span></div>';
     body.innerHTML = html;
-    body.querySelectorAll('.tml-del').forEach(function (b) {
-      b.addEventListener('click', function () {
-        arr.splice(Number(b.dataset.i), 1); renderRecipes();
-        say('已删除该菜谱', 'ok');
+
+    function asVal(k) { return /^[0-9]+$/.test(k) ? Number(k) : k; }
+    function add(k) {
+      if (have[k]) return true;
+      if (!dlcAllowed(k)) {
+        say('已阻止：' + nameFn(k) + ' 属于 ' + dlcLabel(dlcOfId(k)) +
+            '，当前存档未激活该 DLC（防坏档）。如确认要加，请关闭上方「DLC 安全模式」', 'err');
+        return false;
+      }
+      var v = asVal(k);
+      if (arr.indexOf(v) < 0) arr.push(v);
+      have[k] = true;
+      return true;
+    }
+    function remove(k) {
+      if (!have[k]) return;
+      for (var i = arr.length - 1; i >= 0; i--) if (String(arr[i]) === k) arr.splice(i, 1);
+      delete have[k];
+    }
+
+    body.querySelectorAll('.tgl-chk').forEach(function (c) {
+      c.addEventListener('change', function () {
+        var k = c.dataset.k;
+        if (c.checked) {
+          if (!add(k)) { c.checked = false; return; }
+          say('已启用 ' + nameFn(k), 'ok');
+        } else {
+          remove(k);
+          say('已移除 ' + nameFn(k), 'ok');
+        }
+        renderArrToggles(title, key, table, nameFn, opts);
       });
     });
-    body.querySelector('#tmlAddR').addEventListener('click', function () {
-      var v = (body.querySelector('#tmlAddRid').value || '').trim();
-      if (v === '') { say('请填写菜品 ID', 'err'); return; }
-      if (!/^[0-9]+$/.test(v)) { say('菜品 ID 必须是数字', 'err'); return; }
-      if (arr.indexOf(Number(v)) >= 0) { say('该菜谱已存在', 'err'); return; }
-      if (!dlcAllowed(v)) {
-        say('已阻止：菜谱「' + recipeName(v) + '」属于 ' + dlcLabel(dlcOfId(v)) + '，当前存档未激活该 DLC（防坏档）。如确认要加，请关闭上方「DLC 安全模式」', 'err');
-        return;
-      }
-      arr.push(Number(v)); renderRecipes();
-      say('已添加 ' + recipeName(v), 'ok');
+    body.querySelector('#tmlArrAll').addEventListener('click', function () {
+      var ok = 0, blocked = 0;
+      ids.forEach(function (k) {
+        if (have[k]) return;
+        if (dlcAllowed(k)) add(k), ok++;
+        else blocked++;
+      });
+      say('已启用 ' + ok + ' 项' + (blocked ? ('，跳过 ' + blocked + ' 项未激活 DLC 内容') : ''), blocked ? 'err' : 'ok');
+      renderArrToggles(title, key, table, nameFn, opts);
+    });
+    body.querySelector('#tmlArrNone').addEventListener('click', function () {
+      var n = arr.length;
+      arr.length = 0;
+      say(n ? ('已取消 ' + n + ' 项') : '本表当前没有已启用的项', n ? 'ok' : '');
+      renderArrToggles(title, key, table, nameFn, opts);
+    });
+  }
+
+  function renderRecipes() {
+    renderArrToggles('菜谱', 'recipes', TML_RECIPES, recipeName, {
+      note: '勾选 = 解锁该菜谱，取消 = 移除；列表为全部菜谱（含 DLC），名称来自 izakaya.cc'
     });
   }
 
   function renderPartners() {
-    var arr = DATA.storagePartial.unlockedPartners;
-    if (!Array.isArray(arr)) { arr = []; DATA.storagePartial.unlockedPartners = arr; }
     var sel = (DATA.playerPartial && Array.isArray(DATA.playerPartial.historyPartnerSelection))
       ? DATA.playerPartial.historyPartnerSelection : [];
     var roleOf = {};
     sel.forEach(function (p) { if (p && p.Item1 != null) roleOf[p.Item1] = p.Item2; });
-    var html = '<div class="pe-subhead">已解锁伙伴（' + arr.length + ' 位 · storagePartial.unlockedPartners 是伙伴 ID 数组）</div>';
-    html += '<div class="pe-table-wrap"><table class="pe"><thead><tr>' +
-      '<th>ID</th><th>伙伴</th><th>职务</th><th></th></tr></thead><tbody>';
-    arr.forEach(function (id, idx) {
-      var k = String(id);
-      html += '<tr><td class="if-mono">' + esc(k) + '</td><td>' + esc(partnerName(k)) + '</td><td>' +
-        esc(roleOf[id] || '—') + '</td>' +
-        '<td><button class="tml-del" data-i="' + idx + '">删除</button></td></tr>';
-    });
-    html += '</tbody></table></div>';
-    html += '<div class="tml-addbar">' +
-      '<input class="num-input" id="tmlAddPid" placeholder="伙伴 ID" style="width:130px">' +
-      '<button class="po-mini" id="tmlAddP">解锁伙伴</button>' +
-      '<span class="note" style="margin:0">ID 即伙伴编号，名称来自 izakaya.cc</span></div>';
-    body.innerHTML = html;
-    body.querySelectorAll('.tml-del').forEach(function (b) {
-      b.addEventListener('click', function () {
-        arr.splice(Number(b.dataset.i), 1); renderPartners();
-        say('已移除该伙伴', 'ok');
-      });
-    });
-    body.querySelector('#tmlAddP').addEventListener('click', function () {
-      var v = (body.querySelector('#tmlAddPid').value || '').trim();
-      if (v === '') { say('请填写伙伴 ID', 'err'); return; }
-      if (!/^[0-9]+$/.test(v)) { say('伙伴 ID 必须是数字', 'err'); return; }
-      if (arr.indexOf(Number(v)) >= 0) { say('该伙伴已解锁', 'err'); return; }
-      if (!dlcAllowed(v)) {
-        say('已阻止：伙伴「' + partnerName(v) + '」属于 ' + dlcLabel(dlcOfId(v)) + '，当前存档未激活该 DLC（防坏档）。如确认要加，请关闭上方「DLC 安全模式」', 'err');
-        return;
-      }
-      arr.push(Number(v)); renderPartners();
-      say('已解锁 ' + partnerName(v), 'ok');
+    renderArrToggles('伙伴', 'unlockedPartners', TML_PARTNERS, partnerName, {
+      extraCol: '职务',
+      extraOf: function (k) { return roleOf[k]; },
+      note: '勾选 = 解锁该伙伴，取消 = 移除；列表为全部伙伴，名称来自 izakaya.cc'
     });
   }
 
