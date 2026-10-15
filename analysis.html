@@ -700,6 +700,18 @@
             color: #ff8f8f; font-family: inherit; font-size: 0.8em; cursor: pointer; transition: all 0.25s;
         }
         .tml-del:hover { background: rgba(255,143,143,0.12); }
+
+        /* ---------- 夜雀食堂 · DLC 安全 / 勾选式编辑 ---------- */
+        .tml-dlcbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.08); }
+        .dlc-tag { padding: 4px 10px; border-radius: 8px; font-size: 0.78em; letter-spacing: 0.5px; border: 1px solid transparent; white-space: nowrap; }
+        .dlc-tag.on { color: #8fe3b0; background: rgba(143,227,176,0.12); border-color: rgba(143,227,176,0.3); }
+        .dlc-tag.off { color: #7c7c92; background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+        .dlc-safe { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 0.82em; color: #a8a8c0; cursor: pointer; user-select: none; }
+        .dlc-warn { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255,200,120,0.08); border: 1px solid rgba(255,200,120,0.28); color: #ffd699; font-size: 0.85em; line-height: 1.75; }
+        .dlc-warn b { color: #ffe4b3; }
+        .tgl-chk { width: 17px; height: 17px; accent-color: #8fa4e3; cursor: pointer; margin: 0; vertical-align: middle; }
+        .tgl-row-off td { opacity: 0.5; }
+        .tgl-cnt { margin: 0 auto; max-width: 1140px; padding: 6px 0 0; color: #6f6f86; font-size: 0.82em; text-align: right; }
     
         /* ==================== InFalsus 存档解析（移植自 InfalsusSaveAnalysis.html） ==================== */
 /* ==================== 自定义字体 ==================== */
@@ -1570,7 +1582,7 @@ svg { max-width: 100%; }
         <div class="drop-zone" id="tmlDrop">
             <svg class="dz-icon" viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg>
             <div class="dz-title">拖拽 .memory 存档到这里，或点击选择</div>
-            <div class="dz-sub">解析《东方夜雀食堂》Touhou Mystia's Izakaya 存档：基本属性 · 食材 · 酒水 · 菜谱 · 客人好感 · 全部字段<br>纯浏览器端解析与编辑，修改后可直接下载覆盖原存档（请先备份！）</div>
+            <div class="dz-sub">解析《东方夜雀食堂》Touhou Mystia's Izakaya 存档：基本属性 · 货币 / 资产 · 食材 · 酒水 · 厨具 · 菜谱 · 伙伴 · 服饰 · 装饰 · 徽章 · 全部字段<br>纯浏览器端解析与编辑，修改后可直接下载覆盖原存档（请先备份！）</div>
             <input type="file" id="tmlFile" accept=".memory,.json,application/json" hidden>
         </div>
 
@@ -1581,13 +1593,20 @@ svg { max-width: 100%; }
                 <span class="opt-label">编辑对象</span>
                 <div class="seg" id="tmlCat">
                     <button class="seg-btn active" data-v="basic">基本属性</button>
+                    <button class="seg-btn" data-v="money">货币 / 资产</button>
                     <button class="seg-btn" data-v="ing">食材</button>
                     <button class="seg-btn" data-v="bev">酒水</button>
+                    <button class="seg-btn" data-v="cooker">厨具</button>
                     <button class="seg-btn" data-v="recipe">菜谱</button>
                     <button class="seg-btn" data-v="guest">伙伴</button>
+                    <button class="seg-btn" data-v="wear">服饰</button>
+                    <button class="seg-btn" data-v="decor">装饰</button>
+                    <button class="seg-btn" data-v="badge">徽章</button>
                     <button class="seg-btn" data-v="all">全部字段</button>
                 </div>
             </div>
+
+            <div class="tml-dlcbar" id="tmlDlcBar"></div>
 
             <div id="tmlBody" style="margin-top:18px"></div>
 
@@ -1604,8 +1623,11 @@ svg { max-width: 100%; }
         <div class="note">
             <b>说明</b><br>
             · 纯本地编辑，文件不会离开你的设备；修改后的存档<b>请务必先备份原文件</b>再覆盖<br>
-            · 结构化编辑支持：基本属性（金钱 / 等级 / 经验）、食材、酒水、菜谱、伙伴；其余字段在「全部字段」里直接编辑 JSON<br>
-            · 食材 / 酒水 / 菜谱 / 伙伴均已按 <b>ID → 中文名</b> 显示（来源 izakaya.cc，覆盖当前版本全部 DLC；游戏内部 ID 为分段整数，即存档 key）。如某名称不符，把正确对照告诉我即可修正<br>
+            · 结构化编辑支持：基本属性（金钱 / 等级 / 经验）、货币 / 资产、食材、酒水、厨具、菜谱、伙伴、服饰、装饰、徽章；其余字段在「全部字段」里直接编辑 JSON<br>
+            · 全部名称均已按 <b>ID → 中文名</b> 显示（来源 izakaya.cc，覆盖当前版本全部 DLC；游戏内部物品 ID 为分段整数，即存档 key）。如某名称不符，反馈给我即可修正<br>
+            · 食材 / 酒水 / 厨具 / 道具 / 徽章均<b>汇总本体与全部 DLC 分区</b>（<code>storagePartial</code> + <code>storagePartialDLC.DLCn</code>），每行标「所在分区」；改动写回原分区，新增按 ID 区间自动归位<br>
+            · <b>DLC 安全模式（默认开启）</b>：顶部标签显示本档 <code>allActivatedDLC</code> 里已激活的 DLC，并<b>禁止把「未激活 DLC」的物品 / 菜谱 / 伙伴加进存档</b>，避免坏档；载入存档时还会体检一次，把已存在的越界内容列出来。确需添加时，手动关掉该开关即可<br>
+            · 货币 / 服饰 / 装饰为<b>勾选式</b>：勾选 = 获得（写入 <code>storagePartial.items</code>，同时同步 <code>albumPartial.items</code> 图鉴），取消 = 撤销；厨具 / 徽章同理（厨具在 <code>storagePartial.cookers</code>、徽章在 <code>storagePartial.badges</code>）<br>
             · 菜谱 = <code>storagePartial.recipes</code>（菜品 ID 数组）；伙伴 = <code>storagePartial.unlockedPartners</code>（伙伴 ID 数组，「职务」取自 <code>playerPartial.historyPartnerSelection</code>）。注意：游戏里的「客人好感 kizuna」并非数值字段，而是靠事件/任务字符串推进，本页不提供改写<br>
             · 下载得到的文件即为标准 .memory（JSON），可直接放回游戏存档目录
         </div>
@@ -4908,6 +4930,228 @@ var IF = (function () {
     '5007': '萨拉',
   };
 
+  /* 其它类别 ID → 中文名（来源 izakaya.cc，含全部 DLC）。
+     currency = 货币 / 票据类道具（currencyItems ∪ generalItems），与金钱同为「资产」，存放于 storagePartial.items。
+     clothes/decor 亦存于 storagePartial.items；cooker → storagePartial.cookers；badge → storagePartial.badges。 */
+  var TML_MORE = {
+    currency: {
+      '0': '万份特典感谢信',
+      '1': '签名色纸',
+      '2': '香霖堂打折券',
+      '3': '奇怪的石头',
+      '4': '古朴的铜钱',
+      '5': '破损的符咒',
+      '6': '红色的宝石',
+      '7': '发光的竹子',
+      '29': '银色的青蛙硬币',
+      '30': '金色的青蛙硬币',
+      '48': '红美铃的签名照',
+      '49': '土龙罐',
+      '52': '幸运四叶草',
+      '53': '猫豆腐老师的异世界宣传漫画',
+      '2014': '黑谷山女的推荐函',
+      '2015': '水桥帕露西的推荐函',
+      '2016': '星熊勇仪的推荐函',
+      '2017': '古明地觉的推荐函',
+      '2018': '火焰猫燐的推荐函',
+      '2019': '灵乌路空的推荐函',
+      '5011': '蓬松松糖果',
+      '5015': '特殊的噗噗呦果',
+      '10000': '神秘的信封',
+      '10001': '诅咒羊皮纸',
+      '10002': '竹炭',
+      '10003': '水仙花',
+      '10004': '树枝编制的皇冠',
+      '10005': '烧焦枯萎的花环',
+      '10006': '七色虹花冠',
+    },
+    clothes: {
+      '-2': '雀酒屋工作装',
+      '-1': '夜雀服',
+      '23': '黑色套装',
+      '24': '中华风校服',
+      '25': '褪色的巫女服',
+      '26': '睡衣',
+      '27': '访问着和服',
+      '31': '水手服',
+      '54': '万圣节特典晚装',
+      '56': '偶像服',
+      '57': '锦绣中华娃娃',
+      '58': '执事服',
+      '59': '圣诞节特典晚装',
+      '60': '蛋糕裙',
+      '61': '妖精服',
+      '1001': '冬季水手服',
+      '1002': '魔女服',
+      '2001': '花魁浴衣',
+      '2002': '星尘披风套装',
+      '2500': '朋克演出服',
+      '3001': '海盗服',
+      '3002': '仙女服',
+      '4003': '花的报恩',
+      '4004': '番长服',
+      '5009': '军乐队礼服',
+      '5010': '海滩度假装',
+      '9000': 'OL装',
+      '9003': '花嫁',
+    },
+    decor: {
+      '32': '招财猫',
+      '33': '富贵牡丹',
+      '34': '强运桃子',
+      '50': '胖滚君',
+      '51': '幸运的素兔？',
+      '62': '喜之面',
+      '63': '怒之面',
+      '64': '哀之面',
+      '65': '乐之面',
+      '1003': '地藏人偶',
+      '1004': '河童重工电话机',
+      '2003': '觉之眼',
+      '2004': '仇返人形',
+      '3000': '飞碟老虎机',
+      '4000': '普通的钓鱼竿',
+      '4001': '超级钓鱼竿',
+      '5012': '门无杂宾',
+      '5013': '杜门谢客',
+      '5014': '造物者之盒',
+    },
+    cooker: {
+      '0': '煮锅',
+      '1': '烧烤架',
+      '2': '油锅',
+      '3': '蒸锅',
+      '4': '料理台',
+      '5': '夜雀煮锅',
+      '6': '夜雀烧烤架',
+      '7': '夜雀油锅',
+      '8': '夜雀蒸锅',
+      '9': '夜雀料理台',
+      '10': '超煮锅',
+      '11': '超烧烤架',
+      '12': '超油锅',
+      '13': '超蒸锅',
+      '14': '超料理台',
+      '15': '极煮锅',
+      '16': '极烧烤架',
+      '17': '极油锅',
+      '18': '极蒸锅',
+      '19': '极料理台',
+      '20': '核能煮锅',
+      '21': '核能烧烤架',
+      '22': '核能油锅',
+      '23': '核能蒸锅',
+      '24': '核能料理台',
+      '25': '可疑煮锅',
+      '26': '可疑烧烤架',
+      '27': '可疑油锅',
+      '28': '可疑蒸锅',
+      '29': '可疑料理台',
+      '30': '月见煮锅',
+      '31': '月见烧烤架',
+      '32': '月见油锅',
+      '33': '月见蒸锅',
+      '34': '月见料理台',
+      '1000': '「星尘鼎沸」',
+      '2000': '「纯粹炼狱」',
+      '3000': '「紫薇天火」',
+      '4000': '「冯风渡御」',
+      '5000': '「魔人经板」',
+      '5001': '「三位一体」',
+    },
+    badge: {
+      '1000': '地狱大胃王制霸的证明',
+      '2000': '怪诞妖怪制霸的证明-简单',
+      '2001': '怪诞妖怪制霸的证明-普通',
+      '2002': '怪诞妖怪制霸的证明-高级',
+      '2003': '怪诞妖怪制霸的证明-疯狂',
+      '2500': '原始与野性徽章 ~ 银',
+      '2501': '原始与野性徽章 ~ 金',
+      '2502': '雨顺与风调徽章 ~ 银',
+      '2503': '雨顺与风调徽章 ~ 金',
+      '2504': '孤独与节制徽章 ~ 银',
+      '2505': '孤独与节制徽章 ~ 金',
+      '2506': '魔法与诅咒徽章 ~ 银',
+      '2507': '魔法与诅咒徽章 ~ 金',
+      '2508': '终古与刹那徽章 ~ 银',
+      '2509': '终古与刹那徽章 ~ 金',
+      '2510': '樱开与樱落徽章 ~ 银',
+      '2511': '樱开与樱落徽章 ~ 金',
+      '2512': '开端与结局徽章 ~ 银',
+      '2513': '开端与结局徽章 ~ 金',
+      '2514': '幽深与回响徽章 ~ 银',
+      '2515': '幽深与回响徽章 ~ 金',
+      '2516': '丰收与寂寥徽章 ~ 银',
+      '2517': '丰收与寂寥徽章 ~ 金',
+      '2518': '吞噬与破灭徽章 ~ 银',
+      '2519': '吞噬与破灭徽章 ~ 金',
+      '2520': '灼热与躁动徽章 ~ 银',
+      '2521': '灼热与躁动徽章 ~ 金',
+      '2522': '寂寥与偏爱徽章 ~ 银',
+      '2523': '寂寥与偏爱徽章 ~ 金',
+      '2524': '怪诞与常理徽章 ~ 银',
+      '2525': '怪诞与常理徽章 ~ 金',
+      '2526': '爱乐徽章',
+      '2527': '博丽神社大祭徽章 ~ 银',
+      '2528': '博丽神社大祭徽章 ~ 金',
+      '2529': '静寂与晨暮徽章 ~ 银',
+      '2530': '静寂与晨暮徽章 ~ 金',
+      '2531': '阴阳与协调徽章 ~ 银',
+      '2532': '阴阳与协调徽章 ~ 金',
+      '2533': '风灵与芳华徽章 ~ 银',
+      '2534': '风灵与芳华徽章 ~ 金',
+      '2535': '朽梦与孑遗徽章 ~ 银',
+      '2536': '朽梦与孑遗徽章 ~ 金',
+      '2537': '幽闭与禁忌徽章 ~ 银',
+      '2538': '幽闭与禁忌徽章 ~ 金',
+      '2539': '奋进与守旧徽章 ~ 银',
+      '2540': '奋进与守旧徽章 ~ 金',
+      '2541': '梦幻与茶会徽章 ~ 银',
+      '2542': '梦幻与茶会徽章 ~ 金',
+      '2543': '困兽与搏斗徽章 ~ 银',
+      '2544': '困兽与搏斗徽章 ~ 金',
+      '3000': '博丽大祭料理赛徽章',
+      '3001': '博丽大祭摇滚赛徽章',
+      '4000': '恶魔之妹制霸的证明-简单',
+      '4001': '恶魔之妹制霸的证明-普通',
+      '4002': '恶魔之妹制霸的证明-困难',
+      '4003': '恶魔之妹制霸的证明-疯狂',
+      '5000': '创造与无限的证明',
+      '5001': '捕获反狱王的证明·简单',
+      '5002': '捕获反狱王的证明·普通',
+      '5003': '捕获反狱王的证明·困难',
+      '5004': '捕获反狱王的证明·疯狂',
+      '5005': '万物皆可肉鸽？',
+      '5006': '肉鸽的灵魂在于选择',
+      '5007': '你所不知道的卡牌黑市',
+      '5008': '强欲之夜雀',
+      '5009': '鱼肉菜蛋，营养管饱',
+      '5010': '完美的黄金回旋！',
+      '5011': '大吉猫咪的聚宝功',
+      '5012': 'Buff栏要塞不下了！',
+      '5013': '宝货盈门，金卡满堂',
+      '5014': '鸟脑袋的地狱试炼官',
+      '5015': '一个筋斗，这头到那头',
+      '5016': '一元购',
+      '5017': '粮粮粮粮粮草征收人',
+      '5018': '风风火火闯九州',
+      '5019': '轮回·终末',
+      '5020': '擦弹与决死',
+      '5021': '记忆开始收束？',
+      '5022': '千金散尽还复来',
+      '5023': '富可敌魔理沙',
+      '5024': '能收购八云钱庄程度的资产',
+      '5025': '香霖堂至尊VIP客户',
+      '5026': '收集狂',
+      '5027': '胜利的法则已然确定',
+      '5028': '生存模式制霸的证明',
+      '5029': '代理巫女',
+      '5030': '恶属性效果绝佳',
+      '5031': '结束了…再一次…',
+      '5032': '实石求石',
+    },
+  };
+
   function say(msg, cls) { status.className = 'status ' + (cls || ''); status.textContent = msg; }
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (c) {
@@ -4941,8 +5185,11 @@ var IF = (function () {
     reader.readAsText(file);
   }
 
-  function ingCount() { var s = DATA.storagePartial.ingredients; return s && typeof s === 'object' && !Array.isArray(s) ? Object.keys(s).length : 0; }
-  function bevCount() { var s = DATA.storagePartial.beverages; return s && typeof s === 'object' && !Array.isArray(s) ? Object.keys(s).length : 0; }
+  function countBase(base) { var n = 0; containersFor(base).forEach(function (c) { n += Object.keys(c.obj).length; }); return n; }
+  function ingCount() { return countBase('ingredients'); }
+  function bevCount() { return countBase('beverages'); }
+  function itemCount() { return countBase('items'); }
+  function cookerCount() { return countBase('cookers'); }
   function recipeCount() { var r = DATA.storagePartial.recipes; return Array.isArray(r) ? r.length : 0; }
   function partnerCount() { var p = DATA.storagePartial.unlockedPartners; return Array.isArray(p) ? p.length : 0; }
 
@@ -4950,7 +5197,10 @@ var IF = (function () {
     fileList.innerHTML = '';
     if (!DATA) return;
     var it = document.createElement('div'); it.className = 'file-item';
-    var meta = '已解析 · 食材 ' + ingCount() + ' · 酒水 ' + bevCount() + ' · 菜谱 ' + recipeCount() + ' · 伙伴 ' + partnerCount() +
+    var act = activatedList();
+    var meta = '已解析 · 食材 ' + ingCount() + ' · 酒水 ' + bevCount() + ' · 厨具 ' + cookerCount() +
+               ' · 道具 ' + itemCount() + ' · 菜谱 ' + recipeCount() + ' · 伙伴 ' + partnerCount() +
+               ' · 已激活 DLC ' + act.length + ' 个' +
                (DATA.realSaveTimeCode ? ' · ' + esc(DATA.realSaveTimeCode) : '');
     it.innerHTML = '<div class="fi-icon">MEM</div>' +
       '<div class="fi-main"><div class="fi-name">' + esc(FNAME) + '</div>' +
@@ -4958,6 +5208,20 @@ var IF = (function () {
       '<button class="fi-del" title="清除">✕</button>';
     it.querySelector('.fi-del').addEventListener('click', clearAll);
     fileList.appendChild(it);
+
+    // DLC 体检：列出所有属于「未激活 DLC」的物品
+    var bad = auditDLC();
+    if (bad.length) {
+      var w = document.createElement('div'); w.className = 'dlc-warn';
+      var head = bad.slice(0, 12).map(function (b) {
+        return esc(dlcLabel(b.dlc)) + ' 的「' + esc(anyName(b.base, b.id)) + '」(ID ' + esc(b.id) + ' · ' + esc(b.src) + ')';
+      }).join('、');
+      w.innerHTML = '<b>⚠ DLC 体检：发现 ' + bad.length + ' 项属于未激活 DLC 的内容</b><br>' +
+        head + (bad.length > 12 ? ' 等' : '') + '<br>' +
+        '本档 <code>allActivatedDLC = [' + esc(act.join(', ') || '空') + ']</code>；这些内容不在已激活范围内，游戏读取时可能出错。' +
+        '若不需要，可在「全部字段」里删掉对应条目。';
+      fileList.appendChild(w);
+    }
   }
 
   function clearAll() {
@@ -4972,15 +5236,21 @@ var IF = (function () {
 
   function renderCat(cat) {
     if (!DATA) return;
+    renderDlcBar();
     if (!cat) {
       var a = document.querySelector('#tmlCat .seg-btn.active');
       cat = a ? a.dataset.v : 'basic';
     }
     if (cat === 'basic') return renderBasic();
-    if (cat === 'ing') return renderMap('食材', ['storagePartial', 'ingredients'], 'ing');
-    if (cat === 'bev') return renderMap('酒水', ['storagePartial', 'beverages'], 'bev');
+    if (cat === 'money') return renderMoney();
+    if (cat === 'ing') return renderMap('食材', 'ing');
+    if (cat === 'bev') return renderMap('酒水', 'bev');
+    if (cat === 'cooker') return renderToggles('厨具', 'cookers', TML_MORE.cooker, { note: '厨具可持有多个，数量可单独调整' });
     if (cat === 'recipe') return renderRecipes();
     if (cat === 'guest') return renderPartners();
+    if (cat === 'wear') return renderToggles('服饰', 'items', TML_MORE.clothes, { note: '勾选 = 获得该服饰，取消 = 撤销（同步图鉴）' });
+    if (cat === 'decor') return renderToggles('装饰 / 摆件', 'items', TML_MORE.decor, { note: '勾选 = 获得该装饰，取消 = 撤销（同步图鉴）' });
+    if (cat === 'badge') return renderToggles('徽章', 'badges', TML_MORE.badge, { note: '勾选 = 获得该徽章，取消 = 移除' });
     if (cat === 'all') return renderJson('全部字段', null);
   }
 
@@ -5001,21 +5271,182 @@ var IF = (function () {
     });
   }
 
-  function renderMap(title, path, kind) {
-    var o = DATA;
-    for (var i = 0; i < path.length; i++) {
-      if (!o[path[i]] || typeof o[path[i]] !== 'object' || Array.isArray(o[path[i]])) o[path[i]] = {};
-      o = o[path[i]];
+  /* 食材/酒水：本体在 storagePartial.<base>，DLC 追加项在 storagePartialDLC.DLCn.<base>。
+     这里把所有分区汇总成一张表；每行标明来源，编辑/删除写回各自的分区，
+     新增则按 ID 区间自动落到对应分区（<1000 本体，1000~ DLC1，2000~ DLC2，…）。 */
+  var BASE_OF = { ing: 'ingredients', bev: 'beverages', item: 'items', cooker: 'cookers', badge: 'badges' };
+  var MAP_BASE = BASE_OF;
+
+  function isPlainObj(o) { return o && typeof o === 'object' && !Array.isArray(o); }
+
+  /* 把 holder[key] 规整为对象容器；若原值是「非空数组」（异常结构）则返回 null，绝不覆盖原始数据 */
+  function normContainer(holder, key) {
+    var o = holder[key];
+    if (isPlainObj(o)) return o;
+    if (Array.isArray(o) && o.length > 0) return null;
+    holder[key] = {};
+    return holder[key];
+  }
+
+  /* 取某一类物品的全部容器：本体的 storagePartial.<base> + 各 DLC 分区的 storagePartialDLC.DLCn.<base>。 */
+  function containersFor(base) {
+    if (BASE_OF[base]) base = BASE_OF[base];
+    var list = [];
+    if (!isPlainObj(DATA.storagePartial)) DATA.storagePartial = {};
+    var main = normContainer(DATA.storagePartial, base) || (DATA.storagePartial[base] = {});
+    list.push({ src: '本体', obj: main });
+    var dlc = DATA.storagePartialDLC;
+    if (isPlainObj(dlc)) {
+      Object.keys(dlc).sort().forEach(function (d) {
+        var blk = dlc[d];
+        if (!isPlainObj(blk)) return;
+        var o = normContainer(blk, base);
+        if (o) list.push({ src: d, obj: o });
+      });
     }
-    var keys = Object.keys(o);
-    var html = '<div class="pe-subhead">' + title + '（' + keys.length + ' 项）' +
-      ((Object.keys(TML_NAMES.ing || {}).length + Object.keys(TML_NAMES.bev || {}).length) ? '' : ' · 当前按 ID 显示') + '</div>';
+    return list;
+  }
+  function mapContainers(kind) { return containersFor(BASE_OF[kind] || kind); }
+
+  function ensureDlcContainer(base, dlcName) {
+    if (BASE_OF[base]) base = BASE_OF[base];
+    if (!isPlainObj(DATA.storagePartialDLC)) DATA.storagePartialDLC = {};
+    var blk = DATA.storagePartialDLC[dlcName];
+    if (!isPlainObj(blk)) blk = DATA.storagePartialDLC[dlcName] = {};
+    if (!isPlainObj(blk[base])) blk[base] = {};
+    return blk[base];
+  }
+
+  function pickContainerBase(base, id) {
+    if (BASE_OF[base]) base = BASE_OF[base];
+    var list = containersFor(base);
+    for (var i = 0; i < list.length; i++) {
+      if (Object.prototype.hasOwnProperty.call(list[i].obj, id)) return list[i].obj;
+    }
+    var n = Number(id);
+    if (isFinite(n) && n >= 1000 && n < 10000) return ensureDlcContainer(base, 'DLC' + Math.floor(n / 1000));
+    return list[0].obj;
+  }
+  function pickContainer(kind, id) { return pickContainerBase(BASE_OF[kind] || kind, id); }
+
+  /* ================= DLC 归属与安全阀 =================
+     游戏内部物品 ID 是分段整数：本体 <1000，DLCn 占 n000~n999（1000~1999 = DLC1，2000~2999 = DLC2…），
+     10000 以上为联动/特殊内容。存档顶层 allActivatedDLC 记录该档已激活的 DLC。
+     加入属于「未激活 DLC」的物品是坏档的高风险来源，故默认拦截。 */
+  var isChineseNameCache = null;
+  var forceAllow = false;
+
+  function dlcOfId(id) {
+    var n = Number(id);
+    if (!isFinite(n) || n < 1000) return 'CORE';
+    if (n >= 10000) return 'COLLAB';
+    return 'DLC' + Math.floor(n / 1000);
+  }
+  function dlcLabel(code) {
+    if (code === 'CORE') return '本体';
+    if (code === 'COLLAB') return '联动/特殊';
+    return code;
+  }
+  function activatedList() {
+    var a = DATA && DATA.allActivatedDLC;
+    return Array.isArray(a) ? a.map(String) : [];
+  }
+  function collabActivated(act) {
+    return act.some(function (x) { return /COLLAB|DLC9|THYG|TBC|GBC/i.test(String(x)); });
+  }
+  /* 返回 null = 该物品所属 DLC 已激活；否则返回缺失的 DLC 代号 */
+  function dlcMissing(id) {
+    var d = dlcOfId(id);
+    if (d === 'CORE') return null;
+    var act = activatedList();
+    if (d === 'COLLAB') return collabActivated(act) ? null : 'COLLAB';
+    return act.indexOf(d) >= 0 ? null : d;
+  }
+  function dlcAllowed(id) { return forceAllow || !dlcMissing(id); }
+
+  function itemName(k) {
+    if (!isChineseNameCache) isChineseNameCache = [TML_MORE.currency, TML_MORE.clothes, TML_MORE.decor];
+    for (var i = 0; i < isChineseNameCache.length; i++) {
+      if (isChineseNameCache[i][k]) return isChineseNameCache[i][k];
+    }
+    return '物品 ' + k;
+  }
+  function anyName(base, k) {
+    if (base === 'ingredients') return nameOf('ing', k);
+    if (base === 'beverages') return nameOf('bev', k);
+    if (base === 'items') return itemName(k);
+    if (base === 'cookers') return TML_MORE.cooker[k] || ('厨具 ' + k);
+    if (base === 'badges') return TML_MORE.badge[k] || ('徽章 ' + k);
+    return String(k);
+  }
+
+  /* 存档 DLC 体检：列出所有「所属 DLC 未被激活」的物品，用于提示潜在坏档风险 */
+  function auditDLC() {
+    var out = [];
+    if (!DATA) return out;
+    var bases = ['ingredients', 'beverages', 'items', 'cookers', 'badges'];
+    function scan(src, base, obj) {
+      if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
+      Object.keys(obj).forEach(function (k) {
+        var d = dlcMissing(k);
+        if (d) out.push({ src: src, base: base, id: k, dlc: d });
+      });
+    }
+    bases.forEach(function (base) { scan('本体', base, DATA.storagePartial && DATA.storagePartial[base]); });
+    var dlc = DATA.storagePartialDLC;
+    if (isPlainObj(dlc)) Object.keys(dlc).sort().forEach(function (dd) {
+      var blk = dlc[dd]; if (!isPlainObj(blk)) return;
+      bases.forEach(function (base) { scan(dd, base, blk[base]); });
+    });
+    return out;
+  }
+
+  function renderDlcBar() {
+    var bar = $('tmlDlcBar');
+    if (!bar) return;
+    var act = activatedList();
+    var all = ['CORE', 'DLC1', 'DLC2', 'DLC3', 'DLC4', 'DLC5', 'COLLAB'];
+    var html = '<span style="font-size:.82em;color:#a8a8c0;letter-spacing:1px">存档已激活</span>';
+    all.forEach(function (d) {
+      var on = (d === 'COLLAB') ? collabActivated(act) : (act.indexOf(d) >= 0);
+      html += '<span class="dlc-tag ' + (on ? 'on' : 'off') + '" title="' + esc(dlcLabel(d)) + '">' +
+        esc(dlcLabel(d)) + (on ? ' ✓' : ' ✕') + '</span>';
+    });
+    html += '<span style="font-size:.78em;color:#6f6f86">allActivatedDLC = [' + esc(act.join(', ') || '空') + ']</span>';
+    html += '<label class="dlc-safe"><input type="checkbox" class="tgl-chk" id="tmlSafe"' + (forceAllow ? '' : ' checked') +
+      '> 禁止加入未激活 DLC 内容（防坏档）</label>';
+    bar.innerHTML = html;
+    var chk = bar.querySelector('#tmlSafe');
+    if (chk) chk.addEventListener('change', function () {
+      forceAllow = !chk.checked;
+      say(forceAllow ? '⚠ 已关闭 DLC 安全模式：允许加入未激活 DLC 内容，可能坏档' : '已开启 DLC 安全模式：将拦截未激活 DLC 内容', forceAllow ? 'err' : 'ok');
+      renderCat();
+    });
+  }
+
+  function renderMap(title, kind) {
+    var list = mapContainers(kind);
+    var owner = {}, idxOf = {};
+    list.forEach(function (c, i) {
+      Object.keys(c.obj).forEach(function (k) { owner[k] = c.obj; idxOf[k] = i; });
+    });
+    var keys = Object.keys(owner).sort(function (a, b) {
+      var x = Number(a), y = Number(b);
+      if (isFinite(x) && isFinite(y) && x !== y) return x - y;
+      return String(a) < String(b) ? -1 : 1;
+    });
+    var dlcCnt = keys.filter(function (k) { var n = Number(k); return isFinite(n) && n >= 1000; }).length;
+    var html = '<div class="pe-subhead">' + title + '（' + keys.length + ' 项' +
+      (dlcCnt ? ' · 含 DLC ' + dlcCnt + ' 项' : '') + '）</div>';
     html += '<div class="pe-table-wrap"><table class="pe"><thead><tr>' +
-      '<th>ID</th><th>名称</th><th>数量</th><th></th></tr></thead><tbody>';
+      '<th>ID</th><th>名称</th><th>数量</th><th>来源</th><th></th></tr></thead><tbody>';
     keys.forEach(function (k) {
+      var i = idxOf[k];
       html += '<tr><td class="if-mono">' + esc(k) + '</td><td>' + esc(nameOf(kind, k)) + '</td>' +
-        '<td><input class="num-input" type="number" data-k="' + esc(k) + '" value="' + (o[k] != null ? esc(o[k]) : 0) + '" style="width:120px"></td>' +
-        '<td><button class="tml-del" data-k="' + esc(k) + '">删除</button></td></tr>';
+        '<td><input class="num-input" type="number" data-k="' + esc(k) + '" data-i="' + i + '" value="' +
+        (owner[k][k] != null ? esc(owner[k][k]) : 0) + '" style="width:120px"></td>' +
+        '<td class="if-mono" style="opacity:.6">' + esc(list[i].src) + '</td>' +
+        '<td><button class="tml-del" data-k="' + esc(k) + '" data-i="' + i + '">删除</button></td></tr>';
     });
     html += '</tbody></table></div>';
     html += '<div class="tml-addbar">' +
@@ -5023,31 +5454,39 @@ var IF = (function () {
       '<input class="num-input" id="tmlAddCnt" placeholder="数量" style="width:110px">' +
       '<button class="po-mini" id="tmlAdd">添加</button>' +
       '<button class="po-mini" id="tmlFill">全部 +50</button>' +
+      '<span class="note" style="margin:0">ID &lt;1000 归本体，1000~ 归 DLC1，2000~ 归 DLC2，以此类推</span>' +
       '</div>';
     body.innerHTML = html;
 
     body.querySelectorAll('input[data-k]').forEach(function (inp) {
-      inp.addEventListener('input', function () { o[inp.dataset.k] = num(inp.value, 0); });
+      inp.addEventListener('input', function () {
+        list[Number(inp.dataset.i)].obj[inp.dataset.k] = num(inp.value, 0);
+      });
     });
     body.querySelectorAll('.tml-del').forEach(function (b) {
       b.addEventListener('click', function () {
-        delete o[b.dataset.k]; renderMap(title, path, kind);
+        delete list[Number(b.dataset.i)].obj[b.dataset.k];
         say('已删除 ' + nameOf(kind, b.dataset.k), 'ok');
+        renderMap(title, kind);
       });
     });
     body.querySelector('#tmlAdd').addEventListener('click', function () {
       var k = (body.querySelector('#tmlAddId').value || '').trim();
-      var cnt = body.querySelector('#tmlAddCnt').value;
       if (!k) { say('请填写物品 ID', 'err'); return; }
-      if (Object.prototype.hasOwnProperty.call(o, k)) { say('该 ID 已存在', 'err'); return; }
       if (!/^[A-Za-z0-9_]+$/.test(k)) { say('ID 只能含字母、数字、下划线', 'err'); return; }
-      o[k] = num(cnt, 0);
+      if (!dlcAllowed(k)) {
+        say('已阻止：' + nameOf(kind, k) + ' 属于 ' + dlcLabel(dlcOfId(k)) + '，当前存档未激活该 DLC（防坏档）。如确认要加，请关闭上方「DLC 安全模式」', 'err');
+        return;
+      }
+      var target = pickContainer(kind, k);
+      if (Object.prototype.hasOwnProperty.call(target, k)) { say('该 ID 已存在', 'err'); return; }
+      target[k] = num(body.querySelector('#tmlAddCnt').value, 0);
       say('已添加 ' + nameOf(kind, k), 'ok');
-      renderMap(title, path, kind);
+      renderMap(title, kind);
     });
     body.querySelector('#tmlFill').addEventListener('click', function () {
-      keys.forEach(function (k) { o[k] = (Number(o[k]) || 0) + 50; });
-      renderMap(title, path, kind); say('已为全部 ' + title + ' +50', 'ok');
+      keys.forEach(function (k) { var o = owner[k]; o[k] = (Number(o[k]) || 0) + 50; });
+      renderMap(title, kind); say('已为全部 ' + title + ' +50', 'ok');
     });
   }
 
@@ -5098,6 +5537,10 @@ var IF = (function () {
       if (v === '') { say('请填写菜品 ID', 'err'); return; }
       if (!/^[0-9]+$/.test(v)) { say('菜品 ID 必须是数字', 'err'); return; }
       if (arr.indexOf(Number(v)) >= 0) { say('该菜谱已存在', 'err'); return; }
+      if (!dlcAllowed(v)) {
+        say('已阻止：菜谱「' + recipeName(v) + '」属于 ' + dlcLabel(dlcOfId(v)) + '，当前存档未激活该 DLC（防坏档）。如确认要加，请关闭上方「DLC 安全模式」', 'err');
+        return;
+      }
       arr.push(Number(v)); renderRecipes();
       say('已添加 ' + recipeName(v), 'ok');
     });
@@ -5136,8 +5579,155 @@ var IF = (function () {
       if (v === '') { say('请填写伙伴 ID', 'err'); return; }
       if (!/^[0-9]+$/.test(v)) { say('伙伴 ID 必须是数字', 'err'); return; }
       if (arr.indexOf(Number(v)) >= 0) { say('该伙伴已解锁', 'err'); return; }
+      if (!dlcAllowed(v)) {
+        say('已阻止：伙伴「' + partnerName(v) + '」属于 ' + dlcLabel(dlcOfId(v)) + '，当前存档未激活该 DLC（防坏档）。如确认要加，请关闭上方「DLC 安全模式」', 'err');
+        return;
+      }
       arr.push(Number(v)); renderPartners();
       say('已解锁 ' + partnerName(v), 'ok');
+    });
+  }
+
+  /* 各类别共用的容器，用于判断某个 ID「已归类到别处」 */
+  var TABLES_OF_BASE = {
+    items: [TML_MORE.currency, TML_MORE.clothes, TML_MORE.decor],
+    cookers: [TML_MORE.cooker],
+    badges: [TML_MORE.badge]
+  };
+
+  /* 勾选式编辑：适用于「是否拥有」类物品（货币/票据、服饰、装饰、徽章、厨具）。
+     勾选 = 写入对应容器（数量默认 1，可改）；取消 = 从所在容器移除。
+     写入 storagePartial.items 的类别会同步维护 albumPartial.items 图鉴记录。 */
+  function renderToggles(title, base, table, opts) {
+    opts = opts || {};
+    var list = containersFor(base);
+    var owner = {}, idxOf = {};
+    list.forEach(function (c, i) {
+      Object.keys(c.obj).forEach(function (k) { owner[k] = c.obj; idxOf[k] = i; });
+    });
+    var ids = Object.keys(table);
+    var baseName = BASE_OF[base] || base;
+    var siblings = TABLES_OF_BASE[baseName] || [table];
+    Object.keys(owner).forEach(function (k) {
+      if (ids.indexOf(k) >= 0) return;
+      // 已被别的类别收录的（如货币表里的服饰）不重复展示；只附加「完全未知」的条目
+      var other = siblings.some(function (t) { return t !== table && t[k]; });
+      if (!other) ids.push(k);
+    });
+    ids.sort(function (a, b) {
+      var x = Number(a), y = Number(b);
+      if (isFinite(x) && isFinite(y) && x !== y) return x - y;
+      return String(a) < String(b) ? -1 : 1;
+    });
+    var ownCnt = 0, blockedCnt = 0;
+    ids.forEach(function (k) { if (owner[k]) ownCnt++; else if (dlcMissing(k)) blockedCnt++; });
+    var html = opts.top || '';
+    html += '<div class="pe-subhead">' + title + '（持有 ' + ownCnt + ' / 共 ' + ids.length + ' 项' +
+      (blockedCnt ? ' · <span style="color:#ffd699">' + blockedCnt + ' 项属未激活 DLC</span>' : '') + '）</div>';
+    html += '<div class="pe-table-wrap"><table class="pe"><thead><tr>' +
+      '<th style="width:56px">持有</th><th>ID</th><th>名称</th><th>数量</th><th>归属</th><th>所在分区</th></tr></thead><tbody>';
+    ids.forEach(function (k) {
+      var have = !!owner[k];
+      var d = dlcOfId(k), miss = have ? null : dlcMissing(k);
+      html += '<tr class="' + (have ? '' : 'tgl-row-off') + '">' +
+        '<td><input type="checkbox" class="tgl-chk" data-k="' + esc(k) + '"' + (have ? ' checked' : '') + '></td>' +
+        '<td class="if-mono">' + esc(k) + '</td>' +
+        '<td>' + esc(table[k] || ('未知物品 ' + k)) +
+          (miss ? ' <span style="color:#ffd699;font-size:.82em">· 需 ' + esc(dlcLabel(miss)) + '</span>' : '') + '</td>' +
+        '<td><input class="num-input" type="number" data-c="' + esc(k) + '" value="' + (have ? esc(owner[k][k]) : '') + '"' +
+          (have ? '' : ' disabled') + ' style="width:100px"></td>' +
+        '<td class="if-mono" style="opacity:.65">' + esc(dlcLabel(d)) + '</td>' +
+        '<td class="if-mono" style="opacity:.6">' + esc(have ? list[idxOf[k]].src : '—') + '</td></tr>';
+    });
+    html += '</tbody></table></div>' +
+      '<div class="tml-addbar">' +
+      '<button class="po-mini" id="tmlTglAll">全部选中</button>' +
+      '<button class="po-mini" id="tmlTglNone">全部取消</button>' +
+      '<span class="note" style="margin:0">' + (opts.note || '勾选 = 拥有，取消 = 移除') + '</span></div>';
+    body.innerHTML = html;
+
+    var isItems = (baseName === 'items');
+    function add(id) {
+      if (Object.prototype.hasOwnProperty.call(owner, id)) return true;
+      if (!dlcAllowed(id)) {
+        say('已阻止：' + (table[id] || id) + ' 属于 ' + dlcLabel(dlcOfId(id)) +
+            '，当前存档未激活该 DLC。如确认要加，请关闭上方「DLC 安全模式」', 'err');
+        return false;
+      }
+      pickContainerBase(baseName, id)[id] = 1;
+      if (isItems) syncAlbumItem(id, true);
+      return true;
+    }
+    function remove(id) {
+      if (!Object.prototype.hasOwnProperty.call(owner, id)) return;
+      delete owner[id][id];          // 从所在容器真正移除
+      if (isItems) syncAlbumItem(id, false);
+    }
+
+    body.querySelectorAll('.tgl-chk').forEach(function (c) {
+      c.addEventListener('change', function () {
+        var k = c.dataset.k;
+        if (c.checked) {
+          if (!add(k)) { c.checked = false; return; }
+          say('已获得 ' + (table[k] || k), 'ok');
+        } else {
+          remove(k);
+          say('已移除 ' + (table[k] || k), 'ok');
+        }
+        renderToggles(title, base, table, opts);
+      });
+    });
+    body.querySelectorAll('input[data-c]').forEach(function (inp) {
+      inp.addEventListener('input', function () {
+        var k = inp.dataset.c;
+        if (owner[k]) owner[k][k] = num(inp.value, 0);
+      });
+    });
+    body.querySelector('#tmlTglAll').addEventListener('click', function () {
+      var ok = 0, blocked = 0;
+      ids.forEach(function (k) {
+        if (Object.prototype.hasOwnProperty.call(owner, k)) return;
+        if (dlcAllowed(k)) { pickContainerBase(baseName, k)[k] = 1; if (isItems) syncAlbumItem(k, true); ok++; }
+        else blocked++;
+      });
+      say('已选中 ' + ok + ' 项' + (blocked ? ('，跳过 ' + blocked + ' 项未激活 DLC 内容') : ''), blocked ? 'err' : 'ok');
+      renderToggles(title, base, table, opts);
+    });
+    body.querySelector('#tmlTglNone').addEventListener('click', function () {
+      var n = 0;
+      ids.forEach(function (k) {
+        if (Object.prototype.hasOwnProperty.call(owner, k)) { delete owner[k][k]; if (isItems) syncAlbumItem(k, false); n++; }
+      });
+      say(n ? ('已取消 ' + n + ' 项') : '本表当前没有已持有的项', n ? 'ok' : '');
+      renderToggles(title, base, table, opts);
+    });
+    if (opts.after) opts.after();
+  }
+
+  function syncAlbumItem(id, add) {
+    var alb = DATA.albumPartial;
+    if (!isPlainObj(alb) || !Array.isArray(alb.items)) return;
+    var n = Number(id);
+    if (!isFinite(n)) return;
+    var at = alb.items.indexOf(n);
+    if (add && at < 0) alb.items.push(n);
+    if (!add && at >= 0) alb.items.splice(at, 1);
+  }
+
+  function renderMoney() {
+    var pp = DATA.playerPartial;
+    var top = '<div class="tml-grid">' +
+      '<div class="tml-field"><label>金钱 (playerPartial.fund)</label><input class="num-input" type="number" id="tmlFund" value="' +
+      (pp.fund != null ? esc(pp.fund) : 0) + '"></div>' +
+      '</div>' +
+      '<div class="note" style="margin-top:12px;border-left-color:rgba(160,160,220,0.5)">下方为<b>货币与特殊道具</b>（色纸、石头、符咒、铜钱、硬币、打折券、信件、礼物等），与金钱同属资产。勾选即获得、取消即移除，改动写入 <code>storagePartial.items</code>（并同步 <code>albumPartial.items</code> 图鉴）。</div>';
+    renderToggles('货币 / 特殊道具', 'items', TML_MORE.currency, {
+      top: top,
+      note: '勾选 = 获得，取消 = 移除；数量可单独调整',
+      after: function () {
+        var f = $('tmlFund');
+        if (f) f.addEventListener('input', function () { pp.fund = num(f.value, 0); });
+      }
     });
   }
 
@@ -5178,8 +5768,13 @@ var IF = (function () {
   function makeNewSave() {
     return {
       fileVersion: 'BetaV102',
+      allActivatedDLC: ['CORE'],
       playerPartial: { fund: 0, level: 1, exp: 0, gameDate: { day: 1 } },
-      storagePartial: { ingredients: {}, beverages: {}, recipes: [], unlockedPartners: [] },
+      storagePartial: {
+        ingredients: {}, beverages: {}, cookers: {}, items: {}, badges: {},
+        recipes: [], unlockedPartners: [], foods: {}, trophies: []
+      },
+      storagePartialDLC: {},
       realSaveTimeCode: 0
     };
   }
