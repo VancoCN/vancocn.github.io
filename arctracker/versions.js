@@ -1,6 +1,6 @@
 window.ARC_VERSIONS = {
   "latest": "7.0.260c",
-  "updated_at": "2026-10-15T17:04:19+00:00",
+  "updated_at": "2026-10-16T01:40:27+00:00",
   "history": [
     {
       "version": "7.0.260c",
@@ -8,11 +8,17 @@ window.ARC_VERSIONS = {
       "size": 2119430448,
       "size_human": "2.0 GB",
       "last_modified": null,
-      "url": "https://arcaea-static.lowiro-cdn.net/4woVYr3t5X_bWKQxftELyeuaSoDicCszcUOlpCg-M6wcFtVtqMV3-Zsr834cNzfzYe3K8rJUl6BP-LPTm6dLBR209huubgLcbsPuiJ0er-qZONmgE23vamIQtPPZxe8tfw5hYpMDuU4KMj2O5ryo?filename=arcaea_7.0.260c.apk",
-      "url_fetched_at": "2026-10-15T17:04:19+00:00"
+      "url": "https://arcaea-static.lowiro-cdn.net/vqfBJEavxk9wGiOxar-9Kkytjea-MqSd6WDqkzO5Zm_F41mhM3jBuN-l_veptInQxAUjXTZllnxS_kU4RG1aBMQIAIY8xBvkC7o4KFl2YGs_Y3GZuFDP3tjaGxIwjYiSQZi-loZDEhMaEsWt7Nh6?filename=arcaea_7.0.260c.apk",
+      "url_fetched_at": "2026-10-16T01:40:27+00:00"
     }
   ],
   "checks": [
+    {
+      "time": "2026-10-16T01:40:27+00:00",
+      "status": "unchanged",
+      "version": "7.0.260c",
+      "url": "https://arcaea-static.lowiro-cdn.net/vqfBJEavxk9wGiOxar-9Kkytjea-MqSd6WDqkzO5Zm_F41mhM3jBuN-l_veptInQxAUjXTZllnxS_kU4RG1aBMQIAIY8xBvkC7o4KFl2YGs_Y3GZuFDP3tjaGxIwjYiSQZi-loZDEhMaEsWt7Nh6?filename=arcaea_7.0.260c.apk"
+    },
     {
       "time": "2026-10-15T17:04:19+00:00",
       "status": "unchanged",
