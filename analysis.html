@@ -5190,8 +5190,13 @@ var IF = (function () {
   function bevCount() { return countBase('beverages'); }
   function itemCount() { return countBase('items'); }
   function cookerCount() { return countBase('cookers'); }
-  function recipeCount() { var r = DATA.storagePartial.recipes; return Array.isArray(r) ? r.length : 0; }
-  function partnerCount() { var p = DATA.storagePartial.unlockedPartners; return Array.isArray(p) ? p.length : 0; }
+  function countArr(key) {
+    var n = 0;
+    arrContainersFor(key, false).forEach(function (c) { n += c.arr.length; });
+    return n;
+  }
+  function recipeCount() { return countArr('recipes'); }
+  function partnerCount() { return countArr('unlockedPartners'); }
 
   function renderFileList() {
     fileList.innerHTML = '';
@@ -5377,14 +5382,18 @@ var IF = (function () {
     if (base === 'items') return itemName(k);
     if (base === 'cookers') return TML_MORE.cooker[k] || ('厨具 ' + k);
     if (base === 'badges') return TML_MORE.badge[k] || ('徽章 ' + k);
+    if (base === 'recipes') return recipeName(k);
+    if (base === 'unlockedPartners') return partnerName(k);
     return String(k);
   }
 
-  /* 存档 DLC 体检：列出所有「所属 DLC 未被激活」的物品，用于提示潜在坏档风险 */
+  /* 存档 DLC 体检：列出所有「所属 DLC 未被激活」的条目，用于提示潜在坏档风险。
+     既扫对象型（ingredients/beverages/items/cookers/badges），也扫数组型（recipes/unlockedPartners）。 */
   function auditDLC() {
     var out = [];
     if (!DATA) return out;
     var bases = ['ingredients', 'beverages', 'items', 'cookers', 'badges'];
+    var arrKeys = ['recipes', 'unlockedPartners'];
     function scan(src, base, obj) {
       if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
       Object.keys(obj).forEach(function (k) {
@@ -5392,11 +5401,20 @@ var IF = (function () {
         if (d) out.push({ src: src, base: base, id: k, dlc: d });
       });
     }
+    function scanArr(src, base, a) {
+      if (!Array.isArray(a)) return;
+      a.forEach(function (x) {
+        var d = dlcMissing(x);
+        if (d) out.push({ src: src, base: base, id: String(x), dlc: d });
+      });
+    }
     bases.forEach(function (base) { scan('本体', base, DATA.storagePartial && DATA.storagePartial[base]); });
+    arrKeys.forEach(function (base) { scanArr('本体', base, DATA.storagePartial && DATA.storagePartial[base]); });
     var dlc = DATA.storagePartialDLC;
     if (isPlainObj(dlc)) Object.keys(dlc).sort().forEach(function (dd) {
       var blk = dlc[dd]; if (!isPlainObj(blk)) return;
       bases.forEach(function (base) { scan(dd, base, blk[base]); });
+      arrKeys.forEach(function (base) { scanArr(dd, base, blk[base]); });
     });
     return out;
   }
@@ -5509,15 +5527,78 @@ var IF = (function () {
     });
   }
 
+  /* 数组型容器：与本体并列，DLC 追加项存放在 storagePartialDLC.<DLCn>.<key>。
+     实测菜谱就是这样（本体 58 + DLC1 12 + DLC2 7），只读本体必然漏项。
+     asIdArray 会把「非数组但形似 ID 集合」的异常结构安全转成数组，绝不丢 ID。 */
+  function asIdArray(holder, key, create) {
+    var o = holder[key];
+    if (Array.isArray(o)) return o;
+    if (o === undefined || o === null) {
+      if (!create) return null;
+      holder[key] = [];
+      return holder[key];
+    }
+    if (typeof o === 'object') {
+      var ids = [];
+      Object.keys(o).forEach(function (k) { if (/^-?\d+$/.test(k)) ids.push(Number(k)); });
+      if (create) { holder[key] = ids; return holder[key]; }
+      return ids;
+    }
+    if (!create) return null;
+    holder[key] = [];
+    return holder[key];
+  }
+
+  /* 汇总某一数组字段的全部容器：本体的 storagePartial.<key> + 各 DLC 分区的 storagePartialDLC.<DLCn>.<key> */
+  function arrContainersFor(key, create) {
+    var list = [];
+    if (!isPlainObj(DATA.storagePartial)) DATA.storagePartial = {};
+    var main = asIdArray(DATA.storagePartial, key, create !== false);
+    if (main) list.push({ src: '本体', arr: main });
+    var dlc = DATA.storagePartialDLC;
+    if (isPlainObj(dlc)) Object.keys(dlc).sort().forEach(function (d) {
+      var blk = dlc[d];
+      if (!isPlainObj(blk)) return;
+      var a = asIdArray(blk, key, false);
+      if (a) list.push({ src: d, arr: a });
+    });
+    return list;
+  }
+
+  function ensureDlcArray(dlcName, key) {
+    if (!isPlainObj(DATA.storagePartialDLC)) DATA.storagePartialDLC = {};
+    var blk = DATA.storagePartialDLC[dlcName];
+    if (!isPlainObj(blk)) blk = DATA.storagePartialDLC[dlcName] = {};
+    return asIdArray(blk, key, true);
+  }
+
+  /* 新 ID 应写入哪个分区：已存在则留在原分区；否则按 ID 区间归位（<1000 本体，1000~ DLC1 …） */
+  function pickArrFor(key, id) {
+    var list = arrContainersFor(key, true);
+    var s = String(id);
+    for (var i = 0; i < list.length; i++) {
+      for (var j = 0; j < list[i].arr.length; j++) {
+        if (String(list[i].arr[j]) === s) return list[i].arr;
+      }
+    }
+    var n = Number(id);
+    if (isFinite(n) && n >= 1000 && n < 10000) return ensureDlcArray('DLC' + Math.floor(n / 1000), key);
+    return list[0].arr;
+  }
+
   /* 数组型「全部展示 + 勾选」编辑器：适用于 storagePartial.recipes / unlockedPartners 这类「ID 数组」容器。
      全量列出表中条目（+ 存档中已存在但表中未收录的未知条目），勾选 = 启用（加入数组），取消 = 移除。
-     DLC 安全阀同样生效：未激活 DLC 的内容默认拦截。 */
+     已汇总本体与全部 DLC 分区；DLC 安全阀同样生效。 */
   function renderArrToggles(title, key, table, nameFn, opts) {
     opts = opts || {};
-    if (!Array.isArray(DATA.storagePartial[key])) DATA.storagePartial[key] = [];
-    var arr = DATA.storagePartial[key];
-    var have = {};
-    arr.forEach(function (x) { have[String(x)] = true; });
+    var list = arrContainersFor(key, true);
+    var have = {}, partOf = {};
+    list.forEach(function (c) {
+      c.arr.forEach(function (x) {
+        var k = String(x);
+        if (!Object.prototype.hasOwnProperty.call(have, k)) { have[k] = true; partOf[k] = c.src; }
+      });
+    });
     var ids = Object.keys(table);
     Object.keys(have).forEach(function (k) { if (ids.indexOf(k) < 0) ids.push(k); });
     ids.sort(function (a, b) {
@@ -5532,7 +5613,7 @@ var IF = (function () {
     html += '<div class="pe-table-wrap"><table class="pe"><thead><tr>' +
       '<th style="width:56px">启用</th><th>ID</th><th>名称</th>' +
       (opts.extraCol ? '<th>' + esc(opts.extraCol) + '</th>' : '') +
-      '<th>归属</th><th>状态</th></tr></thead><tbody>';
+      '<th>归属</th><th>分区</th><th>状态</th></tr></thead><tbody>';
     ids.forEach(function (k) {
       var on = !!have[k];
       var miss = on ? null : dlcMissing(k);
@@ -5542,6 +5623,7 @@ var IF = (function () {
         '<td>' + esc(nameFn(k)) + '</td>' +
         (opts.extraCol ? '<td>' + esc(opts.extraOf ? (opts.extraOf(k) || '—') : '—') + '</td>' : '') +
         '<td class="if-mono" style="opacity:.65">' + esc(dlcLabel(dlcOfId(k))) + '</td>' +
+        '<td class="if-mono" style="opacity:.6">' + esc(on ? (partOf[k] || '—') : '—') + '</td>' +
         '<td style="font-size:.86em">' + (on ? '<span style="color:#9fdca0">已启用</span>' :
           (miss ? '<span style="color:#ffd699">需 ' + esc(dlcLabel(miss)) + '</span>' : '<span style="opacity:.55">未启用</span>')) + '</td></tr>';
     });
@@ -5561,13 +5643,17 @@ var IF = (function () {
         return false;
       }
       var v = asVal(k);
-      if (arr.indexOf(v) < 0) arr.push(v);
+      var target = pickArrFor(key, k);
+      if (target.indexOf(v) < 0) target.push(v);
       have[k] = true;
       return true;
     }
     function remove(k) {
       if (!have[k]) return;
-      for (var i = arr.length - 1; i >= 0; i--) if (String(arr[i]) === k) arr.splice(i, 1);
+      /* 同一 ID 可能被写进多个分区（异常存档），逐个分区清干净 */
+      list.forEach(function (c) {
+        for (var i = c.arr.length - 1; i >= 0; i--) if (String(c.arr[i]) === k) c.arr.splice(i, 1);
+      });
       delete have[k];
     }
 
@@ -5595,8 +5681,8 @@ var IF = (function () {
       renderArrToggles(title, key, table, nameFn, opts);
     });
     body.querySelector('#tmlArrNone').addEventListener('click', function () {
-      var n = arr.length;
-      arr.length = 0;
+      var n = 0;
+      list.forEach(function (c) { n += c.arr.length; c.arr.length = 0; });
       say(n ? ('已取消 ' + n + ' 项') : '本表当前没有已启用的项', n ? 'ok' : '');
       renderArrToggles(title, key, table, nameFn, opts);
     });
