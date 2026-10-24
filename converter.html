@@ -646,6 +646,22 @@
         .po-ta:focus { border-color: rgba(160,160,220,0.55); }
         .po-ta:disabled { opacity: 0.5; }
         .po-hd-box { margin-top: 14px; }
+
+        /* ==================== 我的世界 → Bloxd ==================== */
+        #panel-bloxd .panel-card { min-width: 0; }
+        #panel-bloxd .opt-row { align-items: flex-start; min-width: 0; }
+        #panel-bloxd .dz-sub { max-width: 100%; word-break: break-word; }
+        #panel-bloxd .opt-row > .dz-sub { flex: 1 1 180px; min-width: 0; margin-top: 0; }
+        #panel-bloxd .chk { flex: 1 1 240px; min-width: 0; align-items: flex-start; line-height: 1.65; }
+        #panel-bloxd .chk input { flex: 0 0 auto; margin-top: 3px; }
+        #panel-bloxd .fi-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #panel-bloxd #bxStats .pe-hint { text-align: left; line-height: 2; }
+        #panel-bloxd #bxStats .pe-tag { margin-bottom: 4px; }
+        @media (max-width: 620px) {
+            #panel-bloxd .opt-label { min-width: 100%; }
+            #panel-bloxd .drop-zone { padding: 26px 12px; }
+            #panel-bloxd .dz-sub { font-size: 0.72em; }
+        }
     </style>
 <base target="_blank" data-page-node-id="MdLilM4yNdHhSnFl836W5S">
 <style id="__dm_no_drag_style__">* { -webkit-user-drag: none !important; }</style><style id="__dm_bindable_badge_style__">[data-sp-bindable="database"]{outline:1px dashed #0088ff;outline-offset:2px;border-radius:4px;}[data-sp-bindable="database"] *{pointer-events:none !important;transition:none !important;animation:none !important;}[data-sp-bindable="database"]{transition:none !important;animation:none !important;}</style></head>
@@ -667,6 +683,7 @@
     <button class="tab" data-tab="lang" data-page-node-id="QFeGYozf3xXrK8re4EbtnP">MO / PO</button>
     <button class="tab" data-tab="crypto" data-page-node-id="hx1NnUU4UPloRQLAchSoze">加解密</button>
     <button class="tab" data-tab="repeat" data-page-node-id="Rk7PwZq3Nv5TbXc2LmYd">文字重复</button>
+    <button class="tab" data-tab="bloxd" data-page-node-id="Bx1TabPanelNode00001">我的世界 → Bloxd</button>
 </div>
 
 <!-- ==================== 音频 ==================== -->
@@ -1128,6 +1145,51 @@
             · 分隔符会在每次重复之间插入；选「无」时紧密相连<br data-page-node-id="Xr2QwZx6MnB8vTt4LkJ7d">
             · 支持从文件读取：把 .txt 拖进输入框即可<br data-page-node-id="Ys5MzX9BnC4wRt2YvQ8p">
             · 结果超过 500 万字符时会提示截断，避免浏览器卡死
+        </div>
+    </div>
+</section>
+
+<section class="panel" id="panel-bloxd" hidden>
+    <div class="panel-card glass">
+        <div class="drop-zone" id="bxDrop">
+            <svg class="dz-icon" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zm0 7.24 8.5-4.25L12 4.06 3.5 4.99 12 9.24zM2 12l10 5 10-5-1.9-.95L12 14.34 3.9 11.05 2 12zm0 5 10 5 10-5-1.9-.95L12 19.34 3.9 16.05 2 17z"></path></svg>
+            <div class="dz-title">拖拽我的世界蓝图到这里，或点击选择</div>
+            <div class="dz-sub">支持 .schem（WorldEdit / FAWE）、.litematic（Litematica）、.schematic（旧版 MCEdit）、.nbt（结构方块）<br>可一次选择多个文件，转换结果直接是 Bloxd 的 .bloxdschem</div>
+            <input type="file" id="bxInput" accept=".schem,.litematic,.schematic,.nbt" multiple hidden>
+        </div>
+
+        <div class="file-list" id="bxFiles"></div>
+
+        <div class="opt-row">
+            <span class="opt-label">替代方块</span>
+            <select class="sel" id="bxFallback">
+                <option value="Dirt" selected>泥土 Dirt</option>
+                <option value="Air">空气 Air</option>
+                <option value="Stone">石头 Stone</option>
+                <option value="Messy Stone">碎石 Messy Stone</option>
+                <option value="Grass Block">草方块 Grass Block</option>
+                <option value="Sand">沙子 Sand</option>
+                <option value="Invisible Solid">隐形方块 Invisible Solid</option>
+            </select>
+            <span class="dz-sub" style="margin:0;">Bloxd 里没有的方块（含楼梯、告示牌、按钮等）用它补位</span>
+        </div>
+
+        <div class="opt-row">
+            <span class="opt-label">大蓝图</span>
+            <label class="chk"><input type="checkbox" id="bxSplitChk" checked> 超过 200 区块（约 655 万格）时自动切成多份并打包成 zip</label>
+        </div>
+
+        <button class="run-btn" id="bxRun">开 始 转 换</button>
+        <div class="status" id="bxStatus"></div>
+        <div class="stat-row" id="bxStats"></div>
+
+        <div class="note">
+            <b>说明</b><br>
+            · 方块对照表来自 <span class="mono">hansdiewurst/converter</span>，按方块名与朝向（rotation）逐块匹配<br>
+            · Bloxd 没有楼梯、台阶、告示牌、按钮、压力板、铁轨、珊瑚等，楼梯与双台阶会退化成同材质的完整方块，其余变成空气<br>
+            · Bloxd 与我的世界的手性相反，转换时会把 Z 轴镜像，建好放回游戏里朝向才对<br>
+            · 蓝图以 y=0 为底面、x/z 从 0 起，导入后会从你脚下开始向上堆叠<br>
+            · 全过程在浏览器里完成，文件不会上传到任何地方
         </div>
     </div>
 </section>
@@ -4475,9 +4537,4323 @@ document.addEventListener("click", e => {
     rows.forEach(r => tb.appendChild(r));
 });
 
+
+
+/* ---------- Bloxd 方块名表（下标即方块 ID，0..3300） ---------- */
+const BX_NAMES_BLOB = `Air
+Unloaded
+Dirt
+Messy Dirt
+Grass Block
+Sand
+Clay
+Gravel
+Snow
+Maple Log
+Pine Log
+Plum Log
+Cedar Log
+Aspen Log
+Jungle Log
+Maple Wood Planks
+Aspen Wood Planks
+Plum Wood Planks
+Jungle Wood Planks
+Pine Wood Planks
+Cedar Wood Planks
+Barkless Maple Log
+Barkless Aspen Log
+Barkless Plum Log
+Barkless Jungle Log
+Barkless Pine Log
+Barkless Cedar Log
+free_placeholder2
+Stone
+Messy Stone
+free_placeholder
+Smooth Stone
+Diorite
+Smooth Diorite
+Andesite
+Smooth Andesite
+Granite
+Smooth Granite
+Sandstone
+Yellowstone
+Coal Ore
+Iron Ore
+Gold Ore
+Lapis Lazuli Ore
+Emerald Ore
+Diamond Ore
+Block of Coal
+Block of Iron
+Block of Gold
+Block of Lapis Lazuli
+Block of Emerald
+White Wool
+Orange Wool
+Magenta Wool
+Light Blue Wool
+Yellow Wool
+Lime Wool
+Pink Wool
+Gray Wool
+Light Gray Wool
+Cyan Wool
+Purple Wool
+Blue Wool
+Brown Wool
+Green Wool
+Red Wool
+Black Wool
+Baked Clay
+White Baked Clay
+Orange Baked Clay
+Magenta Baked Clay
+Light Blue Baked Clay
+Yellow Baked Clay
+Lime Baked Clay
+Pink Baked Clay
+Gray Baked Clay
+Light Gray Baked Clay
+Cyan Baked Clay
+Purple Baked Clay
+Blue Baked Clay
+Brown Baked Clay
+Green Baked Clay
+Red Baked Clay
+Black Baked Clay
+Gray Concrete
+Light Gray Concrete
+Black Concrete
+Blue Concrete
+Brown Concrete
+Cyan Concrete
+Light Blue Concrete
+Lime Concrete
+Magenta Concrete
+Orange Concrete
+Pink Concrete
+Purple Concrete
+Red Concrete
+White Concrete
+Green Concrete
+Yellow Concrete
+Pine Leaves
+Aspen Leaves
+Maple Leaves
+Jungle Leaves
+Pumpkin_placeholder
+Watermelon
+Glass
+Black Glass
+Blue Glass
+Brown Glass
+Cyan Glass
+Gray Glass
+Light Gray Glass
+Green Glass
+Light Blue Glass
+Lime Glass
+Magenta Glass
+Orange Glass
+Pink Glass
+Purple Glass
+Red Glass
+White Glass
+Yellow Glass
+UNUSED BLOCK TYPE
+Dim Lamp On
+Dim Lamp Off
+Water
+Invisible Solid
+Bricks
+Stone Bricks
+Dark Red Brick
+Dark Red Stone
+Block of Quartz
+Chiseled Block of Quartz
+Engraved Stone
+Mossy Stone Bricks
+Cracked Stone Bricks
+Smooth Sandstone
+Engraved Sandstone
+Ice
+Obsidian
+Hay Bale
+Sponge
+Beacon
+temp
+Golden Decoration
+Moonstone Explosive
+Bedrock
+Smooth Double Stone Slab
+Cactus
+Grass
+Dandelion
+Poppy
+Red Tulip
+Pink Tulip
+White Tulip
+Orange Tulip
+Daisy
+Bluebell
+Forget-me-not
+Allium
+Azure Bluet
+Lily of the Valley
+Shadow Rose
+Furnace
+Furnace|meta|rot2
+Furnace|meta|rot3
+Furnace|meta|rot4
+Workbench
+Workbench|meta|rot2
+Workbench|meta|rot3
+Workbench|meta|rot4
+Block of Diamond
+Maple Door
+Maple Door|meta|rot1|open
+Maple Door|meta|rot2|closed
+Maple Door|meta|rot2|open
+Maple Door|meta|rot3|closed
+Maple Door|meta|rot3|open
+Maple Door|meta|rot4|closed
+Maple Door|meta|rot4|open
+_Maple Door Top
+_Maple Door Top|meta|rot1|open
+_Maple Door Top|meta|rot2|closed
+_Maple Door Top|meta|rot2|open
+_Maple Door Top|meta|rot3|closed
+_Maple Door Top|meta|rot3|open
+_Maple Door Top|meta|rot4|closed
+_Maple Door Top|meta|rot4|open
+Maple Trapdoor
+Maple Trapdoor|meta|rot1|open
+Maple Trapdoor|meta|rot2|closed
+Maple Trapdoor|meta|rot2|open
+Maple Trapdoor|meta|rot3|closed
+Maple Trapdoor|meta|rot3|open
+Maple Trapdoor|meta|rot4|closed
+Maple Trapdoor|meta|rot4|open
+Aspen Sapling
+Maple Sapling
+Jungle Sapling
+Plum Sapling
+Pine Sapling
+Cedar Sapling
+Maple Log|TreeBase|Maple
+Chest
+Chest|meta|rot2
+Chest|meta|rot3
+Chest|meta|rot4
+Pine Leaves|TreeCanopy
+Aspen Leaves|TreeCanopy
+Maple Leaves|TreeCanopy
+Jungle Leaves|TreeCanopy
+Protector
+Fat Cactus
+Dry Fat Cactus
+Maple Ladder
+Maple Ladder|meta|rot2
+Maple Ladder|meta|rot3
+Maple Ladder|meta|rot4
+Vines
+Vines|meta|rot2
+Vines|meta|rot3
+Vines|meta|rot4
+Dirt|GrassRoots
+Iron Ladder
+Iron Ladder|meta|rot2
+Iron Ladder|meta|rot3
+Iron Ladder|meta|rot4
+White Planks
+Orange Planks
+Magenta Planks
+Light Blue Planks
+Yellow Planks
+Lime Planks
+Pink Planks
+Gray Planks
+Light Gray Planks
+Cyan Planks
+Purple Planks
+Blue Planks
+Brown Planks
+Green Planks
+Red Planks
+Black Planks
+Artisan Bench
+White Ceramic
+White Ceramic|meta|rot2
+White Ceramic|meta|rot3
+White Ceramic|meta|rot4
+Orange Ceramic
+Orange Ceramic|meta|rot2
+Orange Ceramic|meta|rot3
+Orange Ceramic|meta|rot4
+Magenta Ceramic
+Magenta Ceramic|meta|rot2
+Magenta Ceramic|meta|rot3
+Magenta Ceramic|meta|rot4
+Light Blue Ceramic
+Light Blue Ceramic|meta|rot2
+Light Blue Ceramic|meta|rot3
+Light Blue Ceramic|meta|rot4
+Yellow Ceramic
+Yellow Ceramic|meta|rot2
+Yellow Ceramic|meta|rot3
+Yellow Ceramic|meta|rot4
+Lime Ceramic
+Lime Ceramic|meta|rot2
+Lime Ceramic|meta|rot3
+Lime Ceramic|meta|rot4
+Pink Ceramic
+Pink Ceramic|meta|rot2
+Pink Ceramic|meta|rot3
+Pink Ceramic|meta|rot4
+Gray Ceramic
+Gray Ceramic|meta|rot2
+Gray Ceramic|meta|rot3
+Gray Ceramic|meta|rot4
+Light Gray Ceramic
+Light Gray Ceramic|meta|rot2
+Light Gray Ceramic|meta|rot3
+Light Gray Ceramic|meta|rot4
+Cyan Ceramic
+Cyan Ceramic|meta|rot2
+Cyan Ceramic|meta|rot3
+Cyan Ceramic|meta|rot4
+Purple Ceramic
+Purple Ceramic|meta|rot2
+Purple Ceramic|meta|rot3
+Purple Ceramic|meta|rot4
+Blue Ceramic
+Blue Ceramic|meta|rot2
+Blue Ceramic|meta|rot3
+Blue Ceramic|meta|rot4
+Brown Ceramic
+Brown Ceramic|meta|rot2
+Brown Ceramic|meta|rot3
+Brown Ceramic|meta|rot4
+Green Ceramic
+Green Ceramic|meta|rot2
+Green Ceramic|meta|rot3
+Green Ceramic|meta|rot4
+Red Ceramic
+Red Ceramic|meta|rot2
+Red Ceramic|meta|rot3
+Red Ceramic|meta|rot4
+Black Ceramic
+Black Ceramic|meta|rot2
+Black Ceramic|meta|rot3
+Black Ceramic|meta|rot4
+Wheat Seeds
+Wheat_stage1
+Wheat_stage2
+Wheat_stage3
+Wheat_stage4
+Wheat_stage5
+Wheat
+Wheat|FreshlyGrown
+Tilled Soil
+Bread Block
+ReservedBread BlockRotation1
+ReservedBread BlockRotation2
+ReservedBread BlockRotation3
+Mossy Messy Stone
+Dandelion|Roots
+Poppy|Roots
+Red Tulip|Roots
+Pink Tulip|Roots
+White Tulip|Roots
+Orange Tulip|Roots
+Daisy|Roots
+Bluebell|Roots
+Forget-me-not|Roots
+Allium|Roots
+Azure Bluet|Roots
+Lily of the Valley|Roots
+Shadow Rose|Roots
+White Bed
+White Bed|meta|rot2
+White Bed|meta|rot3
+White Bed|meta|rot4
+_White Bed Head
+_White Bed Head|meta|rot2
+_White Bed Head|meta|rot3
+_White Bed Head|meta|rot4
+Orange Bed
+Orange Bed|meta|rot2
+Orange Bed|meta|rot3
+Orange Bed|meta|rot4
+_Orange Bed Head
+_Orange Bed Head|meta|rot2
+_Orange Bed Head|meta|rot3
+_Orange Bed Head|meta|rot4
+Magenta Bed
+Magenta Bed|meta|rot2
+Magenta Bed|meta|rot3
+Magenta Bed|meta|rot4
+_Magenta Bed Head
+_Magenta Bed Head|meta|rot2
+_Magenta Bed Head|meta|rot3
+_Magenta Bed Head|meta|rot4
+Light Blue Bed
+Light Blue Bed|meta|rot2
+Light Blue Bed|meta|rot3
+Light Blue Bed|meta|rot4
+_Light Blue Bed Head
+_Light Blue Bed Head|meta|rot2
+_Light Blue Bed Head|meta|rot3
+_Light Blue Bed Head|meta|rot4
+Yellow Bed
+Yellow Bed|meta|rot2
+Yellow Bed|meta|rot3
+Yellow Bed|meta|rot4
+_Yellow Bed Head
+_Yellow Bed Head|meta|rot2
+_Yellow Bed Head|meta|rot3
+_Yellow Bed Head|meta|rot4
+Lime Bed
+Lime Bed|meta|rot2
+Lime Bed|meta|rot3
+Lime Bed|meta|rot4
+_Lime Bed Head
+_Lime Bed Head|meta|rot2
+_Lime Bed Head|meta|rot3
+_Lime Bed Head|meta|rot4
+Pink Bed
+Pink Bed|meta|rot2
+Pink Bed|meta|rot3
+Pink Bed|meta|rot4
+_Pink Bed Head
+_Pink Bed Head|meta|rot2
+_Pink Bed Head|meta|rot3
+_Pink Bed Head|meta|rot4
+Gray Bed
+Gray Bed|meta|rot2
+Gray Bed|meta|rot3
+Gray Bed|meta|rot4
+_Gray Bed Head
+_Gray Bed Head|meta|rot2
+_Gray Bed Head|meta|rot3
+_Gray Bed Head|meta|rot4
+Light Gray Bed
+Light Gray Bed|meta|rot2
+Light Gray Bed|meta|rot3
+Light Gray Bed|meta|rot4
+_Light Gray Bed Head
+_Light Gray Bed Head|meta|rot2
+_Light Gray Bed Head|meta|rot3
+_Light Gray Bed Head|meta|rot4
+Cyan Bed
+Cyan Bed|meta|rot2
+Cyan Bed|meta|rot3
+Cyan Bed|meta|rot4
+_Cyan Bed Head
+_Cyan Bed Head|meta|rot2
+_Cyan Bed Head|meta|rot3
+_Cyan Bed Head|meta|rot4
+Purple Bed
+Purple Bed|meta|rot2
+Purple Bed|meta|rot3
+Purple Bed|meta|rot4
+_Purple Bed Head
+_Purple Bed Head|meta|rot2
+_Purple Bed Head|meta|rot3
+_Purple Bed Head|meta|rot4
+Blue Bed
+Blue Bed|meta|rot2
+Blue Bed|meta|rot3
+Blue Bed|meta|rot4
+_Blue Bed Head
+_Blue Bed Head|meta|rot2
+_Blue Bed Head|meta|rot3
+_Blue Bed Head|meta|rot4
+Brown Bed
+Brown Bed|meta|rot2
+Brown Bed|meta|rot3
+Brown Bed|meta|rot4
+_Brown Bed Head
+_Brown Bed Head|meta|rot2
+_Brown Bed Head|meta|rot3
+_Brown Bed Head|meta|rot4
+Green Bed
+Green Bed|meta|rot2
+Green Bed|meta|rot3
+Green Bed|meta|rot4
+_Green Bed Head
+_Green Bed Head|meta|rot2
+_Green Bed Head|meta|rot3
+_Green Bed Head|meta|rot4
+Red Bed
+Red Bed|meta|rot2
+Red Bed|meta|rot3
+Red Bed|meta|rot4
+_Red Bed Head
+_Red Bed Head|meta|rot2
+_Red Bed Head|meta|rot3
+_Red Bed Head|meta|rot4
+Black Bed
+Black Bed|meta|rot2
+Black Bed|meta|rot3
+Black Bed|meta|rot4
+_Black Bed Head
+_Black Bed Head|meta|rot2
+_Black Bed Head|meta|rot3
+_Black Bed Head|meta|rot4
+Apple Block
+Moonstone Ore
+Moonstone Chest
+Moonstone Chest|meta|rot2
+Moonstone Chest|meta|rot3
+Moonstone Chest|meta|rot4
+Block of Moonstone
+Magma
+Useless Soil
+Marked Sandstone
+Red Sandstone
+Smooth Red Sandstone
+Engraved Red Sandstone
+Marked Red Sandstone
+Green Stone
+Green Bricks
+Dark Green Bricks
+Sandstone Bricks
+Engraved Diorite
+Diorite Bricks
+Engraved Andesite
+Andesite Bricks
+Engraved Granite
+Granite Bricks
+Ice Bricks
+Placeholder Packed Ice
+Placeholder Blue Ice
+Plum Leaves
+Cedar Leaves
+Palm Leaves
+Plum Leaves|TreeCanopy
+Cedar Leaves|TreeCanopy
+Palm Leaves|TreeCanopy
+Pine Log|TreeBase|Pine
+Plum Log|TreeBase|Plum
+Cedar Log|TreeBase|Cedar
+Aspen Log|TreeBase|Aspen
+Jungle Log|TreeBase|Jungle
+Palm Log
+Palm Log|TreeBase|Palm
+Palm Wood Planks
+Palm Sapling
+Pine Door
+Pine Door|meta|rot1|open
+Pine Door|meta|rot2|closed
+Pine Door|meta|rot2|open
+Pine Door|meta|rot3|closed
+Pine Door|meta|rot3|open
+Pine Door|meta|rot4|closed
+Pine Door|meta|rot4|open
+_Pine Door Top
+_Pine Door Top|meta|rot1|open
+_Pine Door Top|meta|rot2|closed
+_Pine Door Top|meta|rot2|open
+_Pine Door Top|meta|rot3|closed
+_Pine Door Top|meta|rot3|open
+_Pine Door Top|meta|rot4|closed
+_Pine Door Top|meta|rot4|open
+Plum Door
+Plum Door|meta|rot1|open
+Plum Door|meta|rot2|closed
+Plum Door|meta|rot2|open
+Plum Door|meta|rot3|closed
+Plum Door|meta|rot3|open
+Plum Door|meta|rot4|closed
+Plum Door|meta|rot4|open
+_Plum Door Top
+_Plum Door Top|meta|rot1|open
+_Plum Door Top|meta|rot2|closed
+_Plum Door Top|meta|rot2|open
+_Plum Door Top|meta|rot3|closed
+_Plum Door Top|meta|rot3|open
+_Plum Door Top|meta|rot4|closed
+_Plum Door Top|meta|rot4|open
+Cedar Door
+Cedar Door|meta|rot1|open
+Cedar Door|meta|rot2|closed
+Cedar Door|meta|rot2|open
+Cedar Door|meta|rot3|closed
+Cedar Door|meta|rot3|open
+Cedar Door|meta|rot4|closed
+Cedar Door|meta|rot4|open
+_Cedar Door Top
+_Cedar Door Top|meta|rot1|open
+_Cedar Door Top|meta|rot2|closed
+_Cedar Door Top|meta|rot2|open
+_Cedar Door Top|meta|rot3|closed
+_Cedar Door Top|meta|rot3|open
+_Cedar Door Top|meta|rot4|closed
+_Cedar Door Top|meta|rot4|open
+Aspen Door
+Aspen Door|meta|rot1|open
+Aspen Door|meta|rot2|closed
+Aspen Door|meta|rot2|open
+Aspen Door|meta|rot3|closed
+Aspen Door|meta|rot3|open
+Aspen Door|meta|rot4|closed
+Aspen Door|meta|rot4|open
+_Aspen Door Top
+_Aspen Door Top|meta|rot1|open
+_Aspen Door Top|meta|rot2|closed
+_Aspen Door Top|meta|rot2|open
+_Aspen Door Top|meta|rot3|closed
+_Aspen Door Top|meta|rot3|open
+_Aspen Door Top|meta|rot4|closed
+_Aspen Door Top|meta|rot4|open
+Jungle Door
+Jungle Door|meta|rot1|open
+Jungle Door|meta|rot2|closed
+Jungle Door|meta|rot2|open
+Jungle Door|meta|rot3|closed
+Jungle Door|meta|rot3|open
+Jungle Door|meta|rot4|closed
+Jungle Door|meta|rot4|open
+_Jungle Door Top
+_Jungle Door Top|meta|rot1|open
+_Jungle Door Top|meta|rot2|closed
+_Jungle Door Top|meta|rot2|open
+_Jungle Door Top|meta|rot3|closed
+_Jungle Door Top|meta|rot3|open
+_Jungle Door Top|meta|rot4|closed
+_Jungle Door Top|meta|rot4|open
+Palm Door
+Palm Door|meta|rot1|open
+Palm Door|meta|rot2|closed
+Palm Door|meta|rot2|open
+Palm Door|meta|rot3|closed
+Palm Door|meta|rot3|open
+Palm Door|meta|rot4|closed
+Palm Door|meta|rot4|open
+_Palm Door Top
+_Palm Door Top|meta|rot1|open
+_Palm Door Top|meta|rot2|closed
+_Palm Door Top|meta|rot2|open
+_Palm Door Top|meta|rot3|closed
+_Palm Door Top|meta|rot3|open
+_Palm Door Top|meta|rot4|closed
+_Palm Door Top|meta|rot4|open
+Pine Trapdoor
+Pine Trapdoor|meta|rot1|open
+Pine Trapdoor|meta|rot2|closed
+Pine Trapdoor|meta|rot2|open
+Pine Trapdoor|meta|rot3|closed
+Pine Trapdoor|meta|rot3|open
+Pine Trapdoor|meta|rot4|closed
+Pine Trapdoor|meta|rot4|open
+Plum Trapdoor
+Plum Trapdoor|meta|rot1|open
+Plum Trapdoor|meta|rot2|closed
+Plum Trapdoor|meta|rot2|open
+Plum Trapdoor|meta|rot3|closed
+Plum Trapdoor|meta|rot3|open
+Plum Trapdoor|meta|rot4|closed
+Plum Trapdoor|meta|rot4|open
+Cedar Trapdoor
+Cedar Trapdoor|meta|rot1|open
+Cedar Trapdoor|meta|rot2|closed
+Cedar Trapdoor|meta|rot2|open
+Cedar Trapdoor|meta|rot3|closed
+Cedar Trapdoor|meta|rot3|open
+Cedar Trapdoor|meta|rot4|closed
+Cedar Trapdoor|meta|rot4|open
+Aspen Trapdoor
+Aspen Trapdoor|meta|rot1|open
+Aspen Trapdoor|meta|rot2|closed
+Aspen Trapdoor|meta|rot2|open
+Aspen Trapdoor|meta|rot3|closed
+Aspen Trapdoor|meta|rot3|open
+Aspen Trapdoor|meta|rot4|closed
+Aspen Trapdoor|meta|rot4|open
+Jungle Trapdoor
+Jungle Trapdoor|meta|rot1|open
+Jungle Trapdoor|meta|rot2|closed
+Jungle Trapdoor|meta|rot2|open
+Jungle Trapdoor|meta|rot3|closed
+Jungle Trapdoor|meta|rot3|open
+Jungle Trapdoor|meta|rot4|closed
+Jungle Trapdoor|meta|rot4|open
+Palm Trapdoor
+Palm Trapdoor|meta|rot1|open
+Palm Trapdoor|meta|rot2|closed
+Palm Trapdoor|meta|rot2|open
+Palm Trapdoor|meta|rot3|closed
+Palm Trapdoor|meta|rot3|open
+Palm Trapdoor|meta|rot4|closed
+Palm Trapdoor|meta|rot4|open
+Red Sand
+Red Sandstone Bricks
+Rocky Dirt
+Autumn Maple Leaves
+Autumn Maple Leaves|TreeCanopy
+Fallen Maple Leaves
+Fallen Maple Leaves|meta|rot1|top
+Fallen Maple Leaves|meta|rot1|side
+Fallen Maple Leaves|meta|rot2|side
+Fallen Maple Leaves|meta|rot3|side
+Fallen Maple Leaves|meta|rot4|side
+Maple Slab
+Maple Slab|meta|rot1|top
+Maple Slab|meta|rot1|side
+Maple Slab|meta|rot2|side
+Maple Slab|meta|rot3|side
+Maple Slab|meta|rot4|side
+Pine Slab
+Pine Slab|meta|rot1|top
+Pine Slab|meta|rot1|side
+Pine Slab|meta|rot2|side
+Pine Slab|meta|rot3|side
+Pine Slab|meta|rot4|side
+Plum Slab
+Plum Slab|meta|rot1|top
+Plum Slab|meta|rot1|side
+Plum Slab|meta|rot2|side
+Plum Slab|meta|rot3|side
+Plum Slab|meta|rot4|side
+Cedar Slab
+Cedar Slab|meta|rot1|top
+Cedar Slab|meta|rot1|side
+Cedar Slab|meta|rot2|side
+Cedar Slab|meta|rot3|side
+Cedar Slab|meta|rot4|side
+Aspen Slab
+Aspen Slab|meta|rot1|top
+Aspen Slab|meta|rot1|side
+Aspen Slab|meta|rot2|side
+Aspen Slab|meta|rot3|side
+Aspen Slab|meta|rot4|side
+Jungle Slab
+Jungle Slab|meta|rot1|top
+Jungle Slab|meta|rot1|side
+Jungle Slab|meta|rot2|side
+Jungle Slab|meta|rot3|side
+Jungle Slab|meta|rot4|side
+Palm Slab
+Palm Slab|meta|rot1|top
+Palm Slab|meta|rot1|side
+Palm Slab|meta|rot2|side
+Palm Slab|meta|rot3|side
+Palm Slab|meta|rot4|side
+Dirt Slab
+Dirt Slab|meta|rot1|top
+Dirt Slab|meta|rot1|side
+Dirt Slab|meta|rot2|side
+Dirt Slab|meta|rot3|side
+Dirt Slab|meta|rot4|side
+Grass Slab
+Grass Slab|meta|rot1|top
+Grass Slab|meta|rot1|side
+Grass Slab|meta|rot2|side
+Grass Slab|meta|rot3|side
+Grass Slab|meta|rot4|side
+Messy Stone Slab
+Messy Stone Slab|meta|rot1|top
+Messy Stone Slab|meta|rot1|side
+Messy Stone Slab|meta|rot2|side
+Messy Stone Slab|meta|rot3|side
+Messy Stone Slab|meta|rot4|side
+Stone Slab
+Stone Slab|meta|rot1|top
+Stone Slab|meta|rot1|side
+Stone Slab|meta|rot2|side
+Stone Slab|meta|rot3|side
+Stone Slab|meta|rot4|side
+Smooth Stone Slab
+Smooth Stone Slab|meta|rot1|top
+Smooth Stone Slab|meta|rot1|side
+Smooth Stone Slab|meta|rot2|side
+Smooth Stone Slab|meta|rot3|side
+Smooth Stone Slab|meta|rot4|side
+Engraved Stone Slab
+Engraved Stone Slab|meta|rot1|top
+Engraved Stone Slab|meta|rot1|side
+Engraved Stone Slab|meta|rot2|side
+Engraved Stone Slab|meta|rot3|side
+Engraved Stone Slab|meta|rot4|side
+Stone Bricks Slab
+Stone Bricks Slab|meta|rot1|top
+Stone Bricks Slab|meta|rot1|side
+Stone Bricks Slab|meta|rot2|side
+Stone Bricks Slab|meta|rot3|side
+Stone Bricks Slab|meta|rot4|side
+Mossy Stone Slab
+Mossy Stone Slab|meta|rot1|top
+Mossy Stone Slab|meta|rot1|side
+Mossy Stone Slab|meta|rot2|side
+Mossy Stone Slab|meta|rot3|side
+Mossy Stone Slab|meta|rot4|side
+Mossy Stone Bricks Slab
+Mossy Stone Bricks Slab|meta|rot1|top
+Mossy Stone Bricks Slab|meta|rot1|side
+Mossy Stone Bricks Slab|meta|rot2|side
+Mossy Stone Bricks Slab|meta|rot3|side
+Mossy Stone Bricks Slab|meta|rot4|side
+Andesite Slab
+Andesite Slab|meta|rot1|top
+Andesite Slab|meta|rot1|side
+Andesite Slab|meta|rot2|side
+Andesite Slab|meta|rot3|side
+Andesite Slab|meta|rot4|side
+Smooth Andesite Slab
+Smooth Andesite Slab|meta|rot1|top
+Smooth Andesite Slab|meta|rot1|side
+Smooth Andesite Slab|meta|rot2|side
+Smooth Andesite Slab|meta|rot3|side
+Smooth Andesite Slab|meta|rot4|side
+Engraved Andesite Slab
+Engraved Andesite Slab|meta|rot1|top
+Engraved Andesite Slab|meta|rot1|side
+Engraved Andesite Slab|meta|rot2|side
+Engraved Andesite Slab|meta|rot3|side
+Engraved Andesite Slab|meta|rot4|side
+Andesite Bricks Slab
+Andesite Bricks Slab|meta|rot1|top
+Andesite Bricks Slab|meta|rot1|side
+Andesite Bricks Slab|meta|rot2|side
+Andesite Bricks Slab|meta|rot3|side
+Andesite Bricks Slab|meta|rot4|side
+Diorite Slab
+Diorite Slab|meta|rot1|top
+Diorite Slab|meta|rot1|side
+Diorite Slab|meta|rot2|side
+Diorite Slab|meta|rot3|side
+Diorite Slab|meta|rot4|side
+Smooth Diorite Slab
+Smooth Diorite Slab|meta|rot1|top
+Smooth Diorite Slab|meta|rot1|side
+Smooth Diorite Slab|meta|rot2|side
+Smooth Diorite Slab|meta|rot3|side
+Smooth Diorite Slab|meta|rot4|side
+Engraved Diorite Slab
+Engraved Diorite Slab|meta|rot1|top
+Engraved Diorite Slab|meta|rot1|side
+Engraved Diorite Slab|meta|rot2|side
+Engraved Diorite Slab|meta|rot3|side
+Engraved Diorite Slab|meta|rot4|side
+Diorite Bricks Slab
+Diorite Bricks Slab|meta|rot1|top
+Diorite Bricks Slab|meta|rot1|side
+Diorite Bricks Slab|meta|rot2|side
+Diorite Bricks Slab|meta|rot3|side
+Diorite Bricks Slab|meta|rot4|side
+Granite Slab
+Granite Slab|meta|rot1|top
+Granite Slab|meta|rot1|side
+Granite Slab|meta|rot2|side
+Granite Slab|meta|rot3|side
+Granite Slab|meta|rot4|side
+Smooth Granite Slab
+Smooth Granite Slab|meta|rot1|top
+Smooth Granite Slab|meta|rot1|side
+Smooth Granite Slab|meta|rot2|side
+Smooth Granite Slab|meta|rot3|side
+Smooth Granite Slab|meta|rot4|side
+Engraved Granite Slab
+Engraved Granite Slab|meta|rot1|top
+Engraved Granite Slab|meta|rot1|side
+Engraved Granite Slab|meta|rot2|side
+Engraved Granite Slab|meta|rot3|side
+Engraved Granite Slab|meta|rot4|side
+Granite Bricks Slab
+Granite Bricks Slab|meta|rot1|top
+Granite Bricks Slab|meta|rot1|side
+Granite Bricks Slab|meta|rot2|side
+Granite Bricks Slab|meta|rot3|side
+Granite Bricks Slab|meta|rot4|side
+Sandstone Slab
+Sandstone Slab|meta|rot1|top
+Sandstone Slab|meta|rot1|side
+Sandstone Slab|meta|rot2|side
+Sandstone Slab|meta|rot3|side
+Sandstone Slab|meta|rot4|side
+Smooth Sandstone Slab
+Smooth Sandstone Slab|meta|rot1|top
+Smooth Sandstone Slab|meta|rot1|side
+Smooth Sandstone Slab|meta|rot2|side
+Smooth Sandstone Slab|meta|rot3|side
+Smooth Sandstone Slab|meta|rot4|side
+Engraved Sandstone Slab
+Engraved Sandstone Slab|meta|rot1|top
+Engraved Sandstone Slab|meta|rot1|side
+Engraved Sandstone Slab|meta|rot2|side
+Engraved Sandstone Slab|meta|rot3|side
+Engraved Sandstone Slab|meta|rot4|side
+Marked Sandstone Slab
+Marked Sandstone Slab|meta|rot1|top
+Marked Sandstone Slab|meta|rot1|side
+Marked Sandstone Slab|meta|rot2|side
+Marked Sandstone Slab|meta|rot3|side
+Marked Sandstone Slab|meta|rot4|side
+Sandstone Bricks Slab
+Sandstone Bricks Slab|meta|rot1|top
+Sandstone Bricks Slab|meta|rot1|side
+Sandstone Bricks Slab|meta|rot2|side
+Sandstone Bricks Slab|meta|rot3|side
+Sandstone Bricks Slab|meta|rot4|side
+Red Sandstone Slab
+Red Sandstone Slab|meta|rot1|top
+Red Sandstone Slab|meta|rot1|side
+Red Sandstone Slab|meta|rot2|side
+Red Sandstone Slab|meta|rot3|side
+Red Sandstone Slab|meta|rot4|side
+Smooth Red Sandstone Slab
+Smooth Red Sandstone Slab|meta|rot1|top
+Smooth Red Sandstone Slab|meta|rot1|side
+Smooth Red Sandstone Slab|meta|rot2|side
+Smooth Red Sandstone Slab|meta|rot3|side
+Smooth Red Sandstone Slab|meta|rot4|side
+Engraved Red Sandstone Slab
+Engraved Red Sandstone Slab|meta|rot1|top
+Engraved Red Sandstone Slab|meta|rot1|side
+Engraved Red Sandstone Slab|meta|rot2|side
+Engraved Red Sandstone Slab|meta|rot3|side
+Engraved Red Sandstone Slab|meta|rot4|side
+Marked Red Sandstone Slab
+Marked Red Sandstone Slab|meta|rot1|top
+Marked Red Sandstone Slab|meta|rot1|side
+Marked Red Sandstone Slab|meta|rot2|side
+Marked Red Sandstone Slab|meta|rot3|side
+Marked Red Sandstone Slab|meta|rot4|side
+Red Sandstone Bricks Slab
+Red Sandstone Bricks Slab|meta|rot1|top
+Red Sandstone Bricks Slab|meta|rot1|side
+Red Sandstone Bricks Slab|meta|rot2|side
+Red Sandstone Bricks Slab|meta|rot3|side
+Red Sandstone Bricks Slab|meta|rot4|side
+Bricks Slab
+Bricks Slab|meta|rot1|top
+Bricks Slab|meta|rot1|side
+Bricks Slab|meta|rot2|side
+Bricks Slab|meta|rot3|side
+Bricks Slab|meta|rot4|side
+Ice Bricks Slab
+Ice Bricks Slab|meta|rot1|top
+Ice Bricks Slab|meta|rot1|side
+Ice Bricks Slab|meta|rot2|side
+Ice Bricks Slab|meta|rot3|side
+Ice Bricks Slab|meta|rot4|side
+Vines|meta|rot1|Growing
+Vines|meta|rot2|Growing
+Vines|meta|rot3|Growing
+Vines|meta|rot4|Growing
+Cactus|Growing
+Fat Cactus|Growing
+Plum Block
+Coconut Block
+Pear Log
+Pear Wood Planks
+Pear Leaves
+Pear Door
+Pear Door|meta|rot1|open
+Pear Door|meta|rot2|closed
+Pear Door|meta|rot2|open
+Pear Door|meta|rot3|closed
+Pear Door|meta|rot3|open
+Pear Door|meta|rot4|closed
+Pear Door|meta|rot4|open
+_Pear Door Top
+_Pear Door Top|meta|rot1|open
+_Pear Door Top|meta|rot2|closed
+_Pear Door Top|meta|rot2|open
+_Pear Door Top|meta|rot3|closed
+_Pear Door Top|meta|rot3|open
+_Pear Door Top|meta|rot4|closed
+_Pear Door Top|meta|rot4|open
+Pear Trapdoor
+Pear Trapdoor|meta|rot1|open
+Pear Trapdoor|meta|rot2|closed
+Pear Trapdoor|meta|rot2|open
+Pear Trapdoor|meta|rot3|closed
+Pear Trapdoor|meta|rot3|open
+Pear Trapdoor|meta|rot4|closed
+Pear Trapdoor|meta|rot4|open
+Pear Sapling
+Pear Log|TreeBase|Pear
+Pear Leaves|TreeCanopy
+Pear Slab
+Pear Slab|meta|rot1|top
+Pear Slab|meta|rot1|side
+Pear Slab|meta|rot2|side
+Pear Slab|meta|rot3|side
+Pear Slab|meta|rot4|side
+Pear Block
+Compressed Messy Stone
+Extra Compressed Messy Stone
+Super Compressed Messy Stone
+Hyper Compressed Messy Stone
+Ultra Compressed Messy Stone
+Mega Compressed Messy Stone
+Board
+Board|meta|rot2
+Board|meta|rot3
+Board|meta|rot4
+Net
+Cobweb
+Brown Mushroom Block
+Red Mushroom Block
+Mushroom Stem
+Fireball Block
+Iceball Block
+Watermelon Seeds
+Watermelon Seeds|Growing
+Attached Watermelon Stem
+Attached Watermelon Stem|meta|rot2
+Attached Watermelon Stem|meta|rot3
+Attached Watermelon Stem|meta|rot4
+Pumpkin Seeds
+Pumpkin Seeds|Growing
+Attached Pumpkin Stem
+Attached Pumpkin Stem|meta|rot2
+Attached Pumpkin Stem|meta|rot3
+Attached Pumpkin Stem|meta|rot4
+Pumpkin
+Carved Pumpkin
+Carved Pumpkin|meta|rot2
+Carved Pumpkin|meta|rot3
+Carved Pumpkin|meta|rot4
+Jack o'Lantern
+Jack o'Lantern|meta|rot2
+Jack o'Lantern|meta|rot3
+Jack o'Lantern|meta|rot4
+Melon Seeds
+Melon Seeds|Growing
+Attached Melon Stem
+Attached Melon Stem|meta|rot2
+Attached Melon Stem|meta|rot3
+Attached Melon Stem|meta|rot4
+Melon
+Iron Watermelon
+Patterned Black Glass
+Patterned Blue Glass
+Patterned Brown Glass
+Patterned Cyan Glass
+Patterned Gray Glass
+Patterned Light Gray Glass
+Patterned Green Glass
+Patterned Light Blue Glass
+Patterned Lime Glass
+Patterned Magenta Glass
+Patterned Orange Glass
+Patterned Pink Glass
+Patterned Purple Glass
+Patterned Red Glass
+Patterned White Glass
+Patterned Yellow Glass
+Potion Table
+Potion Table|meta|rot2
+Potion Table|meta|rot3
+Potion Table|meta|rot4
+Pine Ladder
+Pine Ladder|meta|rot2
+Pine Ladder|meta|rot3
+Pine Ladder|meta|rot4
+Plum Ladder
+Plum Ladder|meta|rot2
+Plum Ladder|meta|rot3
+Plum Ladder|meta|rot4
+Cedar Ladder
+Cedar Ladder|meta|rot2
+Cedar Ladder|meta|rot3
+Cedar Ladder|meta|rot4
+Aspen Ladder
+Aspen Ladder|meta|rot2
+Aspen Ladder|meta|rot3
+Aspen Ladder|meta|rot4
+Jungle Ladder
+Jungle Ladder|meta|rot2
+Jungle Ladder|meta|rot3
+Jungle Ladder|meta|rot4
+Palm Ladder
+Palm Ladder|meta|rot2
+Palm Ladder|meta|rot3
+Palm Ladder|meta|rot4
+Pear Ladder
+Pear Ladder|meta|rot2
+Pear Ladder|meta|rot3
+Pear Ladder|meta|rot4
+Black Carpet
+Blue Carpet
+Brown Carpet
+Cyan Carpet
+Gray Carpet
+Light Gray Carpet
+Green Carpet
+Light Blue Carpet
+Lime Carpet
+Magenta Carpet
+Orange Carpet
+Pink Carpet
+Purple Carpet
+Red Carpet
+White Carpet
+Yellow Carpet
+Bookshelf
+Bookshelf|meta|rot2|books6
+Bookshelf|meta|rot3|books6
+Bookshelf|meta|rot4|books6
+Empty Bookshelf
+Empty Bookshelf|meta|rot2|books0
+Empty Bookshelf|meta|rot3|books0
+Empty Bookshelf|meta|rot4|books0
+Bookshelf|meta|rot1|books1
+Bookshelf|meta|rot2|books1
+Bookshelf|meta|rot3|books1
+Bookshelf|meta|rot4|books1
+Bookshelf|meta|rot1|books2
+Bookshelf|meta|rot2|books2
+Bookshelf|meta|rot3|books2
+Bookshelf|meta|rot4|books2
+Bookshelf|meta|rot1|books3
+Bookshelf|meta|rot2|books3
+Bookshelf|meta|rot3|books3
+Bookshelf|meta|rot4|books3
+Bookshelf|meta|rot1|books4
+Bookshelf|meta|rot2|books4
+Bookshelf|meta|rot3|books4
+Bookshelf|meta|rot4|books4
+Bookshelf|meta|rot1|books5
+Bookshelf|meta|rot2|books5
+Bookshelf|meta|rot3|books5
+Bookshelf|meta|rot4|books5
+Mailbox
+Mailbox|meta|rot2|empty
+Mailbox|meta|rot3|empty
+Mailbox|meta|rot4|empty
+Mailbox|meta|rot1|full
+Mailbox|meta|rot2|full
+Mailbox|meta|rot3|full
+Mailbox|meta|rot4|full
+Rice
+Rice_stage1
+Rice_stage2
+Rice_stage3
+Rice_stage4
+Rice_stage5
+Rice|FreshlyGrown
+Cranberries
+Cranberries_stage1
+Cranberries_stage2
+Red Mushroom
+Brown Mushroom
+Cotton Seeds
+Cotton_stage1
+Cotton_stage2
+Cotton_stage3
+Tribe Protector
+Tall Grass
+Tall Grass|Top
+Faction Protector
+Barkless Palm Log
+Barkless Pear Log
+Barkless Maple Log|TreeBase|Maple
+Barkless Plum Log|TreeBase|Plum
+Barkless Cedar Log|TreeBase|Cedar
+Barkless Aspen Log|TreeBase|Aspen
+Barkless Jungle Log|TreeBase|Jungle
+Barkless Pine Log|TreeBase|Pine
+Barkless Palm Log|TreeBase|Palm
+Barkless Pear Log|TreeBase|Pear
+Mystery Block
+Rocket
+Super Rocket
+Yellow Concrete Slab
+Yellow Concrete Slab|meta|rot1|top
+Yellow Concrete Slab|meta|rot1|side
+Yellow Concrete Slab|meta|rot2|side
+Yellow Concrete Slab|meta|rot3|side
+Yellow Concrete Slab|meta|rot4|side
+White Concrete Slab
+White Concrete Slab|meta|rot1|top
+White Concrete Slab|meta|rot1|side
+White Concrete Slab|meta|rot2|side
+White Concrete Slab|meta|rot3|side
+White Concrete Slab|meta|rot4|side
+Red Concrete Slab
+Red Concrete Slab|meta|rot1|top
+Red Concrete Slab|meta|rot1|side
+Red Concrete Slab|meta|rot2|side
+Red Concrete Slab|meta|rot3|side
+Red Concrete Slab|meta|rot4|side
+Purple Concrete Slab
+Purple Concrete Slab|meta|rot1|top
+Purple Concrete Slab|meta|rot1|side
+Purple Concrete Slab|meta|rot2|side
+Purple Concrete Slab|meta|rot3|side
+Purple Concrete Slab|meta|rot4|side
+Pink Concrete Slab
+Pink Concrete Slab|meta|rot1|top
+Pink Concrete Slab|meta|rot1|side
+Pink Concrete Slab|meta|rot2|side
+Pink Concrete Slab|meta|rot3|side
+Pink Concrete Slab|meta|rot4|side
+Orange Concrete Slab
+Orange Concrete Slab|meta|rot1|top
+Orange Concrete Slab|meta|rot1|side
+Orange Concrete Slab|meta|rot2|side
+Orange Concrete Slab|meta|rot3|side
+Orange Concrete Slab|meta|rot4|side
+Magenta Concrete Slab
+Magenta Concrete Slab|meta|rot1|top
+Magenta Concrete Slab|meta|rot1|side
+Magenta Concrete Slab|meta|rot2|side
+Magenta Concrete Slab|meta|rot3|side
+Magenta Concrete Slab|meta|rot4|side
+Lime Concrete Slab
+Lime Concrete Slab|meta|rot1|top
+Lime Concrete Slab|meta|rot1|side
+Lime Concrete Slab|meta|rot2|side
+Lime Concrete Slab|meta|rot3|side
+Lime Concrete Slab|meta|rot4|side
+Light Gray Concrete Slab
+Light Gray Concrete Slab|meta|rot1|top
+Light Gray Concrete Slab|meta|rot1|side
+Light Gray Concrete Slab|meta|rot2|side
+Light Gray Concrete Slab|meta|rot3|side
+Light Gray Concrete Slab|meta|rot4|side
+Light Blue Concrete Slab
+Light Blue Concrete Slab|meta|rot1|top
+Light Blue Concrete Slab|meta|rot1|side
+Light Blue Concrete Slab|meta|rot2|side
+Light Blue Concrete Slab|meta|rot3|side
+Light Blue Concrete Slab|meta|rot4|side
+Green Concrete Slab
+Green Concrete Slab|meta|rot1|top
+Green Concrete Slab|meta|rot1|side
+Green Concrete Slab|meta|rot2|side
+Green Concrete Slab|meta|rot3|side
+Green Concrete Slab|meta|rot4|side
+Gray Concrete Slab
+Gray Concrete Slab|meta|rot1|top
+Gray Concrete Slab|meta|rot1|side
+Gray Concrete Slab|meta|rot2|side
+Gray Concrete Slab|meta|rot3|side
+Gray Concrete Slab|meta|rot4|side
+Cyan Concrete Slab
+Cyan Concrete Slab|meta|rot1|top
+Cyan Concrete Slab|meta|rot1|side
+Cyan Concrete Slab|meta|rot2|side
+Cyan Concrete Slab|meta|rot3|side
+Cyan Concrete Slab|meta|rot4|side
+Brown Concrete Slab
+Brown Concrete Slab|meta|rot1|top
+Brown Concrete Slab|meta|rot1|side
+Brown Concrete Slab|meta|rot2|side
+Brown Concrete Slab|meta|rot3|side
+Brown Concrete Slab|meta|rot4|side
+Blue Concrete Slab
+Blue Concrete Slab|meta|rot1|top
+Blue Concrete Slab|meta|rot1|side
+Blue Concrete Slab|meta|rot2|side
+Blue Concrete Slab|meta|rot3|side
+Blue Concrete Slab|meta|rot4|side
+Black Concrete Slab
+Black Concrete Slab|meta|rot1|top
+Black Concrete Slab|meta|rot1|side
+Black Concrete Slab|meta|rot2|side
+Black Concrete Slab|meta|rot3|side
+Black Concrete Slab|meta|rot4|side
+Grenade
+Cherry Log
+Barkless Cherry Log
+Barkless Cherry Log|TreeBase|Cherry
+Cherry Wood Planks
+Cherry Leaves
+Fallen Cherry Leaves
+Fallen Cherry Leaves|meta|rot1|top
+Fallen Cherry Leaves|meta|rot1|side
+Fallen Cherry Leaves|meta|rot2|side
+Fallen Cherry Leaves|meta|rot3|side
+Fallen Cherry Leaves|meta|rot4|side
+Cherry Door
+Cherry Door|meta|rot1|open
+Cherry Door|meta|rot2|closed
+Cherry Door|meta|rot2|open
+Cherry Door|meta|rot3|closed
+Cherry Door|meta|rot3|open
+Cherry Door|meta|rot4|closed
+Cherry Door|meta|rot4|open
+_Cherry Door Top
+_Cherry Door Top|meta|rot1|open
+_Cherry Door Top|meta|rot2|closed
+_Cherry Door Top|meta|rot2|open
+_Cherry Door Top|meta|rot3|closed
+_Cherry Door Top|meta|rot3|open
+_Cherry Door Top|meta|rot4|closed
+_Cherry Door Top|meta|rot4|open
+Cherry Trapdoor
+Cherry Trapdoor|meta|rot1|open
+Cherry Trapdoor|meta|rot2|closed
+Cherry Trapdoor|meta|rot2|open
+Cherry Trapdoor|meta|rot3|closed
+Cherry Trapdoor|meta|rot3|open
+Cherry Trapdoor|meta|rot4|closed
+Cherry Trapdoor|meta|rot4|open
+Cherry Sapling
+Cherry Log|TreeBase|Cherry
+Cherry Leaves|TreeCanopy
+Cherry Slab
+Cherry Slab|meta|rot1|top
+Cherry Slab|meta|rot1|side
+Cherry Slab|meta|rot2|side
+Cherry Slab|meta|rot3|side
+Cherry Slab|meta|rot4|side
+Cherry Ladder
+Cherry Ladder|meta|rot2
+Cherry Ladder|meta|rot3
+Cherry Ladder|meta|rot4
+Cherry Block
+Bouncy Bomb Block
+Obby Rocket
+Wood Spikes
+Stone Spikes
+Iron Spikes
+Gold Spikes
+Diamond Spikes
+Kill Spikes
+Corn Block
+Corn Seeds
+Corn Seeds_stage1
+Corn Seeds|FreshlyGrown
+Corn Seeds|Growing
+Corn Plant_stage1
+Corn Plant_stage2
+Corn Plant_stage3
+Corn Plant_stage4
+Corn Plant_stage5
+Corn Plant
+Corn Plant|FreshlyGrown
+Loot Chest
+Loot Chest|meta|rot2
+Loot Chest|meta|rot3
+Loot Chest|meta|rot4
+Melting Ice
+Melting Ice|Breaking
+Yellow Paintball Explosive
+White Paintball Explosive
+Red Paintball Explosive
+Purple Paintball Explosive
+Pink Paintball Explosive
+Orange Paintball Explosive
+Magenta Paintball Explosive
+Lime Paintball Explosive
+Light Gray Paintball Explosive
+Light Blue Paintball Explosive
+Green Paintball Explosive
+Gray Paintball Explosive
+Cyan Paintball Explosive
+Brown Paintball Explosive
+Blue Paintball Explosive
+Black Paintball Explosive
+Yellow Quick Paintball Explosive
+White Quick Paintball Explosive
+Red Quick Paintball Explosive
+Purple Quick Paintball Explosive
+Pink Quick Paintball Explosive
+Orange Quick Paintball Explosive
+Magenta Quick Paintball Explosive
+Lime Quick Paintball Explosive
+Light Gray Quick Paintball Explosive
+Light Blue Quick Paintball Explosive
+Green Quick Paintball Explosive
+Gray Quick Paintball Explosive
+Cyan Quick Paintball Explosive
+Brown Quick Paintball Explosive
+Blue Quick Paintball Explosive
+Black Quick Paintball Explosive
+Yellow Seeking Paintball Explosive
+White Seeking Paintball Explosive
+Red Seeking Paintball Explosive
+Purple Seeking Paintball Explosive
+Pink Seeking Paintball Explosive
+Orange Seeking Paintball Explosive
+Magenta Seeking Paintball Explosive
+Lime Seeking Paintball Explosive
+Light Gray Seeking Paintball Explosive
+Light Blue Seeking Paintball Explosive
+Green Seeking Paintball Explosive
+Gray Seeking Paintball Explosive
+Cyan Seeking Paintball Explosive
+Brown Seeking Paintball Explosive
+Blue Seeking Paintball Explosive
+Black Seeking Paintball Explosive
+Yellow Sticky Paintball Explosive
+White Sticky Paintball Explosive
+Red Sticky Paintball Explosive
+Purple Sticky Paintball Explosive
+Pink Sticky Paintball Explosive
+Orange Sticky Paintball Explosive
+Magenta Sticky Paintball Explosive
+Lime Sticky Paintball Explosive
+Light Gray Sticky Paintball Explosive
+Light Blue Sticky Paintball Explosive
+Green Sticky Paintball Explosive
+Gray Sticky Paintball Explosive
+Cyan Sticky Paintball Explosive
+Brown Sticky Paintball Explosive
+Blue Sticky Paintball Explosive
+Black Sticky Paintball Explosive
+White Strongbed
+White Strongbed|meta|rot2
+White Strongbed|meta|rot3
+White Strongbed|meta|rot4
+_White Strongbed Head
+_White Strongbed Head|meta|rot2
+_White Strongbed Head|meta|rot3
+_White Strongbed Head|meta|rot4
+Orange Strongbed
+Orange Strongbed|meta|rot2
+Orange Strongbed|meta|rot3
+Orange Strongbed|meta|rot4
+_Orange Strongbed Head
+_Orange Strongbed Head|meta|rot2
+_Orange Strongbed Head|meta|rot3
+_Orange Strongbed Head|meta|rot4
+Magenta Strongbed
+Magenta Strongbed|meta|rot2
+Magenta Strongbed|meta|rot3
+Magenta Strongbed|meta|rot4
+_Magenta Strongbed Head
+_Magenta Strongbed Head|meta|rot2
+_Magenta Strongbed Head|meta|rot3
+_Magenta Strongbed Head|meta|rot4
+Light Blue Strongbed
+Light Blue Strongbed|meta|rot2
+Light Blue Strongbed|meta|rot3
+Light Blue Strongbed|meta|rot4
+_Light Blue Strongbed Head
+_Light Blue Strongbed Head|meta|rot2
+_Light Blue Strongbed Head|meta|rot3
+_Light Blue Strongbed Head|meta|rot4
+Yellow Strongbed
+Yellow Strongbed|meta|rot2
+Yellow Strongbed|meta|rot3
+Yellow Strongbed|meta|rot4
+_Yellow Strongbed Head
+_Yellow Strongbed Head|meta|rot2
+_Yellow Strongbed Head|meta|rot3
+_Yellow Strongbed Head|meta|rot4
+Lime Strongbed
+Lime Strongbed|meta|rot2
+Lime Strongbed|meta|rot3
+Lime Strongbed|meta|rot4
+_Lime Strongbed Head
+_Lime Strongbed Head|meta|rot2
+_Lime Strongbed Head|meta|rot3
+_Lime Strongbed Head|meta|rot4
+Pink Strongbed
+Pink Strongbed|meta|rot2
+Pink Strongbed|meta|rot3
+Pink Strongbed|meta|rot4
+_Pink Strongbed Head
+_Pink Strongbed Head|meta|rot2
+_Pink Strongbed Head|meta|rot3
+_Pink Strongbed Head|meta|rot4
+Gray Strongbed
+Gray Strongbed|meta|rot2
+Gray Strongbed|meta|rot3
+Gray Strongbed|meta|rot4
+_Gray Strongbed Head
+_Gray Strongbed Head|meta|rot2
+_Gray Strongbed Head|meta|rot3
+_Gray Strongbed Head|meta|rot4
+Light Gray Strongbed
+Light Gray Strongbed|meta|rot2
+Light Gray Strongbed|meta|rot3
+Light Gray Strongbed|meta|rot4
+_Light Gray Strongbed Head
+_Light Gray Strongbed Head|meta|rot2
+_Light Gray Strongbed Head|meta|rot3
+_Light Gray Strongbed Head|meta|rot4
+Cyan Strongbed
+Cyan Strongbed|meta|rot2
+Cyan Strongbed|meta|rot3
+Cyan Strongbed|meta|rot4
+_Cyan Strongbed Head
+_Cyan Strongbed Head|meta|rot2
+_Cyan Strongbed Head|meta|rot3
+_Cyan Strongbed Head|meta|rot4
+Purple Strongbed
+Purple Strongbed|meta|rot2
+Purple Strongbed|meta|rot3
+Purple Strongbed|meta|rot4
+_Purple Strongbed Head
+_Purple Strongbed Head|meta|rot2
+_Purple Strongbed Head|meta|rot3
+_Purple Strongbed Head|meta|rot4
+Blue Strongbed
+Blue Strongbed|meta|rot2
+Blue Strongbed|meta|rot3
+Blue Strongbed|meta|rot4
+_Blue Strongbed Head
+_Blue Strongbed Head|meta|rot2
+_Blue Strongbed Head|meta|rot3
+_Blue Strongbed Head|meta|rot4
+Brown Strongbed
+Brown Strongbed|meta|rot2
+Brown Strongbed|meta|rot3
+Brown Strongbed|meta|rot4
+_Brown Strongbed Head
+_Brown Strongbed Head|meta|rot2
+_Brown Strongbed Head|meta|rot3
+_Brown Strongbed Head|meta|rot4
+Green Strongbed
+Green Strongbed|meta|rot2
+Green Strongbed|meta|rot3
+Green Strongbed|meta|rot4
+_Green Strongbed Head
+_Green Strongbed Head|meta|rot2
+_Green Strongbed Head|meta|rot3
+_Green Strongbed Head|meta|rot4
+Red Strongbed
+Red Strongbed|meta|rot2
+Red Strongbed|meta|rot3
+Red Strongbed|meta|rot4
+_Red Strongbed Head
+_Red Strongbed Head|meta|rot2
+_Red Strongbed Head|meta|rot3
+_Red Strongbed Head|meta|rot4
+Black Strongbed
+Black Strongbed|meta|rot2
+Black Strongbed|meta|rot3
+Black Strongbed|meta|rot4
+_Black Strongbed Head
+_Black Strongbed Head|meta|rot2
+_Black Strongbed Head|meta|rot3
+_Black Strongbed Head|meta|rot4
+Timed Spike Bomb Block
+Timed Spike Bomb Block|Flashing
+Lava
+Fat Brown Mushroom
+Fat Red Mushroom
+Chili Pepper Block
+Chili Pepper Seeds
+Chili Pepper Plant_stage1
+Chili Pepper Plant_stage2
+Chili Pepper Plant_stage3
+Chili Pepper Plant_stage4
+Chili Pepper Plant
+Chili Pepper Plant|FreshlyGrown
+Chili Pepper Seeds|Lava
+Chili Pepper Plant_stage1|Lava
+Chili Pepper Plant_stage2|Lava
+Chili Pepper Plant_stage3|Lava
+Chili Pepper Plant_stage4|Lava
+Chili Pepper Plant_stage5
+Chili Pepper Plant_stage5|Lava
+Chili Pepper Plant|Lava|FreshlyGrown
+Code Block
+Toxin Ball Block
+Spawn Block (Yellow)
+Spawn Block (White)
+Spawn Block (Red)
+Spawn Block (Purple)
+Spawn Block (Pink)
+Spawn Block (Orange)
+Spawn Block (Magenta)
+Spawn Block (Lime)
+Spawn Block (Light Gray)
+Spawn Block (Light Blue)
+Spawn Block (Green)
+Spawn Block (Gray)
+Spawn Block (Cyan)
+Spawn Block (Brown)
+Spawn Block (Blue)
+Spawn Block (Black)
+Spawn Block (Yellow)|meta|rot2
+Spawn Block (White)|meta|rot2
+Spawn Block (Red)|meta|rot2
+Spawn Block (Purple)|meta|rot2
+Spawn Block (Pink)|meta|rot2
+Spawn Block (Orange)|meta|rot2
+Spawn Block (Magenta)|meta|rot2
+Spawn Block (Lime)|meta|rot2
+Spawn Block (Light Gray)|meta|rot2
+Spawn Block (Light Blue)|meta|rot2
+Spawn Block (Green)|meta|rot2
+Spawn Block (Gray)|meta|rot2
+Spawn Block (Cyan)|meta|rot2
+Spawn Block (Brown)|meta|rot2
+Spawn Block (Blue)|meta|rot2
+Spawn Block (Black)|meta|rot2
+Spawn Block (Yellow)|meta|rot3
+Spawn Block (White)|meta|rot3
+Spawn Block (Red)|meta|rot3
+Spawn Block (Purple)|meta|rot3
+Spawn Block (Pink)|meta|rot3
+Spawn Block (Orange)|meta|rot3
+Spawn Block (Magenta)|meta|rot3
+Spawn Block (Lime)|meta|rot3
+Spawn Block (Light Gray)|meta|rot3
+Spawn Block (Light Blue)|meta|rot3
+Spawn Block (Green)|meta|rot3
+Spawn Block (Gray)|meta|rot3
+Spawn Block (Cyan)|meta|rot3
+Spawn Block (Brown)|meta|rot3
+Spawn Block (Blue)|meta|rot3
+Spawn Block (Black)|meta|rot3
+Spawn Block (Yellow)|meta|rot4
+Spawn Block (White)|meta|rot4
+Spawn Block (Red)|meta|rot4
+Spawn Block (Purple)|meta|rot4
+Spawn Block (Pink)|meta|rot4
+Spawn Block (Orange)|meta|rot4
+Spawn Block (Magenta)|meta|rot4
+Spawn Block (Lime)|meta|rot4
+Spawn Block (Light Gray)|meta|rot4
+Spawn Block (Light Blue)|meta|rot4
+Spawn Block (Green)|meta|rot4
+Spawn Block (Gray)|meta|rot4
+Spawn Block (Cyan)|meta|rot4
+Spawn Block (Brown)|meta|rot4
+Spawn Block (Blue)|meta|rot4
+Spawn Block (Black)|meta|rot4
+Checkpoint Block
+Checkpoint Block|meta|rot2
+Checkpoint Block|meta|rot3
+Checkpoint Block|meta|rot4
+Custom Lobby Block
+Custom Lobby Block|meta|rot2
+Custom Lobby Block|meta|rot3
+Custom Lobby Block|meta|rot4
+Generator Spawn Block (Red)
+Generator Spawn Block (Blue)
+Generator Spawn Block (Lime)
+Generator Spawn Block (Yellow)
+Generator Spawn Block (Cyan)
+Generator Spawn Block (White)
+Generator Spawn Block (Pink)
+Generator Spawn Block (Gray)
+Trader Shop Spawn Block
+Trader Shop Spawn Block|meta|rot2
+Trader Shop Spawn Block|meta|rot3
+Trader Shop Spawn Block|meta|rot4
+Wizard Shop Spawn Block
+Wizard Shop Spawn Block|meta|rot2
+Wizard Shop Spawn Block|meta|rot3
+Wizard Shop Spawn Block|meta|rot4
+Generator Spawn Block (Diamond)
+Generator Spawn Block (Moonstone)
+Generator Spawn Block (Ore)
+Goal Block (Red)
+Goal Block (Blue)
+Finish Block
+Drop Location Block
+Obby Death Block
+Obby Absorb Block
+Obby Absorb Death Block
+Bone Block
+Pig Spawner Block
+Cow Spawner Block
+Sheep Spawner Block
+Cave Golem Spawner Block
+Draugr Zombie Spawner Block
+Draugr Skeleton Spawner Block
+Empty Spawner Block
+Frost Golem Spawner Block
+Frost Zombie Spawner Block
+Frost Skeleton Spawner Block
+Snowy Messy Stone
+Snowy Stone Slab
+Snowy Stone Slab|meta|rot1|top
+Snowy Stone Slab|meta|rot1|side
+Snowy Stone Slab|meta|rot2|side
+Snowy Stone Slab|meta|rot3|side
+Snowy Stone Slab|meta|rot4|side
+Draugr Knight Spawner Block
+Packed Snow
+Carved Messy Stone
+Spectral Grass
+Spectral Log
+Barkless Spectral Log
+Barkless Spectral Log|TreeBase|Spectral
+Spectral Wood Planks
+Spectral Leaves
+Spectral Door
+Spectral Door|meta|rot1|open
+Spectral Door|meta|rot2|closed
+Spectral Door|meta|rot2|open
+Spectral Door|meta|rot3|closed
+Spectral Door|meta|rot3|open
+Spectral Door|meta|rot4|closed
+Spectral Door|meta|rot4|open
+_Spectral Door Top
+_Spectral Door Top|meta|rot1|open
+_Spectral Door Top|meta|rot2|closed
+_Spectral Door Top|meta|rot2|open
+_Spectral Door Top|meta|rot3|closed
+_Spectral Door Top|meta|rot3|open
+_Spectral Door Top|meta|rot4|closed
+_Spectral Door Top|meta|rot4|open
+Spectral Trapdoor
+Spectral Trapdoor|meta|rot1|open
+Spectral Trapdoor|meta|rot2|closed
+Spectral Trapdoor|meta|rot2|open
+Spectral Trapdoor|meta|rot3|closed
+Spectral Trapdoor|meta|rot3|open
+Spectral Trapdoor|meta|rot4|closed
+Spectral Trapdoor|meta|rot4|open
+Spectral Sapling
+Spectral Log|TreeBase|Spectral
+Spectral Leaves|TreeCanopy
+Spectral Slab
+Spectral Slab|meta|rot1|top
+Spectral Slab|meta|rot1|side
+Spectral Slab|meta|rot2|side
+Spectral Slab|meta|rot3|side
+Spectral Slab|meta|rot4|side
+Spectral Ladder
+Spectral Ladder|meta|rot2
+Spectral Ladder|meta|rot3
+Spectral Ladder|meta|rot4
+Wood Enchanting Table
+Wood Enchanting Table|meta|rot2
+Wood Enchanting Table|meta|rot3
+Wood Enchanting Table|meta|rot4
+Stone Enchanting Table
+Stone Enchanting Table|meta|rot2
+Stone Enchanting Table|meta|rot3
+Stone Enchanting Table|meta|rot4
+Iron Enchanting Table
+Iron Enchanting Table|meta|rot2
+Iron Enchanting Table|meta|rot3
+Iron Enchanting Table|meta|rot4
+Gold Enchanting Table
+Gold Enchanting Table|meta|rot2
+Gold Enchanting Table|meta|rot3
+Gold Enchanting Table|meta|rot4
+Diamond Enchanting Table
+Diamond Enchanting Table|meta|rot2
+Diamond Enchanting Table|meta|rot3
+Diamond Enchanting Table|meta|rot4
+Pine Grass Block
+Pine Grass Slab
+Pine Grass Slab|meta|rot1|top
+Pine Grass Slab|meta|rot1|side
+Pine Grass Slab|meta|rot2|side
+Pine Grass Slab|meta|rot3|side
+Pine Grass Slab|meta|rot4|side
+Pine Grass
+Pine Fern
+Fallen Pine Cone
+Pine Cone Block
+Wolf Spawner Block
+Bear Spawner Block
+Deer Spawner Block
+Stag Spawner Block
+Bone Antlers
+Bone Antlers|meta|rot2
+Bone Antlers|meta|rot3
+Bone Antlers|meta|rot4
+Gold Antlers
+Gold Antlers|meta|rot2
+Gold Antlers|meta|rot3
+Gold Antlers|meta|rot4
+Gold Watermelon Stag Spawner Block
+Salvaging Table
+Salvaging Table|meta|rot2
+Salvaging Table|meta|rot3
+Salvaging Table|meta|rot4
+Chalk
+Yellow Chalk
+White Chalk
+Red Chalk
+Purple Chalk
+Pink Chalk
+Orange Chalk
+Magenta Chalk
+Lime Chalk
+Light Gray Chalk
+Light Blue Chalk
+Green Chalk
+Gray Chalk
+Cyan Chalk
+Brown Chalk
+Blue Chalk
+Black Chalk
+Yellow Chalk Bricks
+White Chalk Bricks
+Red Chalk Bricks
+Purple Chalk Bricks
+Pink Chalk Bricks
+Orange Chalk Bricks
+Magenta Chalk Bricks
+Lime Chalk Bricks
+Light Gray Chalk Bricks
+Light Blue Chalk Bricks
+Green Chalk Bricks
+Gray Chalk Bricks
+Cyan Chalk Bricks
+Brown Chalk Bricks
+Blue Chalk Bricks
+Black Chalk Bricks
+Yellow Chalk Slab
+Yellow Chalk Slab|meta|rot1|top
+Yellow Chalk Slab|meta|rot1|side
+Yellow Chalk Slab|meta|rot2|side
+Yellow Chalk Slab|meta|rot3|side
+Yellow Chalk Slab|meta|rot4|side
+White Chalk Slab
+White Chalk Slab|meta|rot1|top
+White Chalk Slab|meta|rot1|side
+White Chalk Slab|meta|rot2|side
+White Chalk Slab|meta|rot3|side
+White Chalk Slab|meta|rot4|side
+Red Chalk Slab
+Red Chalk Slab|meta|rot1|top
+Red Chalk Slab|meta|rot1|side
+Red Chalk Slab|meta|rot2|side
+Red Chalk Slab|meta|rot3|side
+Red Chalk Slab|meta|rot4|side
+Purple Chalk Slab
+Purple Chalk Slab|meta|rot1|top
+Purple Chalk Slab|meta|rot1|side
+Purple Chalk Slab|meta|rot2|side
+Purple Chalk Slab|meta|rot3|side
+Purple Chalk Slab|meta|rot4|side
+Pink Chalk Slab
+Pink Chalk Slab|meta|rot1|top
+Pink Chalk Slab|meta|rot1|side
+Pink Chalk Slab|meta|rot2|side
+Pink Chalk Slab|meta|rot3|side
+Pink Chalk Slab|meta|rot4|side
+Orange Chalk Slab
+Orange Chalk Slab|meta|rot1|top
+Orange Chalk Slab|meta|rot1|side
+Orange Chalk Slab|meta|rot2|side
+Orange Chalk Slab|meta|rot3|side
+Orange Chalk Slab|meta|rot4|side
+Magenta Chalk Slab
+Magenta Chalk Slab|meta|rot1|top
+Magenta Chalk Slab|meta|rot1|side
+Magenta Chalk Slab|meta|rot2|side
+Magenta Chalk Slab|meta|rot3|side
+Magenta Chalk Slab|meta|rot4|side
+Lime Chalk Slab
+Lime Chalk Slab|meta|rot1|top
+Lime Chalk Slab|meta|rot1|side
+Lime Chalk Slab|meta|rot2|side
+Lime Chalk Slab|meta|rot3|side
+Lime Chalk Slab|meta|rot4|side
+Light Gray Chalk Slab
+Light Gray Chalk Slab|meta|rot1|top
+Light Gray Chalk Slab|meta|rot1|side
+Light Gray Chalk Slab|meta|rot2|side
+Light Gray Chalk Slab|meta|rot3|side
+Light Gray Chalk Slab|meta|rot4|side
+Light Blue Chalk Slab
+Light Blue Chalk Slab|meta|rot1|top
+Light Blue Chalk Slab|meta|rot1|side
+Light Blue Chalk Slab|meta|rot2|side
+Light Blue Chalk Slab|meta|rot3|side
+Light Blue Chalk Slab|meta|rot4|side
+Green Chalk Slab
+Green Chalk Slab|meta|rot1|top
+Green Chalk Slab|meta|rot1|side
+Green Chalk Slab|meta|rot2|side
+Green Chalk Slab|meta|rot3|side
+Green Chalk Slab|meta|rot4|side
+Gray Chalk Slab
+Gray Chalk Slab|meta|rot1|top
+Gray Chalk Slab|meta|rot1|side
+Gray Chalk Slab|meta|rot2|side
+Gray Chalk Slab|meta|rot3|side
+Gray Chalk Slab|meta|rot4|side
+Cyan Chalk Slab
+Cyan Chalk Slab|meta|rot1|top
+Cyan Chalk Slab|meta|rot1|side
+Cyan Chalk Slab|meta|rot2|side
+Cyan Chalk Slab|meta|rot3|side
+Cyan Chalk Slab|meta|rot4|side
+Brown Chalk Slab
+Brown Chalk Slab|meta|rot1|top
+Brown Chalk Slab|meta|rot1|side
+Brown Chalk Slab|meta|rot2|side
+Brown Chalk Slab|meta|rot3|side
+Brown Chalk Slab|meta|rot4|side
+Blue Chalk Slab
+Blue Chalk Slab|meta|rot1|top
+Blue Chalk Slab|meta|rot1|side
+Blue Chalk Slab|meta|rot2|side
+Blue Chalk Slab|meta|rot3|side
+Blue Chalk Slab|meta|rot4|side
+Black Chalk Slab
+Black Chalk Slab|meta|rot1|top
+Black Chalk Slab|meta|rot1|side
+Black Chalk Slab|meta|rot2|side
+Black Chalk Slab|meta|rot3|side
+Black Chalk Slab|meta|rot4|side
+Yellow Chalk Bricks Slab
+Yellow Chalk Bricks Slab|meta|rot1|top
+Yellow Chalk Bricks Slab|meta|rot1|side
+Yellow Chalk Bricks Slab|meta|rot2|side
+Yellow Chalk Bricks Slab|meta|rot3|side
+Yellow Chalk Bricks Slab|meta|rot4|side
+White Chalk Bricks Slab
+White Chalk Bricks Slab|meta|rot1|top
+White Chalk Bricks Slab|meta|rot1|side
+White Chalk Bricks Slab|meta|rot2|side
+White Chalk Bricks Slab|meta|rot3|side
+White Chalk Bricks Slab|meta|rot4|side
+Red Chalk Bricks Slab
+Red Chalk Bricks Slab|meta|rot1|top
+Red Chalk Bricks Slab|meta|rot1|side
+Red Chalk Bricks Slab|meta|rot2|side
+Red Chalk Bricks Slab|meta|rot3|side
+Red Chalk Bricks Slab|meta|rot4|side
+Purple Chalk Bricks Slab
+Purple Chalk Bricks Slab|meta|rot1|top
+Purple Chalk Bricks Slab|meta|rot1|side
+Purple Chalk Bricks Slab|meta|rot2|side
+Purple Chalk Bricks Slab|meta|rot3|side
+Purple Chalk Bricks Slab|meta|rot4|side
+Pink Chalk Bricks Slab
+Pink Chalk Bricks Slab|meta|rot1|top
+Pink Chalk Bricks Slab|meta|rot1|side
+Pink Chalk Bricks Slab|meta|rot2|side
+Pink Chalk Bricks Slab|meta|rot3|side
+Pink Chalk Bricks Slab|meta|rot4|side
+Orange Chalk Bricks Slab
+Orange Chalk Bricks Slab|meta|rot1|top
+Orange Chalk Bricks Slab|meta|rot1|side
+Orange Chalk Bricks Slab|meta|rot2|side
+Orange Chalk Bricks Slab|meta|rot3|side
+Orange Chalk Bricks Slab|meta|rot4|side
+Magenta Chalk Bricks Slab
+Magenta Chalk Bricks Slab|meta|rot1|top
+Magenta Chalk Bricks Slab|meta|rot1|side
+Magenta Chalk Bricks Slab|meta|rot2|side
+Magenta Chalk Bricks Slab|meta|rot3|side
+Magenta Chalk Bricks Slab|meta|rot4|side
+Lime Chalk Bricks Slab
+Lime Chalk Bricks Slab|meta|rot1|top
+Lime Chalk Bricks Slab|meta|rot1|side
+Lime Chalk Bricks Slab|meta|rot2|side
+Lime Chalk Bricks Slab|meta|rot3|side
+Lime Chalk Bricks Slab|meta|rot4|side
+Light Gray Chalk Bricks Slab
+Light Gray Chalk Bricks Slab|meta|rot1|top
+Light Gray Chalk Bricks Slab|meta|rot1|side
+Light Gray Chalk Bricks Slab|meta|rot2|side
+Light Gray Chalk Bricks Slab|meta|rot3|side
+Light Gray Chalk Bricks Slab|meta|rot4|side
+Light Blue Chalk Bricks Slab
+Light Blue Chalk Bricks Slab|meta|rot1|top
+Light Blue Chalk Bricks Slab|meta|rot1|side
+Light Blue Chalk Bricks Slab|meta|rot2|side
+Light Blue Chalk Bricks Slab|meta|rot3|side
+Light Blue Chalk Bricks Slab|meta|rot4|side
+Green Chalk Bricks Slab
+Green Chalk Bricks Slab|meta|rot1|top
+Green Chalk Bricks Slab|meta|rot1|side
+Green Chalk Bricks Slab|meta|rot2|side
+Green Chalk Bricks Slab|meta|rot3|side
+Green Chalk Bricks Slab|meta|rot4|side
+Gray Chalk Bricks Slab
+Gray Chalk Bricks Slab|meta|rot1|top
+Gray Chalk Bricks Slab|meta|rot1|side
+Gray Chalk Bricks Slab|meta|rot2|side
+Gray Chalk Bricks Slab|meta|rot3|side
+Gray Chalk Bricks Slab|meta|rot4|side
+Cyan Chalk Bricks Slab
+Cyan Chalk Bricks Slab|meta|rot1|top
+Cyan Chalk Bricks Slab|meta|rot1|side
+Cyan Chalk Bricks Slab|meta|rot2|side
+Cyan Chalk Bricks Slab|meta|rot3|side
+Cyan Chalk Bricks Slab|meta|rot4|side
+Brown Chalk Bricks Slab
+Brown Chalk Bricks Slab|meta|rot1|top
+Brown Chalk Bricks Slab|meta|rot1|side
+Brown Chalk Bricks Slab|meta|rot2|side
+Brown Chalk Bricks Slab|meta|rot3|side
+Brown Chalk Bricks Slab|meta|rot4|side
+Blue Chalk Bricks Slab
+Blue Chalk Bricks Slab|meta|rot1|top
+Blue Chalk Bricks Slab|meta|rot1|side
+Blue Chalk Bricks Slab|meta|rot2|side
+Blue Chalk Bricks Slab|meta|rot3|side
+Blue Chalk Bricks Slab|meta|rot4|side
+Black Chalk Bricks Slab
+Black Chalk Bricks Slab|meta|rot1|top
+Black Chalk Bricks Slab|meta|rot1|side
+Black Chalk Bricks Slab|meta|rot2|side
+Black Chalk Bricks Slab|meta|rot3|side
+Black Chalk Bricks Slab|meta|rot4|side
+Leaf Bed
+Leaf Bed|meta|rot2
+Leaf Bed|meta|rot3
+Leaf Bed|meta|rot4
+_Leaf Bed Head
+_Leaf Bed Head|meta|rot2
+_Leaf Bed Head|meta|rot3
+_Leaf Bed Head|meta|rot4
+Jungle Grass Block
+Jungle Grass Slab
+Jungle Grass Slab|meta|rot1|top
+Jungle Grass Slab|meta|rot1|side
+Jungle Grass Slab|meta|rot2|side
+Jungle Grass Slab|meta|rot3|side
+Jungle Grass Slab|meta|rot4|side
+Jungle Tall Grass
+Jungle Tall Grass|Top
+Catnip
+Mango Log
+Barkless Mango Log
+Barkless Mango Log|TreeBase|Mango
+Mango Wood Planks
+Mango Leaves
+Mango Door
+Mango Door|meta|rot1|open
+Mango Door|meta|rot2|closed
+Mango Door|meta|rot2|open
+Mango Door|meta|rot3|closed
+Mango Door|meta|rot3|open
+Mango Door|meta|rot4|closed
+Mango Door|meta|rot4|open
+_Mango Door Top
+_Mango Door Top|meta|rot1|open
+_Mango Door Top|meta|rot2|closed
+_Mango Door Top|meta|rot2|open
+_Mango Door Top|meta|rot3|closed
+_Mango Door Top|meta|rot3|open
+_Mango Door Top|meta|rot4|closed
+_Mango Door Top|meta|rot4|open
+Mango Trapdoor
+Mango Trapdoor|meta|rot1|open
+Mango Trapdoor|meta|rot2|closed
+Mango Trapdoor|meta|rot2|open
+Mango Trapdoor|meta|rot3|closed
+Mango Trapdoor|meta|rot3|open
+Mango Trapdoor|meta|rot4|closed
+Mango Trapdoor|meta|rot4|open
+Mango Sapling
+Mango Log|TreeBase|Mango
+Mango Leaves|TreeCanopy
+Mango Slab
+Mango Slab|meta|rot1|top
+Mango Slab|meta|rot1|side
+Mango Slab|meta|rot2|side
+Mango Slab|meta|rot3|side
+Mango Slab|meta|rot4|side
+Mango Ladder
+Mango Ladder|meta|rot2
+Mango Ladder|meta|rot3
+Mango Ladder|meta|rot4
+Mango Block
+Banana Block
+Banana Seeds
+Banana Seeds|Growing
+Attached Banana Stem
+Attached Banana Stem|meta|rot2
+Attached Banana Stem|meta|rot3
+Attached Banana Stem|meta|rot4
+Dangling Rope
+Dangling Vine
+Gorilla Spawner Block
+Wildcat Spawner Block
+Fruity Maple Leaves
+Pine Cone Leaves
+Fruity Plum Leaves
+Fruity Palm Leaves
+Fruity Pear Leaves
+Fruity Cherry Leaves
+Fruity Mango Leaves
+Draugr Huntress Spawner Block
+Magma Golem Spawner Block
+Black Portal
+Blue Portal
+Brown Portal
+Cyan Portal
+Gray Portal
+Green Portal
+Grey Portal
+Light Blue Portal
+Light Gray Portal
+Lime Portal
+Magenta Portal
+Orange Portal
+Pink Portal
+Purple Portal
+Red Portal
+White Portal
+Yellow Portal
+Leather Block
+Horse Spawner Block
+Tomato Plant
+Tomato Plant_stage1
+Tomato Plant|FreshlyGrown
+Tomato Plant|Top|FreshlyGrown
+Carrot Plant
+Carrot Plant_stage1
+Carrot Plant|FreshlyGrown
+Potato Plant
+Potato Plant_stage1
+Potato Plant|FreshlyGrown
+Strawberry Bush
+Strawberry Bush_stage1
+Strawberry Bush_stage2
+Sugar Cane Plant
+Sugar Cane Plant_stage1
+Sugar Cane Plant|FreshlyGrown
+Sugar Cane Plant|Top|FreshlyGrown
+Lettuce Plant
+Lettuce Plant_stage1
+Lettuce Plant|FreshlyGrown
+Coffee Plant
+Coffee Plant_stage1
+Coffee Plant|FreshlyGrown
+Cauliflower Plant
+Cauliflower Plant_stage1
+Cauliflower Plant|FreshlyGrown
+Parsnip Plant
+Parsnip Plant_stage1
+Parsnip Plant|FreshlyGrown
+Blueberry Bush
+Blueberry Bush_stage1
+Blueberry Bush_stage2
+Red Cabbage Plant
+Red Cabbage Plant_stage1
+Red Cabbage Plant|FreshlyGrown
+Beetroot Plant
+Beetroot Plant_stage1
+Beetroot Plant|FreshlyGrown
+Autumn Aspen Leaves
+Autumn Aspen Leaves|TreeCanopy
+Autumn Fern
+Iron Chest
+Iron Chest|meta|rot2
+Iron Chest|meta|rot3
+Iron Chest|meta|rot4
+Crate
+Carrot Block
+Carrot Seeds
+Potato Block
+Potato Seeds
+Beetroot Block
+Beetroot Seeds
+White Banner
+White Banner|meta|rot2|bot
+White Banner|meta|rot3|bot
+White Banner|meta|rot4|bot
+_White Banner Flag
+_White Banner Flag|meta|rot2|top
+_White Banner Flag|meta|rot3|top
+_White Banner Flag|meta|rot4|top
+_White Banner Flag|meta|rot1|side
+_White Banner Flag|meta|rot2|side
+_White Banner Flag|meta|rot3|side
+_White Banner Flag|meta|rot4|side
+_White Banner Flag|meta|rot1|bot
+_White Banner Flag|meta|rot2|bot
+_White Banner Flag|meta|rot3|bot
+_White Banner Flag|meta|rot4|bot
+White Banner|meta|rot1|top
+White Banner|meta|rot2|top
+White Banner|meta|rot3|top
+White Banner|meta|rot4|top
+White Banner|meta|rot1|side
+White Banner|meta|rot2|side
+White Banner|meta|rot3|side
+White Banner|meta|rot4|side
+Orange Banner
+Orange Banner|meta|rot2|bot
+Orange Banner|meta|rot3|bot
+Orange Banner|meta|rot4|bot
+_Orange Banner Flag
+_Orange Banner Flag|meta|rot2|top
+_Orange Banner Flag|meta|rot3|top
+_Orange Banner Flag|meta|rot4|top
+_Orange Banner Flag|meta|rot1|side
+_Orange Banner Flag|meta|rot2|side
+_Orange Banner Flag|meta|rot3|side
+_Orange Banner Flag|meta|rot4|side
+_Orange Banner Flag|meta|rot1|bot
+_Orange Banner Flag|meta|rot2|bot
+_Orange Banner Flag|meta|rot3|bot
+_Orange Banner Flag|meta|rot4|bot
+Orange Banner|meta|rot1|top
+Orange Banner|meta|rot2|top
+Orange Banner|meta|rot3|top
+Orange Banner|meta|rot4|top
+Orange Banner|meta|rot1|side
+Orange Banner|meta|rot2|side
+Orange Banner|meta|rot3|side
+Orange Banner|meta|rot4|side
+Magenta Banner
+Magenta Banner|meta|rot2|bot
+Magenta Banner|meta|rot3|bot
+Magenta Banner|meta|rot4|bot
+_Magenta Banner Flag
+_Magenta Banner Flag|meta|rot2|top
+_Magenta Banner Flag|meta|rot3|top
+_Magenta Banner Flag|meta|rot4|top
+_Magenta Banner Flag|meta|rot1|side
+_Magenta Banner Flag|meta|rot2|side
+_Magenta Banner Flag|meta|rot3|side
+_Magenta Banner Flag|meta|rot4|side
+_Magenta Banner Flag|meta|rot1|bot
+_Magenta Banner Flag|meta|rot2|bot
+_Magenta Banner Flag|meta|rot3|bot
+_Magenta Banner Flag|meta|rot4|bot
+Magenta Banner|meta|rot1|top
+Magenta Banner|meta|rot2|top
+Magenta Banner|meta|rot3|top
+Magenta Banner|meta|rot4|top
+Magenta Banner|meta|rot1|side
+Magenta Banner|meta|rot2|side
+Magenta Banner|meta|rot3|side
+Magenta Banner|meta|rot4|side
+Light Blue Banner
+Light Blue Banner|meta|rot2|bot
+Light Blue Banner|meta|rot3|bot
+Light Blue Banner|meta|rot4|bot
+_Light Blue Banner Flag
+_Light Blue Banner Flag|meta|rot2|top
+_Light Blue Banner Flag|meta|rot3|top
+_Light Blue Banner Flag|meta|rot4|top
+_Light Blue Banner Flag|meta|rot1|side
+_Light Blue Banner Flag|meta|rot2|side
+_Light Blue Banner Flag|meta|rot3|side
+_Light Blue Banner Flag|meta|rot4|side
+_Light Blue Banner Flag|meta|rot1|bot
+_Light Blue Banner Flag|meta|rot2|bot
+_Light Blue Banner Flag|meta|rot3|bot
+_Light Blue Banner Flag|meta|rot4|bot
+Light Blue Banner|meta|rot1|top
+Light Blue Banner|meta|rot2|top
+Light Blue Banner|meta|rot3|top
+Light Blue Banner|meta|rot4|top
+Light Blue Banner|meta|rot1|side
+Light Blue Banner|meta|rot2|side
+Light Blue Banner|meta|rot3|side
+Light Blue Banner|meta|rot4|side
+Yellow Banner
+Yellow Banner|meta|rot2|bot
+Yellow Banner|meta|rot3|bot
+Yellow Banner|meta|rot4|bot
+_Yellow Banner Flag
+_Yellow Banner Flag|meta|rot2|top
+_Yellow Banner Flag|meta|rot3|top
+_Yellow Banner Flag|meta|rot4|top
+_Yellow Banner Flag|meta|rot1|side
+_Yellow Banner Flag|meta|rot2|side
+_Yellow Banner Flag|meta|rot3|side
+_Yellow Banner Flag|meta|rot4|side
+_Yellow Banner Flag|meta|rot1|bot
+_Yellow Banner Flag|meta|rot2|bot
+_Yellow Banner Flag|meta|rot3|bot
+_Yellow Banner Flag|meta|rot4|bot
+Yellow Banner|meta|rot1|top
+Yellow Banner|meta|rot2|top
+Yellow Banner|meta|rot3|top
+Yellow Banner|meta|rot4|top
+Yellow Banner|meta|rot1|side
+Yellow Banner|meta|rot2|side
+Yellow Banner|meta|rot3|side
+Yellow Banner|meta|rot4|side
+Lime Banner
+Lime Banner|meta|rot2|bot
+Lime Banner|meta|rot3|bot
+Lime Banner|meta|rot4|bot
+_Lime Banner Flag
+_Lime Banner Flag|meta|rot2|top
+_Lime Banner Flag|meta|rot3|top
+_Lime Banner Flag|meta|rot4|top
+_Lime Banner Flag|meta|rot1|side
+_Lime Banner Flag|meta|rot2|side
+_Lime Banner Flag|meta|rot3|side
+_Lime Banner Flag|meta|rot4|side
+_Lime Banner Flag|meta|rot1|bot
+_Lime Banner Flag|meta|rot2|bot
+_Lime Banner Flag|meta|rot3|bot
+_Lime Banner Flag|meta|rot4|bot
+Lime Banner|meta|rot1|top
+Lime Banner|meta|rot2|top
+Lime Banner|meta|rot3|top
+Lime Banner|meta|rot4|top
+Lime Banner|meta|rot1|side
+Lime Banner|meta|rot2|side
+Lime Banner|meta|rot3|side
+Lime Banner|meta|rot4|side
+Pink Banner
+Pink Banner|meta|rot2|bot
+Pink Banner|meta|rot3|bot
+Pink Banner|meta|rot4|bot
+_Pink Banner Flag
+_Pink Banner Flag|meta|rot2|top
+_Pink Banner Flag|meta|rot3|top
+_Pink Banner Flag|meta|rot4|top
+_Pink Banner Flag|meta|rot1|side
+_Pink Banner Flag|meta|rot2|side
+_Pink Banner Flag|meta|rot3|side
+_Pink Banner Flag|meta|rot4|side
+_Pink Banner Flag|meta|rot1|bot
+_Pink Banner Flag|meta|rot2|bot
+_Pink Banner Flag|meta|rot3|bot
+_Pink Banner Flag|meta|rot4|bot
+Pink Banner|meta|rot1|top
+Pink Banner|meta|rot2|top
+Pink Banner|meta|rot3|top
+Pink Banner|meta|rot4|top
+Pink Banner|meta|rot1|side
+Pink Banner|meta|rot2|side
+Pink Banner|meta|rot3|side
+Pink Banner|meta|rot4|side
+Gray Banner
+Gray Banner|meta|rot2|bot
+Gray Banner|meta|rot3|bot
+Gray Banner|meta|rot4|bot
+_Gray Banner Flag
+_Gray Banner Flag|meta|rot2|top
+_Gray Banner Flag|meta|rot3|top
+_Gray Banner Flag|meta|rot4|top
+_Gray Banner Flag|meta|rot1|side
+_Gray Banner Flag|meta|rot2|side
+_Gray Banner Flag|meta|rot3|side
+_Gray Banner Flag|meta|rot4|side
+_Gray Banner Flag|meta|rot1|bot
+_Gray Banner Flag|meta|rot2|bot
+_Gray Banner Flag|meta|rot3|bot
+_Gray Banner Flag|meta|rot4|bot
+Gray Banner|meta|rot1|top
+Gray Banner|meta|rot2|top
+Gray Banner|meta|rot3|top
+Gray Banner|meta|rot4|top
+Gray Banner|meta|rot1|side
+Gray Banner|meta|rot2|side
+Gray Banner|meta|rot3|side
+Gray Banner|meta|rot4|side
+Light Gray Banner
+Light Gray Banner|meta|rot2|bot
+Light Gray Banner|meta|rot3|bot
+Light Gray Banner|meta|rot4|bot
+_Light Gray Banner Flag
+_Light Gray Banner Flag|meta|rot2|top
+_Light Gray Banner Flag|meta|rot3|top
+_Light Gray Banner Flag|meta|rot4|top
+_Light Gray Banner Flag|meta|rot1|side
+_Light Gray Banner Flag|meta|rot2|side
+_Light Gray Banner Flag|meta|rot3|side
+_Light Gray Banner Flag|meta|rot4|side
+_Light Gray Banner Flag|meta|rot1|bot
+_Light Gray Banner Flag|meta|rot2|bot
+_Light Gray Banner Flag|meta|rot3|bot
+_Light Gray Banner Flag|meta|rot4|bot
+Light Gray Banner|meta|rot1|top
+Light Gray Banner|meta|rot2|top
+Light Gray Banner|meta|rot3|top
+Light Gray Banner|meta|rot4|top
+Light Gray Banner|meta|rot1|side
+Light Gray Banner|meta|rot2|side
+Light Gray Banner|meta|rot3|side
+Light Gray Banner|meta|rot4|side
+Cyan Banner
+Cyan Banner|meta|rot2|bot
+Cyan Banner|meta|rot3|bot
+Cyan Banner|meta|rot4|bot
+_Cyan Banner Flag
+_Cyan Banner Flag|meta|rot2|top
+_Cyan Banner Flag|meta|rot3|top
+_Cyan Banner Flag|meta|rot4|top
+_Cyan Banner Flag|meta|rot1|side
+_Cyan Banner Flag|meta|rot2|side
+_Cyan Banner Flag|meta|rot3|side
+_Cyan Banner Flag|meta|rot4|side
+_Cyan Banner Flag|meta|rot1|bot
+_Cyan Banner Flag|meta|rot2|bot
+_Cyan Banner Flag|meta|rot3|bot
+_Cyan Banner Flag|meta|rot4|bot
+Cyan Banner|meta|rot1|top
+Cyan Banner|meta|rot2|top
+Cyan Banner|meta|rot3|top
+Cyan Banner|meta|rot4|top
+Cyan Banner|meta|rot1|side
+Cyan Banner|meta|rot2|side
+Cyan Banner|meta|rot3|side
+Cyan Banner|meta|rot4|side
+Purple Banner
+Purple Banner|meta|rot2|bot
+Purple Banner|meta|rot3|bot
+Purple Banner|meta|rot4|bot
+_Purple Banner Flag
+_Purple Banner Flag|meta|rot2|top
+_Purple Banner Flag|meta|rot3|top
+_Purple Banner Flag|meta|rot4|top
+_Purple Banner Flag|meta|rot1|side
+_Purple Banner Flag|meta|rot2|side
+_Purple Banner Flag|meta|rot3|side
+_Purple Banner Flag|meta|rot4|side
+_Purple Banner Flag|meta|rot1|bot
+_Purple Banner Flag|meta|rot2|bot
+_Purple Banner Flag|meta|rot3|bot
+_Purple Banner Flag|meta|rot4|bot
+Purple Banner|meta|rot1|top
+Purple Banner|meta|rot2|top
+Purple Banner|meta|rot3|top
+Purple Banner|meta|rot4|top
+Purple Banner|meta|rot1|side
+Purple Banner|meta|rot2|side
+Purple Banner|meta|rot3|side
+Purple Banner|meta|rot4|side
+Blue Banner
+Blue Banner|meta|rot2|bot
+Blue Banner|meta|rot3|bot
+Blue Banner|meta|rot4|bot
+_Blue Banner Flag
+_Blue Banner Flag|meta|rot2|top
+_Blue Banner Flag|meta|rot3|top
+_Blue Banner Flag|meta|rot4|top
+_Blue Banner Flag|meta|rot1|side
+_Blue Banner Flag|meta|rot2|side
+_Blue Banner Flag|meta|rot3|side
+_Blue Banner Flag|meta|rot4|side
+_Blue Banner Flag|meta|rot1|bot
+_Blue Banner Flag|meta|rot2|bot
+_Blue Banner Flag|meta|rot3|bot
+_Blue Banner Flag|meta|rot4|bot
+Blue Banner|meta|rot1|top
+Blue Banner|meta|rot2|top
+Blue Banner|meta|rot3|top
+Blue Banner|meta|rot4|top
+Blue Banner|meta|rot1|side
+Blue Banner|meta|rot2|side
+Blue Banner|meta|rot3|side
+Blue Banner|meta|rot4|side
+Brown Banner
+Brown Banner|meta|rot2|bot
+Brown Banner|meta|rot3|bot
+Brown Banner|meta|rot4|bot
+_Brown Banner Flag
+_Brown Banner Flag|meta|rot2|top
+_Brown Banner Flag|meta|rot3|top
+_Brown Banner Flag|meta|rot4|top
+_Brown Banner Flag|meta|rot1|side
+_Brown Banner Flag|meta|rot2|side
+_Brown Banner Flag|meta|rot3|side
+_Brown Banner Flag|meta|rot4|side
+_Brown Banner Flag|meta|rot1|bot
+_Brown Banner Flag|meta|rot2|bot
+_Brown Banner Flag|meta|rot3|bot
+_Brown Banner Flag|meta|rot4|bot
+Brown Banner|meta|rot1|top
+Brown Banner|meta|rot2|top
+Brown Banner|meta|rot3|top
+Brown Banner|meta|rot4|top
+Brown Banner|meta|rot1|side
+Brown Banner|meta|rot2|side
+Brown Banner|meta|rot3|side
+Brown Banner|meta|rot4|side
+Green Banner
+Green Banner|meta|rot2|bot
+Green Banner|meta|rot3|bot
+Green Banner|meta|rot4|bot
+_Green Banner Flag
+_Green Banner Flag|meta|rot2|top
+_Green Banner Flag|meta|rot3|top
+_Green Banner Flag|meta|rot4|top
+_Green Banner Flag|meta|rot1|side
+_Green Banner Flag|meta|rot2|side
+_Green Banner Flag|meta|rot3|side
+_Green Banner Flag|meta|rot4|side
+_Green Banner Flag|meta|rot1|bot
+_Green Banner Flag|meta|rot2|bot
+_Green Banner Flag|meta|rot3|bot
+_Green Banner Flag|meta|rot4|bot
+Green Banner|meta|rot1|top
+Green Banner|meta|rot2|top
+Green Banner|meta|rot3|top
+Green Banner|meta|rot4|top
+Green Banner|meta|rot1|side
+Green Banner|meta|rot2|side
+Green Banner|meta|rot3|side
+Green Banner|meta|rot4|side
+Red Banner
+Red Banner|meta|rot2|bot
+Red Banner|meta|rot3|bot
+Red Banner|meta|rot4|bot
+_Red Banner Flag
+_Red Banner Flag|meta|rot2|top
+_Red Banner Flag|meta|rot3|top
+_Red Banner Flag|meta|rot4|top
+_Red Banner Flag|meta|rot1|side
+_Red Banner Flag|meta|rot2|side
+_Red Banner Flag|meta|rot3|side
+_Red Banner Flag|meta|rot4|side
+_Red Banner Flag|meta|rot1|bot
+_Red Banner Flag|meta|rot2|bot
+_Red Banner Flag|meta|rot3|bot
+_Red Banner Flag|meta|rot4|bot
+Red Banner|meta|rot1|top
+Red Banner|meta|rot2|top
+Red Banner|meta|rot3|top
+Red Banner|meta|rot4|top
+Red Banner|meta|rot1|side
+Red Banner|meta|rot2|side
+Red Banner|meta|rot3|side
+Red Banner|meta|rot4|side
+Black Banner
+Black Banner|meta|rot2|bot
+Black Banner|meta|rot3|bot
+Black Banner|meta|rot4|bot
+_Black Banner Flag
+_Black Banner Flag|meta|rot2|top
+_Black Banner Flag|meta|rot3|top
+_Black Banner Flag|meta|rot4|top
+_Black Banner Flag|meta|rot1|side
+_Black Banner Flag|meta|rot2|side
+_Black Banner Flag|meta|rot3|side
+_Black Banner Flag|meta|rot4|side
+_Black Banner Flag|meta|rot1|bot
+_Black Banner Flag|meta|rot2|bot
+_Black Banner Flag|meta|rot3|bot
+_Black Banner Flag|meta|rot4|bot
+Black Banner|meta|rot1|top
+Black Banner|meta|rot2|top
+Black Banner|meta|rot3|top
+Black Banner|meta|rot4|top
+Black Banner|meta|rot1|side
+Black Banner|meta|rot2|side
+Black Banner|meta|rot3|side
+Black Banner|meta|rot4|side
+Draugr Banner
+Draugr Banner|meta|rot2|bot
+Draugr Banner|meta|rot3|bot
+Draugr Banner|meta|rot4|bot
+_Draugr Banner Flag
+_Draugr Banner Flag|meta|rot2|top
+_Draugr Banner Flag|meta|rot3|top
+_Draugr Banner Flag|meta|rot4|top
+_Draugr Banner Flag|meta|rot1|side
+_Draugr Banner Flag|meta|rot2|side
+_Draugr Banner Flag|meta|rot3|side
+_Draugr Banner Flag|meta|rot4|side
+_Draugr Banner Flag|meta|rot1|bot
+_Draugr Banner Flag|meta|rot2|bot
+_Draugr Banner Flag|meta|rot3|bot
+_Draugr Banner Flag|meta|rot4|bot
+Draugr Banner|meta|rot1|top
+Draugr Banner|meta|rot2|top
+Draugr Banner|meta|rot3|top
+Draugr Banner|meta|rot4|top
+Draugr Banner|meta|rot1|side
+Draugr Banner|meta|rot2|side
+Draugr Banner|meta|rot3|side
+Draugr Banner|meta|rot4|side
+Spirit Golem Spawner Block
+Spirit Wolf Spawner Block
+Spirit Bear Spawner Block
+Spirit Stag Spawner Block
+Spirit Gorilla Spawner Block
+Fertilised Soil
+_Grant Wool Top Left
+_Grant Wool Top Left|meta|rot2
+_Grant Wool Top Left|meta|rot3
+_Grant Wool Top Left|meta|rot4
+_Grant Wool Top Right
+_Grant Wool Top Right|meta|rot2
+_Grant Wool Top Right|meta|rot3
+_Grant Wool Top Right|meta|rot4
+Grant Wool
+Grant Wool|meta|rot2
+Grant Wool|meta|rot3
+Grant Wool|meta|rot4
+_Grant Wool Bottom Right
+_Grant Wool Bottom Right|meta|rot2
+_Grant Wool Bottom Right|meta|rot3
+_Grant Wool Bottom Right|meta|rot4
+_Stampede Top Left
+_Stampede Top Left|meta|rot2
+_Stampede Top Left|meta|rot3
+_Stampede Top Left|meta|rot4
+_Stampede Top Right
+_Stampede Top Right|meta|rot2
+_Stampede Top Right|meta|rot3
+_Stampede Top Right|meta|rot4
+Stampede
+Stampede|meta|rot2
+Stampede|meta|rot3
+Stampede|meta|rot4
+_Stampede Bottom Right
+_Stampede Bottom Right|meta|rot2
+_Stampede Bottom Right|meta|rot3
+_Stampede Bottom Right|meta|rot4
+_Unforgotten Pig Top Left
+_Unforgotten Pig Top Left|meta|rot2
+_Unforgotten Pig Top Left|meta|rot3
+_Unforgotten Pig Top Left|meta|rot4
+_Unforgotten Pig Top Right
+_Unforgotten Pig Top Right|meta|rot2
+_Unforgotten Pig Top Right|meta|rot3
+_Unforgotten Pig Top Right|meta|rot4
+Unforgotten Pig
+Unforgotten Pig|meta|rot2
+Unforgotten Pig|meta|rot3
+Unforgotten Pig|meta|rot4
+_Unforgotten Pig Bottom Right
+_Unforgotten Pig Bottom Right|meta|rot2
+_Unforgotten Pig Bottom Right|meta|rot3
+_Unforgotten Pig Bottom Right|meta|rot4
+_Sunbathed Gallope Top Left
+_Sunbathed Gallope Top Left|meta|rot2
+_Sunbathed Gallope Top Left|meta|rot3
+_Sunbathed Gallope Top Left|meta|rot4
+_Sunbathed Gallope Top Right
+_Sunbathed Gallope Top Right|meta|rot2
+_Sunbathed Gallope Top Right|meta|rot3
+_Sunbathed Gallope Top Right|meta|rot4
+Sunbathed Gallope
+Sunbathed Gallope|meta|rot2
+Sunbathed Gallope|meta|rot3
+Sunbathed Gallope|meta|rot4
+_Sunbathed Gallope Bottom Right
+_Sunbathed Gallope Bottom Right|meta|rot2
+_Sunbathed Gallope Bottom Right|meta|rot3
+_Sunbathed Gallope Bottom Right|meta|rot4
+_Dreaming Canine Top Left
+_Dreaming Canine Top Left|meta|rot2
+_Dreaming Canine Top Left|meta|rot3
+_Dreaming Canine Top Left|meta|rot4
+_Dreaming Canine Top Right
+_Dreaming Canine Top Right|meta|rot2
+_Dreaming Canine Top Right|meta|rot3
+_Dreaming Canine Top Right|meta|rot4
+Dreaming Canine
+Dreaming Canine|meta|rot2
+Dreaming Canine|meta|rot3
+Dreaming Canine|meta|rot4
+_Dreaming Canine Bottom Right
+_Dreaming Canine Bottom Right|meta|rot2
+_Dreaming Canine Bottom Right|meta|rot3
+_Dreaming Canine Bottom Right|meta|rot4
+_A Doe Through The Green Top Left
+_A Doe Through The Green Top Left|meta|rot2
+_A Doe Through The Green Top Left|meta|rot3
+_A Doe Through The Green Top Left|meta|rot4
+_A Doe Through The Green Top Right
+_A Doe Through The Green Top Right|meta|rot2
+_A Doe Through The Green Top Right|meta|rot3
+_A Doe Through The Green Top Right|meta|rot4
+A Doe Through The Green
+A Doe Through The Green|meta|rot2
+A Doe Through The Green|meta|rot3
+A Doe Through The Green|meta|rot4
+_A Doe Through The Green Bottom Right
+_A Doe Through The Green Bottom Right|meta|rot2
+_A Doe Through The Green Bottom Right|meta|rot3
+_A Doe Through The Green Bottom Right|meta|rot4
+_Whiskers Top Left
+_Whiskers Top Left|meta|rot2
+_Whiskers Top Left|meta|rot3
+_Whiskers Top Left|meta|rot4
+_Whiskers Top Right
+_Whiskers Top Right|meta|rot2
+_Whiskers Top Right|meta|rot3
+_Whiskers Top Right|meta|rot4
+Whiskers
+Whiskers|meta|rot2
+Whiskers|meta|rot3
+Whiskers|meta|rot4
+_Whiskers Bottom Right
+_Whiskers Bottom Right|meta|rot2
+_Whiskers Bottom Right|meta|rot3
+_Whiskers Bottom Right|meta|rot4
+Hollow Crate
+Draugr Warper Spawner Block
+Radar
+Radar|meta|rot2
+Radar|meta|rot3
+Radar|meta|rot4
+_Radar Back
+_Radar Back|meta|rot2
+_Radar Back|meta|rot3
+_Radar Back|meta|rot4
+_Radar Dish
+_Radar Dish|meta|rot2
+_Radar Dish|meta|rot3
+_Radar Dish|meta|rot4
+Inactive Radar
+Inactive Radar|meta|rot2
+Inactive Radar|meta|rot3
+Inactive Radar|meta|rot4
+_Inactive Radar Back
+_Inactive Radar Back|meta|rot2
+_Inactive Radar Back|meta|rot3
+_Inactive Radar Back|meta|rot4
+_Inactive Radar Dish
+_Inactive Radar Dish|meta|rot2
+_Inactive Radar Dish|meta|rot3
+_Inactive Radar Dish|meta|rot4
+Active Radar
+Active Radar|meta|rot2
+Active Radar|meta|rot3
+Active Radar|meta|rot4
+_Active Radar Back
+_Active Radar Back|meta|rot2
+_Active Radar Back|meta|rot3
+_Active Radar Back|meta|rot4
+_Active Radar Dish
+_Active Radar Dish|meta|rot2
+_Active Radar Dish|meta|rot3
+_Active Radar Dish|meta|rot4
+Lucky Block
+Ultra Lucky Block
+Gold Trophy
+Gold Trophy|meta|rot2
+Gold Trophy|meta|rot3
+Gold Trophy|meta|rot4
+Small Magenta Pod
+_Small Magenta Pod Mid
+_Small Magenta Pod Top
+Small Light Gray Pod
+_Small Light Gray Pod Mid
+_Small Light Gray Pod Top
+Small Red Pod
+_Small Red Pod Mid
+_Small Red Pod Top
+INTERNAL_MESH_Gold Trophy
+Frost Wraith Spawner Block
+Draugr Reaver Spawner Block
+Small White Pod
+_Small White Pod Mid
+_Small White Pod Top
+Small Orange Pod
+_Small Orange Pod Mid
+_Small Orange Pod Top
+Small Light Blue Pod
+_Small Light Blue Pod Mid
+_Small Light Blue Pod Top
+Small Yellow Pod
+_Small Yellow Pod Mid
+_Small Yellow Pod Top
+Small Lime Pod
+_Small Lime Pod Mid
+_Small Lime Pod Top
+Small Pink Pod
+_Small Pink Pod Mid
+_Small Pink Pod Top
+Small Gray Pod
+_Small Gray Pod Mid
+_Small Gray Pod Top
+Small Cyan Pod
+_Small Cyan Pod Mid
+_Small Cyan Pod Top
+Small Purple Pod
+_Small Purple Pod Mid
+_Small Purple Pod Top
+Small Blue Pod
+_Small Blue Pod Mid
+_Small Blue Pod Top
+Small Brown Pod
+_Small Brown Pod Mid
+_Small Brown Pod Top
+Small Green Pod
+_Small Green Pod Mid
+_Small Green Pod Top
+Small Black Pod
+_Small Black Pod Mid
+_Small Black Pod Top
+Skull Banner
+Skull Banner|meta|rot2|bot
+Skull Banner|meta|rot3|bot
+Skull Banner|meta|rot4|bot
+_Skull Banner Flag
+_Skull Banner Flag|meta|rot2|top
+_Skull Banner Flag|meta|rot3|top
+_Skull Banner Flag|meta|rot4|top
+_Skull Banner Flag|meta|rot1|side
+_Skull Banner Flag|meta|rot2|side
+_Skull Banner Flag|meta|rot3|side
+_Skull Banner Flag|meta|rot4|side
+_Skull Banner Flag|meta|rot1|bot
+_Skull Banner Flag|meta|rot2|bot
+_Skull Banner Flag|meta|rot3|bot
+_Skull Banner Flag|meta|rot4|bot
+Skull Banner|meta|rot1|top
+Skull Banner|meta|rot2|top
+Skull Banner|meta|rot3|top
+Skull Banner|meta|rot4|top
+Skull Banner|meta|rot1|side
+Skull Banner|meta|rot2|side
+Skull Banner|meta|rot3|side
+Skull Banner|meta|rot4|side
+Rainbow Banner
+Rainbow Banner|meta|rot2|bot
+Rainbow Banner|meta|rot3|bot
+Rainbow Banner|meta|rot4|bot
+_Rainbow Banner Flag
+_Rainbow Banner Flag|meta|rot2|top
+_Rainbow Banner Flag|meta|rot3|top
+_Rainbow Banner Flag|meta|rot4|top
+_Rainbow Banner Flag|meta|rot1|side
+_Rainbow Banner Flag|meta|rot2|side
+_Rainbow Banner Flag|meta|rot3|side
+_Rainbow Banner Flag|meta|rot4|side
+_Rainbow Banner Flag|meta|rot1|bot
+_Rainbow Banner Flag|meta|rot2|bot
+_Rainbow Banner Flag|meta|rot3|bot
+_Rainbow Banner Flag|meta|rot4|bot
+Rainbow Banner|meta|rot1|top
+Rainbow Banner|meta|rot2|top
+Rainbow Banner|meta|rot3|top
+Rainbow Banner|meta|rot4|top
+Rainbow Banner|meta|rot1|side
+Rainbow Banner|meta|rot2|side
+Rainbow Banner|meta|rot3|side
+Rainbow Banner|meta|rot4|side
+Duo Blocchino Statue
+Bebek Bebek Bebek Statue
+Bobino Musculino Statue
+Bobzilla Statue
+Brra Brra Pachim Statue
+Capitano Explovissimo Statue
+Cappuccino Ninjino Statue
+Chimpanzano Bananano Statue
+Il Wizardini Del Porko Statue
+Lucchia Blocchi Statue
+Monsieur Bedwar Statue
+Twirlina Cappucina Statue
+Weapon Lucky Block
+Boiling Pot
+Chopping Board
+Frying Pan
+Hob Boiling
+Hob Frying
+Kitchen Worktop
+Slicing Board
+Wood Trophy
+Wood Trophy|meta|rot2
+Wood Trophy|meta|rot3
+Wood Trophy|meta|rot4
+INTERNAL_MESH_Wood Trophy
+Stone Trophy
+Stone Trophy|meta|rot2
+Stone Trophy|meta|rot3
+Stone Trophy|meta|rot4
+INTERNAL_MESH_Stone Trophy
+Iron Trophy
+Iron Trophy|meta|rot2
+Iron Trophy|meta|rot3
+Iron Trophy|meta|rot4
+INTERNAL_MESH_Iron Trophy
+Diamond Trophy
+Diamond Trophy|meta|rot2
+Diamond Trophy|meta|rot3
+Diamond Trophy|meta|rot4
+INTERNAL_MESH_Diamond Trophy
+Moonstone Trophy
+Moonstone Trophy|meta|rot2
+Moonstone Trophy|meta|rot3
+Moonstone Trophy|meta|rot4
+INTERNAL_MESH_Moonstone Trophy
+Black Wave
+Blue Wave
+Brown Wave
+Cyan Wave
+Green Wave
+Grey Wave
+Light Blue Wave
+Light Grey Wave
+Lime Wave
+Magenta Wave
+Orange Wave
+Pink Wave
+Purple Wave
+Red Wave
+White Wave
+Yellow Wave
+White Directional Arrow
+White Directional Arrow|meta|rot2
+White Directional Arrow|meta|rot3
+White Directional Arrow|meta|rot4
+Orange Directional Arrow
+Orange Directional Arrow|meta|rot2
+Orange Directional Arrow|meta|rot3
+Orange Directional Arrow|meta|rot4
+Magenta Directional Arrow
+Magenta Directional Arrow|meta|rot2
+Magenta Directional Arrow|meta|rot3
+Magenta Directional Arrow|meta|rot4
+Light Blue Directional Arrow
+Light Blue Directional Arrow|meta|rot2
+Light Blue Directional Arrow|meta|rot3
+Light Blue Directional Arrow|meta|rot4
+Yellow Directional Arrow
+Yellow Directional Arrow|meta|rot2
+Yellow Directional Arrow|meta|rot3
+Yellow Directional Arrow|meta|rot4
+Lime Directional Arrow
+Lime Directional Arrow|meta|rot2
+Lime Directional Arrow|meta|rot3
+Lime Directional Arrow|meta|rot4
+Pink Directional Arrow
+Pink Directional Arrow|meta|rot2
+Pink Directional Arrow|meta|rot3
+Pink Directional Arrow|meta|rot4
+Grey Directional Arrow
+Grey Directional Arrow|meta|rot2
+Grey Directional Arrow|meta|rot3
+Grey Directional Arrow|meta|rot4
+Light Grey Directional Arrow
+Light Grey Directional Arrow|meta|rot2
+Light Grey Directional Arrow|meta|rot3
+Light Grey Directional Arrow|meta|rot4
+Cyan Directional Arrow
+Cyan Directional Arrow|meta|rot2
+Cyan Directional Arrow|meta|rot3
+Cyan Directional Arrow|meta|rot4
+Purple Directional Arrow
+Purple Directional Arrow|meta|rot2
+Purple Directional Arrow|meta|rot3
+Purple Directional Arrow|meta|rot4
+Blue Directional Arrow
+Blue Directional Arrow|meta|rot2
+Blue Directional Arrow|meta|rot3
+Blue Directional Arrow|meta|rot4
+Brown Directional Arrow
+Brown Directional Arrow|meta|rot2
+Brown Directional Arrow|meta|rot3
+Brown Directional Arrow|meta|rot4
+Green Directional Arrow
+Green Directional Arrow|meta|rot2
+Green Directional Arrow|meta|rot3
+Green Directional Arrow|meta|rot4
+Red Directional Arrow
+Red Directional Arrow|meta|rot2
+Red Directional Arrow|meta|rot3
+Red Directional Arrow|meta|rot4
+Black Directional Arrow
+Black Directional Arrow|meta|rot2
+Black Directional Arrow|meta|rot3
+Black Directional Arrow|meta|rot4
+Bin
+Vending Machine
+Vending Machine|meta|rot2
+Vending Machine|meta|rot3
+Vending Machine|meta|rot4
+_Vending Machine Top
+_Vending Machine Top|meta|rot2
+_Vending Machine Top|meta|rot3
+_Vending Machine Top|meta|rot4
+Job Application Statue
+John Beef Statue
+67 Statue
+Coloured Wheel
+UFO
+Torch
+Torch|meta|rot1|top
+Torch|meta|rot1|side
+Torch|meta|rot2|side
+Torch|meta|rot3|side
+Torch|meta|rot4|side
+Yellow Torch
+Yellow Torch|meta|rot1|top
+Yellow Torch|meta|rot1|side
+Yellow Torch|meta|rot2|side
+Yellow Torch|meta|rot3|side
+Yellow Torch|meta|rot4|side
+White Torch
+White Torch|meta|rot1|top
+White Torch|meta|rot1|side
+White Torch|meta|rot2|side
+White Torch|meta|rot3|side
+White Torch|meta|rot4|side
+Red Torch
+Red Torch|meta|rot1|top
+Red Torch|meta|rot1|side
+Red Torch|meta|rot2|side
+Red Torch|meta|rot3|side
+Red Torch|meta|rot4|side
+Purple Torch
+Purple Torch|meta|rot1|top
+Purple Torch|meta|rot1|side
+Purple Torch|meta|rot2|side
+Purple Torch|meta|rot3|side
+Purple Torch|meta|rot4|side
+Pink Torch
+Pink Torch|meta|rot1|top
+Pink Torch|meta|rot1|side
+Pink Torch|meta|rot2|side
+Pink Torch|meta|rot3|side
+Pink Torch|meta|rot4|side
+Orange Torch
+Orange Torch|meta|rot1|top
+Orange Torch|meta|rot1|side
+Orange Torch|meta|rot2|side
+Orange Torch|meta|rot3|side
+Orange Torch|meta|rot4|side
+Magenta Torch
+Magenta Torch|meta|rot1|top
+Magenta Torch|meta|rot1|side
+Magenta Torch|meta|rot2|side
+Magenta Torch|meta|rot3|side
+Magenta Torch|meta|rot4|side
+Lime Torch
+Lime Torch|meta|rot1|top
+Lime Torch|meta|rot1|side
+Lime Torch|meta|rot2|side
+Lime Torch|meta|rot3|side
+Lime Torch|meta|rot4|side
+Light Gray Torch
+Light Gray Torch|meta|rot1|top
+Light Gray Torch|meta|rot1|side
+Light Gray Torch|meta|rot2|side
+Light Gray Torch|meta|rot3|side
+Light Gray Torch|meta|rot4|side
+Light Blue Torch
+Light Blue Torch|meta|rot1|top
+Light Blue Torch|meta|rot1|side
+Light Blue Torch|meta|rot2|side
+Light Blue Torch|meta|rot3|side
+Light Blue Torch|meta|rot4|side
+Green Torch
+Green Torch|meta|rot1|top
+Green Torch|meta|rot1|side
+Green Torch|meta|rot2|side
+Green Torch|meta|rot3|side
+Green Torch|meta|rot4|side
+Gray Torch
+Gray Torch|meta|rot1|top
+Gray Torch|meta|rot1|side
+Gray Torch|meta|rot2|side
+Gray Torch|meta|rot3|side
+Gray Torch|meta|rot4|side
+Cyan Torch
+Cyan Torch|meta|rot1|top
+Cyan Torch|meta|rot1|side
+Cyan Torch|meta|rot2|side
+Cyan Torch|meta|rot3|side
+Cyan Torch|meta|rot4|side
+Brown Torch
+Brown Torch|meta|rot1|top
+Brown Torch|meta|rot1|side
+Brown Torch|meta|rot2|side
+Brown Torch|meta|rot3|side
+Brown Torch|meta|rot4|side
+Blue Torch
+Blue Torch|meta|rot1|top
+Blue Torch|meta|rot1|side
+Blue Torch|meta|rot2|side
+Blue Torch|meta|rot3|side
+Blue Torch|meta|rot4|side
+Black Torch
+Black Torch|meta|rot1|top
+Black Torch|meta|rot1|side
+Black Torch|meta|rot2|side
+Black Torch|meta|rot3|side
+Black Torch|meta|rot4|side
+Yellow Neon
+White Neon
+Red Neon
+Purple Neon
+Pink Neon
+Orange Neon
+Magenta Neon
+Lime Neon
+Light Gray Neon
+Light Blue Neon
+Green Neon
+Gray Neon
+Cyan Neon
+Brown Neon
+Blue Neon
+Black Neon
+Landing Pad
+Weak Jump Pad
+Jump Pad
+Strong Jump Pad
+Super Jump Pad
+Invisible Yellow Light
+Invisible White Light
+Invisible Red Light
+Invisible Purple Light
+Invisible Pink Light
+Invisible Orange Light
+Invisible Magenta Light
+Invisible Lime Light
+Invisible Light Gray Light
+Invisible Light Blue Light
+Invisible Green Light
+Invisible Gray Light
+Invisible Cyan Light
+Invisible Brown Light
+Invisible Blue Light
+Invisible Black Light
+Invisible Sky Light
+Dirt|PineGrassRoots
+Dirt|JungleGrassRoots
+Gun Lucky Block
+Ghost Chest
+Ghost Lucky Block
+Ghost Mystery Block
+Football
+Pet Lucky Block
+Glowing Mushroom
+Glowing Mushroom|meta|rot1|top
+Glowing Mushroom|meta|rot1|side
+Glowing Mushroom|meta|rot2|side
+Glowing Mushroom|meta|rot3|side
+Glowing Mushroom|meta|rot4|side
+Crystal
+Crystal|meta|rot1|top
+Crystal|meta|rot1|side
+Crystal|meta|rot2|side
+Crystal|meta|rot3|side
+Crystal|meta|rot4|side
+Slime Trail
+Slime Trail|meta|rot2
+Slime Trail|meta|rot3
+Slime Trail|meta|rot4
+Overgrown Grass Block
+Overgrown Pine Grass Block
+Overgrown Jungle Grass Block
+Smoke Block
+Pipe
+Pipe|meta|conn|nx
+Pipe|meta|conn|ny
+Pipe|meta|conn|nz
+Pipe|meta|conn|px
+Pipe|meta|conn|py
+Pipe|meta|conn|pz
+Pipe|meta|conn|nx_ny
+Pipe|meta|conn|nx_nz
+Pipe|meta|conn|nx_px
+Pipe|meta|conn|nx_py
+Pipe|meta|conn|nx_pz
+Pipe|meta|conn|ny_nz
+Pipe|meta|conn|ny_px
+Pipe|meta|conn|ny_py
+Pipe|meta|conn|ny_pz
+Pipe|meta|conn|nz_px
+Pipe|meta|conn|nz_py
+Pipe|meta|conn|nz_pz
+Pipe|meta|conn|px_py
+Pipe|meta|conn|px_pz
+Pipe|meta|conn|py_pz
+Auto Miner
+Auto Miner|meta|rot2
+Auto Miner|meta|rot3
+Auto Miner|meta|rot4
+_Auto Miner Drill Front
+_Auto Miner Drill Front|meta|rot2
+_Auto Miner Drill Front|meta|rot3
+_Auto Miner Drill Front|meta|rot4
+_Auto Miner Drill Back
+_Auto Miner Drill Back|meta|rot2
+_Auto Miner Drill Back|meta|rot3
+_Auto Miner Drill Back|meta|rot4
+_Auto Miner Foot Front
+_Auto Miner Foot Front|meta|rot2
+_Auto Miner Foot Front|meta|rot3
+_Auto Miner Foot Front|meta|rot4
+_Auto Miner Body
+_Auto Miner Body|meta|rot2
+_Auto Miner Body|meta|rot3
+_Auto Miner Body|meta|rot4
+Auto Crafter
+Rocket Ship
+_Rocket Ship Southwest L2
+_Rocket Ship Southwest L3
+_Rocket Ship Southwest L4
+_Rocket Ship Southwest L5
+_Rocket Ship Southeast L1
+_Rocket Ship Southeast L2
+_Rocket Ship Southeast L3
+_Rocket Ship Southeast L4
+_Rocket Ship Southeast L5
+_Rocket Ship Northwest L1
+_Rocket Ship Northwest L2
+_Rocket Ship Northwest L3
+_Rocket Ship Northwest L4
+_Rocket Ship Northwest L5
+_Rocket Ship Northeast L1
+_Rocket Ship Northeast L2
+_Rocket Ship Northeast L3
+_Rocket Ship Northeast L4
+_Rocket Ship Northeast L5
+Rocket Ship S2
+Rocket Ship S3
+Rocket Ship S4
+Rocket Ship S5
+INTERNAL_MESH_Rocket Ship Full
+Extractor Pipe
+Extractor Pipe|meta|conn|nx
+Extractor Pipe|meta|conn|ny
+Extractor Pipe|meta|conn|nz
+Extractor Pipe|meta|conn|px
+Extractor Pipe|meta|conn|py
+Extractor Pipe|meta|conn|pz
+Extractor Pipe|meta|conn|nx_ny
+Extractor Pipe|meta|conn|nx_nz
+Extractor Pipe|meta|conn|nx_px
+Extractor Pipe|meta|conn|nx_py
+Extractor Pipe|meta|conn|nx_pz
+Extractor Pipe|meta|conn|ny_nz
+Extractor Pipe|meta|conn|ny_px
+Extractor Pipe|meta|conn|ny_py
+Extractor Pipe|meta|conn|ny_pz
+Extractor Pipe|meta|conn|nz_px
+Extractor Pipe|meta|conn|nz_py
+Extractor Pipe|meta|conn|nz_pz
+Extractor Pipe|meta|conn|px_py
+Extractor Pipe|meta|conn|px_pz
+Extractor Pipe|meta|conn|py_pz
+Splitter Pipe
+Solar Panel
+Solar Panel|meta|rot2
+Solar Panel|meta|rot3
+Solar Panel|meta|rot4
+_Solar Panel SE
+_Solar Panel SE|meta|rot2
+_Solar Panel SE|meta|rot3
+_Solar Panel SE|meta|rot4
+_Solar Panel NW
+_Solar Panel NW|meta|rot2
+_Solar Panel NW|meta|rot3
+_Solar Panel NW|meta|rot4
+_Solar Panel NE
+_Solar Panel NE|meta|rot2
+_Solar Panel NE|meta|rot3
+_Solar Panel NE|meta|rot4
+Wire
+Wire|meta|conn|nx
+Wire|meta|conn|ny
+Wire|meta|conn|nz
+Wire|meta|conn|px
+Wire|meta|conn|py
+Wire|meta|conn|pz
+Wire|meta|conn|nx_ny
+Wire|meta|conn|nx_nz
+Wire|meta|conn|nx_px
+Wire|meta|conn|nx_py
+Wire|meta|conn|nx_pz
+Wire|meta|conn|ny_nz
+Wire|meta|conn|ny_px
+Wire|meta|conn|ny_py
+Wire|meta|conn|ny_pz
+Wire|meta|conn|nz_px
+Wire|meta|conn|nz_py
+Wire|meta|conn|nz_pz
+Wire|meta|conn|px_py
+Wire|meta|conn|px_pz
+Wire|meta|conn|py_pz
+Filter Pipe
+Filter Pipe|meta|input|nx
+Filter Pipe|meta|input|ny
+Filter Pipe|meta|input|nz
+Filter Pipe|meta|input|px
+Filter Pipe|meta|input|py
+Merger Pipe
+Merger Pipe|meta|output|nx
+Merger Pipe|meta|output|ny
+Merger Pipe|meta|output|nz
+Merger Pipe|meta|output|px
+Merger Pipe|meta|output|py
+Wood Pickaxe
+Stone Pickaxe
+Iron Pickaxe
+Gold Pickaxe
+Diamond Pickaxe
+Moonstone Pickaxe
+Golem Pickaxe
+Wood Axe
+Stone Axe
+Iron Axe
+Gold Axe
+Diamond Axe
+Moonstone Axe
+Artisan Axe
+Wood Spade
+Stone Spade
+Iron Spade
+Gold Spade
+Diamond Spade
+Wood Sword
+Stone Sword
+Iron Sword
+Gold Sword
+Diamond Sword
+Knight Sword
+Wood Hoe
+Stone Hoe
+Iron Hoe
+Gold Hoe
+Diamond Hoe
+Wood Helmet
+Iron Helmet
+Gold Helmet
+Diamond Helmet
+Wood Chestplate
+Iron Chestplate
+Gold Chestplate
+Diamond Chestplate
+Fur Chestplate
+Wood Leggings
+Iron Leggings
+Gold Leggings
+Diamond Leggings
+Wood Boots
+Iron Boots
+Gold Boots
+Diamond Boots
+Spiked Boots
+Wood Gauntlets
+Iron Gauntlets
+Gold Gauntlets
+Diamond Gauntlets
+White Wood Helmet
+White Wood Chestplate
+White Wood Leggings
+White Wood Boots
+White Wood Gauntlets
+Orange Wood Helmet
+Orange Wood Chestplate
+Orange Wood Leggings
+Orange Wood Boots
+Orange Wood Gauntlets
+Magenta Wood Helmet
+Magenta Wood Chestplate
+Magenta Wood Leggings
+Magenta Wood Boots
+Magenta Wood Gauntlets
+Light Blue Wood Helmet
+Light Blue Wood Chestplate
+Light Blue Wood Leggings
+Light Blue Wood Boots
+Light Blue Wood Gauntlets
+Yellow Wood Helmet
+Yellow Wood Chestplate
+Yellow Wood Leggings
+Yellow Wood Boots
+Yellow Wood Gauntlets
+Lime Wood Helmet
+Lime Wood Chestplate
+Lime Wood Leggings
+Lime Wood Boots
+Lime Wood Gauntlets
+Pink Wood Helmet
+Pink Wood Chestplate
+Pink Wood Leggings`;
+
+/* ---------- 我的世界方块 ID → Bloxd 方块名 ---------- */
+const BX_M2B = {"bone_block": "Bone Block", "bedrock": "Bedrock", "glass": "Glass", "glowstone": "Golden Decoration", "hay_block": "Bread Block", "ladder": "Maple Ladder", "lava": "Lava", "bubble_column": "Water", "water": "Water", "bell": "Block of Gold", "campfire": "Lava", "soul_campfire": "Lava", "cobweb": "Cobweb", "magma_block": "Magma", "obsidian": "Obsidian", "calcite": "Diorite", "redstone_lamp": "Dim Lamp On", "redstone_lamp[lit=false]": "Dim Lamp Off", "noteblock": "Dim Lamp Off", "double_plant": "Air", "scaffolding": "Maple Wood Planks", "shroomlight": "Golden Decoration", "sign": "Board", "iron_door": "Maple Door", "tnt": "Moonstone Explosive", "fire": "Lava", "soul_fire": "Lava", "torch": "Torch", "wall_torch": "Torch|side", "nether_portal": "Purple Portal", "dragon_egg": "Obsidian", "slime_block": "Fat Red Mushroom", "petrified_oak_slab": "Maple Slab", "beehive": "Yellow Ceramic", "honey_block": "Yellow Concrete", "honeycomb_block": "Yellow Ceramic", "crying_obsidian": "Obsidian", "respawn_anchor": "Obsidian", "tinted_glass": "Black Glass", "dripstone_block": "Stone", "clay": "Clay", "coarse_dirt": "Rocky Dirt", "dirt": "Dirt", "farmland": "Tilled Soil", "grass_block": "Grass Block", "podzol": "Messy Dirt", "rooted_dirt": "Messy Dirt", "sand": "Sand", "red_sand": "Red Sand", "snow": "Snow", "snow_block": "Snow", "packed_ice": "Ice", "frosted_ice": "Ice", "blue_ice": "Ice", "powder_snow": "Snow", "soul_sand": "Sand", "soul_soil": "Sand", "suspicious_sand": "Sand", "suspicious_gravel": "Clay", "gravel": "Clay", "ice": "Ice", "mud": "Messy Dirt", "packed_mud": "Engraved Granite", "mycelium": "Messy Dirt", "warped_nylium": "Dark Red Stone", "crimson_nylium": "Dark Red Stone", "dirt_path": "Tilled Soil", "carved_pumpkin": "Carved Pumpkin", "jack_o_lantern": "Jack o'Lantern", "pumpkin": "Pumpkin", "pumpkin_stem": "Pumpkin Seeds", "attached_pumpkin_stem": "Attached Pumpkin Stem", "melon": "Watermelon", "melon_stem": "Watermelon Seeds", "attached_melon_stem": "Attached Watermelon Stem", "wheat": "Wheat", "carrots": "Carrot Plant", "potatoes": "Potato Plant", "coal_block": "Block of Coal", "coal_ore": "Coal Ore", "deepslate_coal_ore": "Coal Ore", "iron_block": "Block of Iron", "iron_ore": "Iron Ore", "deepslate_iron_ore": "Iron Ore", "raw_iron_block": "Block of Iron", "copper_block": "Block of Iron", "copper_ore": "Iron Ore", "deepslate_copper_ore": "Iron Ore", "raw_copper_block": "Block of Iron", "redstone_block": "Red Concrete", "redstone_ore": "Gold Ore", "deepslate_redstone_ore": "Gold Ore", "gold_block": "Block of Gold", "gold_ore": "Gold Ore", "deepslate_gold_ore": "Gold Ore", "raw_gold_block": "Block of Gold", "nether_gold_ore": "Gold Ore", "emerald_block": "Block of Diamond", "emerald_ore": "Diamond Ore", "deepslate_emerald_ore": "Diamond Ore", "lapis_block": "Block of Diamond", "lapis_ore": "Diamond Ore", "deepslate_lapis_ore": "Diamond Ore", "diamond_block": "Block of Diamond", "diamond_ore": "Diamond Ore", "deepslate_diamond_ore": "Diamond Ore", "netherite_block": "Block of Diamond", "ancient_debris": "Block of Diamond", "nether_quartz_ore": "Moonstone Ore", "smooth_quartz": "White Concrete", "smooth_quartz_block": "White Concrete", "smooth_quartz_slab": "White Concrete Slab", "quartz_block": "White Concrete", "quartz_bricks": "Diorite Bricks", "quartz_pillar": "White Concrete", "quartz_slab": "White Concrete Slab", "chiseled_quartz_block": "Engraved Diorite", "polished_andesite": "Smooth Andesite", "polished_andesite_slab": "Smooth Andesite Slab", "andesite": "Andesite", "andesite_slab": "Andesite Slab", "basalt": "Hyper Compressed Messy Stone", "polished_basalt": "Hyper Compressed Messy Stone", "smooth_basalt": "Hyper Compressed Messy Stone", "tuff": "Messy Stone", "polished_tuff": "Extra Compressed Messy Stone", "chiseled_tuff": "Hyper Compressed Messy Stone", "tuff_bricks": "Super Compressed Messy Stone", "tuff_brick": "Super Compressed Messy Stone", "chiseled_tuff_bricks": "Super Compressed Messy Stone", "blackstone_slab": "Mega Compressed Messy Stone", "polished_blackstone_brick_slab": "Super Compressed Messy Stone", "polished_blackstone": "Ultra Compressed Messy Stone", "polished_blackstone_bricks": "Super Compressed Messy Stone", "polished_blackstone_slab": "Ultra Compressed Messy Stone", "gilded_blackstone": "Mega Compressed Messy Stone", "blackstone": "Mega Compressed Messy Stone", "chiseled_polished_blackstone": "Ultra Compressed Messy Stone", "cracked_polished_blackstone_bricks": "Super Compressed Messy Stone", "polished_diorite": "Smooth Diorite", "polished_diorite_slab": "Smooth Diorite Slab", "diorite": "Diorite", "diorite_slab": "Diorite Slab", "granite": "Granite", "granite_slab": "Granite Slab", "polished_granite": "Smooth Granite", "polished_granite_slab": "Smooth Granite Slab", "reinforced_deepslate": "Ultra Compressed Messy Stone", "cobbled_deepslate": "Super Compressed Messy Stone", "polished_deepslate": "Super Compressed Messy Stone", "deepslate_bricks": "Super Compressed Messy Stone", "chiseled_deepslate": "Super Compressed Messy Stone", "cracked_deepslate_bricks": "Super Compressed Messy Stone", "cracked_deepslate_tiles": "Super Compressed Messy Stone", "cobbled_deepslate_slab": "Super Compressed Messy Stone", "polished_deepslate_slab": "Super Compressed Messy Stone", "deepslate_brick_slab": "Super Compressed Messy Stone", "deepslate": "Extra Compressed Messy Stone", "deepslate_tile_slab": "Stone Bricks Slab", "deepslate_tiles": "Super Compressed Messy Stone", "red_sandstone": "Red Sandstone", "red_sandstone_slab": "Red Sandstone Slab", "chiseled_red_sandstone": "Engraved Red Sandstone", "cut_red_sandstone": "Marked Red Sandstone", "cut_red_sandstone_slab": "Marked Red Sandstone Slab", "smooth_red_sandstone": "Smooth Red Sandstone", "smooth_red_sandstone_slab": "Smooth Red Sandstone Slab", "sandstone": "Sandstone", "sandstone_slab": "Sandstone Slab", "chiseled_sandstone": "Engraved Sandstone", "cut_sandstone": "Marked Sandstone", "cut_sandstone_slab": "Marked Sandstone Slab", "smooth_sandstone": "Smooth Sandstone", "smooth_sandstone_slab": "Smooth Sandstone Slab", "cobblestone": "Messy Stone", "cobblestone_slab": "Messy Stone Slab", "stone": "Stone", "stone_slab": "Stone Slab", "chiseled_stone_bricks": "Stone Bricks", "cracked_stone_bricks": "Cracked Stone Bricks", "smooth_stone": "Smooth Stone", "smooth_stone_slab": "Smooth Stone Slab", "stone_bricks": "Stone Bricks", "stone_brick_slab": "Stone Bricks Slab", "mossy_cobblestone": "Mossy Messy Stone", "mossy_cobblestone_slab": "Mossy Stone Slab", "mossy_stone": "Mossy Messy Stone", "mossy_stone_bricks": "Mossy Stone Bricks", "mossy_stone_brick_slab": "Mossy Stone Bricks Slab", "mud_brick": "Bricks", "mud_brick_slab": "Granite Bricks Slab", "mud_bricks": "Granite Bricks", "brick_slab": "Bricks Slab", "bricks": "Bricks", "netherrack": "Dark Red Stone", "nether_bricks": "Dark Red Brick", "nether_brick_planks": "Dark Red Brick", "nether_brick_slab": "Dark Red Brick", "red_nether_brick_slab": "Dark Red Brick", "red_nether_bricks": "Dark Red Brick", "purpur_block": "Magenta Concrete", "purpur_slab": "Magenta Concrete Slab", "purpur_pillar": "Magenta Concrete", "end_stone": "Sandstone", "end_stone_bricks": "Sandstone Bricks", "end_stone_brick_slab": "Sandstone Bricks Slab", "air": "Air", "barrier": "Invisible Solid", "void_air": "Air", "cave_air": "Air", "light": "Air", "structure_void": "Air", "beacon": "Block of Diamond", "command_block": "Code Block", "chain_command_block": "Code Block", "repeating_command_block": "Code Block", "hopper": "Block of Iron", "blast_furnace": "Furnace", "barrel": "Chest", "anvil": "Block of Iron", "chipped_anvil": "Block of Iron", "damaged_anvil": "Block of Iron", "cartography_table": "Artisan Bench", "cauldron": "Block of Iron", "lava_cauldron": "Lava", "water_cauldron": "Water", "powder_snow_cauldron": "Snow", "chest": "Chest", "crafting_table": "Workbench", "bookshelf": "Bookshelf", "brewing_stand": "Potion Table", "loom": "Artisan Bench", "fletching_table": "Artisan Bench", "lectern": "Empty Bookshelf", "structure_block": "Block of Moonstone", "jigsaw": "Block of Moonstone1", "enchanting_table": "Block of Diamond", "jukebox": "Mailbox", "chiseled_bookshelf": "Bookshelf", "trapped_chest": "Chest", "note_block": "Workbench", "composter": "Artisan Bench", "grindstone": "Artisan Bench", "ender_chest": "Moonstone Chest", "furnace": "Furnace", "stonecutter": "Artisan Bench", "smithing_table": "Artisan Bench", "smoker": "Furnace", "lilac": "Bluebell", "lily_of_the_valley": "White Tulip", "oxeye_daisy": "Daisy", "daisy": "Daisy", "peony": "Allium", "blue_orchid": "Bluebell", "orange_tulip": "Orange Tulip", "pink_tulip": "Pink Tulip", "red_tulip": "Red Tulip", "white_tulip": "White Tulip", "lily_pad": "Green Carpet", "large_fern": "Tall Grass", "cornflower": "Forget-me-not", "azure_bluet": "Daisy", "cactus": "Fat Cactus", "dandelion": "Dandelion", "allium": "Allium", "poppy": "Poppy", "wither_rose": "Shadow Rose", "torchflower": "Poppy", "vine": "Vines", "cave_vines": "Dangling Vine", "cave_vines_plant": "Dangling Vine", "sugar_cane": "Cactus", "rose_bush": "Poppy", "seagrass": "Grass", "short_grass": "Grass", "sunflower": "Daisy", "tall_grass": "Tall Grass", "tall_seagrass": "Tall Grass", "fern": "Grass", "glow_lichen": "Vines", "grass": "Grass", "chrimson_fungus": "Brown Mushroom", "warped_fungus": "Brown Mushroom", "brown_mushroom": "Brown Mushroom", "brown_mushroom_block": "Brown Mushroom Block", "red_mushroom": "Red Mushroom", "red_mushroom_block": "Red Mushroom Block", "moss_block": "Grass Block", "moss_carpet": "Green Carpet", "mushroom_stem": "Brown Mushroom Block", "chorus_plant": "Purple Ceramic", "chorus_flower": "Purple Ceramic", "beetroots": "Beetroot Plant", "sweet_berry_bush": "Cranberries", "ochre_froglight": "Golden Decoration", "verdant_froglight": "Golden Decoration", "pearlescent_froglight": "Golden Decoration", "dead_tube_coral_block": "Gray Ceramic", "dead_brain_coral_block": "Gray Ceramic", "dead_bubble_coral_block": "Gray Ceramic", "dead_fire_coral_block": "Gray Ceramic", "dead_horn_coral_block": "Gray Ceramic", "tube_coral_block": "Blue Ceramic", "brain_coral_block": "Pink Ceramic", "bubble_coral_block": "Purple Ceramic", "fire_coral_block": "Red Ceramic", "horn_coral_block": "Yellow Ceramic", "kelp": "Grass", "kelp_plant": "Grass", "dried_kelp_block": "Grass Block", "acacia_door": "Plum Door", "acacia_leaves": "Plum Leaves", "acacia_log": "Plum Log", "acacia_planks": "Plum Wood Planks", "acacia_sapling": "Plum Sapling", "acacia_slab": "Plum Slab", "acacia_trapdoor": "Plum Trapdoor", "acacia_wood": "Plum Log", "stripped_acacia_log": "Barkless Plum Log", "stripped_acacia_wood": "Barkless Plum Log", "birch_door": "Aspen Door", "birch_leaves": "Aspen Leaves", "birch_log": "Aspen Log", "birch_planks": "Aspen Wood Planks", "birch_sapling": "Aspen Sapling", "birch_slab": "Aspen Slab", "birch_trapdoor": "Aspen Trapdoor", "birch_wood": "Aspen Log", "stripped_birch_log": "Barkless Aspen Log", "stripped_birch_wood": "Barkless Aspen Log", "cherry_door": "Cherry Door", "cherry_leaves": "Cherry Leaves", "cherry_log": "Cherry Log", "cherry_planks": "Cherry Wood Planks", "cherry_sapling": "Cherry Sapling", "cherry_slab": "Cherry Slab", "cherry_trapdoor": "Cherry Trapdoor", "cherry_wood": "Cherry Log", "stripped_cherry_log": "Barkless Cherry Log", "stripped_cherry_wood": "Barkless Cherry Log", "dark_oak_door": "Cedar Door", "dark_oak_leaves": "Cedar Leaves", "dark_oak_log": "Cedar Log", "dark_oak_planks": "Cedar Wood Planks", "dark_oak_sapling": "Cedar Sapling", "dark_oak_slab": "Cedar Slab", "dark_oak_trapdoor": "Cedar Trapdoor", "dark_oak_wood": "Cedar Log", "stripped_dark_oak_log": "Barkless Cedar Log", "stripped_dark_oak_wood": "Barkless Cedar Log", "jungle_door": "Jungle Door", "jungle_leaves": "Jungle Leaves", "jungle_log": "Jungle Log", "jungle_planks": "Jungle Wood Planks", "jungle_sapling": "Jungle Sapling", "jungle_slab": "Jungle Slab", "jungle_trapdoor": "Jungle Trapdoor", "jungle_wood": "Jungle Log", "stripped_jungle_log": "Barkless Jungle Log", "stripped_jungle_wood": "Barkless Jungle Log", "mangrove_door": "Plum Door", "mangrove_leaves": "Plum Leaves", "mangrove_log": "Plum Log", "mangrove_planks": "Plum Wood Planks", "mangrove_slab": "Plum Slab", "mangrove_trapdoor": "Plum Trapdoor", "mangrove_wood": "Plum Log", "stripped_mangrove_log": "Barkless Plum Log", "stripped_mangrove_wood": "Barkless Plum Log", "mangrove_roots": "Plum Leaves", "muddy_mangrove_roots": "Plum Leaves", "mangrove_sapling": "Plum Sapling", "mangrove_propagule": "Plum Sapling", "oak_door": "Maple Door", "oak_leaves": "Maple Leaves", "oak_log": "Maple Log", "oak_planks": "Maple Wood Planks", "oak_sapling": "Maple Sapling", "oak_slab": "Maple Slab", "oak_trapdoor": "Maple Trapdoor", "oak_wood": "Maple Log", "stripped_oak_log": "Barkless Maple Log", "stripped_oak_wood": "Barkless Maple Log", "azalea": "Maple Leaves", "flowering_azalea": "Maple Leaves", "azalea_leaves": "Maple Leaves", "flowering_azalea_leaves": "Maple Leaves", "azalea_bush": "Maple Leaves", "flowering_azalea_bush": "Maple Leaves", "spruce_door": "Pine Door", "spruce_leaves": "Pine Leaves", "spruce_log": "Pine Log", "spruce_planks": "Pine Wood Planks", "spruce_sapling": "Pine Sapling", "spruce_slab": "Pine Slab", "spruce_trapdoor": "Pine Trapdoor", "spruce_wood": "Pine Log", "stripped_spruce_log": "Barkless Pine Log", "stripped_spruce_wood": "Barkless Pine Log", "warped_door": "Spectral Door", "warped_wart_block": "Spectral Leaves", "warped_stem": "Spectral Log", "warped_planks": "Spectral Wood Planks", "warped_slab": "Spectral Slab", "warped_trapdoor": "Spectral Trapdoor", "warped_hyphae": "Spectral Log", "stripped_warped_stem": "Barkless Spectral Log", "stripped_warped_hyphae": "Barkless Spectral Log", "terracotta": "Baked Clay", "black_bed": "Black Bed", "black_carpet": "Black Carpet", "black_concrete": "Black Concrete", "black_glazed_terracotta": "Black Ceramic", "black_stained_glass": "Black Glass", "black_terracotta": "Black Baked Clay", "black_wool": "Black Wool", "blue_bed": "Blue Bed", "blue_carpet": "Blue Carpet", "blue_concrete": "Blue Concrete", "blue_glazed_terracotta": "Blue Ceramic", "blue_stained_glass": "Blue Glass", "blue_terracotta": "Blue Baked Clay", "blue_wool": "Blue Wool", "brown_bed": "Brown Bed", "brown_carpet": "Brown Carpet", "brown_concrete": "Brown Concrete", "brown_glazed_terracotta": "Brown Ceramic", "brown_stained_glass": "Brown Glass", "brown_terracotta": "Brown Baked Clay", "brown_wool": "Brown Wool", "cyan_bed": "Cyan Bed", "cyan_carpet": "Cyan Carpet", "cyan_concrete": "Cyan Concrete", "cyan_glazed_terracotta": "Cyan Ceramic", "cyan_stained_glass": "Cyan Glass", "cyan_terracotta": "Cyan Baked Clay", "cyan_wool": "Cyan Wool", "gray_bed": "Gray Bed", "gray_carpet": "Gray Carpet", "gray_concrete": "Gray Concrete", "gray_glazed_terracotta": "Gray Ceramic", "gray_stained_glass": "Gray Glass", "gray_terracotta": "Gray Baked Clay", "gray_wool": "Gray Wool", "green_bed": "Green Bed", "green_carpet": "Green Carpet", "green_concrete": "Green Concrete", "green_glazed_terracotta": "Green Ceramic", "green_stained_glass": "Green Glass", "green_terracotta": "Green Baked Clay", "green_wool": "Green Wool", "light_blue_bed": "Light Blue Bed", "light_blue_carpet": "Light Blue Carpet", "light_blue_concrete": "Light Blue Concrete", "light_blue_glazed_terracotta": "Light Blue Ceramic", "light_blue_stained_glass": "Light Blue Glass", "light_blue_terracotta": "Light Blue Baked Clay", "light_blue_wool": "Light Blue Wool", "light_gray_bed": "Light Gray Bed", "light_gray_carpet": "Light Gray Carpet", "light_gray_concrete": "Light Gray Concrete", "light_gray_glazed_terracotta": "Light Gray Ceramic", "light_gray_stained_glass": "Light Gray Glass", "light_gray_terracotta": "Light Gray Baked Clay", "light_gray_wool": "Light Gray Wool", "lime_bed": "Lime Bed", "lime_carpet": "Lime Carpet", "lime_concrete": "Lime Concrete", "lime_glazed_terracotta": "Lime Ceramic", "lime_stained_glass": "Lime Glass", "lime_terracotta": "Lime Baked Clay", "lime_wool": "Lime Wool", "magenta_bed": "Magenta Bed", "magenta_carpet": "Magenta Carpet", "magenta_concrete": "Magenta Concrete", "magenta_glazed_terracotta": "Magenta Ceramic", "magenta_stained_glass": "Magenta Glass", "magenta_terracotta": "Magenta Baked Clay", "magenta_wool": "Magenta Wool", "orange_bed": "Orange Bed", "orange_carpet": "Orange Carpet", "orange_concrete": "Orange Concrete", "orange_glazed_terracotta": "Orange Ceramic", "orange_stained_glass": "Orange Glass", "orange_terracotta": "Orange Baked Clay", "orange_wool": "Orange Wool", "pink_bed": "Pink Bed", "pink_carpet": "Pink Carpet", "pink_concrete": "Pink Concrete", "pink_glazed_terracotta": "Pink Ceramic", "pink_stained_glass": "Pink Glass", "pink_terracotta": "Pink Baked Clay", "pink_wool": "Pink Wool", "purple_bed": "Purple Bed", "purple_carpet": "Purple Carpet", "purple_concrete": "Purple Concrete", "purple_glazed_terracotta": "Purple Ceramic", "purple_stained_glass": "Purple Glass", "purple_terracotta": "Purple Baked Clay", "purple_wool": "Purple Wool", "red_bed": "Red Bed", "red_carpet": "Red Carpet", "red_concrete": "Red Concrete", "red_glazed_terracotta": "Red Ceramic", "red_stained_glass": "Red Glass", "red_terracotta": "Red Baked Clay", "red_wool": "Red Wool", "white_bed": "White Bed", "white_carpet": "White Carpet", "white_concrete": "White Concrete", "white_glazed_terracotta": "White Ceramic", "white_stained_glass": "White Glass", "white_terracotta": "White Baked Clay", "white_wool": "White Wool", "yellow_bed": "Yellow Bed", "yellow_carpet": "Yellow Carpet", "yellow_concrete": "Yellow Concrete", "yellow_glazed_terracotta": "Yellow Ceramic", "yellow_stained_glass": "Yellow Glass", "yellow_terracotta": "Yellow Baked Clay", "yellow_wool": "Yellow Wool"};
+
+/* ---------- 楼梯 / 双台阶 → 完整方块 ---------- */
+const BX_STAIRS = {"oak": "oak_planks", "spruce": "spruce_planks", "birch": "birch_planks", "jungle": "jungle_planks", "acacia": "acacia_planks", "cherry": "cherry_planks", "dark_oak": "dark_oak_planks", "mangrove": "mangrove_planks", "bamboo": "bamboo_planks", "petrified_oak": "oak_planks", "brick": "bricks", "stone_brick": "stone_bricks", "mud_brick": "mud_bricks", "nether_brick": "nether_bricks", "quartz": "quartz_block", "purpur": "purpur_block", "mossy_stone_brick": "mossy_stone_bricks", "end_stone_brick": "end_stone_bricks", "red_nether_brick": "red_nether_bricks", "crimson": "crimson_planks", "warped": "warped_planks", "polished_blackstone_brick": "polished_blackstone_bricks", "deepslate_tile": "deepslate_tiles", "deepslate_brick": "deepslate_bricks"};
+
+/* ---------- 旧版 .schematic 数字 ID → 现代方块名 ---------- */
+const BX_LEGACY_BLOB = {"0": "0:air", "1": "0:stone|1:granite|2:polished_granite|3:diorite|4:polished_diorite|5:andesite|6:polished_andesite", "2": "0:grass_block[snowy=false]", "3": "0:dirt|1:coarse_dirt|2:podzol[snowy=false]", "4": "0:cobblestone", "5": "0:oak_planks|1:spruce_planks|2:birch_planks|3:jungle_planks|4:acacia_planks|5:dark_oak_planks", "6": "0:oak_sapling[stage=0]|1:spruce_sapling[stage=0]|2:birch_sapling[stage=0]|3:jungle_sapling[stage=0]|4:acacia_sapling[stage=0]|5:dark_oak_sapling[stage=0]|8:oak_sapling[stage=1]|9:spruce_sapling[stage=1]|10:birch_sapling[stage=1]|11:jungle_sapling[stage=1]|12:acacia_sapling[stage=1]|13:dark_oak_sapling[stage=1]", "7": "0:bedrock", "8": "0:water[level=0]|1:water[level=1]|2:water[level=2]|3:water[level=3]|4:water[level=4]|5:water[level=5]|6:water[level=6]|7:water[level=7]|8:water[level=8]|9:water[level=9]|10:water[level=10]|11:water[level=11]|12:water[level=12]|13:water[level=13]|14:water[level=14]|15:water[level=15]", "9": "0:water[level=0]|1:water[level=1]|2:water[level=2]|3:water[level=3]|4:water[level=4]|5:water[level=5]|6:water[level=6]|7:water[level=7]|8:water[level=8]|9:water[level=9]|10:water[level=10]|11:water[level=11]|12:water[level=12]|13:water[level=13]|14:water[level=14]|15:water[level=15]", "10": "0:lava[level=0]|1:lava[level=1]|2:lava[level=2]|3:lava[level=3]|4:lava[level=4]|5:lava[level=5]|6:lava[level=6]|7:lava[level=7]|8:lava[level=8]|9:lava[level=9]|10:lava[level=10]|11:lava[level=11]|12:lava[level=12]|13:lava[level=13]|14:lava[level=14]|15:lava[level=15]", "11": "0:lava[level=0]|1:lava[level=1]|2:lava[level=2]|3:lava[level=3]|4:lava[level=4]|5:lava[level=5]|6:lava[level=6]|7:lava[level=7]|8:lava[level=8]|9:lava[level=9]|10:lava[level=10]|11:lava[level=11]|12:lava[level=12]|13:lava[level=13]|14:lava[level=14]|15:lava[level=15]", "12": "0:sand|1:red_sand", "13": "0:gravel", "14": "0:gold_ore", "15": "0:iron_ore", "16": "0:coal_ore", "17": "0:oak_log[axis=y]|1:spruce_log[axis=y]|2:birch_log[axis=y]|3:jungle_log[axis=y]|4:oak_log[axis=x]|5:spruce_log[axis=x]|6:birch_log[axis=x]|7:jungle_log[axis=x]|8:oak_log[axis=z]|9:spruce_log[axis=z]|10:birch_log[axis=z]|11:jungle_log[axis=z]|12:oak_wood|13:spruce_wood|14:birch_wood|15:jungle_wood", "18": "0:oak_leaves[persistent=false,distance=1]|1:spruce_leaves[persistent=false,distance=1]|2:birch_leaves[persistent=false,distance=1]|3:jungle_leaves[persistent=false,distance=1]|4:oak_leaves[persistent=true,distance=1]|5:spruce_leaves[persistent=true,distance=1]|6:birch_leaves[persistent=true,distance=1]|7:jungle_leaves[persistent=true,distance=1]|8:oak_leaves[persistent=false,distance=1]|9:spruce_leaves[persistent=false,distance=1]|10:birch_leaves[persistent=false,distance=1]|11:jungle_leaves[persistent=false,distance=1]|12:oak_leaves[persistent=true,distance=1]|13:spruce_leaves[persistent=true,distance=1]|14:birch_leaves[persistent=true,distance=1]|15:jungle_leaves[persistent=true,distance=1]", "20": "0:glass", "21": "0:lapis_ore", "22": "0:lapis_block", "24": "0:sandstone|1:chiseled_sandstone|2:cut_sandstone", "25": "0:note_block", "26": "0:red_bed[part=foot,facing=south,occupied=false]|1:red_bed[part=foot,facing=west,occupied=false]|2:red_bed[part=foot,facing=north,occupied=false]|3:red_bed[part=foot,facing=east,occupied=false]|4:red_bed[part=foot,facing=south,occupied=true]|5:red_bed[part=foot,facing=west,occupied=true]|6:red_bed[part=foot,facing=north,occupied=true]|7:red_bed[part=foot,facing=east,occupied=true]|8:red_bed[part=head,facing=south,occupied=false]|9:red_bed[part=head,facing=west,occupied=false]|10:red_bed[part=head,facing=north,occupied=false]|11:red_bed[part=head,facing=east,occupied=false]|12:red_bed[part=head,facing=south,occupied=true]|13:red_bed[part=head,facing=west,occupied=true]|14:red_bed[part=head,facing=north,occupied=true]|15:red_bed[part=head,facing=east,occupied=true]", "30": "0:cobweb", "31": "1:grass|2:fern", "35": "0:white_wool|1:orange_wool|2:magenta_wool|3:light_blue_wool|4:yellow_wool|5:lime_wool|6:pink_wool|7:gray_wool|8:light_gray_wool|9:cyan_wool|10:purple_wool|11:blue_wool|12:brown_wool|13:green_wool|14:red_wool|15:black_wool", "37": "0:dandelion", "38": "0:poppy|1:blue_orchid|2:allium|3:azure_bluet|4:red_tulip|5:orange_tulip|6:white_tulip|7:pink_tulip|8:oxeye_daisy", "39": "0:brown_mushroom", "40": "0:red_mushroom", "41": "0:gold_block", "42": "0:iron_block", "43": "0:stone_slab[type=double,waterlogged=false]|1:sandstone_slab[type=double,waterlogged=false]|2:petrified_oak_slab[type=double,waterlogged=false]|3:cobblestone_slab[type=double,waterlogged=false]|4:brick_slab[type=double,waterlogged=false]|5:stone_brick_slab[type=double,waterlogged=false]|6:nether_brick_slab[type=double,waterlogged=false]|7:quartz_slab[type=double,waterlogged=false]|8:smooth_stone|9:smooth_sandstone|10:petrified_oak_slab[type=double,waterlogged=false]|11:cobblestone_slab[type=double,waterlogged=false]|12:brick_slab[type=double,waterlogged=false]|13:stone_brick_slab[type=double,waterlogged=false]|14:nether_brick_slab[type=double,waterlogged=false]|15:smooth_quartz", "44": "0:stone_slab[type=bottom,waterlogged=false]|1:sandstone_slab[type=bottom,waterlogged=false]|2:petrified_oak_slab[type=bottom,waterlogged=false]|3:cobblestone_slab[type=bottom,waterlogged=false]|4:brick_slab[type=bottom,waterlogged=false]|5:stone_brick_slab[type=bottom,waterlogged=false]|6:nether_brick_slab[type=bottom,waterlogged=false]|7:quartz_slab[type=bottom,waterlogged=false]|8:stone_slab[type=top,waterlogged=false]|9:sandstone_slab[type=top,waterlogged=false]|10:petrified_oak_slab[type=top,waterlogged=false]|11:cobblestone_slab[type=top,waterlogged=false]|12:brick_slab[type=top,waterlogged=false]|13:stone_brick_slab[type=top,waterlogged=false]|14:nether_brick_slab[type=top,waterlogged=false]|15:quartz_slab[type=top,waterlogged=false]", "45": "0:bricks", "46": "0:tnt[unstable=false]|1:tnt[unstable=true]", "47": "0:bookshelf", "48": "0:mossy_cobblestone", "49": "0:obsidian", "50": "1:wall_torch[facing=east]|2:wall_torch[facing=west]|3:wall_torch[facing=south]|4:wall_torch[facing=north]|5:torch", "51": "0:fire[east=false,south=false,north=false,west=false,up=false,age=0]|1:fire[east=false,south=false,north=false,west=false,up=false,age=1]|2:fire[east=false,south=false,north=false,west=false,up=false,age=2]|3:fire[east=false,south=false,north=false,west=false,up=false,age=3]|4:fire[east=false,south=false,north=false,west=false,up=false,age=4]|5:fire[east=false,south=false,north=false,west=false,up=false,age=5]|6:fire[east=false,south=false,north=false,west=false,up=false,age=6]|7:fire[east=false,south=false,north=false,west=false,up=false,age=7]|8:fire[east=false,south=false,north=false,west=false,up=false,age=8]|9:fire[east=false,south=false,north=false,west=false,up=false,age=9]|10:fire[east=false,south=false,north=false,west=false,up=false,age=10]|11:fire[east=false,south=false,north=false,west=false,up=false,age=11]|12:fire[east=false,south=false,north=false,west=false,up=false,age=12]|13:fire[east=false,south=false,north=false,west=false,up=false,age=13]|14:fire[east=false,south=false,north=false,west=false,up=false,age=14]|15:fire[east=false,south=false,north=false,west=false,up=false,age=15]", "54": "2:chest[facing=north,type=single,waterlogged=false]|3:chest[facing=south,type=single,waterlogged=false]|4:chest[facing=west,type=single,waterlogged=false]|5:chest[facing=east,type=single,waterlogged=false]", "56": "0:diamond_ore", "57": "0:diamond_block", "58": "0:crafting_table", "59": "0:wheat[age=0]|1:wheat[age=1]|2:wheat[age=2]|3:wheat[age=3]|4:wheat[age=4]|5:wheat[age=5]|6:wheat[age=6]|7:wheat[age=7]", "60": "0:farmland[moisture=0]|1:farmland[moisture=1]|2:farmland[moisture=2]|3:farmland[moisture=3]|4:farmland[moisture=4]|5:farmland[moisture=5]|6:farmland[moisture=6]|7:farmland[moisture=7]", "61": "2:furnace[facing=north,lit=false]|3:furnace[facing=south,lit=false]|4:furnace[facing=west,lit=false]|5:furnace[facing=east,lit=false]", "62": "2:furnace[facing=north,lit=true]|3:furnace[facing=south,lit=true]|4:furnace[facing=west,lit=true]|5:furnace[facing=east,lit=true]", "63": "0:sign[rotation=0,waterlogged=false]|1:sign[rotation=1,waterlogged=false]|2:sign[rotation=2,waterlogged=false]|3:sign[rotation=3,waterlogged=false]|4:sign[rotation=4,waterlogged=false]|5:sign[rotation=5,waterlogged=false]|6:sign[rotation=6,waterlogged=false]|7:sign[rotation=7,waterlogged=false]|8:sign[rotation=8,waterlogged=false]|9:sign[rotation=9,waterlogged=false]|10:sign[rotation=10,waterlogged=false]|11:sign[rotation=11,waterlogged=false]|12:sign[rotation=12,waterlogged=false]|13:sign[rotation=13,waterlogged=false]|14:sign[rotation=14,waterlogged=false]|15:sign[rotation=15,waterlogged=false]", "64": "0:oak_door[hinge=right,half=lower,powered=false,facing=east,open=false]|1:oak_door[hinge=right,half=lower,powered=false,facing=south,open=false]|2:oak_door[hinge=right,half=lower,powered=false,facing=west,open=false]|3:oak_door[hinge=right,half=lower,powered=false,facing=north,open=false]|4:oak_door[hinge=right,half=lower,powered=false,facing=east,open=true]|5:oak_door[hinge=right,half=lower,powered=false,facing=south,open=true]|6:oak_door[hinge=right,half=lower,powered=false,facing=west,open=true]|7:oak_door[hinge=right,half=lower,powered=false,facing=north,open=true]|8:oak_door[hinge=left,half=upper,powered=false,facing=east,open=false]|9:oak_door[hinge=right,half=upper,powered=false,facing=east,open=false]|10:oak_door[hinge=left,half=upper,powered=true,facing=east,open=false]|11:oak_door[hinge=right,half=upper,powered=true,facing=east,open=false]", "65": "2:ladder[facing=north,waterlogged=false]|3:ladder[facing=south,waterlogged=false]|4:ladder[facing=west,waterlogged=false]|5:ladder[facing=east,waterlogged=false]", "71": "0:iron_door[hinge=right,half=lower,powered=false,facing=east,open=false]|1:iron_door[hinge=right,half=lower,powered=false,facing=south,open=false]|2:iron_door[hinge=right,half=lower,powered=false,facing=west,open=false]|3:iron_door[hinge=right,half=lower,powered=false,facing=north,open=false]|4:iron_door[hinge=right,half=lower,powered=false,facing=east,open=true]|5:iron_door[hinge=right,half=lower,powered=false,facing=south,open=true]|6:iron_door[hinge=right,half=lower,powered=false,facing=west,open=true]|7:iron_door[hinge=right,half=lower,powered=false,facing=north,open=true]|8:iron_door[hinge=left,half=upper,powered=false,facing=east,open=false]|9:iron_door[hinge=right,half=upper,powered=false,facing=east,open=false]|10:iron_door[hinge=left,half=upper,powered=true,facing=east,open=false]|11:iron_door[hinge=right,half=upper,powered=true,facing=east,open=false]", "73": "0:redstone_ore[lit=false]", "74": "0:redstone_ore[lit=true]", "78": "0:snow[layers=1]|1:snow[layers=2]|2:snow[layers=3]|3:snow[layers=4]|4:snow[layers=5]|5:snow[layers=6]|6:snow[layers=7]|7:snow[layers=8]", "79": "0:ice", "80": "0:snow_block", "81": "0:cactus[age=0]|1:cactus[age=1]|2:cactus[age=2]|3:cactus[age=3]|4:cactus[age=4]|5:cactus[age=5]|6:cactus[age=6]|7:cactus[age=7]|8:cactus[age=8]|9:cactus[age=9]|10:cactus[age=10]|11:cactus[age=11]|12:cactus[age=12]|13:cactus[age=13]|14:cactus[age=14]|15:cactus[age=15]", "82": "0:clay", "83": "0:sugar_cane[age=0]|1:sugar_cane[age=1]|2:sugar_cane[age=2]|3:sugar_cane[age=3]|4:sugar_cane[age=4]|5:sugar_cane[age=5]|6:sugar_cane[age=6]|7:sugar_cane[age=7]|8:sugar_cane[age=8]|9:sugar_cane[age=9]|10:sugar_cane[age=10]|11:sugar_cane[age=11]|12:sugar_cane[age=12]|13:sugar_cane[age=13]|14:sugar_cane[age=14]|15:sugar_cane[age=15]", "84": "0:jukebox[has_record=false]|1:jukebox[has_record=true]", "86": "0:carved_pumpkin[facing=south]|1:carved_pumpkin[facing=west]|2:carved_pumpkin[facing=north]|3:carved_pumpkin[facing=east]", "87": "0:netherrack", "88": "0:soul_sand", "89": "0:glowstone", "90": "1:nether_portal[axis=x]|2:nether_portal[axis=z]", "91": "0:jack_o_lantern[facing=south]|1:jack_o_lantern[facing=west]|2:jack_o_lantern[facing=north]|3:jack_o_lantern[facing=east]", "95": "0:white_stained_glass|1:orange_stained_glass|2:magenta_stained_glass|3:light_blue_stained_glass|4:yellow_stained_glass|5:lime_stained_glass|6:pink_stained_glass|7:gray_stained_glass|8:light_gray_stained_glass|9:cyan_stained_glass|10:purple_stained_glass|11:blue_stained_glass|12:brown_stained_glass|13:green_stained_glass|14:red_stained_glass|15:black_stained_glass", "96": "0:oak_trapdoor[half=bottom,facing=north,open=false,powered=false,waterlogged=false]|1:oak_trapdoor[half=bottom,facing=south,open=false,powered=false,waterlogged=false]|2:oak_trapdoor[half=bottom,facing=west,open=false,powered=false,waterlogged=false]|3:oak_trapdoor[half=bottom,facing=east,open=false,powered=false,waterlogged=false]|4:oak_trapdoor[half=bottom,facing=north,open=true,powered=true,waterlogged=false]|5:oak_trapdoor[half=bottom,facing=south,open=true,powered=true,waterlogged=false]|6:oak_trapdoor[half=bottom,facing=west,open=true,powered=true,waterlogged=false]|7:oak_trapdoor[half=bottom,facing=east,open=true,powered=true,waterlogged=false]|8:oak_trapdoor[half=top,facing=north,open=false,powered=false,waterlogged=false]|9:oak_trapdoor[half=top,facing=south,open=false,powered=false,waterlogged=false]|10:oak_trapdoor[half=top,facing=west,open=false,powered=false,waterlogged=false]|11:oak_trapdoor[half=top,facing=east,open=false,powered=false,waterlogged=false]|12:oak_trapdoor[half=top,facing=north,open=true,powered=true,waterlogged=false]|13:oak_trapdoor[half=top,facing=south,open=true,powered=true,waterlogged=false]|14:oak_trapdoor[half=top,facing=west,open=true,powered=true,waterlogged=false]|15:oak_trapdoor[half=top,facing=east,open=true,powered=true,waterlogged=false]", "98": "0:stone_bricks|1:mossy_stone_bricks|2:cracked_stone_bricks|3:chiseled_stone_bricks", "99": "0:brown_mushroom_block[north=false,east=false,south=false,west=false,up=false,down=false]|1:brown_mushroom_block[north=true,east=false,south=false,west=true,up=true,down=false]|2:brown_mushroom_block[north=true,east=false,south=false,west=false,up=true,down=false]|3:brown_mushroom_block[north=true,east=true,south=false,west=false,up=true,down=false]|4:brown_mushroom_block[north=false,east=false,south=false,west=true,up=true,down=false]|5:brown_mushroom_block[north=false,east=false,south=false,west=false,up=true,down=false]|6:brown_mushroom_block[north=false,east=true,south=false,west=false,up=true,down=false]|7:brown_mushroom_block[north=false,east=false,south=true,west=true,up=true,down=false]|8:brown_mushroom_block[north=false,east=false,south=true,west=false,up=true,down=false]|9:brown_mushroom_block[north=false,east=true,south=true,west=false,up=true,down=false]|10:mushroom_stem[north=true,east=true,south=true,west=true,up=false,down=false]|14:brown_mushroom_block[north=true,east=true,south=true,west=true,up=true,down=true]|15:mushroom_stem[north=true,east=true,south=true,west=true,up=true,down=true]", "100": "0:red_mushroom_block[north=false,east=false,south=false,west=false,up=false,down=false]|1:red_mushroom_block[north=true,east=false,south=false,west=true,up=true,down=false]|2:red_mushroom_block[north=true,east=false,south=false,west=false,up=true,down=false]|3:red_mushroom_block[north=true,east=true,south=false,west=false,up=true,down=false]|4:red_mushroom_block[north=false,east=false,south=false,west=true,up=true,down=false]|5:red_mushroom_block[north=false,east=false,south=false,west=false,up=true,down=false]|6:red_mushroom_block[north=false,east=true,south=false,west=false,up=true,down=false]|7:red_mushroom_block[north=false,east=false,south=true,west=true,up=true,down=false]|8:red_mushroom_block[north=false,east=false,south=true,west=false,up=true,down=false]|9:red_mushroom_block[north=false,east=true,south=true,west=false,up=true,down=false]|10:mushroom_stem[north=true,east=true,south=true,west=true,up=false,down=false]|14:red_mushroom_block[north=true,east=true,south=true,west=true,up=true,down=true]|15:mushroom_stem[north=true,east=true,south=true,west=true,up=true,down=true]", "103": "0:melon", "104": "0:pumpkin_stem[age=0]|1:pumpkin_stem[age=1]|2:pumpkin_stem[age=2]|3:pumpkin_stem[age=3]|4:pumpkin_stem[age=4]|5:pumpkin_stem[age=5]|6:pumpkin_stem[age=6]|7:pumpkin_stem[age=7]", "105": "0:melon_stem[age=0]|1:melon_stem[age=1]|2:melon_stem[age=2]|3:melon_stem[age=3]|4:melon_stem[age=4]|5:melon_stem[age=5]|6:melon_stem[age=6]|7:melon_stem[age=7]", "106": "0:vine[east=false,south=false,north=false,west=false,up=false]|1:vine[east=false,south=true,north=false,west=false,up=false]|2:vine[east=false,south=false,north=false,west=true,up=false]|3:vine[east=false,south=true,north=false,west=true,up=false]|4:vine[east=false,south=false,north=true,west=false,up=false]|5:vine[east=false,south=true,north=true,west=false,up=false]|6:vine[east=false,south=false,north=true,west=true,up=false]|7:vine[east=false,south=true,north=true,west=true,up=false]|8:vine[east=true,south=false,north=false,west=false,up=false]|9:vine[east=true,south=true,north=false,west=false,up=false]|10:vine[east=true,south=false,north=false,west=true,up=false]|11:vine[east=true,south=true,north=false,west=true,up=false]|12:vine[east=true,south=false,north=true,west=false,up=false]|13:vine[east=true,south=true,north=true,west=false,up=false]|14:vine[east=true,south=false,north=true,west=true,up=false]|15:vine[east=true,south=true,north=true,west=true,up=false]", "110": "0:mycelium[snowy=false]", "111": "0:lily_pad", "112": "0:nether_bricks", "116": "0:enchanting_table", "117": "0:brewing_stand[has_bottle_0=false,has_bottle_1=false,has_bottle_2=false]|1:brewing_stand[has_bottle_0=true,has_bottle_1=false,has_bottle_2=false]|2:brewing_stand[has_bottle_0=false,has_bottle_1=true,has_bottle_2=false]|3:brewing_stand[has_bottle_0=true,has_bottle_1=true,has_bottle_2=false]|4:brewing_stand[has_bottle_0=false,has_bottle_1=false,has_bottle_2=true]|5:brewing_stand[has_bottle_0=true,has_bottle_1=false,has_bottle_2=true]|6:brewing_stand[has_bottle_0=false,has_bottle_1=true,has_bottle_2=true]|7:brewing_stand[has_bottle_0=true,has_bottle_1=true,has_bottle_2=true]", "118": "0:cauldron[level=0]|1:cauldron[level=1]|2:cauldron[level=2]|3:cauldron[level=3]", "121": "0:end_stone", "122": "0:dragon_egg", "123": "0:redstone_lamp[lit=false]", "124": "0:redstone_lamp[lit=true]", "125": "0:oak_slab[type=double,waterlogged=false]|1:spruce_slab[type=double,waterlogged=false]|2:birch_slab[type=double,waterlogged=false]|3:jungle_slab[type=double,waterlogged=false]|4:acacia_slab[type=double,waterlogged=false]|5:dark_oak_slab[type=double,waterlogged=false]", "126": "0:oak_slab[type=bottom,waterlogged=false]|1:spruce_slab[type=bottom,waterlogged=false]|2:birch_slab[type=bottom,waterlogged=false]|3:jungle_slab[type=bottom,waterlogged=false]|4:acacia_slab[type=bottom,waterlogged=false]|5:dark_oak_slab[type=bottom,waterlogged=false]|8:oak_slab[type=top,waterlogged=false]|9:spruce_slab[type=top,waterlogged=false]|10:birch_slab[type=top,waterlogged=false]|11:jungle_slab[type=top,waterlogged=false]|12:acacia_slab[type=top,waterlogged=false]|13:dark_oak_slab[type=top,waterlogged=false]", "129": "0:emerald_ore", "130": "2:ender_chest[facing=north,waterlogged=false]|3:ender_chest[facing=south,waterlogged=false]|4:ender_chest[facing=west,waterlogged=false]|5:ender_chest[facing=east,waterlogged=false]", "133": "0:emerald_block", "137": "0:command_block[conditional=false,facing=down]|1:command_block[conditional=false,facing=up]|2:command_block[conditional=false,facing=north]|3:command_block[conditional=false,facing=south]|4:command_block[conditional=false,facing=west]|5:command_block[conditional=false,facing=east]|8:command_block[conditional=true,facing=down]|9:command_block[conditional=true,facing=up]|10:command_block[conditional=true,facing=north]|11:command_block[conditional=true,facing=south]|12:command_block[conditional=true,facing=west]|13:command_block[conditional=true,facing=east]", "138": "0:beacon", "141": "0:carrots[age=0]|1:carrots[age=1]|2:carrots[age=2]|3:carrots[age=3]|4:carrots[age=4]|5:carrots[age=5]|6:carrots[age=6]|7:carrots[age=7]", "142": "0:potatoes[age=0]|1:potatoes[age=1]|2:potatoes[age=2]|3:potatoes[age=3]|4:potatoes[age=4]|5:potatoes[age=5]|6:potatoes[age=6]|7:potatoes[age=7]", "145": "0:anvil[facing=south]|1:anvil[facing=west]|2:anvil[facing=north]|3:anvil[facing=east]|4:chipped_anvil[facing=south]|5:chipped_anvil[facing=west]|6:chipped_anvil[facing=north]|7:chipped_anvil[facing=east]|8:damaged_anvil[facing=south]|9:damaged_anvil[facing=west]|10:damaged_anvil[facing=north]|11:damaged_anvil[facing=east]", "146": "2:trapped_chest[facing=north,type=single]|3:trapped_chest[facing=south,type=single]|4:trapped_chest[facing=west,type=single]|5:trapped_chest[facing=east,type=single]", "152": "0:redstone_block", "153": "0:nether_quartz_ore", "154": "0:hopper[facing=down,enabled=true]|2:hopper[facing=north,enabled=true]|3:hopper[facing=south,enabled=true]|4:hopper[facing=west,enabled=true]|5:hopper[facing=east,enabled=true]|8:hopper[facing=down,enabled=false]|10:hopper[facing=north,enabled=false]|11:hopper[facing=south,enabled=false]|12:hopper[facing=west,enabled=false]|13:hopper[facing=east,enabled=false]", "155": "0:quartz_block|1:chiseled_quartz_block|2:quartz_pillar[axis=y]|3:quartz_pillar[axis=x]|4:quartz_pillar[axis=z]|6:quartz_pillar[axis=x]|10:quartz_pillar[axis=z]", "159": "0:white_terracotta|1:orange_terracotta|2:magenta_terracotta|3:light_blue_terracotta|4:yellow_terracotta|5:lime_terracotta|6:pink_terracotta|7:gray_terracotta|8:light_gray_terracotta|9:cyan_terracotta|10:purple_terracotta|11:blue_terracotta|12:brown_terracotta|13:green_terracotta|14:red_terracotta|15:black_terracotta", "161": "0:acacia_leaves[persistent=false,distance=1]|1:dark_oak_leaves[persistent=false,distance=1]|4:acacia_leaves[persistent=true,distance=1]|5:dark_oak_leaves[persistent=true,distance=1]|8:acacia_leaves[persistent=false,distance=1]|9:dark_oak_leaves[persistent=false,distance=1]|12:acacia_leaves[persistent=true,distance=1]|13:dark_oak_leaves[persistent=true,distance=1]", "162": "0:acacia_log[axis=y]|1:dark_oak_log[axis=y]|4:acacia_log[axis=x]|5:dark_oak_log[axis=x]|8:acacia_log[axis=z]|9:dark_oak_log[axis=z]|12:acacia_wood|13:dark_oak_wood", "165": "0:slime_block", "166": "0:barrier", "170": "0:hay_block[axis=y]|4:hay_block[axis=x]|8:hay_block[axis=z]", "171": "0:white_carpet|1:orange_carpet|2:magenta_carpet|3:light_blue_carpet|4:yellow_carpet|5:lime_carpet|6:pink_carpet|7:gray_carpet|8:light_gray_carpet|9:cyan_carpet|10:purple_carpet|11:blue_carpet|12:brown_carpet|13:green_carpet|14:red_carpet|15:black_carpet", "172": "0:terracotta", "173": "0:coal_block", "174": "0:packed_ice", "175": "0:sunflower[half=lower]|1:lilac[half=lower]|2:tall_grass[half=lower]|3:large_fern[half=lower]|4:rose_bush[half=lower]|5:peony[half=lower]|8:sunflower[half=upper]|9:lilac[half=upper]|10:tall_grass[half=upper]|11:large_fern[half=upper]|12:rose_bush[half=upper]|13:peony[half=upper]", "179": "0:red_sandstone|1:chiseled_red_sandstone|2:cut_red_sandstone", "181": "0:red_sandstone_slab[type=double,waterlogged=false]|8:smooth_red_sandstone", "182": "0:red_sandstone_slab[type=bottom,waterlogged=false]|8:red_sandstone_slab[type=top,waterlogged=false]", "193": "0:spruce_door[hinge=right,half=lower,powered=false,facing=east,open=false]|1:spruce_door[hinge=right,half=lower,powered=false,facing=south,open=false]|2:spruce_door[hinge=right,half=lower,powered=false,facing=west,open=false]|3:spruce_door[hinge=right,half=lower,powered=false,facing=north,open=false]|4:spruce_door[hinge=right,half=lower,powered=false,facing=east,open=true]|5:spruce_door[hinge=right,half=lower,powered=false,facing=south,open=true]|6:spruce_door[hinge=right,half=lower,powered=false,facing=west,open=true]|7:spruce_door[hinge=right,half=lower,powered=false,facing=north,open=true]|8:spruce_door[hinge=left,half=upper,powered=false,facing=east,open=false]|9:spruce_door[hinge=right,half=upper,powered=false,facing=east,open=false]|10:spruce_door[hinge=left,half=upper,powered=true,facing=east,open=false]|11:spruce_door[hinge=right,half=upper,powered=true,facing=east,open=false]", "194": "0:birch_door[hinge=right,half=lower,powered=false,facing=east,open=false]|1:birch_door[hinge=right,half=lower,powered=false,facing=south,open=false]|2:birch_door[hinge=right,half=lower,powered=false,facing=west,open=false]|3:birch_door[hinge=right,half=lower,powered=false,facing=north,open=false]|4:birch_door[hinge=right,half=lower,powered=false,facing=east,open=true]|5:birch_door[hinge=right,half=lower,powered=false,facing=south,open=true]|6:birch_door[hinge=right,half=lower,powered=false,facing=west,open=true]|7:birch_door[hinge=right,half=lower,powered=false,facing=north,open=true]|8:birch_door[hinge=left,half=upper,powered=false,facing=east,open=false]|9:birch_door[hinge=right,half=upper,powered=false,facing=east,open=false]|10:birch_door[hinge=left,half=upper,powered=true,facing=east,open=false]|11:birch_door[hinge=right,half=upper,powered=true,facing=east,open=false]", "195": "0:jungle_door[hinge=right,half=lower,powered=false,facing=east,open=false]|1:jungle_door[hinge=right,half=lower,powered=false,facing=south,open=false]|2:jungle_door[hinge=right,half=lower,powered=false,facing=west,open=false]|3:jungle_door[hinge=right,half=lower,powered=false,facing=north,open=false]|4:jungle_door[hinge=right,half=lower,powered=false,facing=east,open=true]|5:jungle_door[hinge=right,half=lower,powered=false,facing=south,open=true]|6:jungle_door[hinge=right,half=lower,powered=false,facing=west,open=true]|7:jungle_door[hinge=right,half=lower,powered=false,facing=north,open=true]|8:jungle_door[hinge=left,half=upper,powered=false,facing=east,open=false]|9:jungle_door[hinge=right,half=upper,powered=false,facing=east,open=false]|10:jungle_door[hinge=left,half=upper,powered=true,facing=east,open=false]|11:jungle_door[hinge=right,half=upper,powered=true,facing=east,open=false]", "196": "0:acacia_door[hinge=right,half=lower,powered=false,facing=east,open=false]|1:acacia_door[hinge=right,half=lower,powered=false,facing=south,open=false]|2:acacia_door[hinge=right,half=lower,powered=false,facing=west,open=false]|3:acacia_door[hinge=right,half=lower,powered=false,facing=north,open=false]|4:acacia_door[hinge=right,half=lower,powered=false,facing=east,open=true]|5:acacia_door[hinge=right,half=lower,powered=false,facing=south,open=true]|6:acacia_door[hinge=right,half=lower,powered=false,facing=west,open=true]|7:acacia_door[hinge=right,half=lower,powered=false,facing=north,open=true]|8:acacia_door[hinge=left,half=upper,powered=false,facing=east,open=false]|9:acacia_door[hinge=right,half=upper,powered=false,facing=east,open=false]|10:acacia_door[hinge=left,half=upper,powered=true,facing=east,open=false]|11:acacia_door[hinge=right,half=upper,powered=true,facing=east,open=false]", "197": "0:dark_oak_door[hinge=right,half=lower,powered=false,facing=east,open=false]|1:dark_oak_door[hinge=right,half=lower,powered=false,facing=south,open=false]|2:dark_oak_door[hinge=right,half=lower,powered=false,facing=west,open=false]|3:dark_oak_door[hinge=right,half=lower,powered=false,facing=north,open=false]|4:dark_oak_door[hinge=right,half=lower,powered=false,facing=east,open=true]|5:dark_oak_door[hinge=right,half=lower,powered=false,facing=south,open=true]|6:dark_oak_door[hinge=right,half=lower,powered=false,facing=west,open=true]|7:dark_oak_door[hinge=right,half=lower,powered=false,facing=north,open=true]|8:dark_oak_door[hinge=left,half=upper,powered=false,facing=east,open=false]|9:dark_oak_door[hinge=right,half=upper,powered=false,facing=east,open=false]|10:dark_oak_door[hinge=left,half=upper,powered=true,facing=east,open=false]|11:dark_oak_door[hinge=right,half=upper,powered=true,facing=east,open=false]", "199": "0:chorus_plant[east=false,south=false,north=false,west=false,up=false,down=false]", "200": "0:chorus_flower[age=0]|1:chorus_flower[age=1]|2:chorus_flower[age=2]|3:chorus_flower[age=3]|4:chorus_flower[age=4]|5:chorus_flower[age=5]", "201": "0:purpur_block", "202": "0:purpur_pillar[axis=y]|4:purpur_pillar[axis=x]|8:purpur_pillar[axis=z]", "204": "0:purpur_slab[type=double,waterlogged=false]", "205": "0:purpur_slab[type=bottom,waterlogged=false]|8:purpur_slab[type=top,waterlogged=false]", "206": "0:end_stone_bricks", "207": "0:beetroots[age=0]|1:beetroots[age=1]|2:beetroots[age=2]|3:beetroots[age=3]", "210": "0:repeating_command_block[conditional=false,facing=down]|1:repeating_command_block[conditional=false,facing=up]|2:repeating_command_block[conditional=false,facing=north]|3:repeating_command_block[conditional=false,facing=south]|4:repeating_command_block[conditional=false,facing=west]|5:repeating_command_block[conditional=false,facing=east]|8:repeating_command_block[conditional=true,facing=down]|9:repeating_command_block[conditional=true,facing=up]|10:repeating_command_block[conditional=true,facing=north]|11:repeating_command_block[conditional=true,facing=south]|12:repeating_command_block[conditional=true,facing=west]|13:repeating_command_block[conditional=true,facing=east]", "211": "0:chain_command_block[conditional=false,facing=down]|1:chain_command_block[conditional=false,facing=up]|2:chain_command_block[conditional=false,facing=north]|3:chain_command_block[conditional=false,facing=south]|4:chain_command_block[conditional=false,facing=west]|5:chain_command_block[conditional=false,facing=east]|8:chain_command_block[conditional=true,facing=down]|9:chain_command_block[conditional=true,facing=up]|10:chain_command_block[conditional=true,facing=north]|11:chain_command_block[conditional=true,facing=south]|12:chain_command_block[conditional=true,facing=west]|13:chain_command_block[conditional=true,facing=east]", "212": "0:frosted_ice[age=0]|1:frosted_ice[age=1]|2:frosted_ice[age=2]|3:frosted_ice[age=3]", "213": "0:magma_block", "215": "0:red_nether_bricks", "216": "0:bone_block[axis=y]|4:bone_block[axis=x]|8:bone_block[axis=z]", "217": "0:structure_void", "235": "0:white_glazed_terracotta[facing=south]|1:white_glazed_terracotta[facing=west]|2:white_glazed_terracotta[facing=north]|3:white_glazed_terracotta[facing=east]", "236": "0:orange_glazed_terracotta[facing=south]|1:orange_glazed_terracotta[facing=west]|2:orange_glazed_terracotta[facing=north]|3:orange_glazed_terracotta[facing=east]", "237": "0:magenta_glazed_terracotta[facing=south]|1:magenta_glazed_terracotta[facing=west]|2:magenta_glazed_terracotta[facing=north]|3:magenta_glazed_terracotta[facing=east]", "238": "0:light_blue_glazed_terracotta[facing=south]|1:light_blue_glazed_terracotta[facing=west]|2:light_blue_glazed_terracotta[facing=north]|3:light_blue_glazed_terracotta[facing=east]", "239": "0:yellow_glazed_terracotta[facing=south]|1:yellow_glazed_terracotta[facing=west]|2:yellow_glazed_terracotta[facing=north]|3:yellow_glazed_terracotta[facing=east]", "240": "0:lime_glazed_terracotta[facing=south]|1:lime_glazed_terracotta[facing=west]|2:lime_glazed_terracotta[facing=north]|3:lime_glazed_terracotta[facing=east]", "241": "0:pink_glazed_terracotta[facing=south]|1:pink_glazed_terracotta[facing=west]|2:pink_glazed_terracotta[facing=north]|3:pink_glazed_terracotta[facing=east]", "242": "0:gray_glazed_terracotta[facing=south]|1:gray_glazed_terracotta[facing=west]|2:gray_glazed_terracotta[facing=north]|3:gray_glazed_terracotta[facing=east]", "243": "0:light_gray_glazed_terracotta[facing=south]|1:light_gray_glazed_terracotta[facing=west]|2:light_gray_glazed_terracotta[facing=north]|3:light_gray_glazed_terracotta[facing=east]", "244": "0:cyan_glazed_terracotta[facing=south]|1:cyan_glazed_terracotta[facing=west]|2:cyan_glazed_terracotta[facing=north]|3:cyan_glazed_terracotta[facing=east]", "245": "0:purple_glazed_terracotta[facing=south]|1:purple_glazed_terracotta[facing=west]|2:purple_glazed_terracotta[facing=north]|3:purple_glazed_terracotta[facing=east]", "246": "0:blue_glazed_terracotta[facing=south]|1:blue_glazed_terracotta[facing=west]|2:blue_glazed_terracotta[facing=north]|3:blue_glazed_terracotta[facing=east]", "247": "0:brown_glazed_terracotta[facing=south]|1:brown_glazed_terracotta[facing=west]|2:brown_glazed_terracotta[facing=north]|3:brown_glazed_terracotta[facing=east]", "248": "0:green_glazed_terracotta[facing=south]|1:green_glazed_terracotta[facing=west]|2:green_glazed_terracotta[facing=north]|3:green_glazed_terracotta[facing=east]", "249": "0:red_glazed_terracotta[facing=south]|1:red_glazed_terracotta[facing=west]|2:red_glazed_terracotta[facing=north]|3:red_glazed_terracotta[facing=east]", "250": "0:black_glazed_terracotta[facing=south]|1:black_glazed_terracotta[facing=west]|2:black_glazed_terracotta[facing=north]|3:black_glazed_terracotta[facing=east]", "251": "0:white_concrete|1:orange_concrete|2:magenta_concrete|3:light_blue_concrete|4:yellow_concrete|5:lime_concrete|6:pink_concrete|7:gray_concrete|8:light_gray_concrete|9:cyan_concrete|10:purple_concrete|11:blue_concrete|12:brown_concrete|13:green_concrete|14:red_concrete|15:black_concrete", "255": "0:structure_block[mode=save]|1:structure_block[mode=load]|2:structure_block[mode=corner]|3:structure_block[mode=data]"};
+
+/* ==================================================================
+ * 我的世界蓝图 → Bloxd 蓝图
+ * 参考实现：github.com/hansdiewurst/converter
+ * 全部在本地完成，不上传任何文件
+ * ================================================================== */
+(function (global) {
+"use strict";
+
+/* ---------------- Bloxd 方块表 ---------------- */
+
+const BX_NAME_TO_ID = new Map();
+{
+    const arr = BX_NAMES_BLOB.split("\n");
+    for (let i = 0; i < arr.length; i++) if (arr[i]) BX_NAME_TO_ID.set(arr[i], i);
+}
+
+/* 旧版数字 ID 表：{ "35": "0:white_wool|1:orange_wool|…" } → Map("35:0" → "white_wool") */
+const BX_LEGACY_MAP = (() => {
+    const m = new Map();
+    for (const bid in BX_LEGACY_BLOB) {
+        const segs = BX_LEGACY_BLOB[bid].split("|");
+        for (let i = 0; i < segs.length; i++) {
+            const p = segs[i].indexOf(":");
+            m.set(bid + ":" + segs[i].slice(0, p), "minecraft:" + segs[i].slice(p + 1));
+        }
+    }
+    return m;
+})();
+
+/* ---------------- 我的世界方块名 → Bloxd ---------------- */
+
+const BX_MC_TYPES = [
+    ["trapdoor", /trapdoor/],
+    ["door", /door/],
+    ["bed", /bed(?=$|\[)/],
+    ["chest", /^chest/],
+    ["ender_chest", /ender_chest/],
+    ["brewing_stand", /brewing_stand/],
+    ["cactus", /cactus/],
+    ["stem", /stem/],
+    ["bush", /bush/],
+    ["farmland", /farmland/],
+    ["furnace", /furnace/],
+    ["ladder", /ladder/],
+    ["leaves", /leaves/],
+    ["y_axis", /log|wood|hay_block/],
+    ["block_sides", /mushroom_(block|stem)/],
+    ["vine", /vine/],
+    ["sapling", /sapling/],
+    ["sign", /sign/],
+    ["slab", /slab/],
+    ["tall_grass", /tall_grass/],
+    ["water", /water/],
+    ["lamp", /lamp/],
+    ["jukebox", /jukebox/],
+    ["stairs", /stairs/],
+    ["facing", /glazed_terracotta|jack_o_lantern|^pumpkin(?!_)|attached|wall_torch/]
+];
+
+const BX_MC_DEFAULT_STATES = {
+    trapdoor: { facing: "south", half: "top", open: "false", powered: "false", waterlogged: "false" },
+    door: { facing: "south", half: "lower", hinge: "left", open: "false", powered: "false" },
+    bed: { facing: "north", occupied: "false", part: "foot" },
+    chest: { facing: "south", type: "single", waterlogged: "false" },
+    ender_chest: { facing: "south", waterlogged: "false" },
+    brewing_stand: { has_bottle_0: "true", has_bottle_1: "true", has_bottle_2: "true" },
+    cactus: { age: "0" },
+    stem: { age: "7" },
+    bush: { age: "3" },
+    farmland: { moisture: "0" },
+    furnace: { facing: "south", lit: "false" },
+    ladder: { facing: "south", waterlogged: "false" },
+    leaves: { distance: "7", persistent: "true", waterlogged: "false" },
+    y_axis: { axis: "y" },
+    block_sides: { east: "true", down: "true", north: "true", south: "true", up: "true", west: "true" },
+    sapling: { stage: "0" },
+    sign: { facing: "south", waterlogged: "false" },
+    slab: { type: "bottom", waterlogged: "false" },
+    tall_grass: { half: "lower" },
+    vine: { east: "false", north: "false", south: "false", up: "false", west: "false" },
+    water: { level: "0" },
+    lamp: { lit: "false" },
+    jukebox: { has_record: "false" },
+    stairs: { facing: "south", half: "bottom", shape: "straight", waterlogged: "false" },
+    facing: { facing: "south" },
+    default: {}
+};
+
+const BX_FACING_TO_ROT = { north: 1, east: 2, south: 3, west: 4 };
+const BX_FACING_TO_ROT_INV = { south: 1, west: 2, north: 3, east: 4 };
+const BX_ROT_TO_FACING = ["", "north", "east", "south", "west"];
+const BX_ROT_TO_FACING_INV = ["", "south", "west", "north", "east"];
+
+function bxMcType(mcId) {
+    for (let i = 0; i < BX_MC_TYPES.length; i++) {
+        if (mcId.match(BX_MC_TYPES[i][1])) return BX_MC_TYPES[i][0];
+    }
+    return "default";
+}
+
+function bxParseStates(name) {
+    const out = {};
+    const i = name.indexOf("[");
+    if (i < 0) return out;
+    const j = name.lastIndexOf("]");
+    const body = name.slice(i + 1, j < 0 ? name.length : j);
+    const pairs = body.split(",");
+    for (let k = 0; k < pairs.length; k++) {
+        const eq = pairs[k].indexOf("=");
+        if (eq < 0) continue;
+        out[pairs[k].slice(0, eq).trim()] = pairs[k].slice(eq + 1).trim();
+    }
+    return out;
+}
+
+function bxStringifyStates(states) {
+    const keys = Object.keys(states);
+    if (!keys.length) return "";
+    return "[" + keys.map(k => k + "=" + states[k]).join(",") + "]";
+}
+
+function bxTrimId(name) {
+    const i = name.indexOf("[");
+    return i < 0 ? name : name.slice(0, i);
+}
+
+/* ---------------- Bloxd 元数据（|meta|rot1 / |open / |top …） ---------------- */
+
+const BX_LOC_TERMS = ["Top", "Bottom", "Left", "Right", "Head", "Mid", "Flag"];
+
+const BX_META_CFG = {
+    rotation: {
+        global: false, order: 1, dflt: 1,
+        test: s => /^meta\|rot[1-4]$/.test(s),
+        read: s => Number(s.match(/[1-4]/)[0]),
+        write: (v, n) => n + "|meta|rot" + v
+    },
+    opened: {
+        global: false, order: 0, dflt: false, needs: "rotation",
+        test: s => s === "open" || s === "closed",
+        read: s => s === "open",
+        write: (v, n) => n + "|" + (v ? "open" : "closed")
+    },
+    halfblockPlacement: {
+        global: false, order: 0, dflt: "bot", needs: "rotation",
+        test: s => s === "top" || s === "bot" || s === "side",
+        read: s => s,
+        write: (v, n) => n + "|" + v
+    },
+    plantTop: {
+        global: false, order: 0, dflt: false,
+        test: s => s === "Top",
+        read: () => true,
+        write: (v, n) => n + (v ? "|Top" : "")
+    },
+    blockLoc: {
+        global: true, order: 2, dflt: null,
+        test: s => s.charAt(0) === "_",
+        read(name) {
+            const parts = name.split("|")[0].split(" ");
+            const terms = [];
+            for (let i = 0; i < parts.length; i++) {
+                if (BX_LOC_TERMS.indexOf(parts[i]) < 0) {
+                    if (terms.length) return [];
+                    continue;
+                }
+                terms.push(parts[i]);
+            }
+            return terms;
+        },
+        write: (v, n) => v.length ? "_" + n + v.map(a => " " + a).join("") : n,
+        clean: (n, v) => n.replace(/^_/, "").replace(v.map(a => " " + a).join(""), "")
+    },
+    growingStage: {
+        global: true, order: 3, dflt: 1,
+        test: s => /_stage\d+($|\|)/.test(s),
+        read(name) {
+            const m = name.split("|")[0].match(/(?<=_stage)\d+$/);
+            return m ? parseInt(m[0], 10) : NaN;
+        },
+        write: (v, n) => n + "_stage" + v,
+        clean: (n, v) => n.split("_stage" + v).join("")
+    }
+};
+
+function bxParseBloxdMeta(name) {
+    const meta = {};
+    const segs = name.split(/(?<!meta)\|/).slice(1);
+    for (const key in BX_META_CFG) {
+        const cfg = BX_META_CFG[key];
+        if (cfg.global) {
+            if (cfg.test(name)) meta[key] = cfg.read(name);
+            continue;
+        }
+        for (let i = 0; i < segs.length; i++) {
+            if (!cfg.test(segs[i])) continue;
+            meta[key] = cfg.read(segs[i]);
+            break;
+        }
+    }
+    return meta;
+}
+
+function bxCleanBloxdName(name, meta) {
+    meta = meta || bxParseBloxdMeta(name);
+    let out = name.split("|")[0];
+    for (const key in BX_META_CFG) {
+        if (!(key in meta)) continue;
+        const fn = BX_META_CFG[key].clean;
+        if (fn) {
+            const r = fn(out, meta[key]);
+            if (r) out = r;
+        }
+    }
+    return out;
+}
+
+function bxStringifyBloxdMeta(name, meta) {
+    // 若所有「非全局」元数据都是默认值，直接丢掉
+    let allDefault = true;
+    for (const key in meta) {
+        const cfg = BX_META_CFG[key];
+        if (!cfg.global && meta[key] !== cfg.dflt) { allDefault = false; break; }
+    }
+    if (allDefault) {
+        for (const key in meta) if (!BX_META_CFG[key].global) delete meta[key];
+    }
+    // 补全依赖字段
+    for (const key in meta) {
+        const needs = BX_META_CFG[key].needs;
+        if (needs && !(needs in meta)) meta[needs] = BX_META_CFG[needs].dflt;
+    }
+    // 按 order 从大到小依次套用
+    const list = [];
+    for (const key in meta) list.push({ cfg: BX_META_CFG[key], order: BX_META_CFG[key].order || 0, val: meta[key] });
+    list.sort((a, b) => b.order - a.order);
+    for (let i = 0; i < list.length; i++) name = list[i].cfg.write(list[i].val, name);
+    return name;
+}
+
+/* ---------------- 核心：我的世界方块 → Bloxd 方块 ID ---------------- */
+
+const bxCache = new Map();
+const bxUnknown = new Map();   // 未识别的方块 → 出现次数
+
+/**
+ * @param {string} mcId 形如 minecraft:oak_stairs[facing=east,half=bottom]
+ * @param {number} fallback 无对应方块时的替代方块 ID
+ */
+function bxMcToBloxd(mcId, fallback) {
+    if (mcId === "minecraft:air" || mcId === "air") return 0;
+    const hit = bxCache.get(mcId);
+    if (hit !== undefined) return hit;
+
+    const origId = mcId;
+    let id = mcId
+        .replace(/minecraft:|potted_|flowing_|infested_|_pane|(_gate|_wall)(?=$|\[)|_powder|.*(?=sign(?=$|\[))/g, "")
+        .replace("fence", "planks")
+        .replace(/brick(?=$|\[)/g, "bricks");
+
+    // 无法表达的方块直接变成空气
+    if (/_(button|head|skull|pot)|candle|cake|rail|pressure_plate|coral(?!_block)/.test(id)) {
+        bxCache.set(origId, 0);
+        return 0;
+    }
+
+    let states = bxParseStates(id);
+    let cleanId = bxTrimId(id);
+    let type = bxMcType(cleanId);
+
+    // 楼梯、双台阶换成完整方块
+    if (type === "stairs" || (type === "slab" && states.type === "double")) {
+        const full = cleanId.replace(/_(stairs|slab)/g, "");
+        cleanId = BX_STAIRS[full] || full;
+        states = {};
+        type = bxMcType(cleanId);
+    }
+
+    let bloxdName = BX_M2B[id] || BX_M2B[cleanId];
+    if (!bloxdName) {
+        bxUnknown.set(cleanId, (bxUnknown.get(cleanId) || 0) + 1);
+        bxCache.set(origId, fallback);
+        return fallback;
+    }
+
+    const cleanBloxd = bxCleanBloxdName(bloxdName);
+    let invert = false;
+    const meta = bxParseBloxdMeta(bloxdName);
+    const blockLoc = [];
+
+    if (type === "vine") {
+        const dirs = ["north", "east", "south", "west"];
+        for (let i = 0; i < dirs.length; i++) {
+            if (states[dirs[i]] === "true") {
+                invert = true;
+                states.facing = dirs[i];
+                break;
+            }
+        }
+    }
+
+    if (states.half === "upper") {
+        if (bloxdName.indexOf("Door") >= 0) blockLoc.push("Top");
+        else if (bloxdName === "Tall Grass") meta.plantTop = true;
+    }
+
+    if (states.part) {
+        if (states.part === "head") blockLoc.push("Head");
+        invert = true;
+    }
+
+    if (type === "slab" && states.type === "top") {
+        meta.rotation = 1;
+        meta.halfblockPlacement = "top";
+    }
+
+    if (states.facing) {
+        const map = invert ? BX_FACING_TO_ROT_INV : BX_FACING_TO_ROT;
+        if (map[states.facing]) meta.rotation = map[states.facing];
+    }
+
+    if ("open" in states) meta.opened = states.open === "true";
+
+    meta.blockLoc = blockLoc;
+    const fullName = bxStringifyBloxdMeta(cleanBloxd, meta);
+
+    let bloxdId = BX_NAME_TO_ID.get(fullName);
+    if (bloxdId === undefined) bloxdId = BX_NAME_TO_ID.get(bloxdName);
+    if (bloxdId === undefined) bloxdId = BX_NAME_TO_ID.get(cleanBloxd);
+    if (bloxdId === undefined) {
+        bxUnknown.set(cleanId, (bxUnknown.get(cleanId) || 0) + 1);
+        bloxdId = fallback;
+    }
+
+    bxCache.set(origId, bloxdId);
+    return bloxdId;
+}
+
+/* ---------------- NBT 解析 ---------------- */
+
+function bxDecompress(u8) {
+    if (u8.length >= 2 && u8[0] === 0x1f && u8[1] === 0x8b) {
+        return bxPipeThrough(u8, "gzip");
+    }
+    if (u8.length >= 2 && (u8[0] & 0x0f) === 8 && (u8[0] * 256 + u8[1]) % 31 === 0) {
+        return bxPipeThrough(u8, "deflate");
+    }
+    return Promise.resolve(u8);
+}
+
+async function bxPipeThrough(u8, fmt) {
+    if (typeof DecompressionStream !== "function") throw new Error("当前浏览器不支持解压，请使用较新版本的 Chrome / Edge / Firefox");
+    const ds = new DecompressionStream(fmt);
+    const buf = await new Response(new Blob([u8]).stream().pipeThrough(ds)).arrayBuffer();
+    return new Uint8Array(buf);
+}
+
+/** 解析 NBT，返回根节点的 value（Compound） */
+function bxParseNbt(u8) {
+    const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+    const dec = new TextDecoder("utf-8");
+    let p = 0;
+
+    function str() {
+        const n = dv.getUint16(p); p += 2;
+        const s = dec.decode(u8.subarray(p, p + n)); p += n;
+        return s;
+    }
+    function payload(t) {
+        switch (t) {
+            case 1: { const v = dv.getInt8(p); p += 1; return v; }
+            case 2: { const v = dv.getInt16(p); p += 2; return v; }
+            case 3: { const v = dv.getInt32(p); p += 4; return v; }
+            case 4: { const v = dv.getBigInt64(p); p += 8; return Number(v); }
+            case 5: { const v = dv.getFloat32(p); p += 4; return v; }
+            case 6: { const v = dv.getFloat64(p); p += 8; return v; }
+            case 7: {
+                const n = dv.getInt32(p); p += 4;
+                const a = u8.subarray(p, p + n); p += n;
+                return a;
+            }
+            case 8: return str();
+            case 9: {
+                const it = dv.getInt8(p); p += 1;
+                const n = dv.getInt32(p); p += 4;
+                const a = new Array(n);
+                for (let i = 0; i < n; i++) a[i] = payload(it);
+                return a;
+            }
+            case 10: {
+                const o = {};
+                for (;;) {
+                    const it = dv.getUint8(p); p += 1;
+                    if (it === 0) break;
+                    const nm = str();
+                    o[nm] = payload(it);
+                }
+                return o;
+            }
+            case 11: {
+                const n = dv.getInt32(p); p += 4;
+                const a = new Int32Array(n);
+                for (let i = 0; i < n; i++) { a[i] = dv.getInt32(p); p += 4; }
+                return a;
+            }
+            case 12: {
+                const n = dv.getInt32(p); p += 4;
+                const a = new BigInt64Array(n);
+                for (let i = 0; i < n; i++) { a[i] = dv.getBigInt64(p); p += 8; }
+                return a;
+            }
+            default: throw new Error("未知的 NBT 标签类型：" + t);
+        }
+    }
+
+    const rootType = dv.getUint8(p); p += 1;
+    if (rootType !== 10) throw new Error("不是有效的 NBT 文件");
+    str(); // 根名称
+    return payload(10);
+}
+
+/* ---------------- 读取各类蓝图 ---------------- */
+
+/** 解码 MUTF-8 varint 数组（Sponge 的 BlockData） */
+function bxDecodeVarInts(arr) {
+    const out = new Uint32Array(Math.ceil(arr.length / 1));
+    let oi = 0, i = 0;
+    while (i < arr.length) {
+        let v = 0, shift = 0;
+        for (;;) {
+            const b = arr[i++] & 0xff;
+            v |= (b & 127) << shift;
+            shift += 7;
+            if ((b & 128) !== 128) break;
+            if (shift > 35) throw new Error("蓝图数据损坏（变长整数溢出）");
+        }
+        out[oi++] = v >>> 0;
+    }
+    return out.subarray(0, oi);
+}
+
+/* 统一的中间结果：blocks 为「Bloxd 坐标」下的 Uint16Array，索引 = (y*length + z)*width + x */
+function bxNewBuffer(w, h, l) {
+    const blocks = new Uint16Array(w * h * l);
+    return { width: w, height: h, length: l, blocks };
+}
+
+function bxReadSponge(root) {
+    let s = root;
+    if (s.Schematic) s = s.Schematic;
+
+    const w = s.Width | 0, h = s.Height | 0, l = s.Length | 0;
+    if (!w || !h || !l) throw new Error("蓝图缺少尺寸信息");
+
+    let palette, data;
+    const ver = s.Version | 0;
+    if (ver === 1 || ver === 2 || (!s.Blocks && s.Palette)) {
+        palette = s.Palette;
+        data = s.BlockData;
+    } else if (ver === 3 || s.Blocks) {
+        palette = s.Blocks && s.Blocks.Palette;
+        data = s.Blocks && s.Blocks.Data;
+    }
+    if (!palette) throw new Error("蓝图缺少方块调色板");
+    if (!data) throw new Error("蓝图缺少方块数据");
+
+    // 调色板：方块名 → 调色板序号
+    const idxToId = new Map();
+    for (const name in palette) idxToId.set(palette[name], name);
+
+    const ids = bxDecodeVarInts(data);
+    const total = w * h * l;
+    if (ids.length < total) throw new Error("方块数据不完整（" + ids.length + " / " + total + "）");
+
+    const out = bxNewBuffer(w, h, l);
+    const cache = new Map();
+    let i = 0;
+    // 原始顺序：y → z → x；写入时把 z 翻转（Bloxd 是左手坐标系）
+    for (let y = 0; y < h; y++) {
+        for (let z = l - 1; z >= 0; z--) {
+            const base = (y * l + z) * w;
+            for (let x = 0; x < w; x++) {
+                const pi = ids[i++];
+                let id = cache.get(pi);
+                if (id === undefined) {
+                    id = bxPaletteToBloxd(idxToId.get(pi));
+                    cache.set(pi, id);
+                }
+                out.blocks[base + x] = id;
+            }
+        }
+    }
+    return out;
+}
+
+let bxFallback = 2; // 未识别方块时使用的 Bloxd 方块（默认 2 = Dirt）
+
+function bxPaletteToBloxd(name) {
+    if (name === undefined || name === null) return bxFallback;
+    return bxMcToBloxd(String(name), bxFallback);
+}
+
+function bxReadLitematic(root) {
+    const v = root;
+    const mc = v.Metadata || {};
+    const enc = mc.EnclosingSize;
+    if (!enc) throw new Error("litematic 缺少 EnclosingSize");
+
+    const regions = [];
+    const regs = v.Regions || {};
+    for (const rn in regs) {
+        const r = regs[rn];
+        const pos = { x: r.Position.x | 0, y: r.Position.y | 0, z: r.Position.z | 0 };
+        const size = { x: r.Size.x | 0, y: r.Size.y | 0, z: r.Size.z | 0 };
+        for (const a of ["x", "y", "z"]) {
+            if (size[a] < 0) { pos[a] += size[a]; size[a] = -size[a]; }
+        }
+        regions.push({ pos, size, palette: r.BlockStatePalette || [], states: r.BlockStates });
+    }
+    if (!regions.length) throw new Error("litematic 中没有区域");
+
+    // 计算整体包围盒
+    let minX = Infinity, minY = Infinity, minZ = Infinity;
+    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+    for (const r of regions) {
+        minX = Math.min(minX, r.pos.x); minY = Math.min(minY, r.pos.y); minZ = Math.min(minZ, r.pos.z);
+        maxX = Math.max(maxX, r.pos.x + r.size.x); maxY = Math.max(maxY, r.pos.y + r.size.y); maxZ = Math.max(maxZ, r.pos.z + r.size.z);
+    }
+
+    const w = maxX - minX, h = maxY - minY, l = maxZ - minZ;
+    if (w <= 0 || h <= 0 || l <= 0) throw new Error("litematic 尺寸无效");
+    if (w > 4096 || h > 4096 || l > 4096) throw new Error("蓝图过大（单边超过 4096）");
+
+    const out = bxNewBuffer(w, h, l);
+    const blocks = out.blocks;
+
+    for (const r of regions) {
+        const palette = r.palette;
+        const longs = r.states;
+        if (!longs || !longs.length) continue;
+
+        const nLongs = longs.length;
+        const rx = r.size.x, ry = r.size.y, rz = r.size.z;
+        const bits = Math.max(2, Math.ceil(Math.log2(palette.length || 1)));
+        const mask = (1n << BigInt(bits)) - 1n;
+        const layerSize = rx * rz;
+
+        const idCache = new Array(palette.length);
+        for (let i = 0; i < palette.length; i++) {
+            const blk = palette[i] || {};
+            let nm = blk.Name || "minecraft:air";
+            if (blk.Properties) {
+                const st = {};
+                for (const k in blk.Properties) st[k] = String(blk.Properties[k]);
+                nm += bxStringifyStates(st);
+            }
+            idCache[i] = bxPaletteToBloxd(nm);
+        }
+
+        const ox = r.pos.x - minX, oy = r.pos.y - minY, oz = r.pos.z - minZ;
+
+        for (let y = 0; y < ry; y++) {
+            for (let z = 0; z < rz; z++) {
+                const rowBase = y * layerSize + z * rx;
+                const ty = oy + y;
+                // z 翻转
+                const tz = l - 1 - (oz + z);
+                const dst = (ty * l + tz) * w;
+                for (let x = 0; x < rx; x++) {
+                    const idx = rowBase + x;
+                    const startOff = idx * bits;
+                    const a = Math.floor(startOff / 64);
+                    if (a >= nLongs) continue;
+                    const b = Math.floor((startOff + bits - 1) / 64);
+                    const shift = BigInt(startOff - a * 64);
+
+                    let val = BigInt.asUintN(64, longs[a]) >> shift;
+                    if (a !== b && b < nLongs) val |= BigInt.asUintN(64, longs[b]) << BigInt(64 - Number(shift));
+                    const pi = Number(val & mask);
+
+                    blocks[dst + ox + x] = idCache[pi] === undefined ? bxFallback : idCache[pi];
+                }
+            }
+        }
+    }
+    return out;
+}
+
+function bxReadLegacySchematic(root) {
+    let s = root;
+    if (s.Schematic) s = s.Schematic;
+    if (s.BlockData) throw new Error("这个文件其实是 .schem 格式，请把后缀改成 .schem 再试");
+
+    const w = s.Width | 0, h = s.Height | 0, l = s.Length | 0;
+    if (!w || !h || !l) throw new Error("蓝图缺少尺寸信息");
+    const blk = s.Blocks, dat = s.Data || new Uint8Array(0);
+
+    const out = bxNewBuffer(w, h, l);
+    const cache = new Map();
+    let i = 0;
+    for (let y = 0; y < h; y++) {
+        for (let z = l - 1; z >= 0; z--) {
+            const base = (y * l + z) * w;
+            for (let x = 0; x < w; x++) {
+                let id = blk[i] & 0xff;
+                let d = (dat[i] || 0) & 0xff;
+                i++;
+                if (id === 0) { out.blocks[base + x] = 0; continue; }
+                const key = id + ":" + d;
+                let v = cache.get(key);
+                if (v === undefined) {
+                    const name = BX_LEGACY_MAP.get(key) || BX_LEGACY_MAP.get(id + ":0") || "minecraft:dirt";
+                    v = bxPaletteToBloxd(name);
+                    cache.set(key, v);
+                }
+                out.blocks[base + x] = v;
+            }
+        }
+    }
+    return out;
+}
+
+/** 结构方块 .nbt（palette + blocks + size） */
+function bxReadStructure(root) {
+    const s = root;
+    const size = s.size || [];
+    const w = size[0] | 0, h = size[1] | 0, l = size[2] | 0;
+    if (!w || !h || !l) throw new Error("结构文件缺少尺寸信息");
+    const pal = s.palette || [];
+    const list = s.blocks || [];
+
+    const idCache = new Array(pal.length);
+    for (let i = 0; i < pal.length; i++) {
+        const p = pal[i] || {};
+        let nm = p.Name || "minecraft:air";
+        if (p.Properties) {
+            const st = {};
+            for (const k in p.Properties) st[k] = String(p.Properties[k]);
+            nm += bxStringifyStates(st);
+        }
+        idCache[i] = bxPaletteToBloxd(nm);
+    }
+
+    const out = bxNewBuffer(w, h, l);
+    for (let i = 0; i < list.length; i++) {
+        const b = list[i] || {};
+        const p = b.pos || [0, 0, 0];
+        const x = p[0] | 0, y = p[1] | 0, z = p[2] | 0;
+        if (x < 0 || y < 0 || z < 0 || x >= w || y >= h || z >= l) continue;
+        const id = idCache[b.state | 0];
+        out.blocks[(y * l + (l - 1 - z)) * w + x] = id === undefined ? bxFallback : id;
+    }
+    return out;
+}
+
+/* ---------------- 写出 Bloxd 蓝图（AVRO 二进制） ---------------- */
+
+function BxByteWriter(cap) {
+    this.buf = new Uint8Array(cap || 65536);
+    this.p = 0;
+}
+BxByteWriter.prototype = {
+    need(n) {
+        const req = this.p + n;
+        if (req <= this.buf.length) return;
+        let c = this.buf.length * 2;
+        while (c < req) c *= 2;
+        const nb = new Uint8Array(c);
+        nb.set(this.buf.subarray(0, this.p));
+        this.buf = nb;
+    },
+    byte(b) { this.need(1); this.buf[this.p++] = b & 0xff; },
+    raw(a) { this.need(a.length); this.buf.set(a, this.p); this.p += a.length; },
+    // AVRO int / long：zigzag + varint
+    int(n) {
+        let u = n >= 0 ? n * 2 : (-n) * 2 - 1;
+        this.need(10);
+        while (u >= 128) {
+            this.buf[this.p++] = (u % 128) | 128;
+            u = Math.floor(u / 128);
+        }
+        this.buf[this.p++] = u;
+    },
+    str(s) {
+        const b = new TextEncoder().encode(s);
+        this.int(b.length);
+        this.raw(b);
+    },
+    bytes(a) {
+        this.int(a.length);
+        this.raw(a);
+    },
+    bool(v) { this.byte(v ? 1 : 0); },
+    done() { return this.buf.slice(0, this.p); }
+};
+
+const BX_CHUNK_LIMIT = 200;
+
+/** 把中间结果编码成 .bloxdschem 字节 */
+function bxEncodeBloxdschem(name, w, h, l, blocks) {
+    const cw = Math.ceil(w / 32), ch = Math.ceil(h / 32), cl = Math.ceil(l / 32);
+    const wtr = new BxByteWriter(Math.max(65536, blocks.length));
+
+    // headers: fixed(4) = 04 00 00 00
+    wtr.byte(4); wtr.byte(0); wtr.byte(0); wtr.byte(0);
+    wtr.str(name);
+    wtr.int(0); wtr.int(0); wtr.int(0);   // x / y / z
+    wtr.int(w); wtr.int(h); wtr.int(l);   // width / height / length
+
+    // chunks
+    wtr.int(cw * ch * cl);
+    const chunk = new Uint16Array(32768);
+    for (let cx = 0; cx < cw; cx++) {
+        for (let cy = 0; cy < ch; cy++) {
+            for (let cz = 0; cz < cl; cz++) {
+                // 取出这一块，越界补空气
+                let o = 0;
+                for (let x = 0; x < 32; x++) {
+                    const gx = cx * 32 + x;
+                    for (let y = 0; y < 32; y++) {
+                        const gy = cy * 32 + y;
+                        for (let z = 0; z < 32; z++) {
+                            const gz = cz * 32 + z;
+                            chunk[o++] = (gx < w && gy < h && gz < l)
+                                ? blocks[(gy * l + gz) * w + gx] : 0;
+                        }
+                    }
+                }
+
+                // RLE：数量 + 方块 ID
+                const rle = new BxByteWriter(8192);
+                let curId = chunk[0], curAmt = 1;
+                for (let i = 1; i <= chunk.length; i++) {
+                    if (chunk[i] === curId && i < chunk.length) {
+                        curAmt++;
+                    } else {
+                        rle.int(curAmt);
+                        rle.int(curId);
+                        curAmt = 1;
+                        curId = chunk[i];
+                    }
+                }
+                const rleBytes = rle.done();
+
+                wtr.int(cx); wtr.int(cy); wtr.int(cz);
+                wtr.bytes(rleBytes);
+            }
+        }
+    }
+
+    wtr.int(0);           // blockdatas（空）
+    wtr.int(0); wtr.int(0); wtr.int(0); // globalX / globalY / globalZ
+    wtr.int(0);           // worldcode: null 分支
+    wtr.bool(false);      // somebool
+
+    return wtr.done();
+}
+
+/**
+ * 按 Bloxd 的 200 chunk 上限切分，返回一组 { name, w, h, l, blocks }
+ */
+function bxSplit(w, h, l, blocks, name) {
+    const cw = Math.ceil(w / 32), ch = Math.ceil(h / 32), cl = Math.ceil(l / 32);
+    if (cw * ch * cl <= BX_CHUNK_LIMIT) return null;
+
+    const sx = Math.min(BX_CHUNK_LIMIT, cw);
+    const sy = Math.min(Math.floor(BX_CHUNK_LIMIT / sx) || 1, ch);
+    const sz = Math.min(Math.floor(BX_CHUNK_LIMIT / sx / sy) || 1, cl);
+
+    const out = [];
+    for (let x0 = 0; x0 < cw; x0 += sx) {
+        for (let y0 = 0; y0 < ch; y0 += sy) {
+            for (let z0 = 0; z0 < cl; z0 += sz) {
+                const nx = Math.min(sx, cw - x0), ny = Math.min(sy, ch - y0), nz = Math.min(sz, cl - z0);
+                const nw = Math.min(nx * 32, w - x0 * 32);
+                const nh = Math.min(ny * 32, h - y0 * 32);
+                const nl = Math.min(nz * 32, l - z0 * 32);
+                const sub = new Uint16Array(nw * nh * nl);
+                for (let y = 0; y < nh; y++) {
+                    for (let z = 0; z < nl; z++) {
+                        const srcRow = ((y0 * 32 + y) * l + (z0 * 32 + z)) * w + x0 * 32;
+                        const dstRow = (y * nl + z) * nw;
+                        sub.set(blocks.subarray(srcRow, srcRow + nw), dstRow);
+                    }
+                }
+                out.push({
+                    name: name + " - Offset " + (x0 * 32) + " " + (y0 * 32) + " " + (z0 * 32),
+                    w: nw, h: nh, l: nl, blocks: sub
+                });
+            }
+        }
+    }
+    return out;
+}
+
+/* ---------------- 对外接口 ---------------- */
+
+async function bxConvert(file, name, fallbackId, splitEnabled) {
+    bxFallback = fallbackId || 2;
+    bxCache.clear();
+    bxUnknown.clear();
+
+    const raw = new Uint8Array(await file.arrayBuffer());
+    const data = await bxDecompress(raw);
+    const root = bxParseNbt(data);
+
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    let res;
+    if (ext === "litematic") res = bxReadLitematic(root);
+    else if (ext === "schematic") res = bxReadLegacySchematic(root);
+    else if (ext === "nbt") res = bxReadStructure(root);
+    else if (ext === "schem") res = bxReadSponge(root);
+    else {
+        // 按内容判断
+        if (root.Regions) res = bxReadLitematic(root);
+        else if (root.Width) res = bxReadSponge(root);
+        else if (root.size) res = bxReadStructure(root);
+        else throw new Error("无法识别的蓝图格式");
+    }
+
+    const cleanName = (name || "schematic").replace(/[\\/:*?"<>|]/g, "_");
+    const cells = res.width * res.height * res.length;
+    if (!cells) throw new Error("蓝图是空的（尺寸为 0）");
+    if (cells > 33554432) {
+        throw new Error("蓝图太大（" + res.width + "×" + res.height + "×" + res.length
+            + " = " + (cells / 1048576).toFixed(1) + "M 格），单次上限 32M 格，请先在游戏里分块导出");
+    }
+    const parts = splitEnabled === false
+        ? null
+        : bxSplit(res.width, res.height, res.length, res.blocks, cleanName);
+
+    // 统计非空气方块
+    let solid = 0;
+    const all = res.blocks;
+    for (let i = 0; i < all.length; i++) if (all[i]) solid++;
+
+    const chunkCount = Math.ceil(res.width / 32) * Math.ceil(res.height / 32) * Math.ceil(res.length / 32);
+
+    if (!parts) {
+        return {
+            files: [{ name: cleanName + ".bloxdschem", data: bxEncodeBloxdschem(cleanName, res.width, res.height, res.length, res.blocks) }],
+            width: res.width, height: res.height, length: res.length,
+            chunks: chunkCount, solid: solid,
+            unknown: bxUnknownEntries(), split: 1
+        };
+    }
+
+    const files = parts.map(p => ({
+        name: p.name + ".bloxdschem",
+        data: bxEncodeBloxdschem(p.name, p.w, p.h, p.l, p.blocks)
+    }));
+    return {
+        files, width: res.width, height: res.height, length: res.length,
+        chunks: chunkCount, solid: solid,
+        unknown: bxUnknownEntries(), split: files.length
+    };
+}
+
+function bxUnknownEntries() {
+    const arr = Array.from(bxUnknown.entries());
+    arr.sort((a, b) => b[1] - a[1]);
+    return arr.slice(0, 12).map(e => e[0]);
+}
+
+global.BX = {
+    convert: bxConvert,
+    mcToBloxd: bxMcToBloxd,
+    names: BX_NAME_TO_ID,
+    setName: n => { /* 保留接口 */ }
+};
+
+})(typeof window !== "undefined" ? window : globalThis);
+
+/* ==================== 我的世界 → Bloxd 蓝图 面板 ==================== */
+const bxList = makeFileList($("bxFiles"));
+
+bindDropZone($("bxDrop"), $("bxInput"), files => {
+    const ok = files.filter(f => /\.(schem|litematic|schematic|nbt)$/i.test(f.name));
+    const bad = files.length - ok.length;
+    if (ok.length) {
+        bxList.add(ok);
+        $("bxStatus").className = "status";
+        $("bxStatus").textContent = "已添加 " + ok.length + " 个文件"
+            + (bad ? "（忽略 " + bad + " 个不支持的文件）" : "");
+    } else {
+        $("bxStatus").className = "status err";
+        $("bxStatus").textContent = "只支持 .schem / .litematic / .schematic / .nbt";
+    }
+});
+
+function bxStat(label, value) {
+    const d = document.createElement("div");
+    d.className = "stat";
+    d.textContent = label;
+    const b = document.createElement("b");
+    b.textContent = value;
+    d.appendChild(b);
+    return d;
+}
+
+$("bxRun").addEventListener("click", async () => {
+    const btn = $("bxRun"), st = $("bxStatus"), stats = $("bxStats");
+    const items = bxList.all();
+    if (!items.length) {
+        st.className = "status err";
+        st.textContent = "请先选择要转换的蓝图文件";
+        return;
+    }
+
+    btn.disabled = true;
+    stats.innerHTML = "";
+    stats.hidden = true;
+
+    const fbName = $("bxFallback").value;
+    const fbId = BX.names.get(fbName);
+    const fallback = fbId === undefined ? 2 : fbId;
+    const splitOn = $("bxSplitChk").checked;
+
+    let okCount = 0, failCount = 0, totalChunks = 0, totalBytes = 0, totalCells = 0, totalSolid = 0;
+    const problems = new Map();
+
+    for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        const base = baseName(it.file.name);
+        try {
+            bxList.setMeta(it, "准备中…");
+            bxList.setProgress(it, 0.08);
+            st.className = "status";
+            st.textContent = "（" + (i + 1) + "/" + items.length + "）" + it.file.name + " 正在解析…";
+            await yieldUI();
+
+            const res = await BX.convert(it.file, base, fallback, splitOn);
+
+            bxList.setProgress(it, 0.9);
+            st.textContent = "（" + (i + 1) + "/" + items.length + "）" + it.file.name + " 正在写出…";
+            await yieldUI();
+
+            if (res.files.length === 1) {
+                download(new Blob([res.files[0].data], { type: "application/octet-stream" }), res.files[0].name);
+            } else {
+                const zip = zipStore(res.files.map(f => ({ name: f.name, data: f.data })));
+                download(new Blob([zip], { type: "application/zip" }), base + "-bloxd.zip");
+            }
+
+            const bytes = res.files.reduce((a, f) => a + f.data.length, 0);
+            totalChunks += res.chunks;
+            totalBytes += bytes;
+            totalCells += res.width * res.height * res.length;
+            totalSolid += res.solid;
+            okCount++;
+
+            let meta = res.width + "×" + res.height + "×" + res.length
+                + " · " + res.solid.toLocaleString("zh-CN") + " 个方块 · " + fmtBytes(bytes);
+            if (res.split > 1) meta += " · 切成 " + res.split + " 份";
+            bxList.setMeta(it, meta, "done");
+            bxList.setProgress(it, 1);
+
+            for (const n of res.unknown) problems.set(n, (problems.get(n) || 0) + 1);
+        } catch (err) {
+            failCount++;
+            bxList.setMeta(it, "失败：" + (err && err.message ? err.message : err), "err");
+            bxList.setProgress(it, 0);
+        }
+    }
+
+    // 汇总
+    stats.hidden = false;
+    stats.appendChild(bxStat("成功", okCount));
+    if (failCount) stats.appendChild(bxStat("失败", failCount));
+    if (totalCells) stats.appendChild(bxStat("方块", totalSolid.toLocaleString("zh-CN")));
+    if (totalChunks) stats.appendChild(bxStat("区块", totalChunks.toLocaleString("zh-CN")));
+    if (totalBytes) stats.appendChild(bxStat("输出", fmtBytes(totalBytes)));
+
+    if (problems.size) {
+        const box = document.createElement("div");
+        box.className = "pe-hint";
+        box.style.width = "100%";
+        box.textContent = "以下方块在 Bloxd 里没有对应（已用「" + fbName + "」补位）：";
+        const list = Array.from(problems.keys()).sort();
+        const shown = list.slice(0, 24);
+        for (const n of shown) {
+            const s = document.createElement("span");
+            s.className = "pe-tag r";
+            s.textContent = n.replace(/^minecraft:/, "");
+            box.appendChild(s);
+        }
+        if (list.length > shown.length) {
+            const s = document.createElement("span");
+            s.className = "pe-tag";
+            s.textContent = "… 另有 " + (list.length - shown.length) + " 种";
+            box.appendChild(s);
+        }
+        stats.appendChild(box);
+    }
+
+    st.className = failCount ? (okCount ? "status" : "status err") : "status ok";
+    st.textContent = failCount
+        ? okCount + " 个成功，" + failCount + " 个失败（失败原因见上方列表）"
+        : "全部完成，共 " + okCount + " 个文件，已开始下载";
+
+    btn.disabled = false;
+});
+
 </script>
-
-
-
 
 </body></html>
