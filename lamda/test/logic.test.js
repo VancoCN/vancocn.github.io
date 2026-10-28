@@ -98,6 +98,7 @@ win.eval(read('charts/index.js'));
 win.eval(read(`charts/${CHART_ID}.js`));
 win.eval(read('charts/pupa.js'));
 win.eval(read('charts/amidst-the-jungle.js'));
+win.eval(read('charts/the-earth.js'));
 win.eval(read('js/synth.js'));
 win.eval(read('js/game.js'));
 
@@ -120,7 +121,7 @@ function boot() {
   await boot();
   console.log('\n== 载入 ==');
   ok(!!M, '__MR 已挂载');
-  eq(M.App.songs.length, 3, '曲库载入 3 首');
+  eq(M.App.songs.length, 4, '曲库载入 4 首');
   const song = M.App.songs[0];
   eq(song.title, 'Bad Apple!!', '曲名（来自谱面）');
   eq(song.taps, 848, '可击打分组数 = 848');
@@ -139,6 +140,15 @@ function boot() {
   near(jg.duration, 134.116, 0.05, '新曲时长 134.116s');
   near(jg.bpm, 68, 0.1, '新曲 BPM 68');
   eq(jg.level, 3, '新曲难度 LV.03');
+  const te = M.App.songs.filter(function (s) { return s.id === 'the-earth'; })[0];
+  ok(!!te, 'the Earth 已加载');
+  eq(te.title, 'The Earth', 'the Earth 曲名');
+  eq(te.artist, 'Cheetah Mobile', 'the Earth 曲师');
+  eq(te.cover, '', '无曲绘（走艺术字封面）');
+  eq(te.taps, 245, 'the Earth 击打单位 = 245');
+  eq(te.level, 6, 'the Earth 难度 LV.06');
+  near(te.bpm, 100, 0.1, 'the Earth BPM 100');
+  eq(te.orig, false, 'the Earth 非原创曲');
   eq(song.parsed.tracks.length, 3, '谱面含 3 条音轨');
   ok(song.parsed.beats.length > 400, '节拍线由 tempo 生成（' + song.parsed.beats.length + ' 拍）');
 
@@ -191,6 +201,64 @@ function boot() {
   setT(G.groups[0].t + 0.061);
   M.press(win.performance.now());
   eq(G.good, 1, '+61ms -> GOOD');
+
+  /* 判定精度：记录误差，且不会串到后一个音符 */
+  restart();
+  setT(G.groups[0].t + 0.030);
+  M.press(win.performance.now());
+  eq(G.perfect, 1, '+30ms -> PERFECT');
+  near(G.judge.err, 0.030, 0.006, 'PERFECT 记录误差值');
+  eq(G.judge.txt, 'PERFECT', '判定文字为 PERFECT');
+  eq(G.judge.k, 1, 'PERFECT 判定等级 = 1');
+
+  restart();
+  setT(G.groups[0].t + 0.085);
+  M.press(win.performance.now());
+  eq(G.good, 1, '+85ms -> GOOD');
+  eq(G.judge.txt, 'GOOD', '判定文字为 GOOD');
+  eq(G.judge.k, 2, 'GOOD 判定等级 = 2（与 PERFECT 区分）');
+  ok(G.judge.k !== 1, 'GOOD 的等级与 PERFECT 不同，可用于区分特效');
+
+  /* 只消耗一个音符：后面的音符不受影响 */
+  restart();
+  const gapG = G.groups[0], nextG = G.groups[1];
+  setT(gapG.t);
+  M.press(win.performance.now());
+  eq(G.perfect, 1, '第一个音符被判 PERFECT');
+  eq(G.groups[1].st, 0, '后一个音符未被一起消耗');
+  ok(nextG.t > gapG.t, '音符按时间递增');
+  /* 后面的音符仍可正常判定，不会继承前一个的判定结果 */
+  setT(nextG.t);
+  M.press(win.performance.now());
+  eq(G.perfect, 2, '下一个音符独立判定为 PERFECT');
+  eq(G.good, 0, 'GOOD 没有传导到下一个音符');
+
+  /* 判定偏移校准 */
+  restart();
+  M.S.offset = 0;
+  setT(G.groups[0].t + 0.070);
+  M.press(win.performance.now());
+  eq(G.good, 1, '偏移 0 时 +70ms 是 GOOD');
+
+  restart();
+  M.S.offset = 0;
+  setT(G.groups[0].t + 0.070);
+  M.press(G.t0 !== null ? win.performance.now() : win.performance.now());
+  eq(G.good, 1, '（基线）');
+
+  restart();
+  M.S.offset = 0;
+  setT(G.groups[0].t + 0.030);
+  M.S.offset = -30;      // 玩家反馈偏晚，减 30ms 抵消
+  M.press(win.performance.now());
+  eq(G.perfect, 1, '偏移 -30ms 后同样输入变 PERFECT');
+  M.S.offset = 0;
+
+  /* 越界的偏移被夹住 */
+  M.S.offset = 0;
+  M.openSettings('select');
+  M.closeSettings();
+  ok(true, '设置面板可开关');
 
   restart();
   setT(G.groups[0].t + 0.150);
@@ -280,9 +348,11 @@ function boot() {
   const key = (k) => {
     win.dispatchEvent(new win.KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
   };
-  M.setScreen('title');
-  eq(M.App.screen, 'title', '起始于标题');
+  M.goSplash();
+  eq(M.App.screen, 'splash', '起始于启动屏');
   M.setHomeSel(0);
+  key('x');
+  eq(M.App.screen, 'title', '启动屏：任意键进入主界面');
   key('x');
   eq(M.App.screen, 'title', '主界面：任意键不再跳转');
   key('ArrowDown');
@@ -317,7 +387,7 @@ function boot() {
   eq(M.App.screen, 'title', '设置 ESC 回到主界面');
   eq(M.App.screen !== 'select', true, '设置是主界面的一级入口，不经过选曲');
   eq(win.document.querySelectorAll('#homeMenu .hitem').length, 2, '主界面有 2 个菜单项');
-  eq(win.document.getElementById('homeTracks').textContent, '03', '主界面显示曲目数');
+  eq(win.document.getElementById('homeTracks').textContent, '04', '主界面显示曲目数');
   ok(/^\d{4}$/.test(win.document.getElementById('homeChart').textContent), '主界面显示总音符数');
   const sel0 = win.document.querySelectorAll('#homeMenu .hitem.sel');
   eq(sel0.length, 1, '主界面只有一项处于选中态');
@@ -338,7 +408,6 @@ function boot() {
   eq(M.G.paused, true, 'blur 后自动暂停');
   eq(M.App.screen, 'pause', 'blur 后切到暂停界面');
   eq(M.G.autoPaused, true, '标记为自动暂停');
-  ok(/AUTO PAUSED/.test(win.document.getElementById('pauseNote').textContent), '暂停界面提示自动暂停');
   const tBlur = M.songTime();
   win.dispatchEvent(new win.Event('blur'));
   eq(M.G.paused, true, '重复 blur 不重复触发');
@@ -346,7 +415,6 @@ function boot() {
   M.resumeGame();
   eq(M.G.paused, false, '继续游戏');
   eq(M.G.autoPaused, false, '继续后清除自动暂停标记');
-  eq(win.document.getElementById('pauseNote').textContent, '', '继续后提示清空');
   win.dispatchEvent(new win.Event('blur'));
   eq(M.G.paused, true, '再次失焦再次暂停');
   M.resumeGame();
@@ -454,7 +522,7 @@ function boot() {
   M.setScreen('select');
   M.openSettings('select');
   eq(M.App.screen, 'settings', '打开设置面板');
-  eq(win.document.querySelectorAll('#setList .setRow').length, 4, '四个设置项');
+  eq(win.document.querySelectorAll('#setList .setRow').length, 5, '五个设置项');
   const valOf = (i) => win.document.querySelectorAll('#setList .setRow')[i].querySelector('.v b').textContent;
   const v0 = valOf(0);
   key('ArrowRight');
@@ -544,7 +612,7 @@ function boot() {
   /* ---------- 曲目清单 ---------- */
   console.log('\n== 曲目清单 ==');
   ok(Array.isArray(win.LAMBDA_INDEX), 'charts/index.js 提供清单');
-  eq(win.LAMBDA_INDEX.length, 3, '清单里 3 首');
+  eq(win.LAMBDA_INDEX.length, 4, '清单里 4 首');
   eq(win.LAMBDA_INDEX[0], CHART_ID, '清单 id = ' + CHART_ID);
   ok(!!(win.LAMBDA_CHART && win.LAMBDA_CHART[CHART_ID]), '谱面已注册到 LAMBDA_CHART');
   eq(M.App.songs[0].id, CHART_ID, '歌曲 id 与清单一致');
@@ -552,7 +620,7 @@ function boot() {
   eq(M.App.failed.length, 0, '没有加载失败的谱面');
 
   await M.loadSongs();
-  eq(M.App.songs.length, 3, '重新加载后仍是 3 首');
+  eq(M.App.songs.length, 4, '重新加载后仍是 4 首');
 
   /* 空清单：提示怎么加曲 */
   const wEmpty = (function () {

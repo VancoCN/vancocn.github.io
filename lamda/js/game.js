@@ -65,14 +65,14 @@
   }
 
   /* ------------------------------------------------------------------ 存档 */
-  var App = { screen: 'title', songs: [], sel: 0, booted: false,
+  var App = { screen: 'splash', songs: [], sel: 0, booted: false,
     loading: true, notice: '', failed: [] };
   var AUTO = false;   // 自动演奏（演示 / 调试用，?auto=1 开启）
 
   /* ------------------------------------------------------------------ 设置 */
   var SPEEDS = [0.6, 0.75, 0.9, 1.0, 1.15, 1.35, 1.6, 2.0];
   var SET_KEY = 'mono-rhythm.settings.v1';
-  var S = { spd: 3, onHit: false, skip: true, auto: false };
+  var S = { spd: 3, onHit: false, skip: true, auto: false, offset: 0 };  // offset: 判定偏移(ms)
   var setRow = 0, setFrom = 'select';
 
   function loadSettings() {
@@ -83,6 +83,9 @@
         if (typeof raw.onHit === 'boolean') S.onHit = raw.onHit;
         if (typeof raw.skip === 'boolean') S.skip = raw.skip;
         if (typeof raw.auto === 'boolean') S.auto = raw.auto;
+        if (typeof raw.offset === 'number' && isFinite(raw.offset)) {
+          S.offset = clamp(Math.round(raw.offset / 5) * 5, -150, 150);
+        }
       }
     } catch (e) {}
   }
@@ -142,10 +145,10 @@
   }
 
   /* ------------------------------------------------------------------ 屏幕 */
-  var SCREENS = { 'scr-title': 1, 'scr-select': 1, 'scr-result': 1, 'scr-pause': 1, 'scr-settings': 1 };
+  var SCREENS = { 'scr-splash': 1, 'scr-title': 1, 'scr-select': 1, 'scr-result': 1, 'scr-pause': 1, 'scr-settings': 1 };
   function setScreen(name) {
     App.screen = name;
-    var map = { title: 'scr-title', select: 'scr-select', result: 'scr-result', pause: 'scr-pause', settings: 'scr-settings' };
+    var map = { splash: 'scr-splash', title: 'scr-title', select: 'scr-select', result: 'scr-result', pause: 'scr-pause', settings: 'scr-settings' };
     Object.keys(SCREENS).forEach(function (id) {
       var el = $(id), on = (map[name] === id);
       el.classList.toggle('on', on);
@@ -322,6 +325,32 @@
       im.onerror = function () { probe(i + 1); };
       im.src = list[i];
     })(0);
+    /* 没有曲绘时不放占位符，直接用曲名做艺术字封面 */
+    var art = $('coverArt');
+    if (art) renderCoverArt(art, s);
+  }
+
+  /* 曲名艺术字：按最长单词自动缩放，堆叠排版，保持黑白几何风 */
+  function renderCoverArt(el, s) {
+    el.innerHTML = '';
+    var words = String(s.title || '').toUpperCase().split(/\s+/).filter(Boolean);
+    if (!words.length) return;
+    var longest = words.reduce(function (a, b) { return b.length > a.length ? b : a; }, '');
+    /* 单行可用宽 ~ 100cqw，字宽经验值 0.62em，留 12% 边距 */
+    var size = Math.max(11, Math.min(64, 88 / Math.max(1, longest.length) * 1.6));
+    var box = document.createElement('div');
+    box.className = 'coverArtBox';
+    words.forEach(function (w) {
+      var d = document.createElement('i');
+      d.textContent = w;
+      d.style.fontSize = size + 'px';
+      box.appendChild(d);
+    });
+    var tag = document.createElement('span');
+    tag.className = 'coverArtTag';
+    tag.textContent = s.orig ? 'ORIGINAL' : (s.artist || '');
+    if (tag.textContent) box.appendChild(tag);
+    el.appendChild(box);
   }
 
   function renderSide(s) {
@@ -436,9 +465,22 @@
     renderSongList();
   }
 
+  function goSplash() {
+    setScreen('splash');
+  }
+
   function goTitle() {
     setScreen('title');
     renderHome();
+  }
+
+  /* 启动屏 -> 主界面 */
+  function enterHome() {
+    if (App.screen !== 'splash') return false;
+    Synth.init();
+    Synth.resume();
+    goTitle();
+    return true;
   }
 
   /* ------------------------------------------------------------------ 主菜单 */
@@ -463,18 +505,20 @@
   }
 
   /* ------------------------------------------------------------------ 设置面板 */
-  var SET_ROWS = 4;
+  var SET_ROWS = 5;
   var SET_KEYS = [
     ['流速', 'SCROLL SPEED'],
     ['打击发声', 'AUDIO ON HIT'],
     ['跳过前奏', 'SKIP INTRO'],
-    ['自动游玩', 'AUTO PLAY']
+    ['自动游玩', 'AUTO PLAY'],
+    ['判定偏移', 'TIMING OFFSET']
   ];
   function settingValue(i) {
     if (i === 0) return speedFactor().toFixed(2) + 'x';
     if (i === 1) return S.onHit ? 'ON' : 'OFF';
     if (i === 2) return S.skip ? 'ON' : 'OFF';
-    return S.auto ? 'ON' : 'OFF';
+    if (i === 3) return S.auto ? 'ON' : 'OFF';
+    return (S.offset > 0 ? '+' : '') + S.offset + 'ms';
   }
   function renderSettings() {
     var ul = $('setList');
@@ -502,7 +546,8 @@
     if (i === 0) S.spd = (S.spd + d + SPEEDS.length) % SPEEDS.length;
     else if (i === 1) S.onHit = !S.onHit;
     else if (i === 2) S.skip = !S.skip;
-    else S.auto = !S.auto;
+    else if (i === 3) S.auto = !S.auto;
+    else S.offset = clamp(S.offset + (d > 0 ? 5 : -5), -150, 150);
     saveSettings();
     computeLayout();
     renderSettings();
@@ -693,14 +738,12 @@
     if (!G.active || G.paused) return;
     G.paused = true;
     Synth.suspend();
-    renderPauseNote();
     setScreen('pause');
   }
   function resumeGame() {
     if (!G.paused) return;
     G.paused = false;
     G.autoPaused = false;
-    renderPauseNote();
     Synth.resume();
     setScreen('play');
   }
@@ -717,13 +760,7 @@
     if (App.screen !== 'play') return false;
     pauseGame();
     G.autoPaused = true;
-    renderPauseNote();
     return true;
-  }
-
-  function renderPauseNote() {
-    var el = $('pauseNote');
-    if (el) el.textContent = G.autoPaused ? 'AUTO PAUSED · 界面失焦自动暂停' : '';
   }
   /* ------------------------------------------------------------------ 判定 */
   function addFx(o) {
@@ -736,18 +773,21 @@
     var jx = L.judgeX;
     var strong = kind === 1;
     var y = groupY(g);
-    addFx({ k: 'ring', x: jx, y: y, life: strong ? 0.5 : 0.4, r0: 8, r1: strong ? 78 : 54, w: strong ? 1.8 : 1.2 });
-    if (strong) addFx({ k: 'sq', x: jx, y: y, life: 0.45, s0: 16, s1: 58, rot: Math.PI / 4 });
-    var cnt = strong ? 7 : 4;
+    addFx({ k: 'ring', x: jx, y: y, life: strong ? 0.5 : 0.26, r0: 8, r1: strong ? 78 : 44, w: strong ? 1.8 : 1 });
+    if (strong) {
+      addFx({ k: 'sq', x: jx, y: y, life: 0.45, s0: 16, s1: 58, rot: Math.PI / 4 });
+      addFx({ k: 'ring', x: jx, y: y, life: 0.34, r0: 12, r1: 34, w: 2.4 });
+    }
+    var cnt = strong ? 7 : 2;
     for (var j = 0; j < cnt; j++) {
       addFx({
-        k: 'shard', x: jx, y: y, life: 0.42,
+        k: 'shard', x: jx, y: y, life: strong ? 0.42 : 0.24,
         a: (j / cnt) * Math.PI * 2 + Math.random() * 0.4,
-        sp: 120 + Math.random() * (strong ? 160 : 90),
+        sp: 120 + Math.random() * (strong ? 160 : 60),
         len: 7 + Math.random() * 11
       });
     }
-    addFx({ k: 'blade', x1: jx, x2: Math.max(70, W * 0.34), y: y, life: 0.28 });
+    if (strong) addFx({ k: 'blade', x1: jx, x2: Math.max(70, W * 0.34), y: y, life: 0.28 });
   }
 
   function missFx(g) {
@@ -758,7 +798,7 @@
     addFx({ k: 'ring', x: L.judgeX, y: (L.top + L.bot) / 2, life: 0.22, r0: 3, r1: 20, w: 1 });
   }
 
-  function judgeHit(g, kind) {
+  function judgeHit(g, kind, err) {
     g.st = kind;
     for (var i = 0; i < g.notes.length; i++) g.notes[i].st = 1;
     G.combo++;
@@ -766,10 +806,16 @@
     if (kind === 1) G.perfect++; else G.good++;
     if (G.perfect === G.total) G.score = 1000000;
     else G.score = Math.round(G.perNote * (G.perfect + G.good * 0.85));
-    G.judge = { txt: kind === 1 ? 'PERFECT' : 'GOOD', k: kind, t0: songTime() };
+    G.judge = {
+      txt: kind === 1 ? 'PERFECT' : 'GOOD',
+      k: kind,
+      err: (typeof err === 'number') ? err : 0,
+      t0: songTime()
+    };
     hitFx(g, kind);
     if (S.onHit) playGroupNow(g);          // 打击发声：和弦里的所有音一起响
-    Synth.tick(Synth.ctx.currentTime, kind === 1 ? 0.055 : 0.04);
+    /* 声音也要区分：PERFECT 清脆高音，GOOD 闷一点、短一点 */
+    Synth.tick(Synth.ctx.currentTime, kind === 1 ? 0.055 : 0.028);
   }
 
   function playGroupNow(g) {
@@ -792,9 +838,17 @@
     var c = Synth.ctx;
     if (!c) return;
     if (c.state === 'suspended') Synth.resume();   // 某些浏览器首次需在按键回调里解锁
-    var late = Math.max(0, (performance.now() - (ts || performance.now())) / 1000);
-    var st = c.currentTime - G.t0 - Synth.latency() - late;
 
+    /* 事件时间戳可能早于回调（事件排队 / 掉帧），用两者中更早的作为输入时刻，
+       再把“输入时刻”换算到音频时钟，减去输出延迟与采样精度带来的固定偏差。
+       偏差由玩家在设置里自行校准（OFFSET），不再猜测。 */
+    var now = performance.now();
+    var tEvt = (typeof ts === 'number' && isFinite(ts) && ts > 0) ? Math.min(ts, now) : now;
+    var age = Math.max(0, (now - tEvt) / 1000);
+    if (age > 0.25) age = 0.25;                    // 兜底：异常旧的事件按 250ms 计
+    var st = c.currentTime - G.t0 - Synth.latency() - age - S.offset / 1000;
+
+    /* 在判定窗内找“绝对值最小”的音符，而不是第一个够得着的 */
     var best = -1, bd = 1e9;
     for (var i = G.first; i < G.groups.length; i++) {
       var g = G.groups[i];
@@ -804,7 +858,7 @@
       if (d <= WIN_GOOD && d < bd) { bd = d; best = i; }
     }
     if (best >= 0) {
-      judgeHit(G.groups[best], bd <= WIN_PERFECT ? 1 : 2);
+      judgeHit(G.groups[best], bd <= WIN_PERFECT ? 1 : 2, bd);
     } else {
       ghostFx();
       Synth.tick(c.currentTime, 0.022);
@@ -1220,21 +1274,38 @@
       ctx.restore();
     }
 
-    /* 判定文字 */
+    /* 判定文字：PERFECT 实心大字 + 误差毫秒，GOOD 明显更小更淡 */
     if (G.judge) {
-      var p = (st - G.judge.t0) / 0.42;
-      if (p >= 0 && p < 1) {
-        var a = p < 0.1 ? p / 0.1 : Math.pow(1 - (p - 0.1) / 0.9, 1.7);
-        var sc = 1.22 - 0.22 * Math.min(1, p * 5);
+      var jp = (st - G.judge.t0) / (G.judge.k === 1 ? 0.46 : 0.3);
+      if (jp >= 0 && jp < 1) {
+        var ja = jp < 0.08 ? jp / 0.08 : Math.pow(1 - (jp - 0.08) / 0.92, 1.6);
+        var isP = G.judge.k === 1;
         ctx.save();
-        ctx.globalAlpha = a;
+        ctx.globalAlpha = ja;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.translate(L.judgeX, L.top - 54);
-        ctx.scale(sc, sc);
-        ctx.fillStyle = G.judge.k === 1 ? '#ffffff' : '#cfcfcf';
-        setFont(500, 15, true, 5);
-        ctx.fillText(G.judge.txt, 0, 0);
+        ctx.translate(L.judgeX, L.top - 56);
+        if (isP) {
+          /* 爆开：从 1.35 收到 1.0，再轻微上浮 */
+          var sp = 1.35 - 0.35 * Math.min(1, jp * 6);
+          ctx.scale(sp, sp);
+          ctx.translate(0, -jp * 5);
+          ctx.fillStyle = '#ffffff';
+          setFont(600, 19, true, 6);
+          ctx.fillText('PERFECT', 0, 0);
+          /* 误差数值，越小越亮 */
+          var em = Math.round(Math.abs(G.judge.err) * 1000);
+          ctx.globalAlpha = ja * (0.5 - Math.min(0.34, em / 180));
+          ctx.fillStyle = '#ffffff';
+          setFont(400, 9, true, 4);
+          ctx.fillText((G.judge.err > 0 ? '+' : '-') + em, 0, 17);
+        } else {
+          var sg = 0.94 - jp * 0.06;
+          ctx.scale(sg, sg);
+          ctx.fillStyle = 'rgba(255,255,255,0.42)';
+          setFont(400, 12, true, 5);
+          ctx.fillText('GOOD', 0, 0);
+        }
         ctx.restore();
         ctx.textBaseline = 'alphabetic';
       }
@@ -1293,6 +1364,11 @@
     if (e.repeat) return;
     if (k === 'Tab' || k === 'F5' || k === 'F11' || k === 'F12') return;
 
+    if (App.screen === 'splash') {
+      e.preventDefault();
+      enterHome();
+      return;
+    }
     if (App.screen === 'title') {
       if (k === 'ArrowUp' || k === 'w' || k === 'W') {
         e.preventDefault(); homeSel = (homeSel + HOME_ITEMS.length - 1) % HOME_ITEMS.length; renderHome();
@@ -1377,6 +1453,7 @@
   }
 
   function devScene(q) {
+    if (q === 'splash') { goSplash(); return true; }
     if (q === 'home' || q === 'title') { goTitle(); return true; }
     if (q === 'select') { goSelect(); return true; }
     if (q === 'settings') { goSelect(); openSettings('select'); return true; }
@@ -1434,7 +1511,7 @@
     if (DEV.seed === '1') seedBest();
     resize();
     computeLayout();
-    setScreen('title');
+    setScreen('splash');
     renderHome();
     loadSongs().then(function () {
       App.booted = true;
@@ -1444,6 +1521,7 @@
       if (DEV.scene && devScene(DEV.scene)) return;
     });
 
+    $('splashHit').addEventListener('click', function () { enterHome(); });
     $('btnStart').addEventListener('click', function () {
       Synth.init(); Synth.resume(); goSelect();
     });
@@ -1482,8 +1560,9 @@
     drawNotes: drawNotes, saveSettings: saveSettings,
     loadSongs: loadSongs, reloadSongs: reloadSongs, makeSong: makeSong, buildBeats: buildBeats,
     loadBest: loadBest, getBest: function () { return Best; }, renderSongList: renderSongList,
-    renderHome: renderHome, renderPauseNote: renderPauseNote,
-    homeActivate: homeActivate, goTitle: goTitle, goSelect: goSelect,
+    renderHome: renderHome,
+    homeActivate: homeActivate, goTitle: goTitle, goSplash: goSplash, enterHome: enterHome,
+    goSelect: goSelect,
     pauseGame: pauseGame, resumeGame: resumeGame, autoPause: autoPause,
     getHomeSel: function () { return homeSel; }, setHomeSel: function (i) { homeSel = i; renderHome(); },
   };

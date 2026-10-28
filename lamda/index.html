@@ -23,10 +23,11 @@ html,body{height:100%;background:var(--bg);color:var(--fg);overflow:hidden;
   pointer-events:none;transition:opacity .3s ease}
 .screen.on{opacity:1;pointer-events:auto}
 
-/* ---------------- title / home ---------------- */
-#scr-title{align-items:center;justify-content:center;text-align:center}
-.homeWrap{position:relative;display:flex;flex-direction:column;align-items:center;
-  padding:clamp(20px,4vh,40px) clamp(20px,6vw,80px)}
+/* ---------------- splash / home ---------------- */
+#scr-splash{align-items:center;justify-content:center;text-align:center;cursor:pointer}
+.splashHit{position:relative;display:flex;flex-direction:column;align-items:center;
+  background:transparent;border:0;color:inherit;cursor:pointer;font-family:var(--sans);
+  padding:40px}
 .tmark{position:relative;width:104px;height:104px;margin-bottom:46px}
 .tmark i{position:absolute;display:block;border:1.5px solid #fff}
 .tmark .sq{inset:0;animation:spin 18s linear infinite}
@@ -35,13 +36,30 @@ html,body{height:100%;background:var(--bg);color:var(--fg);overflow:hidden;
   font-size:44px;font-weight:300;line-height:1;color:#fff;padding-bottom:3px}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes spinrev{from{transform:rotate(45deg)}to{transform:rotate(405deg)}}
-#scr-title h1{font-size:clamp(28px,5.2vw,62px);font-weight:200;letter-spacing:.32em;
+#scr-splash h1{font-size:clamp(28px,5.2vw,62px);font-weight:200;letter-spacing:.32em;
   text-indent:.32em;line-height:1;white-space:nowrap}
-#scr-title .sub{margin-top:20px;font-size:12px;letter-spacing:.42em;text-indent:.42em;color:#777}
+.splashLine{position:relative;width:1px;height:56px;margin-top:34px;overflow:hidden;
+  background:rgba(255,255,255,.12)}
+.splashLine i{position:absolute;left:0;top:0;width:1px;height:18px;background:#fff;
+  animation:sweep 2.2s cubic-bezier(.4,0,.6,1) infinite}
+@keyframes sweep{0%{transform:translateY(-20px)}60%,100%{transform:translateY(56px)}}
+#scr-splash:hover .tmark i{border-color:#fff}
+#scr-splash:hover h1{letter-spacing:.36em}
+
+#scr-title{align-items:center;justify-content:center;text-align:center}
+.homeWrap{position:relative;display:flex;flex-direction:column;align-items:center;
+  padding:clamp(20px,4vh,40px) clamp(20px,6vw,80px)}
+/* 主界面顶部标识：小号 λ + 横线，不做大字标题，保持界面干净 */
+.homeMark{position:relative;width:100%;display:flex;align-items:center;justify-content:center;
+  margin-bottom:clamp(40px,8vh,86px)}
+.homeMark span{font:200 26px/1 var(--sans);color:#fff;letter-spacing:0}
+.homeMark::before,.homeMark::after{content:'';position:absolute;top:50%;width:min(120px,18vw);
+  height:1px;background:rgba(255,255,255,.14)}
+.homeMark::before{right:calc(50% + 34px)}
+.homeMark::after{left:calc(50% + 34px)}
 
 /* 主菜单：科技感描边条目 */
-.hmenu{margin-top:clamp(28px,5vh,54px);display:flex;flex-direction:column;gap:10px;
-  width:min(360px,78vw)}
+.hmenu{display:flex;flex-direction:column;gap:10px;width:min(360px,78vw)}
 .hitem{position:relative;display:grid;grid-template-columns:38px 1fr 8px;align-items:center;
   gap:14px;padding:15px 18px;background:transparent;border:1px solid rgba(255,255,255,.14);
   color:#d8d8d8;cursor:pointer;text-align:left;font-family:var(--sans);
@@ -63,13 +81,10 @@ html,body{height:100%;background:var(--bg);color:var(--fg);overflow:hidden;
 .hitem.sel::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
 .hitem.sel::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
 
-.hstat{margin-top:clamp(22px,4vh,40px);display:flex;gap:26px;
+.hstat{margin-top:clamp(30px,6vh,56px);display:flex;gap:26px;
   font:400 9px/1 var(--mono);letter-spacing:.24em;color:#4a4a4a}
 .hstat em{font-style:normal;color:#bdbdbd}
 
-.hint{margin-top:clamp(20px,4vh,38px);font-size:11px;letter-spacing:.4em;text-indent:.4em;
-  color:#fff;animation:blink 2s steps(1) infinite}
-@keyframes blink{0%,58%{opacity:1}59%,100%{opacity:.12}}
 
 /* ---------------- select ---------------- */
 #scr-select{padding:clamp(24px,5vh,64px) clamp(20px,5vw,80px);justify-content:center}
@@ -116,9 +131,18 @@ html,body{height:100%;background:var(--bg);color:var(--fg);overflow:hidden;
 .coverWrap img{width:100%;height:100%;object-fit:cover;display:block;
   filter:grayscale(1) contrast(1.04);opacity:0;transition:opacity .45s}
 .coverWrap img.on{opacity:.94}
-.coverPh{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font:400 9px/1 var(--mono);letter-spacing:.3em;color:#3f3f3f}
-.coverWrap:not(.empty) .coverPh{display:none}
+/* 无曲绘：曲名艺术字封面 */
+.coverArt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  padding:9%;overflow:hidden}
+.coverArtBox{width:100%;display:flex;flex-direction:column;align-items:center;gap:2px}
+.coverArtBox i{display:block;font-style:normal;font-weight:200;line-height:1.02;
+  letter-spacing:.02em;color:#fff;text-align:center;word-break:break-word}
+.coverArtTag{margin-top:14px;font:400 9px/1 var(--mono);letter-spacing:.3em;
+  color:rgba(255,255,255,.34);text-transform:uppercase}
+.coverWrap:not(.empty) .coverArt{display:none}
+/* 边框与内部细线，补足无图片时的画面密度 */
+.coverArt::before{content:'';position:absolute;inset:11px;
+  border:1px solid rgba(255,255,255,.08);pointer-events:none}
 .sideLv span{display:block;font-size:9px;letter-spacing:.34em;color:#5f5f5f;margin-bottom:6px}
 .sideLv b{display:block;font-size:46px;font-weight:200;line-height:.95;letter-spacing:.02em;
   color:transparent;-webkit-text-stroke:1px #fff}
@@ -126,7 +150,6 @@ html,body{height:100%;background:var(--bg);color:var(--fg);overflow:hidden;
   padding:7px 0;border-bottom:1px solid rgba(255,255,255,.07);
   font:400 10px/1 var(--mono);letter-spacing:.1em;color:#636363}
 .sideRows div b{color:#eaeaea;font-weight:400}
-.sideNote{margin-top:auto;font-size:9px;line-height:2;letter-spacing:.14em;color:#4a4a4a}
 @media (max-width:880px){ .selSide{display:none} .selWrap{height:auto} #songList{max-height:52vh} }
 .btn{background:transparent;border:1px solid rgba(255,255,255,.26);color:#eaeaea;
   padding:11px 20px;font:400 10px/1 var(--sans);letter-spacing:.26em;cursor:pointer;
@@ -158,16 +181,12 @@ html,body{height:100%;background:var(--bg);color:var(--fg);overflow:hidden;
 .statGrid span{display:block;margin-top:9px;font-size:9px;letter-spacing:.22em;color:#5f5f5f}
 .resBest{margin-top:18px;min-height:14px;font:400 11px/1 var(--mono);
   letter-spacing:.18em;color:#8a8a8a}
-.rFoot{margin-top:34px;display:flex;justify-content:center;gap:36px;
-  font-size:10px;letter-spacing:.26em;color:#767676}
 
 /* ---------------- pause ---------------- */
 #scr-pause{background:rgba(5,5,5,.74);align-items:center;justify-content:center;
   -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px)}
 .pWrap{text-align:center}
 .plbl{font-size:12px;letter-spacing:.5em;text-indent:.5em;color:#fff;margin-bottom:34px}
-.pnote{min-height:12px;margin:-20px 0 22px;font:400 9px/1 var(--mono);
-  letter-spacing:.24em;color:#6f6f6f}
 .pbtns{display:flex;flex-direction:column;gap:12px;width:200px}
 .pbtns .btn{padding:13px 0;text-align:center}
 
@@ -200,18 +219,25 @@ html,body{height:100%;background:var(--bg);color:var(--fg);overflow:hidden;
 .setRow.sel .v b{color:#000}
 .setRow.sel .v i{color:#9a9a9a}
 .setRow.sel .v i:hover{color:#000}
-.setFoot{margin-top:26px;text-align:center;font-size:10px;letter-spacing:.26em;color:#5a5a5a}
 </style>
 </head>
 <body>
 <canvas id="cv"></canvas>
 
 <div id="ui">
-  <section class="screen" id="scr-title">
-    <div class="homeWrap">
+  <!-- 第一层：启动屏 -->
+  <section class="screen" id="scr-splash">
+    <button class="splashHit" id="splashHit" aria-label="进入">
       <div class="tmark"><i class="sq"></i><i class="ci"></i><span class="lam">λ</span></div>
       <h1>LAMDA</h1>
-      <p class="sub">单键 · 黑白 · 几何节奏</p>
+      <div class="splashLine"><i></i></div>
+    </button>
+  </section>
+
+  <!-- 第二层：主界面 -->
+  <section class="screen" id="scr-title">
+    <div class="homeWrap">
+      <div class="homeMark"><span>λ</span></div>
       <nav class="hmenu" id="homeMenu">
         <button class="hitem" id="btnStart" data-i="0">
           <span class="hk">01</span>
@@ -227,9 +253,7 @@ html,body{height:100%;background:var(--bg);color:var(--fg);overflow:hidden;
       <div class="hstat">
         <span>TRACK <em id="homeTracks">--</em></span>
         <span>CHART <em id="homeChart">--</em></span>
-        <span>VER <em>1.2</em></span>
       </div>
-      <p class="hint" id="titleHint">↑↓ 选择　ENTER 确认</p>
     </div>
   </section>
 
@@ -238,7 +262,6 @@ html,body{height:100%;background:var(--bg);color:var(--fg);overflow:hidden;
       <div class="selMain">
         <div class="head">
           <div class="lbl"><i class="crumb">MAIN /</i> SELECT / 选曲</div>
-          <div class="sub">↑↓ 选择　ENTER 开始　R 重新扫描　ESC 返回</div>
         </div>
         <div class="notice" id="notice" hidden></div>
         <ul id="songList"></ul>
@@ -252,11 +275,10 @@ html,body{height:100%;background:var(--bg);color:var(--fg);overflow:hidden;
       <aside class="selSide">
         <div class="coverWrap empty" id="coverWrap">
           <img id="coverImg" alt="">
-          <span class="coverPh">NO COVER</span>
+          <div class="coverArt" id="coverArt"></div>
         </div>
         <div class="sideLv"><span>LEVEL</span><b id="sideLv">--</b></div>
         <div class="sideRows" id="sideRows"></div>
-        <div class="sideNote">玩家音轨 = 谱面 player 轨<br>曲绘 covers/&lt;id&gt;.jpg<br>谱面目录 charts/</div>
       </aside>
     </div>
   </section>
@@ -274,14 +296,12 @@ html,body{height:100%;background:var(--bg);color:var(--fg);overflow:hidden;
       </div>
       <div class="statGrid" id="statGrid"></div>
       <div class="resBest" id="resBest"></div>
-      <div class="rFoot"><span>R 重试</span><span>ESC 返回选曲</span></div>
     </div>
   </section>
 
   <div class="screen" id="scr-pause">
     <div class="pWrap">
       <div class="plbl">PAUSED</div>
-      <div class="pnote" id="pauseNote"></div>
       <div class="pbtns">
         <button class="btn" id="btnResume">继续</button>
         <button class="btn ghost" id="btnSettingsPause">设置</button>
@@ -295,7 +315,6 @@ html,body{height:100%;background:var(--bg);color:var(--fg);overflow:hidden;
     <div class="setWrap">
       <div class="setHead">SETTINGS / 设置</div>
       <ul id="setList"></ul>
-      <div class="setFoot">↑↓ 选择　←→ 调节　ESC 返回</div>
     </div>
   </section>
 </div>
