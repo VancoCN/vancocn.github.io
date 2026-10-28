@@ -15,12 +15,13 @@
     });
   }
 
-  var APPROACH = 1.55;      // 音符可见时长（秒）
-  var WIN_PERFECT = 0.060;  // ±60ms
-  var WIN_GOOD = 0.100;     // ±100ms
+  var APPROACH = 2.05;      // 音符从出现到判定线的时间（纵向视野长度；只影响观感，不影响判定）
+  var WIN_PERFECT = 0.100;  // ±100ms
+  var WIN_GOOD = 0.150;     // ±150ms
   var LEAD = 1.7;           // 开场预备时间
   var LOOKAHEAD = 0.30;     // 音频提前调度窗口
   var CHORD_WIN = 0.028;    // 视为「同时按下」的时间窗
+  var LANE_RECALC = 0.10;   // 音高→横向轨道 的重算间隔（秒）
   var MONO = 'ui-monospace,"SF Mono",Menlo,Consolas,monospace';
   var SANS = '-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
 
@@ -39,25 +40,94 @@
     ctx.setTransform(d, 0, 0, d, 0, 0);
   }
 
-  var L = { judgeX: 200, pxs: 600, top: 200, bot: 700, pMin: 40, pMax: 80, padX: 40 };
+  /* 纵向下落：Y 轴 = 时间（音符从上往下落），X 轴 = 音高（左右展开）。
+     judgeY 是判定线所在的 Y，pys 是「每秒多少像素」的下落速度。 */
+  var L = { judgeY: 640, pys: 600, left: 200, right: 1000, pMin: 40, pMax: 80, padX: 40, padY: 40,
+    /* 自适应音高窗：只统计「当前屏幕上看得见的那批音」的音域，并把它铺满左右 */
+    spanLo: 40, spanHi: 80, spanT: -1e9 };
   function computeLayout() {
     L.padX = Math.max(18, W * 0.035);
-    L.judgeX = Math.round(Math.max(88, W * 0.185));
-    L.top = Math.round(H * 0.335);
-    L.bot = Math.round(H * 0.795);
-    L.pxs = (W - L.judgeX) / (APPROACH / speedFactor());
+    L.padY = Math.max(14, H * 0.022);
+    /* 判定线放在偏下的位置：上方留给下落时间，下方留给 HUD */
+    L.judgeY = Math.round(H * 0.755);
+    /* 音高左右展开的范围，留出两侧留白但不要过窄 */
+    L.left = Math.round(W * 0.16);
+    L.right = Math.round(W * 0.84);
+    L.pys = (L.judgeY - L.padY) / (APPROACH / speedFactor());
   }
-  function yFor(p) {
-    var span = Math.max(1, L.pMax - L.pMin);
-    var t = (p - L.pMin) / span;
-    return L.bot - 24 - t * (L.bot - L.top - 48);
-  }
-  /* 一组（同时按下的音）只显示成一个音符，取音高均值定位 */
-  function groupY(g) {
+  function pitchOf(g) {
     var s = 0;
     for (var i = 0; i < g.notes.length; i++) s += g.notes[i].pitch;
-    return yFor(s / g.notes.length);
+    return s / g.notes.length;
   }
+  /* 音高 -> 横坐标：低音在左，高音在右。
+     单声部钢琴曲的音域往往只有十几度，若按整首曲子的 min~max 线性映射，
+     每个瞬间的音符都会挤成一小撮。这里按「屏幕上正在下落的音符」的音域
+     自适应铺满左右——音乐进行时音域窗会平滑跟着移动，视觉上始终用满宽度，
+     而同一时刻的音高顺序严格保持（低音永远在左）。 */
+  /* 音高窗的「填充系数」：窗口宽度 = 可见音域 / FILL。
+     FILL < 1 时窗口比音域略窄，音符会被推到两侧边缘——
+     单音段落因此也能铺满画面，而不是缩在中间一小撮。
+     0.78 是试出来的平衡点：多音段落仍能看清音高走向，单音段落也不会挤成一条线。 */
+  var SPAN_FILL = 0.78;
+  function updateSpan(st, force) {
+    if (!G.groups.length) { L.spanLo = L.pMin; L.spanHi = L.pMax; return; }
+    if (!force && st - L.spanT < LANE_RECALC) return;
+    L.spanT = st;
+    /* 窗口 = 「屏幕上真正画出来的」那批音，与 drawNotes 的裁剪条件完全一致：
+       y ∈ [padY-70, judgeY+240]，换算成时间就是下面这个区间。 */
+    var pys = L.pys > 1 ? L.pys : 600;
+    var t0 = st - 240 / pys;
+    var t1 = st + (L.judgeY - (L.padY - 70)) / pys;
+    var i = G.first;
+    while (i > 0 && G.groups[i - 1].t > t0) i--;
+    var lo = 1e9, hi = -1e9;
+    for (; i < G.groups.length; i++) {
+      var g = G.groups[i];
+      if (g.t > t1) break;
+      if (g.t < t0) continue;
+      var p = pitchOf(g);
+      if (p < lo) lo = p;
+      if (p > hi) hi = p;
+    }
+    var tLo, tHi;
+    if (lo > hi) {
+      /* 空档期：沿用整首曲子的音域，避免画面突然塌缩 */
+      tLo = L.pMin; tHi = L.pMax;
+    } else {
+      var mid = (lo + hi) / 2;
+      /* 用一个下限托住「完全没有音高差」的极端情况 */
+      var span = Math.max(2.6, (hi - lo) / SPAN_FILL);
+      tLo = mid - span / 2;
+      tHi = mid + span / 2;
+    }
+    /* 平滑跟随：正常音高起伏时慢慢插值（镜头有呼吸感），
+       但音域发生大跳（换句、换段）或窗口明显跟不上时必须直接吸附，
+       否则会出现「音符全挤在窗口外」的中间帧。 */
+    var k = force ? 1 : 0.16;
+    var curW = L.spanHi - L.spanLo;
+    var tgtW = tHi - tLo;
+    /* 判定：目标窗口和当前窗口几乎不重叠，或者宽度差太多 -> 直接吸附 */
+    var overlap = Math.min(L.spanHi, tHi) - Math.max(L.spanLo, tLo);
+    if (force || overlap < 0 || curW < tgtW * 0.45 || curW > tgtW * 2.2) k = 1;
+    L.spanLo += (tLo - L.spanLo) * k;
+    L.spanHi += (tHi - L.spanHi) * k;
+    /* 保证窗口不会退化 */
+    if (L.spanHi - L.spanLo < 2) {
+      var m2 = (L.spanLo + L.spanHi) / 2;
+      L.spanLo = m2 - 1;
+      L.spanHi = m2 + 1;
+    }
+  }
+  function xFor(p) {
+    var span = Math.max(1, L.spanHi - L.spanLo);
+    var u = (p - L.spanLo) / span;
+    /* 窗外的音夹在两侧边缘，不会跑到画面外 */
+    if (u < 0) u = 0; else if (u > 1) u = 1;
+    return L.left + u * (L.right - L.left);
+  }
+  /* 一组（同时按下的音）只显示成一个音符，取音高均值定位 */
+  function groupX(g) { return xFor(pitchOf(g)); }
   function groupDur(g) {
     var d = 0;
     for (var i = 0; i < g.notes.length; i++) if (g.notes[i].dur > d) d = g.notes[i].dur;
@@ -629,9 +699,12 @@
       if (notes[i].pitch < lo) lo = notes[i].pitch;
       if (notes[i].pitch > hi) hi = notes[i].pitch;
     }
+    if (hi < lo) { lo = 48; hi = 72; }
     if (hi - lo < 7) { var mid = (hi + lo) / 2; lo = mid - 3.5; hi = mid + 3.5; }
     L.pMin = lo - 0.5;
     L.pMax = hi + 0.5;
+    /* 自适应音高窗回到整首曲子的音域，等第一次绘制时再收敛到局部窗口 */
+    L.spanLo = L.pMin; L.spanHi = L.pMax; L.spanT = -1e9;
 
     /* 低音 / 鼓轨自动演奏；玩家音轨在「打击发声」模式下改为按键时发声 */
     var evs = [];
@@ -814,32 +887,33 @@
   }
 
   function hitFx(g, kind) {
-    var jx = L.judgeX;
+    var jy = L.judgeY;
     var strong = kind === 1;
-    var y = groupY(g);
-    addFx({ k: 'ring', x: jx, y: y, life: strong ? 0.5 : 0.26, r0: 8, r1: strong ? 78 : 44, w: strong ? 1.8 : 1 });
+    var x = groupX(g);
+    addFx({ k: 'ring', x: x, y: jy, life: strong ? 0.5 : 0.26, r0: 8, r1: strong ? 78 : 44, w: strong ? 1.8 : 1 });
     if (strong) {
-      addFx({ k: 'sq', x: jx, y: y, life: 0.45, s0: 16, s1: 58, rot: Math.PI / 4 });
-      addFx({ k: 'ring', x: jx, y: y, life: 0.34, r0: 12, r1: 34, w: 2.4 });
+      addFx({ k: 'sq', x: x, y: jy, life: 0.45, s0: 16, s1: 58, rot: Math.PI / 4 });
+      addFx({ k: 'ring', x: x, y: jy, life: 0.34, r0: 12, r1: 34, w: 2.4 });
     }
     var cnt = strong ? 7 : 2;
     for (var j = 0; j < cnt; j++) {
+      /* 碎片偏向向上飞散（音符是从上方落下来的，打碎后往上溅） */
       addFx({
-        k: 'shard', x: jx, y: y, life: strong ? 0.42 : 0.24,
-        a: (j / cnt) * Math.PI * 2 + Math.random() * 0.4,
+        k: 'shard', x: x, y: jy, life: strong ? 0.42 : 0.24,
+        a: Math.PI + (j / cnt) * Math.PI + Math.random() * 0.4,
         sp: 120 + Math.random() * (strong ? 160 : 60),
         len: 7 + Math.random() * 11
       });
     }
-    if (strong) addFx({ k: 'blade', x1: jx, x2: Math.max(70, W * 0.34), y: y, life: 0.28 });
+    if (strong) addFx({ k: 'blade', x1: jy, x2: Math.max(70, H * 0.34), x: x, life: 0.28 });
   }
 
   function missFx(g) {
-    addFx({ k: 'xm', x: L.judgeX, y: groupY(g), life: 0.5 });
+    addFx({ k: 'xm', x: groupX(g), y: L.judgeY, life: 0.5 });
   }
 
   function ghostFx() {
-    addFx({ k: 'ring', x: L.judgeX, y: (L.top + L.bot) / 2, life: 0.22, r0: 3, r1: 20, w: 1 });
+    addFx({ k: 'ring', x: (L.left + L.right) / 2, y: L.judgeY, life: 0.22, r0: 3, r1: 20, w: 1 });
   }
 
   function judgeHit(g, kind, err) {
@@ -896,10 +970,11 @@
     var best = -1, bd = 1e9;
     for (var i = G.first; i < G.groups.length; i++) {
       var g = G.groups[i];
-      if (g.t > st + WIN_GOOD) break;
+      /* 留 1ms 余量：窗口边界上的音符也要能被判到（浮点误差会让它被跳过） */
+      if (g.t > st + WIN_GOOD + 0.001) break;
       if (g.st) continue;
       var d = Math.abs(g.t - st);
-      if (d <= WIN_GOOD && d < bd) { bd = d; best = i; }
+      if (d <= WIN_GOOD + 0.001 && d < bd) { bd = d; best = i; }
     }
     if (best >= 0) {
       judgeHit(G.groups[best], bd <= WIN_PERFECT ? 1 : 2, bd);
@@ -1138,9 +1213,10 @@
     drawIntro(performance.now() / 1000);
   }
 
-  /* 判定线在 p 时刻的纵向位置（弧 -> 平线的过渡由这里统一决定） */
+  /* 判定线在 p 时刻的纵向位置（弧 -> 平线的过渡由这里统一决定）
+     终点必须落在 L.judgeY，这样交棒给游玩画面时镜头不跳。 */
   function introLineY(p) {
-    var flat = L.bot;
+    var flat = L.judgeY;
     var rise = easeOutCubic(seg(p, 0.34, 0.60));
     var arcLift = (1 - easeInOutCubic(seg(p, 0.52, 0.78))) * H * 0.085;
     return flat + (1 - rise) * H * 0.055 - arcLift;
@@ -1200,7 +1276,7 @@
       ctx.restore();
     }
 
-    /* ② 横向扫描线：先在整屏流过，再被收拢到底部那条线上 */
+    /* ② 竖向扫描线：先在整屏铺开，再被收拢到底部那条判定线上 */
     var scan = seg(p, 0.06, 0.46);
     var merge = easeInOutCubic(seg(p, 0.38, 0.56));
     var lineY = introLineY(p);
@@ -1253,11 +1329,10 @@
       }
       ctx.stroke();
 
-      /* 判定点（对应游玩时的 judgeX），最后一刻闪一下 */
+      /* 判定点：落在判定线中点，与游玩时的视觉重心一致 */
       var jp = seg(p, 0.56, 0.84);
       if (jp > 0) {
-        var jx = L.judgeX * easeOutCubic(seg(p, 0.56, 0.70));
-        /* 外扩的光环，用两圈拉出层次 */
+        var jx = W * 0.5;
         ctx.globalAlpha = jp * (1 - jp) * 1.6;
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 1;
@@ -1273,25 +1348,26 @@
         ctx.globalAlpha = 1;
       }
 
-      /* 音符：从上方落下，在判定点处汇成一束（呼应游玩时的判定节奏） */
+      /* 音符：各自从上方竖直落到判定线上（与游玩时的下落方向完全一致） */
       var np = seg(p, 0.46, 0.90);
       if (np > 0) {
-        for (var n = 0; n < 7; n++) {
-          var u3 = (n + 0.5) / 7;
-          var prog = clamp(np * 1.6 - n * 0.072, 0, 1);
+        /* 落点铺满游玩时的可用宽度（L.left~L.right），交棒时不会跳 */
+        for (var n = 0; n < 9; n++) {
+          var u3 = (n + 0.5) / 9;
+          var prog = clamp(np * 1.6 - n * 0.062, 0, 1);
           if (prog <= 0) continue;
-          /* 落下位置：从画面上部滑到判定线，起步更慢、尾段加速 */
-          var ny = H * 0.16 + (lineY - H * 0.16) * (1 - Math.pow(1 - prog, 1.7));
-          var nx = W * (0.10 + u3 * 0.80);
-          var pull = easeOutCubic(seg(prog, 0.76, 1));
-          nx = nx + (L.judgeX + 14 - nx) * pull * 0.92;
-          var na = (1 - seg(prog, 0.90, 1)) * 0.8;
+          var ny = H * 0.12 + (lineY - H * 0.12) * (1 - Math.pow(1 - prog, 1.8));
+          var nx = L.left + (L.right - L.left) * u3;
+          var na = (1 - seg(prog, 0.92, 1)) * 0.85;
           if (na <= 0) continue;
-          ctx.globalAlpha = na;
-          ctx.fillStyle = '#fff';
-          ctx.fillRect(nx - 3, ny - 1, 6, 2);
+          /* 竖线拖尾 + 端点圆点，提前预告游玩时的音符形态 */
           ctx.globalAlpha = na * 0.3;
-          ctx.fillRect(nx - 0.5, ny - 20, 1, 18);
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(nx - 0.5, ny - 26, 1, 24);
+          ctx.globalAlpha = na;
+          ctx.beginPath();
+          ctx.arc(nx, ny, 3, 0, 6.2832);
+          ctx.fill();
           ctx.globalAlpha = 1;
         }
       }
@@ -1334,38 +1410,55 @@
     }
   }
 
-  function drawField(st) {    /* 点阵底纹 */
+  function drawField(st) {
+    /* 点阵底纹（覆盖整个下落区域） */
     ctx.globalAlpha = 0.045;
     ctx.fillStyle = '#fff';
     for (var x = L.padX; x < W; x += 46) {
-      for (var y = L.top - 44; y < L.bot + 44; y += 46) ctx.fillRect(x, y, 1, 1);
+      for (var y = L.padY; y < L.judgeY + 44; y += 46) ctx.fillRect(x, y, 1, 1);
     }
     ctx.globalAlpha = 1;
 
-    /* 音高导引线 */
-    var firstC = Math.ceil(L.pMin / 12) * 12;
+    /* 音高导引线：竖直，低音左高音右。
+       跟着自适应音高窗走，所以竖线之间是「半音等距」的，
+       音符落在哪两条线之间就能一眼看出音高关系。 */
+    var stepPx = (L.right - L.left) / Math.max(1, L.spanHi - L.spanLo);
     ctx.lineWidth = 1;
-    for (var p = firstC; p <= L.pMax; p += 12) {
-      var y = yFor(p);
-      ctx.strokeStyle = 'rgba(255,255,255,0.055)';
+    /* 八度线（C）：更亮一点，作为音高的地标 */
+    for (var p = Math.ceil(L.spanLo / 12) * 12; p <= L.spanHi; p += 12) {
+      var vx = xFor(p);
+      if (vx < L.left - 1 || vx > L.right + 1) continue;
+      ctx.strokeStyle = 'rgba(255,255,255,0.075)';
       ctx.beginPath();
-      ctx.moveTo(L.judgeX, y);
-      ctx.lineTo(W, y);
+      ctx.moveTo(vx, L.padY);
+      ctx.lineTo(vx, L.judgeY);
       ctx.stroke();
     }
+    /* 半音级的细线：只在拉得开的时候画，否则糊成一片 */
+    if (stepPx >= 9) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.032)';
+      for (var q = Math.ceil(L.spanLo); q <= L.spanHi; q++) {
+        if (q % 12 === 0) continue;
+        var qx = xFor(q);
+        ctx.beginPath();
+        ctx.moveTo(qx, L.padY);
+        ctx.lineTo(qx, L.judgeY);
+        ctx.stroke();
+      }
+    }
 
-    /* 节拍线 */
+    /* 节拍线：水平，从上往下流 */
     var beats = G.beats;
     for (var i = 0; i < beats.length; i++) {
       var b = beats[i];
-      var bx = L.judgeX + (b.t - st) * L.pxs;
-      if (bx < L.judgeX - 2) continue;
-      if (bx > W + 2) break;
+      var by = L.judgeY - (b.t - st) * L.pys;
+      if (by > L.judgeY + 2) continue;
+      if (by < L.padY - 40) break;
       ctx.strokeStyle = b.bar ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.065)';
       ctx.lineWidth = b.bar ? 1.4 : 1;
       ctx.beginPath();
-      ctx.moveTo(bx, L.top);
-      ctx.lineTo(bx, L.bot);
+      ctx.moveTo(L.left - 40, by);
+      ctx.lineTo(L.right + 40, by);
       ctx.stroke();
     }
   }
@@ -1376,24 +1469,26 @@
     for (var i = G.first; i < gs.length; i++) {
       var g = gs[i];
       if (g.st === 1) continue;
-      var x = L.judgeX + (g.t - st) * L.pxs;
-      if (x < -240) continue;
-      if (x > W + 70) break;
+      /* 纵向下落：越接近判定线 y 越大 */
+      var y = L.judgeY - (g.t - st) * L.pys;
+      if (y > L.judgeY + 240) continue;
+      if (y < L.padY - 70) break;
 
-      var a = (W - x) / 110;
+      /* 越靠近判定线越清晰，刚出场时淡入 */
+      var a = (y - (L.padY - 70)) / 110;
       a = a > 1 ? 1 : (a < 0 ? 0 : a);
       var missed = (g.st === 3);
-      var y = groupY(g);
+      var x = groupX(g);
 
-      /* 尾迹 */
-      var tl = Math.min(groupDur(g) * L.pxs, 240);
+      /* 尾迹：向下拖出音符时值 */
+      var tl = Math.min(groupDur(g) * L.pys, 240);
       if (tl >= 4) {
         ctx.globalAlpha = a * (missed ? 0.05 : 0.1);
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(x + 9, y);
-        ctx.lineTo(x + 9 + tl, y);
+        ctx.moveTo(x, y + 9);
+        ctx.lineTo(x, y + 9 + tl);
         ctx.stroke();
       }
 
@@ -1413,13 +1508,15 @@
   }
 
   function drawJudgeLine(st, mode) {
-    var jx = L.judgeX;
-    var grad = ctx.createLinearGradient(jx - 22, 0, jx + 22, 0);
+    var jy = L.judgeY;
+
+    /* 判定线下方的渐隐光带，暗示「音符在这里消失」 */
+    var grad = ctx.createLinearGradient(0, jy - 22, 0, jy + 22);
     grad.addColorStop(0, 'rgba(255,255,255,0)');
     grad.addColorStop(0.5, 'rgba(255,255,255,0.035)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = grad;
-    ctx.fillRect(jx - 22, L.top, 44, L.bot - L.top);
+    ctx.fillRect(0, jy - 22, W, 44);
 
     var ph = 0;
     if (G.beatDur > 0 && st > 0) {
@@ -1431,19 +1528,20 @@
     ctx.strokeStyle = 'rgba(255,255,255,' + (0.78 + 0.2 * pulse) + ')';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(jx, L.top - 18);
-    ctx.lineTo(jx, L.bot + 18);
+    ctx.moveTo(L.left - 18, jy);
+    ctx.lineTo(L.right + 18, jy);
     ctx.stroke();
 
+    /* 两端的收口刻线 */
     ctx.fillStyle = '#fff';
-    ctx.fillRect(jx - 9, L.top - 20, 18, 2);
-    ctx.fillRect(jx - 9, L.bot + 18, 18, 2);
+    ctx.fillRect(L.left - 20, jy - 9, 2, 18);
+    ctx.fillRect(L.right + 18, jy - 9, 2, 18);
 
     if (pulse > 0.55) {
       ctx.globalAlpha = (pulse - 0.55) * 0.5;
       ctx.fillStyle = '#fff';
-      ctx.fillRect(jx - 34, L.top - 26, 68, 1);
-      ctx.fillRect(jx - 34, L.bot + 25, 68, 1);
+      ctx.fillRect(L.left - 26, jy - 6, 68, 1);
+      ctx.fillRect(L.right - 42, jy + 6, 68, 1);
       ctx.globalAlpha = 1;
     }
   }
@@ -1483,12 +1581,13 @@
         ctx.lineTo(f.x + Math.cos(f.a) * (d + f.len), f.y + Math.sin(f.a) * (d + f.len));
         ctx.stroke();
       } else if (f.k === 'blade') {
+        /* 竖直光刃：从判定线向上拉出（音符逆着下落方向被劈开） */
         ctx.globalAlpha = (1 - p) * 0.85;
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(f.x1, f.y);
-        ctx.lineTo(f.x1 + f.x2 * e, f.y);
+        ctx.moveTo(f.x, f.x1);
+        ctx.lineTo(f.x, f.x1 - f.x2 * e);
         ctx.stroke();
       } else if (f.k === 'xm') {
         var s2 = 6 + 9 * e;
@@ -1548,8 +1647,8 @@
     ctx.fillText(padn(G.score, 7), W - pad, 74);
 
     /* 中央幽灵连击 */
-    var cx = (L.judgeX + W) / 2;
-    var cy = (L.top + L.bot) / 2;
+    var cx = W * 0.5;
+    var cy = (L.padY + L.judgeY) / 2;
     if (G.combo >= 3) {
       ctx.save();
       ctx.globalAlpha = 0.105;
@@ -1572,7 +1671,7 @@
         ctx.globalAlpha = ja;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.translate(L.judgeX, L.top - 56);
+        ctx.translate(W * 0.5, L.judgeY - 56);
         if (isP) {
           /* 爆开：从 1.35 收到 1.0，再轻微上浮 */
           var sp = 1.35 - 0.35 * Math.min(1, jp * 6);
@@ -1602,13 +1701,13 @@
     /* 底部：连击 / 准度 / 进度计数 */
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    var by = L.bot + 58;
+    var by = L.judgeY + 58;
     ctx.fillStyle = 'rgba(255,255,255,0.92)';
     setFont(400, 26, true, 1);
-    ctx.fillText(String(G.combo), L.judgeX - 26, by);
+    ctx.fillText(String(G.combo), pad, by);
     ctx.fillStyle = 'rgba(255,255,255,0.34)';
     setFont(400, 9, true, 3);
-    ctx.fillText('COMBO', L.judgeX - 26, by + 18);
+    ctx.fillText('COMBO', pad, by + 18);
 
     var judged = G.perfect + G.good + G.miss;
     var acc = judged ? (G.perfect + G.good * 0.85) / judged * 100 : 100;
@@ -1629,7 +1728,7 @@
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#fff';
       setFont(400, 12, true, 7);
-      ctx.fillText('READY', (L.judgeX + W) / 2, cy);
+      ctx.fillText('READY', W * 0.5, cy);
       ctx.restore();
       ctx.textBaseline = 'alphabetic';
     }
@@ -1639,6 +1738,8 @@
   function drawGame(st) {
     bg();
     computeLayout();
+    /* 音高窗要跟着「屏幕上看得见的音」走，所以每帧先更新再画 */
+    updateSpan(st);
     drawField(st);
     drawNotes(st);
     drawJudgeLine(st);
@@ -1786,6 +1887,17 @@
       startSong(clamp(App.sel, 0, App.songs.length - 1), parseFloat(DEV.t || 0) || 0);
       return true;
     }
+    /* 定格到某一秒（截图用）：跳到该时刻后把时钟钉住，
+       否则音频时钟会继续往前走，无头截图的 virtual-time 又会快进过去。 */
+    if (q === 'frame') {
+      if (!App.songs.length) return false;
+      var at = Math.max(0, parseFloat(DEV.at || 0) || 0);
+      startSong(clamp(App.sel, 0, App.songs.length - 1), at, true);
+      /* 让这一帧的第一次绘制也落在这个时刻：直接把 t0 往前推 */
+      if (Synth.ctx) G.t0 = Synth.ctx.currentTime - at;
+      G.paused = true;
+      return true;
+    }
     if (q === 'result') {
       var s = App.songs[0];
       var all = DEV.all === '1';
@@ -1879,6 +1991,7 @@
     G: G, App: App, L: L, S: S, SPEEDS: SPEEDS,
     press: press, startSong: startSong, update: update, finish: finish,
     songTime: songTime, setScreen: setScreen, computeLayout: computeLayout, drawGame: drawGame,
+    updateSpan: updateSpan, xFor: xFor, groupX: groupX, pitchOf: pitchOf,
     openSettings: openSettings, closeSettings: closeSettings, introSkip: introSkip,
     drawNotes: drawNotes, saveSettings: saveSettings,
     loadSongs: loadSongs, reloadSongs: reloadSongs, makeSong: makeSong, buildBeats: buildBeats,

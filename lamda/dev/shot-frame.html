@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>LAMDA 定格截图</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+  iframe { display: block; border: 0; width: 1280px; height: 720px; }
+</style>
+</head>
+<body>
+<script>
+/* 定格截图台：scene=frame&at=<秒> 会跳到该歌曲时刻并暂停，
+   无头浏览器拍到的就是这一帧。
+   参数：?at=<秒>&song=<索引>&spd=<0~7> */
+(function () {
+  var q = new URLSearchParams(location.search);
+  var at = q.get('at') || '45';
+  var song = q.get('song') || '0';
+  var spd = q.get('spd');
+
+  var f = document.createElement('iframe');
+  f.setAttribute('width', '1280');
+  f.setAttribute('height', '720');
+  f.style.width = '1280px';
+  f.style.height = '720px';
+  f.src = '../index.html?scene=frame&at=' + encodeURIComponent(at) +
+          '&sel=' + encodeURIComponent(song) +
+          (spd !== null ? '&spd=' + encodeURIComponent(spd) : '');
+  document.body.appendChild(f);
+})();
+</script>
+</body>
+</html>

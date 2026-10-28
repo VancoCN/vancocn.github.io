@@ -191,26 +191,32 @@ function boot() {
   near(G.score, Math.round(G.perNote), 1, '得分 = 1 个分组');
 
   restart();
-  setT(G.groups[0].t + 0.080);
+  setT(G.groups[0].t + 0.150);
   M.press(win.performance.now());
-  eq(G.good, 1, '+80ms -> GOOD');
-  eq(G.perfect, 0, '+80ms 不计 PERFECT');
+  eq(G.good, 1, '+150ms -> GOOD（窗口边界）');
+  eq(G.perfect, 0, '+150ms 不计 PERFECT');
   near(G.score, Math.round(G.perNote * 0.85), 1, 'GOOD 得 85%');
 
   restart();
-  setT(G.groups[0].t - 0.080);
+  setT(G.groups[0].t - 0.150);
   M.press(win.performance.now());
-  eq(G.good, 1, '-80ms -> GOOD');
+  eq(G.good, 1, '-150ms -> GOOD（窗口边界）');
 
   restart();
-  setT(G.groups[0].t + 0.059);
+  setT(G.groups[0].t + 0.095);
   M.press(win.performance.now());
-  eq(G.perfect, 1, '+59ms -> 仍为 PERFECT');
+  eq(G.perfect, 1, '+95ms -> 仍为 PERFECT');
 
   restart();
-  setT(G.groups[0].t + 0.061);
+  setT(G.groups[0].t + 0.105);
   M.press(win.performance.now());
-  eq(G.good, 1, '+61ms -> GOOD');
+  eq(G.good, 1, '+105ms -> GOOD');
+
+  restart();
+  setT(G.groups[0].t + 0.160);
+  M.press(win.performance.now());
+  eq(G.good, 0, '+160ms 超出 GOOD 窗口');
+  eq(G.perfect, 0, '+160ms 不计分');
 
   /* 判定精度：记录误差，且不会串到后一个音符 */
   restart();
@@ -222,9 +228,9 @@ function boot() {
   eq(G.judge.k, 1, 'PERFECT 判定等级 = 1');
 
   restart();
-  setT(G.groups[0].t + 0.085);
+  setT(G.groups[0].t + 0.120);
   M.press(win.performance.now());
-  eq(G.good, 1, '+85ms -> GOOD');
+  eq(G.good, 1, '+120ms -> GOOD');
   eq(G.judge.txt, 'GOOD', '判定文字为 GOOD');
   eq(G.judge.k, 2, 'GOOD 判定等级 = 2（与 PERFECT 区分）');
   ok(G.judge.k !== 1, 'GOOD 的等级与 PERFECT 不同，可用于区分特效');
@@ -246,20 +252,20 @@ function boot() {
   /* 判定偏移校准 */
   restart();
   M.S.offset = 0;
-  setT(G.groups[0].t + 0.070);
+  setT(G.groups[0].t + 0.120);
   M.press(win.performance.now());
-  eq(G.good, 1, '偏移 0 时 +70ms 是 GOOD');
+  eq(G.good, 1, '偏移 0 时 +120ms 是 GOOD（超出 ±100ms）');
 
   restart();
   M.S.offset = 0;
-  setT(G.groups[0].t + 0.070);
+  setT(G.groups[0].t + 0.120);
   M.press(G.t0 !== null ? win.performance.now() : win.performance.now());
   eq(G.good, 1, '（基线）');
 
   restart();
   M.S.offset = 0;
-  setT(G.groups[0].t + 0.030);
-  M.S.offset = -30;      // 玩家反馈偏晚，减 30ms 抵消
+  setT(G.groups[0].t + 0.065);
+  M.S.offset = -30;      // 玩家反馈偏晚，减 30ms 抵消 -> 实际 +95ms
   M.press(win.performance.now());
   eq(G.perfect, 1, '偏移 -30ms 后同样输入变 PERFECT');
   M.S.offset = 0;
@@ -271,9 +277,9 @@ function boot() {
   ok(true, '设置面板可开关');
 
   restart();
-  setT(G.groups[0].t + 0.150);
+  setT(G.groups[0].t + 0.200);
   M.press(win.performance.now());
-  eq(G.perfect + G.good, 0, '+150ms 按不到任何音符（不计分）');
+  eq(G.perfect + G.good, 0, '+200ms 按不到任何音符（不计分）');
   M.update();
   eq(G.miss, 1, '越过窗口 -> MISS');
   eq(G.combo, 0, 'MISS 断连击');
@@ -328,7 +334,7 @@ function boot() {
   /* ---------- 全 GOOD ---------- */
   restart();
   for (let k = 0; k < G.groups.length; k++) {
-    setT(G.groups[k].t - 0.08);   // 提前 80ms：上一组已判定，不会抢到下一组
+    setT(G.groups[k].t - 0.12);   // 提前 120ms：落在 GOOD 区，且上一组已判定不会抢下一组
     M.press(win.performance.now());
   }
   M.update();
@@ -479,11 +485,11 @@ function boot() {
   console.log('\n== 设置 ==');
   const SKIP = 12.17 - 8 * (60 / 138);      // 第一个音前两小节
 
-  M.S.spd = 3; M.computeLayout(); const px1 = M.L.pxs;
-  M.S.spd = 6; M.computeLayout(); const px6 = M.L.pxs;
-  near(px6 / px1, 1.6, 0.005, '流速 1.6x -> 滚动速度 x1.6');
+  M.S.spd = 3; M.computeLayout(); const py1 = M.L.pys;
+  M.S.spd = 6; M.computeLayout(); const py6 = M.L.pys;
+  near(py6 / py1, 1.6, 0.005, '流速 1.6x -> 下落速度 x1.6');
   M.S.spd = 1; M.computeLayout();
-  near(M.L.pxs / px1, 0.75, 0.005, '流速 0.75x -> 滚动速度 x0.75');
+  near(M.L.pys / py1, 0.75, 0.005, '流速 0.75x -> 下落速度 x0.75');
   M.S.spd = 3; M.computeLayout();
 
   M.S.skip = true; restart();
@@ -526,8 +532,13 @@ function boot() {
   M.drawNotes(20);
   let visible = 0;
   for (let i = 0; i < G.groups.length; i++) {
-    const x = M.L.judgeX + (G.groups[i].t - 20) * M.L.pxs;
-    if (x > -240 && x <= cvEl.width + 70) visible++;
+    const g = G.groups[i];
+    if (g.st === 1) continue;
+    /* 纵向下落：y 由判定线往上按时间差算 */
+    const y = M.L.judgeY - (g.t - 20) * M.L.pys;
+    if (y > M.L.judgeY + 240) continue;
+    if (y < M.L.padY - 70) break;
+    visible++;
   }
   ok(visible > 3, '该时刻有可见音符（' + visible + '）');
   eq(c2d._arcs, visible * 2, '每个音符只画一个圆（描边 + 内点 = 2 次 arc）');
@@ -668,6 +679,152 @@ function boot() {
   M.startSong(0, 0, true);
   eq(M.App.screen, 'play', 'instant 跳过动画直接游玩');
   ok(!M.getIntro().on, 'instant 不残留动画状态');
+
+  /* ---------- 换曲清理 ---------- */
+  console.log('\n== 换曲清理 ==');
+  M.startSong(0, 0, true);          // Bad Apple
+  const oldGroups = G.groups, oldSong = G.song;
+  // 打到中途，制造连击 / 特效 / 已判定音符
+  for (let k = 0; k < 12; k++) {
+    const g = G.groups[k];
+    setT(g.t);
+    M.press(win.performance.now());
+  }
+  ok(G.combo >= 12, '切曲前有连击（' + G.combo + '）');
+  ok(G.fx.length >= 0, '切曲前特效队列可用');
+  const hitCount = G.groups.filter((g) => g.st === 1).length;
+  ok(hitCount >= 12, '切曲前已有 ' + hitCount + ' 个判定过的音符');
+
+  const nextIdx = M.App.songs.findIndex((s) => s.id === 'the-earth');
+  ok(nextIdx > 0, '找到另一首可切换的曲子');
+  M.startSong(nextIdx, 0, true);
+
+  eq(G.song.id, 'the-earth', '切曲后 G.song 指向新曲');
+  ok(G.groups !== oldGroups, '分组数组整体换成了新的一份');
+  eq(G.groups.length, M.App.songs[nextIdx].taps, '分组数 = 新曲击打数');
+  eq(G.total, M.App.songs[nextIdx].taps, '总数与新曲一致');
+  eq(G.combo, 0, '连击清零');
+  eq(G.maxCombo, 0, '最大连击清零');
+  eq(G.score, 0, '得分清零');
+  eq(G.perfect, 0, 'PERFECT 计数清零');
+  eq(G.good, 0, 'GOOD 计数清零');
+  eq(G.miss, 0, 'MISS 计数清零');
+  eq(G.first, 0, '已消费指针回到 0');
+  eq(G.fx.length, 0, '特效队列清空（旧曲碎片不残留）');
+  eq(G.judge, null, '判定文字清空');
+  eq(G.over, false, '结算状态复位');
+  eq(G.evIdx, 0, '音频事件指针回到 0');
+  eq(G.active, true, '新曲处于进行中');
+  eq(M.App.sel, nextIdx, '选中项跟随到新曲');
+
+  // 旧曲的音符不能出现在新曲的数据里（按时间集合比对）
+  const newSig = G.groups.map((g) => g.t.toFixed(3)).join(',');
+  const oldSig = oldGroups.map((g) => g.t.toFixed(3)).join(',');
+  ok(newSig !== oldSig, '新曲分组时间表与旧曲不同');
+  ok(!G.groups.some((g) => g.st === 1), '新曲里没有任何「已判定」残留音符');
+  ok(!G.groups.some((g) => g.g && g.g.st === 1), '分组自身状态干净');
+
+  // 从新曲第一帧开始推进：不应出现旧曲的判定/特效
+  G.t0 = 0; AC().T = 0;
+  const before = G.fx.length;
+  M.drawGame(0);
+  eq(G.fx.length, before, '新曲首帧不喷出旧曲特效');
+  eq(G.combo, 0, '新曲首帧连击仍为 0');
+
+  /* ---------- 音高 -> 横向位置 ---------- */
+  console.log('\n== 音高映射 ==');
+  M.startSong(0, 0, true);          // Bad Apple，音域 39~79
+  M.computeLayout();
+  const L2 = M.L;
+  ok(L2.right > L2.left, '可用宽度为正');
+  ok(L2.spanHi > L2.spanLo, '自适应音高窗有效');
+
+  // 单音段落：音域窗不能塌成 0
+  L2.spanLo = 60; L2.spanHi = 60;
+  ok(isFinite(M.xFor(60)), '退化音域窗仍能算出坐标');
+  L2.spanLo = L2.pMin; L2.spanHi = L2.pMax;
+
+  // 单调性：音高越大 x 越大
+  M.updateSpan(30, true);
+  let lastX = -1e9, mono = true;
+  for (let p = Math.ceil(L2.spanLo); p <= Math.floor(L2.spanHi); p++) {
+    const x = M.xFor(p);
+    if (x < lastX - 1e-6) mono = false;
+    lastX = x;
+  }
+  ok(mono, '音高严格单调（低音在左、高音在右）');
+
+  eq(M.xFor(L2.spanLo), L2.left, '音域下界落在左端');
+  eq(M.xFor(L2.spanHi), L2.right, '音域上界落在右端');
+  eq(M.xFor(L2.spanLo - 24), L2.left, '低于音域的音夹在左端');
+  eq(M.xFor(L2.spanHi + 24), L2.right, '高于音域的音夹在右端');
+
+  // 自适应窗：同一瞬间的音符应该铺开，而不是挤成一条竖线
+  ok(L2.spanHi - L2.spanLo >= 7, '音域窗至少 7 个半音宽（不会挤成竖线）');
+
+  // 严格几何检查：可见音符必须在屏幕上真正散开。
+  // 单音长音段落（音高几乎不变）天然只占几条线，这是音乐的本来面目，
+  // 所以分成两档：普通段落必须占满窗宽，单音段落至少要占窗宽的 1/3（不叠成一条线）。
+  let worstRatio = 1, worstT = 0, checked = 0;
+  let narrowFrames = 0, narrowWorst = 1;
+  for (let t = 15; t < 200; t += 3.1) {
+    M.updateSpan(t, true);
+    const gs = G.groups;
+    let lo = 1e9, hi = -1e9, c = 0;
+    for (let i = G.first; i < gs.length; i++) {
+      const g = gs[i];
+      const y = L2.judgeY - (g.t - t) * L2.pys;
+      if (y < L2.padY - 70) break;
+      if (y > L2.judgeY + 240) continue;
+      const p = M.pitchOf(g);
+      if (p < lo) lo = p;
+      if (p > hi) hi = p;
+      c++;
+    }
+    if (c < 2) continue;
+    const ratio = (hi - lo) / (L2.spanHi - L2.spanLo);
+    checked++;
+    if (hi - lo < 4) {
+      /* 单音 / 颤音段落：只要求不叠成一条线 */
+      narrowFrames++;
+      if (ratio < narrowWorst) narrowWorst = ratio;
+    } else if (ratio < worstRatio) { worstRatio = ratio; worstT = t; }
+  }
+  ok(checked > 30, '几何检查采样 ' + checked + ' 帧');
+  ok(worstRatio > 0.72,
+    '多音段落至少占音高窗的 72%（最差 ' + (worstRatio * 100).toFixed(0) + '% @t=' + worstT.toFixed(0) + '）');
+  ok(narrowWorst > 0.15,
+    '纯单音段落（' + narrowFrames + ' 帧）散开到窗宽 15% 以上（最窄 ' + (narrowWorst * 100).toFixed(0) + '%）');
+
+  let maxGap = 0, samples = 0;
+  for (let t = 20; t < 120; t += 1.7) {
+    M.updateSpan(t, true);
+    const gs = G.groups;
+    let lo = 1e9, hi = -1e9, c = 0;
+    for (let i = G.first; i < gs.length; i++) {
+      const g = gs[i];
+      const y = L2.judgeY - (g.t - t) * L2.pys;
+      if (y < L2.padY - 70) break;
+      if (y > L2.judgeY + 240) continue;
+      const x = M.groupX(g);
+      if (x < lo) lo = x;
+      if (x > hi) hi = x;
+      c++;
+    }
+    if (c >= 4) { maxGap += (hi - lo) / (L2.right - L2.left); samples++; }
+  }
+  ok(samples > 20, '采样到足够多的多音画面（' + samples + ' 帧）');
+  ok(maxGap / samples > 0.45,
+    '可见音符平均铺开 >45% 宽度（实测 ' + (maxGap / samples * 100).toFixed(0) + '%）');
+
+  // 窗外的音不应把窗挤走：单音反复的段落保持稳定
+  M.updateSpan(30, true);
+  const stableLo = L2.spanLo;
+  M.updateSpan(30.05, false);      // 不足 LANE_RECALC 间隔，不应重算
+  eq(L2.spanLo, stableLo, '重算间隔内音高窗保持不变');
+
+  M.startSong(0, 0, true);
+  eq(M.L.spanLo, M.L.pMin, '新开局时音高窗回到整首曲子的音域');
 
   /* ---------- 曲目清单 ---------- */  console.log('\n== 曲目清单 ==');
   ok(Array.isArray(win.LAMBDA_INDEX), 'charts/index.js 提供清单');
