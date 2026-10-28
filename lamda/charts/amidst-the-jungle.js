@@ -3,7 +3,7 @@
   "v": 1,
   "id": "amidst-the-jungle",
   "title": "Amidst The Jungle",
-  "artist": "ORIGINAL",
+  "artist": "Vanco",
   "orig": true,
   "bpm": 68.0,
   "duration": 134.116,

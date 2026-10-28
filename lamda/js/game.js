@@ -157,6 +157,16 @@
     });
   }
 
+  /* 进歌动画期间所有 DOM 界面都隐藏，交给画布自己的 drawIntro 绘制 */
+  function hideScreens() {
+    App.screen = 'intro';
+    Object.keys(SCREENS).forEach(function (id) {
+      var el = $(id);
+      el.classList.remove('on');
+      el.style.visibility = 'hidden';
+    });
+  }
+
   var toastTimer = 0;
   function toast(msg, ms) {
     var el = $('toast');
@@ -256,49 +266,75 @@
     });
   }
 
+  /* 把已注册到 LAMBDA_CHART 的谱面收进曲库；返回还需要注入脚本的 id 列表。 */
+  function absorb(id) {
+    var c = (window.LAMBDA_CHART || {})[id];
+    if (!c) return false;
+    try {
+      var s = makeSong(c);
+      if (s) { App.songs.push(s); return true; }
+      App.failed.push(id + ' — 没有可用音符');
+    } catch (e) {
+      App.failed.push(id + ' — ' + (e && e.message || e));
+    }
+    return false;
+  }
+
   function loadSongs() {
+    /* 首次加载：清空后逐个注入谱面脚本。
+       之后的重复调用（刷新清单 / 测试里再次加载）走「增量」路径：
+       已经注册过的谱面直接就位，不清空已有曲库，避免界面闪空。 */
+    var already = App.booted;
     App.loading = true;
     App.notice = '';
     App.failed = [];
-    App.songs = [];
+    if (!already) App.songs = [];
     renderSongList();
 
     var ids = (window.LAMBDA_INDEX || []).slice();
     if (!ids.length) {
       App.loading = false;
+      App.songs = [];
       App.notice = 'nolib';
       renderSongList();
       return Promise.resolve();
     }
 
-    var chain = Promise.resolve();
+    var loaded = {};
+    for (var k = 0; k < App.songs.length; k++) loaded[App.songs[k].id] = 1;
+
+    /* 已在内存里的谱面直接同步收下（jsdom 等无脚本注入的环境也能跑通） */
+    var pending = [];
     ids.forEach(function (id) {
-      chain = chain.then(function () {
-        var reg = window.LAMBDA_CHART || {};
-        var ready = reg[id] ? Promise.resolve(true)
-          : injectScript(CHART_DIR + encodeURIComponent(id) + '.js');
-        return ready.then(function (ok) {
-          if (!ok) { App.failed.push(id + ' — 谱面文件缺失'); return; }
-          var c = (window.LAMBDA_CHART || {})[id];
-          if (!c) { App.failed.push(id + ' — 未注册'); return; }
-          try {
-            var s = makeSong(c);
-            if (s) App.songs.push(s);
-            else App.failed.push(id + ' — 没有可用音符');
-          } catch (e) {
-            App.failed.push(id + ' — ' + (e && e.message || e));
-          }
-        });
-      });
+      if ((window.LAMBDA_CHART || {})[id]) {
+        if (!loaded[id]) { if (absorb(id)) loaded[id] = 1; }
+      } else {
+        pending.push(id);
+      }
     });
 
-    return chain.then(function () {
+    function settle() {
       App.loading = false;
       if (App.songs.length) App.sel = clamp(App.sel, 0, App.songs.length - 1);
       else App.notice = 'nolib';
       renderSongList();
       if (App.failed.length) console.warn('[charts] 跳过：', App.failed);
+    }
+
+    if (!pending.length) { settle(); return Promise.resolve(); }
+
+    var chain = Promise.resolve();
+    pending.forEach(function (id) {
+      chain = chain.then(function () {
+        return injectScript(CHART_DIR + encodeURIComponent(id) + '.js').then(function (ok) {
+          if (!ok) { App.failed.push(id + ' — 谱面文件缺失'); return; }
+          if (!(window.LAMBDA_CHART || {})[id]) { App.failed.push(id + ' — 未注册'); return; }
+          if (!loaded[id] && absorb(id)) loaded[id] = 1;
+        });
+      });
     });
+
+    return chain.then(settle);
   }
 
   /* ------------------------------------------------------------------ 选曲界面 */
@@ -638,9 +674,17 @@
     return Math.max(0, G.groups[0].t - twoBars);
   }
 
-  function startSong(i, skip) {
+  function startSong(i, skip, instant) {
     var s = App.songs[i];
     if (!s) return;
+
+    /* 进歌动画：先播 ~1.9s，结束后再真正开始计时与发声。
+       再次按键/点击可直接跳过；?instant=1 时完全跳过（测试与截图用）。 */
+    if (!instant && !DEV.instant) {
+      playIntro(s, function () { startSong(i, skip, true); });
+      return;
+    }
+
     Synth.init();
     Synth.resume();
     var c = Synth.ctx;
@@ -1045,8 +1089,252 @@
     ctx.globalAlpha = 1;
   }
 
-  function drawField(st) {
-    /* 点阵底纹 */
+  /* ------------------------------------------------------------------ 进歌动画
+   * 分两段，共 ~1.9s：
+   *   ① 曲名从主页位置抽出、上浮淡出，同时画布铺满横向流动的扫描线
+   *   ② 扫描线在底部汇聚成弧，拉起、压平、铺开 —— 变成判定线；
+   *      节拍竖线从上落下，最后一点白光柱扫过，交棒给 startSong。
+   */
+  var INTRO_DUR = 1.90;
+  var intro = { on: false, t0: 0, song: null, cb: null, seeded: false };
+
+  function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
+  function easeInOutCubic(x) {
+    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  }
+  function seg(p, a, b) { return clamp((p - a) / Math.max(1e-6, b - a), 0, 1); }
+
+  function playIntro(song, cb) {
+    intro.on = true;
+    intro.t0 = performance.now();
+    intro.song = song || null;
+    intro.cb = cb || null;
+    intro.seeded = false;
+    intro.hold = null;
+    hideScreens();
+  }
+
+  function introProgress() {
+    if (intro.hold !== null && intro.hold !== undefined && isFinite(intro.hold)) {
+      return clamp(intro.hold, 0, 1);
+    }
+    return clamp(Math.max(0, performance.now() - intro.t0) / (INTRO_DUR * 1000), 0, 1);
+  }
+
+  function endIntro() {
+    if (!intro.on) return;          // 防重入
+    intro.on = false;
+    var cb = intro.cb;
+    intro.cb = null;
+    if (cb) cb();
+    /* 回调理应把屏幕切走（startSong -> play）。若没有（例如调试挂起），
+       退回选曲，避免 loop 一直卡在 intro 上。 */
+    if (App.screen === 'intro') goSelect();
+  }
+
+  function introEndsNow() {
+    if (!intro.on) return;
+    intro.t0 = performance.now() - INTRO_DUR * 1000 - 1;
+    drawIntro(performance.now() / 1000);
+  }
+
+  /* 判定线在 p 时刻的纵向位置（弧 -> 平线的过渡由这里统一决定） */
+  function introLineY(p) {
+    var flat = L.bot;
+    var rise = easeOutCubic(seg(p, 0.34, 0.60));
+    var arcLift = (1 - easeInOutCubic(seg(p, 0.52, 0.78))) * H * 0.085;
+    return flat + (1 - rise) * H * 0.055 - arcLift;
+  }
+
+  function drawIntro(t) {
+    var p = introProgress();
+    if (p >= 1) { endIntro(); return; }
+
+    bg();
+
+    var song = intro.song;
+    var title = song ? String(song.title || '').toUpperCase() : '';
+    var cx = W * 0.5;
+
+    /* 背景点阵，随进度淡入 */
+    ctx.globalAlpha = 0.045 * seg(p, 0, 0.30);
+    ctx.fillStyle = '#fff';
+    for (var gx = 14; gx < W; gx += 60) {
+      for (var gy = 14; gy < H; gy += 60) ctx.fillRect(gx, gy, 1, 1);
+    }
+    ctx.globalAlpha = 1;
+
+    /* ① 曲名：从中间上浮，拉宽字距，淡出 */
+    var tp = seg(p, 0.02, 0.40);
+    if (title && tp < 1) {
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      /* 字号按标题长度自适应，长标题自动缩，短标题放大 */
+      var fs = Math.round(clamp(W * 0.62 / Math.max(8, title.length), 16, W * 0.062));
+      ctx.font = '300 ' + fs + 'px ' + SANS;
+      if ('letterSpacing' in ctx) ctx.letterSpacing = (0.14 + tp * 0.26) * fs + 'px';
+      ctx.globalAlpha = (1 - easeOutCubic(tp)) * 0.96;
+      ctx.fillStyle = '#fff';
+      ctx.fillText(title, cx, H * 0.46 - easeOutCubic(tp) * H * 0.10);
+      if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+
+      /* 曲名下的一根细线，跟着字宽展开 */
+      var lw = Math.min(W * 0.66, title.length * fs * 0.72) * easeOutCubic(tp);
+      ctx.globalAlpha = (1 - easeOutCubic(tp)) * 0.42;
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx - lw / 2, H * 0.46 + fs * 0.95);
+      ctx.lineTo(cx + lw / 2, H * 0.46 + fs * 0.95);
+      ctx.stroke();
+
+      if (song) {
+        var sub = (song.artist || '') + (song.level ? '   LV.' + padn(song.level, 2) : '');
+        ctx.font = '400 11px ' + MONO;
+        if ('letterSpacing' in ctx) ctx.letterSpacing = '4px';
+        ctx.globalAlpha = (1 - easeOutCubic(tp)) * 0.52;
+        ctx.fillText(sub.toUpperCase(), cx, H * 0.46 + fs * 1.5);
+        if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+      }
+      ctx.restore();
+    }
+
+    /* ② 横向扫描线：先在整屏流过，再被收拢到底部那条线上 */
+    var scan = seg(p, 0.06, 0.46);
+    var merge = easeInOutCubic(seg(p, 0.38, 0.56));
+    var lineY = introLineY(p);
+    var lineW = easeInOutCubic(seg(p, 0.44, 0.72));
+
+    if (scan > 0) {
+      var rows = 26;
+      ctx.lineWidth = 1;
+      for (var i = 0; i < rows; i++) {
+        var f = i / (rows - 1);
+        var base = H * (0.12 + f * 0.76);
+        var y = base + (lineY - base) * merge;
+        /* 每行自带一点相位漂移，形成风过的感觉 */
+        var phase = ((t * 0.55 + i * 0.13) % 1);
+        var half = (W * 0.5) * (0.28 + easeOutCubic(scan) * 0.98) * (1 - merge * 0.86);
+        var a = (0.16 + 0.10 * Math.sin(i * 1.7)) * scan * (1 - merge * 0.45);
+        ctx.strokeStyle = 'rgba(255,255,255,' + a.toFixed(3) + ')';
+        ctx.beginPath();
+        ctx.moveTo(cx - half, y);
+        ctx.lineTo(cx + half, y);
+        ctx.stroke();
+
+        /* 线上滑过的亮点 */
+        if (p < 0.52) {
+          var px = cx - half + phase * half * 2;
+          ctx.globalAlpha = Math.min(1, a * 6);
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(px, y - 0.5, 26, 1.4);
+          ctx.globalAlpha = 1;
+        }
+      }
+    }
+
+    /* 判定线本体：弧形 -> 压平 -> 向两侧铺满 */
+    if (lineW > 0) {
+      var x0 = cx - (W * 0.5) * lineW;
+      var x1 = cx + (W * 0.5) * lineW;
+      var bow = (1 - easeInOutCubic(seg(p, 0.52, 0.80))) * H * 0.055;
+      var bright = seg(p, 0.48, 0.62);
+
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.34 + bright * 0.5).toFixed(3) + ')';
+      ctx.lineWidth = 1 + bright * 0.6;
+      ctx.beginPath();
+      var steps = 48;
+      for (var k = 0; k <= steps; k++) {
+        var u = k / steps;
+        var xx = x0 + (x1 - x0) * u;
+        var yy = lineY - Math.sin(u * Math.PI) * bow;
+        if (k === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+      }
+      ctx.stroke();
+
+      /* 判定点（对应游玩时的 judgeX），最后一刻闪一下 */
+      var jp = seg(p, 0.56, 0.84);
+      if (jp > 0) {
+        var jx = L.judgeX * easeOutCubic(seg(p, 0.56, 0.70));
+        /* 外扩的光环，用两圈拉出层次 */
+        ctx.globalAlpha = jp * (1 - jp) * 1.6;
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(jx, lineY, 8 + (1 - jp) * 58, 0, 6.2832);
+        ctx.stroke();
+        ctx.globalAlpha = jp;
+        ctx.beginPath();
+        ctx.arc(jx, lineY, 4.5, 0, 6.2832);
+        ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(jx - 0.5, lineY - 11, 1, 22);
+        ctx.globalAlpha = 1;
+      }
+
+      /* 音符：从上方落下，在判定点处汇成一束（呼应游玩时的判定节奏） */
+      var np = seg(p, 0.46, 0.90);
+      if (np > 0) {
+        for (var n = 0; n < 7; n++) {
+          var u3 = (n + 0.5) / 7;
+          var prog = clamp(np * 1.6 - n * 0.072, 0, 1);
+          if (prog <= 0) continue;
+          /* 落下位置：从画面上部滑到判定线，起步更慢、尾段加速 */
+          var ny = H * 0.16 + (lineY - H * 0.16) * (1 - Math.pow(1 - prog, 1.7));
+          var nx = W * (0.10 + u3 * 0.80);
+          var pull = easeOutCubic(seg(prog, 0.76, 1));
+          nx = nx + (L.judgeX + 14 - nx) * pull * 0.92;
+          var na = (1 - seg(prog, 0.90, 1)) * 0.8;
+          if (na <= 0) continue;
+          ctx.globalAlpha = na;
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(nx - 3, ny - 1, 6, 2);
+          ctx.globalAlpha = na * 0.3;
+          ctx.fillRect(nx - 0.5, ny - 20, 1, 18);
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      /* 节拍竖线：音符收拢后，从上方依次落下，把画面撑满 */
+      var bp = seg(p, 0.74, 0.99);
+      if (bp > 0) {
+        var cols = 16;
+        var bot = lineY;
+        for (var c = 0; c < cols; c++) {
+          var u2 = (c + 0.5) / cols;
+          var bx = W * u2;
+          var grow = easeOutCubic(clamp(bp * 1.8 - c * 0.038, 0, 1));
+          var barA = (c % 4 === 0 ? 0.22 : 0.10);
+          ctx.strokeStyle = 'rgba(255,255,255,' + barA.toFixed(3) + ')';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(bx, bot - (bot + 40) * grow);
+          ctx.lineTo(bx, bot);
+          ctx.stroke();
+        }
+      }
+    }
+
+    /* 收尾：一道纵向光柱扫过，作为进入游玩的信号 */
+    var flash = seg(p, 0.86, 1.0);
+    if (flash > 0) {
+      var fx = cx + (flash - 0.5) * W * 1.4;
+      var g2 = ctx.createLinearGradient(fx - 90, 0, fx + 90, 0);
+      g2.addColorStop(0, 'rgba(255,255,255,0)');
+      g2.addColorStop(0.5, 'rgba(255,255,255,' + (Math.sin(flash * Math.PI) * 0.16).toFixed(3) + ')');
+      g2.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g2;
+      ctx.fillRect(fx - 90, 0, 180, H);
+      /* 收尾时整体压暗，避免最后一帧跳变 */
+      ctx.globalAlpha = seg(p, 0.92, 1.0) * 0.55;
+      ctx.fillStyle = '#060606';
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawField(st) {    /* 点阵底纹 */
     ctx.globalAlpha = 0.045;
     ctx.fillStyle = '#fff';
     for (var x = L.padX; x < W; x += 46) {
@@ -1369,6 +1657,11 @@
       enterHome();
       return;
     }
+    if (App.screen === 'intro') {
+      e.preventDefault();
+      introEndsNow();
+      return;
+    }
     if (App.screen === 'title') {
       if (k === 'ArrowUp' || k === 'w' || k === 'W') {
         e.preventDefault(); homeSel = (homeSel + HOME_ITEMS.length - 1) % HOME_ITEMS.length; renderHome();
@@ -1417,6 +1710,12 @@
   }, { passive: false });
 
   window.addEventListener('pointerdown', function (e) {
+    if (App.screen === 'intro') {
+      if (e.button !== undefined && e.button !== 0) return;
+      e.preventDefault();
+      introEndsNow();
+      return;
+    }
     if (App.screen !== 'play') return;
     if (e.button !== undefined && e.button !== 0) return;
     e.preventDefault();
@@ -1442,7 +1741,9 @@
     requestAnimationFrame(loop);
     resize();
     var t = performance.now() / 1000;
-    if (App.screen === 'play' && G.active) {
+    if (App.screen === 'intro') {
+      drawIntro(t);
+    } else if (App.screen === 'play' && G.active) {
       if (!G.paused) update();
       drawGame(songTime());
     } else if (App.screen === 'pause' && G.active) {
@@ -1456,6 +1757,28 @@
     if (q === 'splash') { goSplash(); return true; }
     if (q === 'home' || q === 'title') { goTitle(); return true; }
     if (q === 'select') { goSelect(); return true; }
+    if (q === 'intro') {
+      if (!App.songs.length) return false;
+      var si = clamp(App.sel, 0, App.songs.length - 1);
+      var hold = parseFloat(DEV.at || 0);
+      playIntro(App.songs[si], function () {
+        if (DEV.hold === '1') {          // 截图用：停在原地，不进入游玩
+          intro.on = true;
+          intro.cb = null;
+          intro.song = App.songs[si];
+          return;
+        }
+        G.paused = true;
+        startSong(si, 0, true);
+        G.paused = true;
+      });
+      if (hold > 0) intro.t0 = performance.now() - hold * INTRO_DUR * 1000;
+      if (DEV.hold === '1') {
+        /* 冻结进度：每帧都把 t0 顶回固定位置 */
+        intro.hold = hold;
+      }
+      return true;
+    }
     if (q === 'settings') { goSelect(); openSettings('select'); return true; }
     if (q === 'pause') { startSong(0); pauseGame(); return true; }
     if (q === 'play') {
@@ -1565,6 +1888,10 @@
     goSelect: goSelect,
     pauseGame: pauseGame, resumeGame: resumeGame, autoPause: autoPause,
     getHomeSel: function () { return homeSel; }, setHomeSel: function (i) { homeSel = i; renderHome(); },
+    playIntro: playIntro, drawIntro: drawIntro, endIntro: endIntro,
+    introProgress: introProgress, introEndsNow: introEndsNow,
+    getIntro: function () { return intro; },
+    INTRO_DUR: INTRO_DUR,
   };
 
   if (document.readyState === 'loading') {

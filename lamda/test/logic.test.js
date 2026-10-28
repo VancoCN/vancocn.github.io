@@ -99,6 +99,7 @@ win.eval(read(`charts/${CHART_ID}.js`));
 win.eval(read('charts/pupa.js'));
 win.eval(read('charts/amidst-the-jungle.js'));
 win.eval(read('charts/the-earth.js'));
+win.eval(read('charts/the-field-of-hopes-and-dreams.js'));
 win.eval(read('js/synth.js'));
 win.eval(read('js/game.js'));
 
@@ -121,7 +122,7 @@ function boot() {
   await boot();
   console.log('\n== 载入 ==');
   ok(!!M, '__MR 已挂载');
-  eq(M.App.songs.length, 4, '曲库载入 4 首');
+  eq(M.App.songs.length, 5, '曲库载入 5 首');
   const song = M.App.songs[0];
   eq(song.title, 'Bad Apple!!', '曲名（来自谱面）');
   eq(song.taps, 848, '可击打分组数 = 848');
@@ -149,15 +150,24 @@ function boot() {
   eq(te.level, 6, 'the Earth 难度 LV.06');
   near(te.bpm, 100, 0.1, 'the Earth BPM 100');
   eq(te.orig, false, 'the Earth 非原创曲');
+  const fh = M.App.songs.filter(function (s) { return s.id === 'the-field-of-hopes-and-dreams'; })[0];
+  ok(!!fh, 'The Field of Hopes and Dreams 已加载');
+  eq(fh.title, 'The Field of Hopes and Dreams', '新曲曲名');
+  eq(fh.artist, 'Toby Fox', '新曲曲师');
+  eq(fh.cover, '', '无曲绘（走艺术字封面）');
+  eq(fh.taps, 542, '新曲击打单位 = 542');
+  eq(fh.level, 8, '新曲难度 LV.08');
+  near(fh.bpm, 125, 0.1, '新曲 BPM 125');
+  eq(fh.orig, false, '新曲非原创');
   eq(song.parsed.tracks.length, 3, '谱面含 3 条音轨');
   ok(song.parsed.beats.length > 400, '节拍线由 tempo 生成（' + song.parsed.beats.length + ' 拍）');
 
   /* 重新开始 */
   function restart() {
-    M.startSong(0);
+    M.startSong(0, 0, true);   // 第三参 true = 跳过进歌动画，直接开局
     const a = AC();
     a.T = 0;
-    M.startSong(0);            // 再次调用以保证 t0 基于 T=0
+    M.startSong(0, 0, true);   // 再次调用以保证 t0 基于 T=0
   }
   function setT(t) { AC().T = G.t0 + t; }
 
@@ -366,7 +376,11 @@ function boot() {
   key('ArrowUp');
   eq(M.App.sel, 0, '↑ 回到第 1 首');
   key('Enter');
-  eq(M.App.screen, 'play', 'ENTER 开始游玩');
+  eq(M.App.screen, 'intro', 'ENTER 先播进歌动画');
+  ok(M.getIntro().on, '进歌动画处于激活状态');
+  eq(M.App.songs[M.App.sel].id, G.song ? G.song.id : M.App.songs[M.App.sel].id, '动画绑定了当前曲目');
+  key('Enter');                          // 再按一次跳过动画
+  eq(M.App.screen, 'play', 'ENTER 开始游玩（跳过动画）');
   key('Escape');
   eq(M.App.screen, 'pause', 'ESC 暂停');
   key('Escape');
@@ -387,7 +401,7 @@ function boot() {
   eq(M.App.screen, 'title', '设置 ESC 回到主界面');
   eq(M.App.screen !== 'select', true, '设置是主界面的一级入口，不经过选曲');
   eq(win.document.querySelectorAll('#homeMenu .hitem').length, 2, '主界面有 2 个菜单项');
-  eq(win.document.getElementById('homeTracks').textContent, '04', '主界面显示曲目数');
+  eq(win.document.getElementById('homeTracks').textContent, '05', '主界面显示曲目数');
   ok(/^\d{4}$/.test(win.document.getElementById('homeChart').textContent), '主界面显示总音符数');
   const sel0 = win.document.querySelectorAll('#homeMenu .hitem.sel');
   eq(sel0.length, 1, '主界面只有一项处于选中态');
@@ -401,7 +415,7 @@ function boot() {
 
   /* 失焦自动暂停 */
   console.log('\n== 失焦自动暂停 ==');
-  M.startSong(0);
+  M.startSong(0, 0, true);
   eq(M.App.screen, 'play', '进入游玩');
   eq(M.G.paused, false, '未暂停');
   win.dispatchEvent(new win.Event('blur'));
@@ -535,7 +549,7 @@ function boot() {
   eq(M.App.screen, 'select', 'ESC 返回选曲');
   ok(win.localStorage.getItem('mono-rhythm.settings.v1') !== null, '设置写入本地存储');
 
-  M.startSong(0);
+  M.startSong(0, 0, true);
   key('Escape');
   eq(M.App.screen, 'pause', '暂停中');
   M.openSettings('pause');
@@ -609,10 +623,55 @@ function boot() {
     ok(txt.indexOf(String(saved)) >= 0, '侧栏显示历史最高分');
   }
 
-  /* ---------- 曲目清单 ---------- */
-  console.log('\n== 曲目清单 ==');
+  /* ---------- 进歌动画 ---------- */
+  console.log('\n== 进歌动画 ==');
+  eq(M.INTRO_DUR, 1.9, '动画时长 1.9s');
+  M.goSelect();
+  M.App.sel = 0;
+  let introDone = 0;
+  M.playIntro(M.App.songs[0], function () { introDone++; });
+  eq(M.App.screen, 'intro', '播放动画时进入 intro 界面');
+  ok(M.getIntro().on, '动画处于开启状态');
+  eq(M.getIntro().song.id, 'badapple', '动画携带曲目信息');
+  eq(M.App.songs.length, 5, '动画不影响曲库');
+  // 所有 DOM 界面都应隐藏，只有画布可见
+  const domScreens = ['scr-splash', 'scr-title', 'scr-select', 'scr-settings', 'scr-result'];
+  ok(domScreens.every((id) => {
+    const el = win.document.getElementById(id);
+    return !el.classList.contains('on') && el.style.visibility === 'hidden';
+  }), '动画期间 DOM 界面全部隐藏');
+  // 渲染几帧不应抛异常（含曲名测量 / 渐变 / 弧形路径）
+  [0, 0.15, 0.35, 0.55, 0.75, 0.95].forEach((p) => {
+    const it = M.getIntro();
+    it.t0 = win.performance.now() - p * M.INTRO_DUR * 1000;
+    M.drawIntro(win.performance.now() / 1000);
+  });
+  ok(true, '动画各阶段渲染不抛异常');
+  eq(introDone, 0, '中途未触发回调');
+  // 推到末尾，下一帧渲染应收尾并回调
+  M.getIntro().t0 = win.performance.now() - M.INTRO_DUR * 1000 - 5;
+  near(M.introProgress(), 1, 0.001, '进度按时间推进到 1');
+  M.drawIntro(win.performance.now() / 1000);
+  eq(introDone, 1, '渲染到末尾时触发一次回调');
+  ok(!M.getIntro().on, '回调后动画关闭');
+
+  // 跳过路径
+  let skipped = 0;
+  M.playIntro(M.App.songs[0], function () { skipped++; });
+  M.getIntro();                    // 确认在播
+  M.introEndsNow();
+  M.drawIntro(win.performance.now() / 1000);
+  eq(skipped, 1, '跳过时立即执行回调');
+  ok(!M.getIntro().on, '跳过后动画关闭');
+
+  // instant 直接开局，不经过动画
+  M.startSong(0, 0, true);
+  eq(M.App.screen, 'play', 'instant 跳过动画直接游玩');
+  ok(!M.getIntro().on, 'instant 不残留动画状态');
+
+  /* ---------- 曲目清单 ---------- */  console.log('\n== 曲目清单 ==');
   ok(Array.isArray(win.LAMBDA_INDEX), 'charts/index.js 提供清单');
-  eq(win.LAMBDA_INDEX.length, 4, '清单里 4 首');
+  eq(win.LAMBDA_INDEX.length, 5, '清单里 5 首');
   eq(win.LAMBDA_INDEX[0], CHART_ID, '清单 id = ' + CHART_ID);
   ok(!!(win.LAMBDA_CHART && win.LAMBDA_CHART[CHART_ID]), '谱面已注册到 LAMBDA_CHART');
   eq(M.App.songs[0].id, CHART_ID, '歌曲 id 与清单一致');
@@ -620,7 +679,7 @@ function boot() {
   eq(M.App.failed.length, 0, '没有加载失败的谱面');
 
   await M.loadSongs();
-  eq(M.App.songs.length, 4, '重新加载后仍是 4 首');
+  eq(M.App.songs.length, 5, '重新加载后仍是 5 首');
 
   /* 空清单：提示怎么加曲 */
   const wEmpty = (function () {
