@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>dev shot</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}
+iframe{display:block;width:100vw;height:100vh;border:0}</style>
+</head>
+<body>
+<iframe id="f"></iframe>
+<script>
+/* 开发用截图辅助：无头环境下 AudioContext 时钟不前进，
+   这里通过 __MR 手动推进播放头并模拟自动演奏，便于静态截图检查视觉。
+
+   注意：必须通过 http 打开（file:// 的 iframe 是 opaque origin，父页面无法访问
+   contentWindow，脚本会拿不到 __MR）。用 python -m http.server 起一下即可。 */
+var params = new URLSearchParams(location.search);
+var src = params.get('src') || '../index.html?scene=play&t=20&auto=1';
+var steps = parseInt(params.get('steps') || '260', 10);
+var step = parseFloat(params.get('step') || '0.006');
+var age = parseFloat(params.get('age') || '0.15');
+var f = document.getElementById('f');
+
+f.onload = function () {
+  var t0 = Date.now();
+  (function waitReady() {
+    var w = f.contentWindow, M = w && w.__MR;
+    if (!M || !M.App.songs.length || !M.G.groups.length) {
+      if (Date.now() - t0 < 8000) return setTimeout(waitReady, 100);
+      return;
+    }
+    try {
+      for (var i = 0; i < steps; i++) { M.G.t0 -= step; M.update(); }
+      var ct = M.songTime() + M.G.t0;
+      var g = M.G.groups[M.G.first];
+      if (g) { M.G.t0 = ct - g.t; M.update(); }
+      if (M.G.judge) M.G.judge.t0 -= age;
+      M.G.fx.forEach(function (o) { o.t0 -= age; });
+      M.drawGame(M.songTime());
+    } catch (e) { console.error(e); }
+  })();
+};
+
+f.src = src;
+</script>
+</body>
+</html>

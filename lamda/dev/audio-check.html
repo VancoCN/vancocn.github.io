@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>audio check</title>
+<style>html,body{margin:0;height:100%;background:#000;color:#0f0;font:16px/1.6 monospace}
+pre{padding:24px;white-space:pre-wrap}</style>
+</head>
+<body>
+<pre id="out">rendering…</pre>
+<script src="../js/synth.js"></script>
+<script>
+/* 用 OfflineAudioContext 渲染合成器，检查是否真的出声、有无 NaN / 削波 */
+(function () {
+  var out = document.getElementById('out');
+  var lines = [];
+  function log(s) { lines.push(s); out.textContent = lines.join('\n'); }
+
+  var SR = 44100;
+  var oac = new OfflineAudioContext(1, SR * 3, SR);
+  Synth.ctx = oac;
+  Synth.master = oac.createGain();
+  Synth.master.gain.value = 0.9;
+  Synth.master.connect(oac.destination);
+
+  // 噪声缓冲需要单独造（init 会新建 AudioContext，这里不用）
+  var len = SR * 1.2;
+  var nb = oac.createBuffer(1, len, SR);
+  var d = nb.getChannelData(0);
+  for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  Synth.noiseBuf = nb;
+
+  // 旋律：C4 E4 G4 C5
+  [261.63, 329.63, 392.0, 523.25].forEach(function (f, i) {
+    Synth.piano(oac.currentTime + 0.05 + i * 0.25, f, 100, 0.6, 1.0);
+  });
+  // 鼓：kick snare hat crash
+  Synth.drum(oac.currentTime + 0.05, 36, 110);
+  Synth.drum(oac.currentTime + 0.30, 38, 100);
+  Synth.drum(oac.currentTime + 0.55, 42, 90);
+  Synth.drum(oac.currentTime + 0.80, 49, 100);
+  Synth.tick(oac.currentTime + 0.55, 0.05);
+
+  oac.startRendering().then(function (buf) {
+    var ch = buf.getChannelData(0);
+    var peak = 0, sum = 0, nan = 0;
+    for (var i = 0; i < ch.length; i++) {
+      var v = ch[i];
+      if (!isFinite(v)) { nan++; continue; }
+      if (Math.abs(v) > peak) peak = Math.abs(v);
+      sum += v * v;
+    }
+    var rms = Math.sqrt(sum / ch.length);
+    // 检查是否有明显静音段（开头应有声）
+    var head = 0;
+    for (var i = 0; i < SR * 0.5; i++) head = Math.max(head, Math.abs(ch[i]));
+
+    log('RENDER OK');
+    log('samples      ' + ch.length);
+    log('peak         ' + peak.toFixed(4) + (peak > 0.02 ? '  [有声]' : '  [静音！]'));
+    log('rms          ' + rms.toFixed(4));
+    log('head(0.5s)   ' + head.toFixed(4));
+    log('non-finite   ' + nan + (nan ? '  [NaN!]' : '  [ok]'));
+    log('clipping     ' + (peak > 0.999 ? 'YES' : 'no'));
+    log('verdict      ' + ((peak > 0.02 && nan === 0) ? 'PASS' : 'FAIL'));
+    document.title = (peak > 0.02 && nan === 0) ? 'PASS' : 'FAIL';
+  }).catch(function (e) {
+    log('RENDER FAIL: ' + e.message);
+    document.title = 'FAIL';
+  });
+})();
+</script>
+</body>
+</html>

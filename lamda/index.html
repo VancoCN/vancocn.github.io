@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LAMDA</title>
+<style>
+:root{
+  --bg:#050505;
+  --fg:#f2f2f2;
+  --dim:#6d6d6d;
+  --line:rgba(255,255,255,.14);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,"Courier New",monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--bg);color:var(--fg);overflow:hidden;
+  font-family:var(--sans);-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+#ui{position:fixed;inset:0;pointer-events:none}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;
+  pointer-events:none;transition:opacity .3s ease}
+.screen.on{opacity:1;pointer-events:auto}
+
+/* ---------------- title / home ---------------- */
+#scr-title{align-items:center;justify-content:center;text-align:center}
+.homeWrap{position:relative;display:flex;flex-direction:column;align-items:center;
+  padding:clamp(20px,4vh,40px) clamp(20px,6vw,80px)}
+.tmark{position:relative;width:104px;height:104px;margin-bottom:46px}
+.tmark i{position:absolute;display:block;border:1.5px solid #fff}
+.tmark .sq{inset:0;animation:spin 18s linear infinite}
+.tmark .ci{inset:26px;transform:rotate(45deg);animation:spinrev 11s linear infinite}
+.tmark .lam{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:44px;font-weight:300;line-height:1;color:#fff;padding-bottom:3px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spinrev{from{transform:rotate(45deg)}to{transform:rotate(405deg)}}
+#scr-title h1{font-size:clamp(28px,5.2vw,62px);font-weight:200;letter-spacing:.32em;
+  text-indent:.32em;line-height:1;white-space:nowrap}
+#scr-title .sub{margin-top:20px;font-size:12px;letter-spacing:.42em;text-indent:.42em;color:#777}
+
+/* 主菜单：科技感描边条目 */
+.hmenu{margin-top:clamp(28px,5vh,54px);display:flex;flex-direction:column;gap:10px;
+  width:min(360px,78vw)}
+.hitem{position:relative;display:grid;grid-template-columns:38px 1fr 8px;align-items:center;
+  gap:14px;padding:15px 18px;background:transparent;border:1px solid rgba(255,255,255,.14);
+  color:#d8d8d8;cursor:pointer;text-align:left;font-family:var(--sans);
+  transition:border-color .18s,background .18s,color .18s,padding .18s}
+.hitem .hk{font:400 10px/1 var(--mono);letter-spacing:.16em;color:#5f5f5f;transition:color .18s}
+.hitem .ht b{display:block;font-size:15px;font-weight:400;letter-spacing:.24em}
+.hitem .ht i{display:block;margin-top:6px;font:400 9px/1 var(--mono);font-style:normal;
+  letter-spacing:.3em;color:#5a5a5a;transition:color .18s}
+.hitem .hdot{width:6px;height:6px;border:1px solid rgba(255,255,255,.3);
+  transition:background .18s,border-color .18s}
+.hitem:hover{border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.03)}
+.hitem.sel{background:#f2f2f2;border-color:#fff;color:#050505;padding-left:26px}
+.hitem.sel .hk{color:#7a7a7a}
+.hitem.sel .ht i{color:#6a6a6a}
+.hitem.sel .hdot{background:#050505;border-color:#050505}
+/* 选中条目的四角标记 */
+.hitem.sel::before,.hitem.sel::after{content:'';position:absolute;width:7px;height:7px;
+  border:1px solid rgba(0,0,0,.55)}
+.hitem.sel::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
+.hitem.sel::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
+
+.hstat{margin-top:clamp(22px,4vh,40px);display:flex;gap:26px;
+  font:400 9px/1 var(--mono);letter-spacing:.24em;color:#4a4a4a}
+.hstat em{font-style:normal;color:#bdbdbd}
+
+.hint{margin-top:clamp(20px,4vh,38px);font-size:11px;letter-spacing:.4em;text-indent:.4em;
+  color:#fff;animation:blink 2s steps(1) infinite}
+@keyframes blink{0%,58%{opacity:1}59%,100%{opacity:.12}}
+
+/* ---------------- select ---------------- */
+#scr-select{padding:clamp(24px,5vh,64px) clamp(20px,5vw,80px);justify-content:center}
+.selWrap{display:flex;gap:clamp(22px,4vw,64px);align-items:stretch;width:100%;max-width:1340px;
+  margin:0 auto;height:min(74vh,600px)}
+.selMain{flex:1;min-width:0;display:flex;flex-direction:column}
+.head{display:flex;justify-content:space-between;align-items:flex-end;
+  border-bottom:1px solid rgba(255,255,255,.22);padding-bottom:14px}
+.head .lbl{font-size:12px;letter-spacing:.34em;color:#fff}
+.head .lbl .crumb{font-style:normal;color:#5a5a5a;letter-spacing:.3em}
+.head .sub{font-size:11px;letter-spacing:.14em;color:#5f5f5f}
+#songList{list-style:none;flex:1;min-height:0;overflow:auto;overflow-x:hidden;scrollbar-width:thin}
+#songList::-webkit-scrollbar{width:2px}
+#songList::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3)}
+.song{display:grid;grid-template-columns:48px 1fr auto;align-items:center;gap:16px;
+  padding:17px 14px;border-bottom:1px solid rgba(255,255,255,.075);cursor:pointer;
+  transition:background .16s,color .16s,padding .16s}
+.song .idx{font:400 11px/1 var(--mono);color:#4f4f4f;letter-spacing:.1em}
+.song .ttl b{display:block;font-size:18px;font-weight:400;letter-spacing:.05em;line-height:1.2}
+.song .ttl span{display:block;margin-top:7px;font-size:10px;letter-spacing:.2em;color:#666}
+.song .st{display:flex;gap:18px;font:400 10px/1 var(--mono);color:#5f5f5f;letter-spacing:.08em}
+.song .st em{font-style:normal;color:#9a9a9a}
+.song .st .orig{border:1px solid rgba(255,255,255,.28);padding:3px 6px;letter-spacing:.22em;
+  font-size:9px;color:#cfcfcf}
+.song.sel{background:#f2f2f2;color:#050505;padding-left:24px}
+.song.empty{cursor:default;pointer-events:none;opacity:.2}
+.song.empty .ttl b{font-size:18px}
+.song.empty .ttl span{letter-spacing:.28em}
+.song.sel .idx{color:#8a8a8a}
+.song.sel .ttl span{color:#555}
+.song.sel .st{color:#555}
+.song.sel .st em{color:#111}
+.song.sel .st .orig{border-color:rgba(0,0,0,.4);color:#222}
+.foot{display:flex;align-items:center;gap:18px;margin-top:22px;flex-wrap:wrap}
+.libinfo{font:400 10px/1 var(--mono);letter-spacing:.2em;color:#4a4a4a}
+.notice{border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.045);
+  padding:14px 16px;margin-top:14px;font-size:11px;line-height:1.95;letter-spacing:.08em;color:#b9b9b9}
+.notice b{display:block;font-weight:400;font-size:12px;letter-spacing:.22em;color:#fff;margin-bottom:7px}
+.notice code{font:400 11px var(--mono);color:#fff;background:rgba(255,255,255,.08);padding:1px 6px}
+.selSide{width:clamp(190px,21vw,252px);border-left:1px solid rgba(255,255,255,.14);
+  padding-left:clamp(18px,2vw,28px);display:flex;flex-direction:column;gap:13px}
+.coverWrap{position:relative;width:100%;aspect-ratio:1/1;border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.025);overflow:hidden;flex:none}
+.coverWrap img{width:100%;height:100%;object-fit:cover;display:block;
+  filter:grayscale(1) contrast(1.04);opacity:0;transition:opacity .45s}
+.coverWrap img.on{opacity:.94}
+.coverPh{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font:400 9px/1 var(--mono);letter-spacing:.3em;color:#3f3f3f}
+.coverWrap:not(.empty) .coverPh{display:none}
+.sideLv span{display:block;font-size:9px;letter-spacing:.34em;color:#5f5f5f;margin-bottom:6px}
+.sideLv b{display:block;font-size:46px;font-weight:200;line-height:.95;letter-spacing:.02em;
+  color:transparent;-webkit-text-stroke:1px #fff}
+.sideRows div{display:flex;justify-content:space-between;align-items:baseline;
+  padding:7px 0;border-bottom:1px solid rgba(255,255,255,.07);
+  font:400 10px/1 var(--mono);letter-spacing:.1em;color:#636363}
+.sideRows div b{color:#eaeaea;font-weight:400}
+.sideNote{margin-top:auto;font-size:9px;line-height:2;letter-spacing:.14em;color:#4a4a4a}
+@media (max-width:880px){ .selSide{display:none} .selWrap{height:auto} #songList{max-height:52vh} }
+.btn{background:transparent;border:1px solid rgba(255,255,255,.26);color:#eaeaea;
+  padding:11px 20px;font:400 10px/1 var(--sans);letter-spacing:.26em;cursor:pointer;
+  transition:.16s;font-family:var(--sans);text-transform:uppercase}
+.btn:hover{background:#fff;color:#000;border-color:#fff}
+.btn.ghost{border-color:rgba(255,255,255,.12);color:#9a9a9a}
+
+/* ---------------- result ---------------- */
+#scr-result{align-items:center;justify-content:center}
+.rWrap{width:min(780px,88vw);text-align:center}
+.rlbl{font-size:11px;letter-spacing:.46em;text-indent:.46em;color:#5f5f5f}
+.resSong{margin-top:12px;font-size:13px;letter-spacing:.18em;color:#bdbdbd;min-height:16px}
+.rankRow{display:flex;align-items:center;justify-content:center;gap:clamp(20px,4vw,52px);
+  margin:14px 0 30px}
+.rankLetter{font-size:clamp(84px,15vw,158px);line-height:.86;font-weight:300;letter-spacing:0;
+  color:transparent;-webkit-text-stroke:1.2px #fff;transform:scale(.86);opacity:0;
+  transition:transform .5s cubic-bezier(.2,.9,.2,1),opacity .4s}
+.rankLetter.in{transform:scale(1);opacity:1}
+.rankLetter.lam{font-size:clamp(92px,16vw,172px);-webkit-text-stroke:2px #fff;
+  font-family:Georgia,"Times New Roman",serif;line-height:1}
+.scoreCol{text-align:left}
+.finalScore{font:300 clamp(34px,5.6vw,58px)/1 var(--mono);letter-spacing:.05em}
+.finalTag{margin-top:12px;font-size:10px;letter-spacing:.32em;color:#8a8a8a;min-height:12px}
+.statGrid{display:grid;grid-template-columns:repeat(5,1fr);
+  border-top:1px solid rgba(255,255,255,.2);border-bottom:1px solid rgba(255,255,255,.2)}
+.statGrid div{padding:16px 6px;border-right:1px solid rgba(255,255,255,.07)}
+.statGrid div:last-child{border-right:0}
+.statGrid b{display:block;font:400 19px/1 var(--mono);letter-spacing:.02em}
+.statGrid span{display:block;margin-top:9px;font-size:9px;letter-spacing:.22em;color:#5f5f5f}
+.resBest{margin-top:18px;min-height:14px;font:400 11px/1 var(--mono);
+  letter-spacing:.18em;color:#8a8a8a}
+.rFoot{margin-top:34px;display:flex;justify-content:center;gap:36px;
+  font-size:10px;letter-spacing:.26em;color:#767676}
+
+/* ---------------- pause ---------------- */
+#scr-pause{background:rgba(5,5,5,.74);align-items:center;justify-content:center;
+  -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px)}
+.pWrap{text-align:center}
+.plbl{font-size:12px;letter-spacing:.5em;text-indent:.5em;color:#fff;margin-bottom:34px}
+.pnote{min-height:12px;margin:-20px 0 22px;font:400 9px/1 var(--mono);
+  letter-spacing:.24em;color:#6f6f6f}
+.pbtns{display:flex;flex-direction:column;gap:12px;width:200px}
+.pbtns .btn{padding:13px 0;text-align:center}
+
+#toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%) translateY(10px);
+  opacity:0;border:1px solid rgba(255,255,255,.26);padding:11px 20px;
+  font-size:11px;letter-spacing:.16em;background:rgba(5,5,5,.94);
+  transition:.25s;pointer-events:none;z-index:20;max-width:86vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ---------------- settings ---------------- */
+#scr-settings{background:rgba(5,5,5,.9);align-items:center;justify-content:center;
+  -webkit-backdrop-filter:blur(9px);backdrop-filter:blur(9px)}
+.setWrap{width:min(640px,88vw)}
+.setHead{font-size:12px;letter-spacing:.4em;text-indent:.4em;color:#fff;
+  padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.22)}
+#setList{list-style:none}
+.setRow{display:flex;justify-content:space-between;align-items:center;
+  padding:19px 14px 19px 16px;border-bottom:1px solid rgba(255,255,255,.08);
+  cursor:pointer;transition:background .16s,color .16s,padding .16s}
+.setRow .k b{display:block;font-weight:400;font-size:15px;letter-spacing:.08em}
+.setRow .k span{display:block;margin-top:7px;font-size:9px;letter-spacing:.26em;color:#5f5f5f}
+.setRow .v{display:flex;align-items:center;gap:18px;font:400 14px/1 var(--mono);letter-spacing:.04em}
+.setRow .v i{font-style:normal;color:#7d7d7d;cursor:pointer;padding:2px 8px;
+  transition:color .12s;user-select:none}
+.setRow:not(.sel):hover{background:rgba(255,255,255,.045)}
+.setRow .v i:hover{color:#fff}
+.setRow .v b{min-width:76px;text-align:center;color:#fff;font-weight:400}
+.setRow.sel{background:#f2f2f2;color:#050505;padding-left:26px}
+.setRow.sel .k span{color:#666}
+.setRow.sel .v b{color:#000}
+.setRow.sel .v i{color:#9a9a9a}
+.setRow.sel .v i:hover{color:#000}
+.setFoot{margin-top:26px;text-align:center;font-size:10px;letter-spacing:.26em;color:#5a5a5a}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<div id="ui">
+  <section class="screen" id="scr-title">
+    <div class="homeWrap">
+      <div class="tmark"><i class="sq"></i><i class="ci"></i><span class="lam">λ</span></div>
+      <h1>LAMDA</h1>
+      <p class="sub">单键 · 黑白 · 几何节奏</p>
+      <nav class="hmenu" id="homeMenu">
+        <button class="hitem" id="btnStart" data-i="0">
+          <span class="hk">01</span>
+          <span class="ht"><b>开始游戏</b><i>START</i></span>
+          <span class="hdot"></span>
+        </button>
+        <button class="hitem" id="btnHomeSettings" data-i="1">
+          <span class="hk">02</span>
+          <span class="ht"><b>设置</b><i>SETTINGS</i></span>
+          <span class="hdot"></span>
+        </button>
+      </nav>
+      <div class="hstat">
+        <span>TRACK <em id="homeTracks">--</em></span>
+        <span>CHART <em id="homeChart">--</em></span>
+        <span>VER <em>1.2</em></span>
+      </div>
+      <p class="hint" id="titleHint">↑↓ 选择　ENTER 确认</p>
+    </div>
+  </section>
+
+  <section class="screen" id="scr-select">
+    <div class="selWrap">
+      <div class="selMain">
+        <div class="head">
+          <div class="lbl"><i class="crumb">MAIN /</i> SELECT / 选曲</div>
+          <div class="sub">↑↓ 选择　ENTER 开始　R 重新扫描　ESC 返回</div>
+        </div>
+        <div class="notice" id="notice" hidden></div>
+        <ul id="songList"></ul>
+        <div class="foot">
+          <button class="btn ghost" id="btnBack">返回</button>
+          <button class="btn ghost" id="btnSettings">设置</button>
+          <button class="btn ghost" id="btnReload">重新扫描</button>
+          <span class="libinfo" id="libInfo">SCANNING…</span>
+        </div>
+      </div>
+      <aside class="selSide">
+        <div class="coverWrap empty" id="coverWrap">
+          <img id="coverImg" alt="">
+          <span class="coverPh">NO COVER</span>
+        </div>
+        <div class="sideLv"><span>LEVEL</span><b id="sideLv">--</b></div>
+        <div class="sideRows" id="sideRows"></div>
+        <div class="sideNote">玩家音轨 = 谱面 player 轨<br>曲绘 covers/&lt;id&gt;.jpg<br>谱面目录 charts/</div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="screen" id="scr-result">
+    <div class="rWrap">
+      <div class="rlbl">RESULT</div>
+      <div class="resSong" id="resSong"></div>
+      <div class="rankRow">
+        <div class="rankLetter" id="rankLetter">S</div>
+        <div class="scoreCol">
+          <div class="finalScore" id="finalScore">0000000</div>
+          <div class="finalTag" id="finalTag"></div>
+        </div>
+      </div>
+      <div class="statGrid" id="statGrid"></div>
+      <div class="resBest" id="resBest"></div>
+      <div class="rFoot"><span>R 重试</span><span>ESC 返回选曲</span></div>
+    </div>
+  </section>
+
+  <div class="screen" id="scr-pause">
+    <div class="pWrap">
+      <div class="plbl">PAUSED</div>
+      <div class="pnote" id="pauseNote"></div>
+      <div class="pbtns">
+        <button class="btn" id="btnResume">继续</button>
+        <button class="btn ghost" id="btnSettingsPause">设置</button>
+        <button class="btn ghost" id="btnRestart">重来</button>
+        <button class="btn ghost" id="btnQuit">退出</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="screen" id="scr-settings">
+    <div class="setWrap">
+      <div class="setHead">SETTINGS / 设置</div>
+      <ul id="setList"></ul>
+      <div class="setFoot">↑↓ 选择　←→ 调节　ESC 返回</div>
+    </div>
+  </section>
+</div>
+
+<div id="toast"></div>
+
+<script src="charts/index.js"></script>
+<script src="js/synth.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
