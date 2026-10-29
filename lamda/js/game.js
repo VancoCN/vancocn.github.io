@@ -39,27 +39,32 @@
     ctx.setTransform(d, 0, 0, d, 0, 0);
   }
 
-  /* 侧落式：X 轴 = 时间（音符从右往左流），Y 轴 = 音高（低音在下、高音在上）。
-     judgeX 是判定线所在的 X，pxs 是「每秒多少像素」的横向速度。
-     音高 -> 纵坐标的映射是**静态**的（整首曲子只算一次），
-     所以音符在屏幕上只会横向移动，绝不会上下漂移 —— 这是不闪动的前提。 */
+  /* 侧落式 + 判定环（Rizline 那种）：
+     音符沿一条跟着音乐起伏的轨道从右往左滑，终点是左侧的**判定环**。
+     判定环的纵向位置跟着「当前要判定的那个音」的音高走，所以环会随旋律上下移动；
+     轨道也以环为起点，向右依次穿过后面每个音符 —— 这就是「音符随轨道动」。
+     音高 -> 纵坐标是静态映射（整首曲子只算一次），所以音符本身不会抖动。 */
   var L = {
-    judgeX: 220, pxs: 500,
-    top: 40, bottom: 680,        /* 音高映射的纵向范围 */
+    judgeX: 300, pxs: 500,
+    top: 160, bottom: 560,       /* 音高映射的纵向范围（收拢到画面中间） */
     pMin: 40, pMax: 80,          /* 音高范围（静态，buildChart 时算定） */
     padY: 40, padX: 40,
-    laneGap: 34                  /* 分轨时相邻轨道的纵向间距 */
+    laneGap: 26,                 /* 分轨时相邻轨道的纵向间距 */
+    ringR: 46,                   /* 判定环半径 */
+    ringY: 360                   /* 判定环当前纵向位置（每帧跟随音高） */
   };
   function computeLayout() {
     L.padY = Math.max(14, H * 0.022);
     L.padX = Math.max(18, W * 0.035);
-    L.top = L.padY;
-    L.bottom = H - L.padY;
-    /* 判定线靠左，右侧整片留给下落区，左侧留出 HUD */
-    L.judgeX = Math.round(W * 0.17);
-    /* 横向速度：整段下落区在 APPROACH 秒内走完（流速越快，APPROACH 越短） */
-    L.pxs = Math.max(120, (W - L.judgeX - L.padY) * speedFactor() / APPROACH);
-    L.laneGap = clamp((L.bottom - L.top) * 0.055, 24, 44);
+    /* 音高范围收拢到画面中间：上下各留 22%，避免高音/低音贴到屏幕边缘 */
+    L.top = H * 0.22;
+    L.bottom = H * 0.78;
+    /* 判定环偏左，右侧留出足够长的轨道 */
+    L.judgeX = Math.round(W * 0.30);
+    L.ringR = clamp((L.bottom - L.top) * 0.115, 30, 56);
+    /* 横向速度：整段轨道在 APPROACH 秒内走完（流速越快，APPROACH 越短） */
+    L.pxs = Math.max(120, (W - L.judgeX - L.padX) * speedFactor() / APPROACH);
+    L.laneGap = clamp((L.bottom - L.top) * 0.062, 18, 34);
   }
   function pitchOf(g) {
     var s = 0;
@@ -89,6 +94,33 @@
     var d = 0;
     for (var i = 0; i < g.notes.length; i++) if (g.notes[i].dur > d) d = g.notes[i].dur;
     return d;
+  }
+  /* 判定环当前应该在的纵向位置 = 最近一个未判定音符的音高位置。
+     跟着音高走，所以环会随旋律上下移动。 */
+  function ringTargetY() {
+    var gs = G.groups;
+    for (var i = G.first; i < gs.length; i++) {
+      if (gs[i].st) continue;
+      return groupY(gs[i]);
+    }
+    return (L.top + L.bottom) / 2;
+  }
+  /* 平滑跟随：换音时环是「滑过去」而不是瞬移。
+     跳跃超过半个音域（换曲、开局）则直接吸附，避免从默认位置慢慢飘过来。 */
+  function updateRing() {
+    var t = ringTargetY();
+    if (!isFinite(L.ringY) || Math.abs(t - L.ringY) > (L.bottom - L.top) * 0.5) {
+      L.ringY = t;
+      return;
+    }
+    L.ringY += (t - L.ringY) * 0.22;
+  }
+  /* 节拍脉动强度：正拍 1，随后迅速衰减 */
+  function beatPulse(st) {
+    if (!(G.beatDur > 0) || !(st > 0)) return 0;
+    var ph = (st / G.beatDur) % 1;
+    if (ph < 0) ph += 1;
+    return Math.pow(1 - ph, 4);
   }
 
   /* ------------------------------------------------------------------ 存档 */
@@ -1494,23 +1526,42 @@
       var missed = (g.st === 3);
       var y = groupY(g);
 
-      /* 尾迹：只有 hold（按住）才有实心长条，短音不画 ——
-         否则会和水平的音高地标线混在一起，读不出哪个是节奏、哪个是音高 */
-      var tl = Math.min(groupDur(g) * L.pxs, 260);
-      if (groupDur(g) >= 0.30 && tl >= 8) {
-        ctx.globalAlpha = a * (missed ? 0.05 : 0.16);
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 3;
+      /* 尾迹：只有 hold（按住）才有，沿轨道方向延伸（而不是水平），
+         这样它看起来是「轨道上的一段」而不是一条独立的线。 */
+      var holdDur = groupDur(g);
+      var tl = Math.min(holdDur * L.pxs, 260);
+      if (holdDur >= 0.30 && tl >= 8) {
+        var ex = x + 9 + tl, ey = y;
+        var nxt = gs[i + 1];
+        if (nxt) {
+          /* 用「到下一个音符」的方向当轨道切线 */
+          var nx2 = L.judgeX + (nxt.t - st) * L.pxs;
+          var ny2 = groupY(nxt);
+          var dx = nx2 - x, dy = ny2 - y;
+          var dl = Math.sqrt(dx * dx + dy * dy);
+          if (dl > 8) {
+            ex = x + 9 + dx / dl * tl;
+            ey = y + dy / dl * tl;
+          }
+        }
+        ctx.globalAlpha = a * (missed ? 0.06 : 0.45);
+        ctx.strokeStyle = '#5DCAA5';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
         ctx.beginPath();
-        ctx.moveTo(x + 9, y);
-        ctx.lineTo(x + 9 + tl, y);
+        ctx.moveTo(x + 8, y);
+        ctx.lineTo(ex, ey);
         ctx.stroke();
+        ctx.lineCap = 'butt';
+        ctx.globalAlpha = 1;
       }
 
-      /* 音符本体：无论几个音同时按下，都只画一个 */
+      /* 音符本体：无论几个音同时按下，都只画一个。
+         hold 用绿色，和普通白点区分开。 */
+      var isHold = holdDur >= 0.30;
       ctx.globalAlpha = a * (missed ? 0.3 : 1);
-      ctx.strokeStyle = '#fff';
-      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = isHold ? '#5DCAA5' : '#fff';
+      ctx.fillStyle = isHold ? '#5DCAA5' : '#fff';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(x, y, 9, 0, 6.2832);
@@ -1522,75 +1573,95 @@
     ctx.globalAlpha = 1;
   }
 
-  function drawJudgeLine(st, mode) {
-    var jx = L.judgeX;
-
-    /* 判定区是一条极淡的竖向光带：不画整条线（会挡住画面），
-       但必须让人一眼知道判定发生在哪一列。 */
-    var grad = ctx.createLinearGradient(jx - 26, 0, jx + 26, 0);
-    grad.addColorStop(0, 'rgba(255,255,255,0)');
-    grad.addColorStop(0.5, 'rgba(255,255,255,0.030)');
-    grad.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(jx - 26, 0, 52, H);
-
-    /* 节拍脉动：整条光带跟着拍子呼吸 */
-    var ph = 0;
-    if (G.beatDur > 0 && st > 0) {
-      ph = (st / G.beatDur) % 1;
-      if (ph < 0) ph += 1;
+  /* 把一串点画成平滑曲线（中点法） */
+  function strokeTrack(pts) {
+    if (pts.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (var k = 1; k < pts.length - 1; k++) {
+      var p = pts[k], nxt = pts[k + 1];
+      ctx.quadraticCurveTo(p.x, p.y, (p.x + nxt.x) / 2, (p.y + nxt.y) / 2);
     }
-    var pulse = Math.pow(1 - ph, 4);
-    if (pulse > 0.5) {
-      ctx.globalAlpha = (pulse - 0.5) * 0.14;
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(jx - 1, 0, 2, H);
-      ctx.globalAlpha = 1;
-    }
+    var lastP = pts[pts.length - 1];
+    ctx.quadraticCurveTo(lastP.x, lastP.y, lastP.x, lastP.y);
+    ctx.stroke();
+  }
 
-    /* 判定线本体：只画「马上要有音符落下」的那几段。
-       音符在别的 y 位置时，那条线根本不存在 —— 画面于是干净很多，
-       而玩家要盯的位置也只有自己正在追的那几个音符。
-       范围给到 0.42s、亮度给足，否则「一闪就没」会让人抓不住判定点。 */
+  /* 轨道：从判定环出发，向右依次穿过可见的音符，画成一条平滑曲线。
+     音符的 y 取决于音高（含分轨偏移），所以旋律一起伏，轨道就跟着弯 ——
+     这就是「音符随轨道动、轨道随音乐动」。
+     密集段（已分轨）交给 3 条水平轨道线表现，主曲线在那里断开，
+     否则曲线和直轨叠在一起会互相干扰。 */
+  function drawTrack(st) {
     var gs = G.groups;
-    var drawn = 0;
+    var pts = [{ x: L.judgeX, y: L.ringY }];
+    ctx.strokeStyle = 'rgba(255,255,255,0.11)';
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+
     for (var i = G.first; i < gs.length; i++) {
       var g = gs[i];
-      if (g.st) continue;
-      var x = jx + (g.t - st) * L.pxs;
-      if (x < jx - 18) continue;
-      if (x > jx + L.pxs * 0.42) break;
-
-      var y = groupY(g);
-      /* near: 1 = 正好在判定线上, 0 = 还有 0.42 秒才到 */
-      var near = 1 - Math.min(1, Math.max(0, (g.t - st) / 0.42));
-      var hold = groupDur(g) >= 0.30;
-      var al = 0.42 + 0.55 * near;
-      if (hold) {
-        ctx.strokeStyle = 'rgba(93,202,165,' + al.toFixed(3) + ')';
-      } else {
-        ctx.strokeStyle = 'rgba(255,255,255,' + al.toFixed(3) + ')';
+      if (g.st === 1) continue;
+      var x = L.judgeX + (g.t - st) * L.pxs;
+      if (x > W + 90) break;
+      if (x <= L.judgeX + 2) continue;      /* 环左侧（已过去）不画轨道 */
+      if (g.laned) {
+        /* 进入密集段：收掉当前曲线，这段交给水平轨道线 */
+        strokeTrack(pts);
+        pts = [];
+        continue;
       }
-      var half = 16 + near * 8;
-      ctx.lineWidth = 2.0 + near * 1.6;
-      ctx.beginPath();
-      ctx.moveTo(jx, y - half);
-      ctx.lineTo(jx, y + half);
-      ctx.stroke();
-
-      /* 两端的短横刻线，把这一小段「判定线」圈出来，避免和音符尾巴混淆 */
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(jx - 5, y - half); ctx.lineTo(jx + 5, y - half);
-      ctx.moveTo(jx - 5, y + half); ctx.lineTo(jx + 5, y + half);
-      ctx.stroke();
-      drawn++;
+      pts.push({ x: x, y: groupY(g) });
+      if (pts.length > 90) break;
     }
+    strokeTrack(pts);
+  }
 
-    /* 一段都没有（空档期）时留一个小刻点，判定位置不消失 */
-    if (!drawn) {
-      ctx.fillStyle = 'rgba(255,255,255,0.26)';
-      ctx.fillRect(jx - 1, (L.top + L.bottom) / 2 - 8, 2, 16);
+  /* 判定环：跟着当前音高上下移动的圆环，音符滑进环心时判定。
+     替代了原来那条贯穿整屏的判定线。 */
+  function drawRing(st, pulse) {
+    var cx = L.judgeX, cy = L.ringY, r = L.ringR;
+
+    /* 当前要判定的音符如果是 hold，环也变绿 ——
+       环、轨道、音符三处同色，玩家一眼就知道「这个要按住」。 */
+    var cur = null;
+    for (var i = G.first; i < G.groups.length; i++) {
+      if (!G.groups[i].st) { cur = G.groups[i]; break; }
+    }
+    var holdNow = cur && groupDur(cur) >= 0.30;
+    var main = holdNow ? '93,202,165' : '255,255,255';
+
+    /* 环内极淡的靶心填充 */
+    var gr = ctx.createRadialGradient(cx, cy, r * 0.12, cx, cy, r);
+    gr.addColorStop(0, 'rgba(' + main + ',0.06)');
+    gr.addColorStop(1, 'rgba(' + main + ',0)');
+    ctx.fillStyle = gr;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.2832); ctx.fill();
+
+    /* 主环 */
+    ctx.strokeStyle = 'rgba(' + main + ',' + (0.60 + 0.32 * pulse).toFixed(3) + ')';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.2832); ctx.stroke();
+
+    /* 内侧细环 */
+    ctx.strokeStyle = 'rgba(' + main + ',0.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, r * 0.6, 0, 6.2832); ctx.stroke();
+
+    /* 中心点 */
+    ctx.fillStyle = 'rgba(' + main + ',0.9)';
+    ctx.beginPath(); ctx.arc(cx, cy, 2.4, 0, 6.2832); ctx.fill();
+
+    /* 节拍时向外扩一圈 */
+    if (pulse > 0.02) {
+      ctx.globalAlpha = pulse * 0.45;
+      ctx.strokeStyle = 'rgba(' + main + ',1)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * (1 + (1 - pulse) * 0.45), 0, 6.2832);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
     }
   }
 
@@ -1786,9 +1857,12 @@
   function drawGame(st) {
     bg();
     computeLayout();
+    /* 判定环要跟着当前音高走，所以每帧先更新位置再画 */
+    updateRing();
     drawField(st);
+    drawTrack(st);
     drawNotes(st);
-    drawJudgeLine(st);
+    drawRing(st, beatPulse(st));
     drawFx(st);
     drawHud(st);
   }
@@ -2038,6 +2112,7 @@
     press: press, startSong: startSong, update: update, finish: finish,
     songTime: songTime, setScreen: setScreen, computeLayout: computeLayout, drawGame: drawGame,
     yFor: yFor, groupY: groupY, pitchOf: pitchOf,
+    updateRing: updateRing, ringTargetY: ringTargetY, beatPulse: beatPulse,
     openSettings: openSettings, closeSettings: closeSettings, introSkip: introSkip,
     drawNotes: drawNotes, saveSettings: saveSettings,
     loadSongs: loadSongs, reloadSongs: reloadSongs, makeSong: makeSong, buildBeats: buildBeats,

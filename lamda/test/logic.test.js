@@ -25,6 +25,8 @@ function makeCtx() {
     letterSpacing: '0px', lineCap: 'butt', shadowBlur: 0,
     save: noop, restore: noop, beginPath: noop, closePath: noop,
     moveTo: noop, lineTo: noop, arc: function () { ctx._arcs++; }, rect: noop,
+    quadraticCurveTo: noop, bezierCurveTo: noop, ellipse: noop,
+    setLineDash: noop, arcTo: noop,
     stroke: noop, fill: noop,
     fillRect: noop, strokeRect: noop, clearRect: noop, clip: noop,
     translate: noop, rotate: noop, scale: noop, setTransform: noop, resetTransform: noop,
@@ -808,7 +810,48 @@ function boot() {
   M.startSong(0, 0, true);
   eq(M.L.pMin, M.L.pMin, '新开局音域不变（静态映射）');
 
-  /* ---------- 曲目清单 ---------- */  console.log('\n== 曲目清单 ==');
+  /* 判定环：位置跟随当前音高，平滑但会收敛 */
+  console.log('\n== 判定环 ==');
+  M.startSong(0, 0, true);
+  M.computeLayout();
+  ok(M.L.ringR > 0, '判定环半径为正');
+  ok(M.L.ringY > 0, '判定环有纵向位置');
+  ok(M.L.top > M.L.padY, '音高上界收拢到中间（不贴顶）');
+  ok(M.L.bottom < 720 - M.L.padY, '音高下界收拢到中间（不贴底）');
+
+  /* 环的目标位置 = 最近未判定音符的 y */
+  const firstG = G.groups.find((g) => !g.st);
+  near(M.ringTargetY(), M.groupY(firstG), 0.001, '环的目标位置 = 当前音符的音高位置');
+
+  /* 反复更新后必须收敛到目标（不能一直飘） */
+  for (let k = 0; k < 80; k++) M.updateRing();
+  near(M.L.ringY, M.ringTargetY(), 0.6, '持续更新后环收敛到目标位置');
+
+  /* 不同音高的音符 -> 环目标位置不同（说明环确实跟着音高走） */
+  const ys = new Set();
+  for (let i = 0; i < G.groups.length; i += 40) {
+    M.G.first = i;
+    ys.add(Math.round(M.ringTargetY()));
+  }
+  ok(ys.size >= 3, '环目标位置随音高变化（' + ys.size + ' 个不同位置）');
+
+  /* 所有音符都应落在收拢后的纵向范围内 */
+  M.G.first = 0;
+  let yOK = true, yMin = 1e9, yMax = -1e9;
+  for (let i = 0; i < G.groups.length; i++) {
+    const y = M.groupY(G.groups[i]);
+    if (y < M.L.top - 0.5 || y > M.L.bottom + 0.5) yOK = false;
+    if (y < yMin) yMin = y;
+    if (y > yMax) yMax = y;
+  }
+  ok(yOK, '所有音符都在收拢后的纵向范围内（' + Math.round(yMin) + '~' + Math.round(yMax) + '）');
+
+  /* 节拍脉动 */
+  near(M.beatPulse(-1), 0, 1e-9, '未开始时没有节拍脉动');
+  ok(M.beatPulse(0) >= 0, '正拍有脉动');
+
+  /* ---------- 曲目清单 ---------- */
+  console.log('\n== 曲目清单 ==');
   ok(Array.isArray(win.LAMBDA_INDEX), 'charts/index.js 提供清单');
   eq(win.LAMBDA_INDEX.length, 5, '清单里 5 首');
   eq(win.LAMBDA_INDEX[0], CHART_ID, '清单 id = ' + CHART_ID);
