@@ -61,7 +61,9 @@
     L.bottom = H * 0.78;
     /* 判定环偏左，右侧留出足够长的轨道 */
     L.judgeX = Math.round(W * 0.30);
-    L.ringR = clamp((L.bottom - L.top) * 0.115, 30, 56);
+    /* 判定环只比音符略大一圈（音符半径 9px，环 15~21px），
+       不做成「靶子」那种大圆 */
+    L.ringR = Math.round(clamp(Math.min(W, H) * 0.024, 15, 21));
     /* 横向速度：整段轨道在 APPROACH 秒内走完（流速越快，APPROACH 越短） */
     L.pxs = Math.max(120, (W - L.judgeX - L.padX) * speedFactor() / APPROACH);
     L.laneGap = clamp((L.bottom - L.top) * 0.062, 18, 34);
@@ -131,7 +133,12 @@
   /* ------------------------------------------------------------------ 设置 */
   var SPEEDS = [0.6, 0.75, 0.9, 1.0, 1.15, 1.35, 1.6, 2.0];
   var SET_KEY = 'mono-rhythm.settings.v1';
-  var S = { spd: 3, onHit: false, skip: true, auto: false, offset: 0 };  // offset: 判定偏移(ms)
+  /* judgeStyle: 'full' 全判定线 / 'partial' 仅落点附近 / 'ring' 判定环
+     decor: 背景星环装饰 */
+  var S = { spd: 3, onHit: false, skip: true, auto: false, offset: 0,
+    judgeStyle: 'ring', decor: true };
+  var JUDGE_STYLES = ['full', 'partial', 'ring'];
+  var JUDGE_STYLE_LABEL = ['FULL LINE', 'PARTIAL', 'RING'];
   var setRow = 0, setFrom = 'select';
 
   function loadSettings() {
@@ -145,6 +152,8 @@
         if (typeof raw.offset === 'number' && isFinite(raw.offset)) {
           S.offset = clamp(Math.round(raw.offset / 5) * 5, -150, 150);
         }
+        if (JUDGE_STYLES.indexOf(raw.judgeStyle) >= 0) S.judgeStyle = raw.judgeStyle;
+        if (typeof raw.decor === 'boolean') S.decor = raw.decor;
       }
     } catch (e) {}
   }
@@ -600,9 +609,11 @@
   }
 
   /* ------------------------------------------------------------------ 设置面板 */
-  var SET_ROWS = 5;
+  var SET_ROWS = 7;
   var SET_KEYS = [
     ['流速', 'SCROLL SPEED'],
+    ['判定样式', 'JUDGE STYLE'],
+    ['背景星环', 'STAR RINGS'],
     ['打击发声', 'AUDIO ON HIT'],
     ['跳过前奏', 'SKIP INTRO'],
     ['自动游玩', 'AUTO PLAY'],
@@ -610,9 +621,11 @@
   ];
   function settingValue(i) {
     if (i === 0) return speedFactor().toFixed(2) + 'x';
-    if (i === 1) return S.onHit ? 'ON' : 'OFF';
-    if (i === 2) return S.skip ? 'ON' : 'OFF';
-    if (i === 3) return S.auto ? 'ON' : 'OFF';
+    if (i === 1) return JUDGE_STYLE_LABEL[JUDGE_STYLES.indexOf(S.judgeStyle)] || 'RING';
+    if (i === 2) return S.decor ? 'ON' : 'OFF';
+    if (i === 3) return S.onHit ? 'ON' : 'OFF';
+    if (i === 4) return S.skip ? 'ON' : 'OFF';
+    if (i === 5) return S.auto ? 'ON' : 'OFF';
     return (S.offset > 0 ? '+' : '') + S.offset + 'ms';
   }
   function renderSettings() {
@@ -639,9 +652,15 @@
   }
   function adjustSetting(i, d) {
     if (i === 0) S.spd = (S.spd + d + SPEEDS.length) % SPEEDS.length;
-    else if (i === 1) S.onHit = !S.onHit;
-    else if (i === 2) S.skip = !S.skip;
-    else if (i === 3) S.auto = !S.auto;
+    else if (i === 1) {
+      var ci = JUDGE_STYLES.indexOf(S.judgeStyle);
+      if (ci < 0) ci = JUDGE_STYLES.length - 1;
+      S.judgeStyle = JUDGE_STYLES[(ci + d + JUDGE_STYLES.length) % JUDGE_STYLES.length];
+    }
+    else if (i === 2) S.decor = !S.decor;
+    else if (i === 3) S.onHit = !S.onHit;
+    else if (i === 4) S.skip = !S.skip;
+    else if (i === 5) S.auto = !S.auto;
     else S.offset = clamp(S.offset + (d > 0 ? 5 : -5), -150, 150);
     saveSettings();
     computeLayout();
@@ -1618,8 +1637,53 @@
     strokeTrack(pts);
   }
 
-  /* 判定环：跟着当前音高上下移动的圆环，音符滑进环心时判定。
-     替代了原来那条贯穿整屏的判定线。 */
+  /* 背景星环装饰：几圈缓慢自转的断环 + 沿环漂移的星点。
+     极淡（alpha 0.01~0.03），只做氛围，不能干扰读谱。
+     可在设置里关掉（背景星环 STAR RINGS）。 */
+  function drawDecor(st, pulse) {
+    var t = Math.max(0, st);
+    var cx = W * 0.5, cy = H * 0.46;
+    var unit = Math.min(W, H);
+    var boost = 1 + pulse * 0.55;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    /* 断环的缺口位置（弧度比例），三段弧拼成一圈 */
+    var gaps = [[0.02, 0.30], [0.36, 0.62], [0.68, 0.94]];
+
+    for (var i = 0; i < 3; i++) {
+      var rx = unit * (0.36 + i * 0.17);
+      var ry = rx * (0.34 + i * 0.04);          /* 压扁成椭圆，出透视感 */
+      var rot = t * (0.030 + i * 0.011) + i * 1.15;
+      var a = (0.044 - i * 0.009) * boost;
+      if (a <= 0.002) continue;
+
+      ctx.strokeStyle = 'rgba(255,255,255,' + a.toFixed(4) + ')';
+      ctx.lineWidth = i === 0 ? 1.3 : 1;
+      for (var k = 0; k < gaps.length; k++) {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, rx, ry, 0,
+          rot + gaps[k][0] * Math.PI * 2, rot + gaps[k][1] * Math.PI * 2);
+        ctx.stroke();
+      }
+
+      /* 沿环漂移的星点：反向自转，像轨道上的碎星 */
+      var dots = 3 + i * 2;
+      ctx.fillStyle = '#fff';
+      ctx.globalAlpha = Math.min(0.5, a * 12);
+      for (var d = 0; d < dots; d++) {
+        var ang = -rot * 1.7 + d * (Math.PI * 2 / dots) + i * 0.8;
+        ctx.beginPath();
+        ctx.arc(Math.cos(ang) * rx, Math.sin(ang) * ry, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+  }
+
+  /* 判定环：只比音符略大一圈的小环，跟着当前音高上下移动，音符滑进环心时判定。 */
   function drawRing(st, pulse) {
     var cx = L.judgeX, cy = L.ringY, r = L.ringR;
 
@@ -1633,36 +1697,123 @@
     var main = holdNow ? '93,202,165' : '255,255,255';
 
     /* 环内极淡的靶心填充 */
-    var gr = ctx.createRadialGradient(cx, cy, r * 0.12, cx, cy, r);
-    gr.addColorStop(0, 'rgba(' + main + ',0.06)');
+    var gr = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r);
+    gr.addColorStop(0, 'rgba(' + main + ',0.07)');
     gr.addColorStop(1, 'rgba(' + main + ',0)');
     ctx.fillStyle = gr;
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.2832); ctx.fill();
 
     /* 主环 */
-    ctx.strokeStyle = 'rgba(' + main + ',' + (0.60 + 0.32 * pulse).toFixed(3) + ')';
+    ctx.strokeStyle = 'rgba(' + main + ',' + (0.62 + 0.30 * pulse).toFixed(3) + ')';
     ctx.lineWidth = 1.8;
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.2832); ctx.stroke();
 
-    /* 内侧细环 */
-    ctx.strokeStyle = 'rgba(' + main + ',0.15)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(cx, cy, r * 0.6, 0, 6.2832); ctx.stroke();
-
     /* 中心点 */
-    ctx.fillStyle = 'rgba(' + main + ',0.9)';
-    ctx.beginPath(); ctx.arc(cx, cy, 2.4, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = 'rgba(' + main + ',0.85)';
+    ctx.beginPath(); ctx.arc(cx, cy, 1.8, 0, 6.2832); ctx.fill();
 
     /* 节拍时向外扩一圈 */
     if (pulse > 0.02) {
-      ctx.globalAlpha = pulse * 0.45;
+      ctx.globalAlpha = pulse * 0.4;
       ctx.strokeStyle = 'rgba(' + main + ',1)';
-      ctx.lineWidth = 1.4;
+      ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.arc(cx, cy, r * (1 + (1 - pulse) * 0.45), 0, 6.2832);
+      ctx.arc(cx, cy, r * (1 + (1 - pulse) * 0.55), 0, 6.2832);
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
+  }
+
+  /* 全判定线：一条贯穿整个下落区的竖线 + 极淡光带 */
+  function drawJudgeFull(st, pulse) {
+    var jx = L.judgeX;
+    var grad = ctx.createLinearGradient(jx - 24, 0, jx + 24, 0);
+    grad.addColorStop(0, 'rgba(255,255,255,0)');
+    grad.addColorStop(0.5, 'rgba(255,255,255,' + (0.03 + 0.02 * pulse).toFixed(3) + ')');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(jx - 24, 0, 48, H);
+
+    var top = L.top - 34, bot = L.bottom + 34;
+    ctx.strokeStyle = 'rgba(255,255,255,' + (0.62 + 0.28 * pulse).toFixed(3) + ')';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(jx, top);
+    ctx.lineTo(jx, bot);
+    ctx.stroke();
+
+    /* 两端的收口刻线 */
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(jx - 11, top); ctx.lineTo(jx + 11, top);
+    ctx.moveTo(jx - 11, bot); ctx.lineTo(jx + 11, bot);
+    ctx.stroke();
+
+    /* 每个音符的落点处加一小段加亮，提示「这个音会在这里被判定」 */
+    var gs = G.groups;
+    for (var i = G.first; i < gs.length; i++) {
+      var g = gs[i];
+      if (g.st) continue;
+      var x = jx + (g.t - st) * L.pxs;
+      if (x < jx - 14) continue;
+      if (x > jx + L.pxs * 0.30) break;
+      var near = 1 - Math.min(1, Math.max(0, (g.t - st) / 0.30));
+      var y = groupY(g);
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.20 + 0.65 * near).toFixed(3) + ')';
+      ctx.lineWidth = 2 + near * 1.6;
+      ctx.beginPath();
+      ctx.moveTo(jx, y - 11 - near * 5);
+      ctx.lineTo(jx, y + 11 + near * 5);
+      ctx.stroke();
+    }
+  }
+
+  /* 仅落点附近的判定线：只有音符要落时才在它的 y 位置亮一小段 */
+  function drawJudgePartial(st, pulse) {
+    var jx = L.judgeX;
+
+    /* 极淡的定位光带，保证没有音符时也知道判定在哪一列 */
+    var grad = ctx.createLinearGradient(jx - 22, 0, jx + 22, 0);
+    grad.addColorStop(0, 'rgba(255,255,255,0)');
+    grad.addColorStop(0.5, 'rgba(255,255,255,' + (0.026 + 0.018 * pulse).toFixed(3) + ')');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(jx - 22, 0, 44, H);
+
+    var gs = G.groups;
+    var drawn = 0;
+    for (var i = G.first; i < gs.length; i++) {
+      var g = gs[i];
+      if (g.st) continue;
+      var x = jx + (g.t - st) * L.pxs;
+      if (x < jx - 18) continue;
+      if (x > jx + L.pxs * 0.42) break;
+
+      var y = groupY(g);
+      var near = 1 - Math.min(1, Math.max(0, (g.t - st) / 0.42));
+      var hold = groupDur(g) >= 0.30;
+      var al = 0.42 + 0.55 * near;
+      var main = hold ? '93,202,165' : '255,255,255';
+      ctx.strokeStyle = 'rgba(' + main + ',' + al.toFixed(3) + ')';
+      var half = 13 + near * 7;
+      ctx.lineWidth = 2.0 + near * 1.6;
+      ctx.beginPath();
+      ctx.moveTo(jx, y - half);
+      ctx.lineTo(jx, y + half);
+      ctx.stroke();
+      drawn++;
+    }
+    if (!drawn) {
+      ctx.fillStyle = 'rgba(255,255,255,0.26)';
+      ctx.fillRect(jx - 1, (L.top + L.bottom) / 2 - 8, 2, 16);
+    }
+  }
+
+  /* 按设置分发到三种判定样式 */
+  function drawJudge(st, pulse) {
+    if (S.judgeStyle === 'full') drawJudgeFull(st, pulse);
+    else if (S.judgeStyle === 'partial') drawJudgePartial(st, pulse);
+    else drawRing(st, pulse);
   }
 
   function drawFx(st) {
@@ -1857,12 +2008,15 @@
   function drawGame(st) {
     bg();
     computeLayout();
-    /* 判定环要跟着当前音高走，所以每帧先更新位置再画 */
+    var pulse = beatPulse(st);
+    /* 背景装饰画在最底层（bg 之后、轨道之前） */
+    if (S.decor) drawDecor(st, pulse);
+    /* 判定环/轨道的起点都要跟着当前音高走，所以每帧先更新位置 */
     updateRing();
     drawField(st);
     drawTrack(st);
     drawNotes(st);
-    drawRing(st, beatPulse(st));
+    drawJudge(st, pulse);
     drawFx(st);
     drawHud(st);
   }
@@ -2063,6 +2217,10 @@
   function boot() {
     loadSettings();
     loadBest();
+    /* 调试参数：?style=full|partial|ring  ?decor=0|1  （覆盖本地设置，不落盘） */
+    if (DEV.style && JUDGE_STYLES.indexOf(DEV.style) >= 0) S.judgeStyle = DEV.style;
+    if (DEV.decor === '0') S.decor = false;
+    else if (DEV.decor === '1') S.decor = true;
     if (DEV.seed === '1') seedBest();
     resize();
     computeLayout();
@@ -2113,6 +2271,9 @@
     songTime: songTime, setScreen: setScreen, computeLayout: computeLayout, drawGame: drawGame,
     yFor: yFor, groupY: groupY, pitchOf: pitchOf,
     updateRing: updateRing, ringTargetY: ringTargetY, beatPulse: beatPulse,
+    drawJudge: drawJudge, drawDecor: drawDecor, drawTrack: drawTrack,
+    adjustSetting: adjustSetting, settingValue: settingValue,
+    JUDGE_STYLES: JUDGE_STYLES, SET_ROWS_VAL: SET_ROWS,
     openSettings: openSettings, closeSettings: closeSettings, introSkip: introSkip,
     drawNotes: drawNotes, saveSettings: saveSettings,
     loadSongs: loadSongs, reloadSongs: reloadSongs, makeSong: makeSong, buildBeats: buildBeats,

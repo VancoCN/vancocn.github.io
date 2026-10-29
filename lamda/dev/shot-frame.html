@@ -12,21 +12,23 @@
 <script>
 /* 定格截图台：scene=frame&at=<秒> 会跳到该歌曲时刻并暂停，
    无头浏览器拍到的就是这一帧。
-   参数：?at=<秒>&song=<索引>&spd=<0~7> */
+   参数：?at=<秒>&song=<索引>&style=full|partial|ring&decor=0|1&spd=<0~7> */
 (function () {
   var q = new URLSearchParams(location.search);
-  var at = q.get('at') || '45';
-  var song = q.get('song') || '0';
-  var spd = q.get('spd');
+  var p = new URLSearchParams();
+  p.set('scene', 'frame');
+  p.set('at', q.get('at') || '45');
+  p.set('sel', q.get('song') || '0');
+  ['style', 'decor', 'spd'].forEach(function (k) {
+    if (q.get(k) !== null) p.set(k, q.get(k));
+  });
 
   var f = document.createElement('iframe');
   f.setAttribute('width', '1280');
   f.setAttribute('height', '720');
   f.style.width = '1280px';
   f.style.height = '720px';
-  f.src = '../index.html?scene=frame&at=' + encodeURIComponent(at) +
-          '&sel=' + encodeURIComponent(song) +
-          (spd !== null ? '&spd=' + encodeURIComponent(spd) : '');
+  f.src = '../index.html?' + p.toString();
   document.body.appendChild(f);
 })();
 </script>

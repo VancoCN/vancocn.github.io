@@ -550,15 +550,16 @@ function boot() {
   M.setScreen('select');
   M.openSettings('select');
   eq(M.App.screen, 'settings', '打开设置面板');
-  eq(win.document.querySelectorAll('#setList .setRow').length, 5, '五个设置项');
+  eq(win.document.querySelectorAll('#setList .setRow').length, 7, '七个设置项');
   const valOf = (i) => win.document.querySelectorAll('#setList .setRow')[i].querySelector('.v b').textContent;
   const v0 = valOf(0);
   key('ArrowRight');
   ok(valOf(0) !== v0, '←→ 调节流速（' + v0 + ' -> ' + valOf(0) + '）');
-  key('ArrowDown');
-  const on0 = valOf(1);
+  /* 下移三次到「打击发声」（索引 3：判定样式 / 背景星环插在前面） */
+  key('ArrowDown'); key('ArrowDown'); key('ArrowDown');
+  const on0 = valOf(3);
   key('ArrowRight');
-  ok(valOf(1) !== on0, '←→ 切换打击发声');
+  ok(valOf(3) !== on0, '←→ 切换打击发声');
   key('Escape');
   eq(M.App.screen, 'select', 'ESC 返回选曲');
   ok(win.localStorage.getItem('mono-rhythm.settings.v1') !== null, '设置写入本地存储');
@@ -815,6 +816,8 @@ function boot() {
   M.startSong(0, 0, true);
   M.computeLayout();
   ok(M.L.ringR > 0, '判定环半径为正');
+  ok(M.L.ringR >= 15 && M.L.ringR <= 21,
+    '判定环只比音符略大（' + M.L.ringR + 'px，音符半径 9px）');
   ok(M.L.ringY > 0, '判定环有纵向位置');
   ok(M.L.top > M.L.padY, '音高上界收拢到中间（不贴顶）');
   ok(M.L.bottom < 720 - M.L.padY, '音高下界收拢到中间（不贴底）');
@@ -849,6 +852,53 @@ function boot() {
   /* 节拍脉动 */
   near(M.beatPulse(-1), 0, 1e-9, '未开始时没有节拍脉动');
   ok(M.beatPulse(0) >= 0, '正拍有脉动');
+
+  /* ---------- 判定样式 / 背景星环 ---------- */
+  console.log('\n== 判定样式与装饰 ==');
+  eq(M.S.judgeStyle, 'ring', '默认判定样式 = 判定环');
+
+  /* 三种样式都必须能渲染（装错误一个都会在这里炸） */
+  let styleRenderOK = true, styleErr = '';
+  for (const s of ['full', 'partial', 'ring']) {
+    M.S.judgeStyle = s;
+    try { M.drawGame(30); } catch (e) { styleRenderOK = false; styleErr = s + ': ' + e.message; }
+  }
+  ok(styleRenderOK, '三种判定样式（全判定线/落点附近/判定环）都能渲染', styleErr);
+
+  /* 面板里切换：索引 1 = 判定样式，索引 2 = 背景星环 */
+  M.S.judgeStyle = 'ring';
+  M.adjustSetting(1, 1);
+  eq(M.S.judgeStyle, 'full', '样式右移：RING -> FULL LINE');
+  M.adjustSetting(1, 1);
+  eq(M.S.judgeStyle, 'partial', '样式右移：FULL LINE -> PARTIAL');
+  M.adjustSetting(1, 1);
+  eq(M.S.judgeStyle, 'ring', '样式循环回到 RING');
+  M.adjustSetting(1, -1);
+  eq(M.S.judgeStyle, 'partial', '样式左移：RING -> PARTIAL');
+
+  const decor0 = M.S.decor;
+  M.adjustSetting(2, 1);
+  eq(M.S.decor, !decor0, '背景星环可以关掉');
+  M.adjustSetting(2, 1);
+  eq(M.S.decor, decor0, '背景星环可以打开');
+
+  /* 关掉装饰后 drawDecor 不画任何东西 */
+  M.S.judgeStyle = 'ring';
+  M.S.decor = false;
+  let decorThrew = false;
+  try { M.drawGame(30); } catch (e) { decorThrew = true; }
+  ok(!decorThrew, '关闭星环后画面正常');
+
+  /* 打开后也不抛（ellipse 路径要能走通） */
+  M.S.decor = true;
+  let decorThrew2 = false;
+  try { M.drawGame(30); } catch (e) { decorThrew2 = true; }
+  ok(!decorThrew2, '开启星环后画面正常');
+
+  /* 设置项编号与面板一一对应 */
+  eq(M.SET_ROWS_VAL, 7, '设置面板 7 项（含判定样式与背景星环）');
+  eq(M.settingValue(1), 'RING', '设置面板回显判定样式');
+  eq(M.settingValue(2), 'ON', '设置面板回显星环开关');
 
   /* ---------- 曲目清单 ---------- */
   console.log('\n== 曲目清单 ==');
