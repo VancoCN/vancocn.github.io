@@ -510,6 +510,8 @@
     App.songs.forEach(function (s, i) {
       var li = document.createElement('li');
       li.className = 'song' + (i === App.sel ? ' sel' : '');
+      /* 入场时逐项上浮，间隔 45ms —— 列表是一次性铺开的，错开才有节奏感 */
+      li.style.animationDelay = (i * 45) + 'ms';
       li.innerHTML =
         '<div class="idx">' + padn(i + 1, 2) + '</div>' +
         '<div class="ttl"><b>' + esc(s.title) + '</b><span>' +
@@ -520,7 +522,11 @@
         '<span><em>' + s.taps + '</em> NOTES</span>' +
         '<span><em>' + fmtTime(s.duration) + '</em></span>' +
         (s.orig ? '<span class="orig">ORIGINAL</span>' : '') + '</div>';
-      li.addEventListener('click', function () { App.sel = i; renderSongList(); });
+      li.addEventListener('click', function () {
+        App.sel = i;
+        syncSelClasses();
+        renderSide(App.songs[i]);
+      });
       li.addEventListener('dblclick', function () { App.sel = i; startSong(i); });
       ul.appendChild(li);
     });
@@ -552,10 +558,24 @@
     return '<b>曲库加载失败</b>' + esc(String(kind));
   }
 
+  /* 只切换选中样式，不重建 DOM —— 重建会让整个列表闪一下，
+     而且会打断 CSS 过渡（背景/缩进/颜色都做了 160ms 缓动）。 */
+  function syncSelClasses() {
+    var items = $('songList').querySelectorAll('.song');
+    for (var i = 0; i < items.length; i++) {
+      items[i].classList.toggle('sel', i === App.sel);
+    }
+    var cur = items[App.sel];
+    if (cur && cur.scrollIntoView) {
+      try { cur.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+    }
+  }
+
   function moveSel(d) {
     if (!App.songs.length) return;
     App.sel = (App.sel + d + App.songs.length) % App.songs.length;
-    renderSongList();
+    syncSelClasses();
+    renderSide(App.songs[App.sel]);
   }
 
   function reloadSongs() {
@@ -576,6 +596,13 @@
   function goTitle() {
     setScreen('title');
     renderHome();
+    /* 重新触发菜单入场动画（同一屏反复进出也要播） */
+    var m = $('homeMenu');
+    if (m) {
+      m.classList.remove('in');
+      void m.offsetWidth;
+      m.classList.add('in');
+    }
   }
 
   /* 启动屏 -> 主界面 */
@@ -830,6 +857,9 @@
       while (G.evIdx < G.events.length && G.events[G.evIdx].t < sk) G.evIdx++;
       while (G.first < G.groups.length && G.groups[G.first].t + WIN_GOOD < sk) G.first++;
     }
+    /* 记下进入游玩的时刻：开场黑幕从这里开始退。
+       跳过动画（测试/截图）时置成很久以前，直接全亮。 */
+    G.enterAt = (instant || DEV.instant) ? -1e9 : performance.now();
     setScreen('play');
   }
 
@@ -880,8 +910,10 @@
       ['PERFECT', G.perfect], ['GOOD', G.good], ['MISS', G.miss],
       ['MAX COMBO', G.maxCombo], ['ACCURACY', acc.toFixed(2) + '%']
     ];
-    $('statGrid').innerHTML = items.map(function (it) {
-      return '<div><b>' + it[1] + '</b><span>' + it[0] + '</span></div>';
+    $('statGrid').innerHTML = items.map(function (it, i) {
+      /* 逐项错开 55ms 上浮，跟在分数滚动之后出现 */
+      return '<div style="animation-delay:' + (140 + i * 55) + 'ms"><b>' + it[1] +
+        '</b><span>' + it[0] + '</span></div>';
     }).join('');
 
     setScreen('result');
@@ -1236,7 +1268,22 @@
     intro.cb = cb || null;
     intro.seeded = false;
     intro.hold = null;
+    /* 提前建谱：动画后段要预览真实的游玩画面（轨道/判定/音符/HUD），
+       这样交棒那一帧和游戏第一帧完全一致，不会「凭空多出」元素。 */
+    if (song) {
+      try { buildChart(song); } catch (e) {}
+    }
     hideScreens();
+  }
+
+  /* 游戏刚开始那一帧的 songTime。动画尾声用它渲染预览画面，
+     保证预览和正式开局的音符位置分毫不差。 */
+  function gameStartTime() {
+    if (S.skip && G.groups.length) {
+      var sk = introSkip();
+      if (sk > 0.02) return sk;
+    }
+    return -LEAD;
   }
 
   function introProgress() {
@@ -1269,6 +1316,35 @@
     var flat = L.judgeX;
     var u = easeOutCubic(seg(p, 0.34, 0.72));
     return flat + (1 - u) * W * 0.28;
+  }
+
+  /* 动画里预览音符的落点 y：直接取真实曲子的前几个音高，
+     这样动画末尾的音符分布和游戏第一帧一致，交棒时不会突然改位置。 */
+  function introNoteYs(song, n) {
+    var ys = [];
+    var ns = null;
+    try {
+      if (song && song.parsed) {
+        var tr = song.parsed.tracks[song.melodyTrack || 0];
+        if (tr && tr.notes && tr.notes.length) ns = tr.notes;
+      }
+    } catch (e) {}
+    if (ns) {
+      var lo = 127, hi = 0;
+      for (var i = 0; i < ns.length; i++) {
+        if (ns[i].pitch < lo) lo = ns[i].pitch;
+        if (ns[i].pitch > hi) hi = ns[i].pitch;
+      }
+      var span = Math.max(1, hi - lo);
+      for (var k = 0; k < n; k++) {
+        var pv = ns[Math.min(ns.length - 1, k)].pitch;
+        var u = (pv - lo) / span;
+        ys.push(L.bottom - u * (L.bottom - L.top));
+      }
+      return ys;
+    }
+    for (var k2 = 0; k2 < n; k2++) ys.push(L.top + (L.bottom - L.top) * ((k2 + 0.5) / n));
+    return ys;
   }
 
   function drawIntro(t) {
@@ -1334,6 +1410,8 @@
 
     if (scan > 0) {
       var cols = 26;
+      /* 收拢完成后退场，否则会在判定环上压出一条多余的竖线 */
+      var scanFade = 1 - seg(p, 0.52, 0.68);
       ctx.lineWidth = 1;
       for (var i = 0; i < cols; i++) {
         var f = i / (cols - 1);
@@ -1342,7 +1420,8 @@
         /* 每列自带一点相位漂移，形成风过的感觉 */
         var phase = ((t * 0.55 + i * 0.13) % 1);
         var half = (H * 0.5) * (0.28 + easeOutCubic(scan) * 0.98) * (1 - merge * 0.86);
-        var a = (0.16 + 0.10 * Math.sin(i * 1.7)) * scan * (1 - merge * 0.45);
+        var a = (0.16 + 0.10 * Math.sin(i * 1.7)) * scan * (1 - merge * 0.45) * scanFade;
+        if (a <= 0.001) continue;
         ctx.strokeStyle = 'rgba(255,255,255,' + a.toFixed(3) + ')';
         ctx.beginPath();
         ctx.moveTo(x, cy - half);
@@ -1360,59 +1439,86 @@
       }
     }
 
-    /* 判定线本体：弧形 -> 拉直 -> 向上下铺开（改成了竖线） */
+    /* 判定元素：形状跟随设置（判定环 / 判定线），这样动画和游玩用的是同一种视觉语言 */
     if (lineW > 0) {
-      var y0 = cy - (H * 0.5) * lineW;
-      var y1 = cy + (H * 0.5) * lineW;
-      var bow = (1 - easeInOutCubic(seg(p, 0.52, 0.80))) * W * 0.055;
       var bright = seg(p, 0.48, 0.62);
 
-      ctx.strokeStyle = 'rgba(255,255,255,' + (0.34 + bright * 0.5).toFixed(3) + ')';
-      ctx.lineWidth = 1 + bright * 0.6;
-      ctx.beginPath();
-      var steps = 48;
-      for (var k = 0; k <= steps; k++) {
-        var u = k / steps;
-        var yy = y0 + (y1 - y0) * u;
-        var xx = lineX - Math.sin(u * Math.PI) * bow;
-        if (k === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
-      }
-      ctx.stroke();
+      if (S.judgeStyle === 'ring') {
+        /* 判定环样式：一个大环从外圈收拢，最后停在游戏里环的大小 */
+        var rp = seg(p, 0.46, 0.82);
+        if (rp > 0) {
+          var rr = L.ringR + (1 - easeOutCubic(rp)) * Math.min(W, H) * 0.26;
+          ctx.strokeStyle = 'rgba(255,255,255,' + (0.30 + 0.58 * bright).toFixed(3) + ')';
+          ctx.lineWidth = 1.8;
+          ctx.beginPath(); ctx.arc(lineX, cy, rr, 0, 6.2832); ctx.stroke();
+          /* 收缩过程中跟在后面的淡光环，给出「它在往这里收」的势能 */
+          if (rp < 0.86) {
+            ctx.globalAlpha = (1 - rp / 0.86) * 0.4;
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(lineX, cy, rr + 26, 0, 6.2832); ctx.stroke();
+            ctx.globalAlpha = 1;
+          }
+          var rj = seg(p, 0.58, 0.84);
+          if (rj > 0) {
+            ctx.fillStyle = 'rgba(255,255,255,' + (0.85 * rj).toFixed(3) + ')';
+            ctx.beginPath(); ctx.arc(lineX, cy, 1.8, 0, 6.2832); ctx.fill();
+          }
+        }
+      } else {
+        /* 判定线样式：弧形 -> 拉直 -> 向上下铺开 */
+        var y0 = cy - (H * 0.5) * lineW;
+        var y1 = cy + (H * 0.5) * lineW;
+        var bow = (1 - easeInOutCubic(seg(p, 0.52, 0.80))) * W * 0.055;
 
-      /* 判定点：落在判定线中点，与游玩时的视觉重心一致 */
-      var jp = seg(p, 0.56, 0.84);
-      if (jp > 0) {
-        ctx.globalAlpha = jp * (1 - jp) * 1.6;
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(255,255,255,' + (0.34 + bright * 0.5).toFixed(3) + ')';
+        ctx.lineWidth = 1 + bright * 0.6;
         ctx.beginPath();
-        ctx.arc(lineX, cy, 8 + (1 - jp) * 58, 0, 6.2832);
+        var steps = 48;
+        for (var k = 0; k <= steps; k++) {
+          var u = k / steps;
+          var yy = y0 + (y1 - y0) * u;
+          var xx = lineX - Math.sin(u * Math.PI) * bow;
+          if (k === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+        }
         ctx.stroke();
-        ctx.globalAlpha = jp;
-        ctx.beginPath();
-        ctx.arc(lineX, cy, 4.5, 0, 6.2832);
-        ctx.stroke();
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(lineX - 11, cy - 0.5, 22, 1);
-        ctx.globalAlpha = 1;
+
+        /* 判定点：落在判定线中点，与游玩时的视觉重心一致 */
+        var jp = seg(p, 0.56, 0.84);
+        if (jp > 0) {
+          ctx.globalAlpha = jp * (1 - jp) * 1.6;
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(lineX, cy, 8 + (1 - jp) * 58, 0, 6.2832);
+          ctx.stroke();
+          ctx.globalAlpha = jp;
+          ctx.beginPath();
+          ctx.arc(lineX, cy, 4.5, 0, 6.2832);
+          ctx.stroke();
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(lineX - 11, cy - 0.5, 22, 1);
+          ctx.globalAlpha = 1;
+        }
       }
 
       /* 音符：各自从右侧横向落到判定线上（与游玩时的来向完全一致） */
       var np = seg(p, 0.46, 0.90);
       if (np > 0) {
-        /* 落点铺满游玩时的纵向可用范围（L.top~L.bottom），交棒时不会跳 */
+        /* 落点用真实音高，和游戏第一帧的音符位置对得上 */
+        var ysArr = introNoteYs(intro.song, 9);
         for (var n = 0; n < 9; n++) {
-          var u3 = (n + 0.5) / 9;
           var prog = clamp(np * 1.6 - n * 0.062, 0, 1);
           if (prog <= 0) continue;
-          var nx = W * 0.92 + (lineX - W * 0.92) * (1 - Math.pow(1 - prog, 1.8));
-          var ny = L.top + (L.bottom - L.top) * u3;
-          var na = (1 - seg(prog, 0.92, 1)) * 0.85;
+          /* 停靠点按时间向右散开，模拟游戏里音符沿轨道的分布 */
+          var restX = lineX + L.pxs * (0.10 + n * 0.13);
+          var nx = W * 0.92 + (restX - W * 0.92) * (1 - Math.pow(1 - prog, 1.8));
+          var ny = ysArr[n];
+          var na = (1 - seg(prog, 0.94, 1)) * 0.9;
           if (na <= 0) continue;
           /* 横向拖尾 + 端点圆点，提前预告游玩时的音符形态 */
           ctx.globalAlpha = na * 0.3;
           ctx.fillStyle = '#fff';
-          ctx.fillRect(nx + 2, ny - 0.5, 24, 1);
+          ctx.fillRect(nx + 2, ny - 0.5, 20, 1);
           ctx.globalAlpha = na;
           ctx.beginPath();
           ctx.arc(nx, ny, 3, 0, 6.2832);
@@ -1440,18 +1546,25 @@
       }
     }
 
-    /* 收尾：一道横向光带扫过，作为进入游玩的信号 */
-    var flash = seg(p, 0.86, 1.0);
-    if (flash > 0) {
-      var fy = cy + (flash - 0.5) * H * 1.4;
-      var g2 = ctx.createLinearGradient(0, fy - 90, 0, fy + 90);
-      g2.addColorStop(0, 'rgba(255,255,255,0)');
-      g2.addColorStop(0.5, 'rgba(255,255,255,' + (Math.sin(flash * Math.PI) * 0.16).toFixed(3) + ')');
-      g2.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = g2;
-      ctx.fillRect(0, fy - 90, W, 180);
-      /* 收尾时整体压暗，避免最后一帧跳变 */
-      ctx.globalAlpha = seg(p, 0.92, 1.0) * 0.55;
+    /* ③ 交棒前先把「真实的游玩画面」铺好（轨道 / 判定 / 音符 / HUD）。
+       它和游戏第一帧用的是同一套绘制函数、同一个 songTime，
+       所以黑幕散去时玩家看到的就是连续的同一幅画面，而不是另一个界面。
+       时机放在黑幕已经压到 0.9 之后，换底不可见。 */
+    if (p > 0.87 && G.groups.length) {
+      var st0 = gameStartTime();
+      updateRing();
+      drawField(st0);
+      drawTrack(st0);
+      drawNotes(st0);
+      drawJudge(st0, 0);
+      drawHud(st0);
+    }
+
+    /* ④ 黑幕：0.70 就开始压，到 0.88 满黑，之后整段全黑 ——
+       最后一帧的黑度（0.94）和游戏第一帧完全一致，散场时只会看到它一层层退去。 */
+    var black = seg(p, 0.70, 0.88) * 0.94;
+    if (black > 0) {
+      ctx.globalAlpha = black;
       ctx.fillStyle = '#060606';
       ctx.fillRect(0, 0, W, H);
       ctx.globalAlpha = 1;
@@ -1883,6 +1996,9 @@
 
   function drawHud(st) {
     var pad = L.padX;
+    /* 调用者可以先用 ctx.globalAlpha 设一个基础不透明度（进歌动画尾声淡入用），
+       下面所有 alpha 都在这个基准上再乘各自的比例。 */
+    var base = ctx.globalAlpha;
     ctx.textBaseline = 'alphabetic';
 
     /* 进度 */
@@ -1921,7 +2037,7 @@
     var cy = (L.top + L.bottom) / 2;
     if (G.combo >= 3) {
       ctx.save();
-      ctx.globalAlpha = 0.085;
+      ctx.globalAlpha = base * 0.085;
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = Math.max(1.5, Math.round(H * 0.0016));
       ctx.textAlign = 'center';
@@ -1938,7 +2054,7 @@
         var ja = jp < 0.08 ? jp / 0.08 : Math.pow(1 - (jp - 0.08) / 0.92, 1.6);
         var isP = G.judge.k === 1;
         ctx.save();
-        ctx.globalAlpha = ja;
+        ctx.globalAlpha = base * ja;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.translate(Math.max(58, L.judgeX - 58), H * 0.46);
@@ -1952,7 +2068,7 @@
           ctx.fillText('PERFECT', 0, 0);
           /* 误差数值，越小越亮 */
           var em = Math.round(Math.abs(G.judge.err) * 1000);
-          ctx.globalAlpha = ja * (0.5 - Math.min(0.34, em / 180));
+          ctx.globalAlpha = base * ja * (0.5 - Math.min(0.34, em / 180));
           ctx.fillStyle = '#ffffff';
           setFont(400, 9, true, 4);
           ctx.fillText((G.judge.err > 0 ? '+' : '-') + em, 0, 17);
@@ -1993,7 +2109,7 @@
     if (st < 0.9) {
       var ra = 1 - clamp(st / 0.9, 0, 1);
       ctx.save();
-      ctx.globalAlpha = ra;
+      ctx.globalAlpha = base * ra;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#fff';
@@ -2019,6 +2135,17 @@
     drawJudge(st, pulse);
     drawFx(st);
     drawHud(st);
+
+    /* 开场黑幕：从进歌动画最后一帧的黑度（0.94）接着退，0.55 秒内退干净。
+       用二次曲线，先快后慢，眼睛不会觉得「亮得突然」。 */
+    var age = (performance.now() - (G.enterAt || -1e9)) / 1000;
+    if (age >= 0 && age < 0.55) {
+      var f = 1 - age / 0.55;
+      ctx.globalAlpha = f * f * 0.94;
+      ctx.fillStyle = '#060606';
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
+    }
   }
 
   /* ------------------------------------------------------------------ 输入 */
@@ -2217,6 +2344,9 @@
   function boot() {
     loadSettings();
     loadBest();
+    /* 截图 / 无障碍：关掉所有 CSS 动画与过渡（headless 的虚拟时间不推进 CSS 动画，
+       开着会让截图拍到「入场动画第一帧」的空壳） */
+    if (DEV.nomotion === '1') document.documentElement.classList.add('nomotion');
     /* 调试参数：?style=full|partial|ring  ?decor=0|1  （覆盖本地设置，不落盘） */
     if (DEV.style && JUDGE_STYLES.indexOf(DEV.style) >= 0) S.judgeStyle = DEV.style;
     if (DEV.decor === '0') S.decor = false;
@@ -2273,6 +2403,7 @@
     updateRing: updateRing, ringTargetY: ringTargetY, beatPulse: beatPulse,
     drawJudge: drawJudge, drawDecor: drawDecor, drawTrack: drawTrack,
     adjustSetting: adjustSetting, settingValue: settingValue,
+    moveSel: moveSel, syncSelClasses: syncSelClasses,
     JUDGE_STYLES: JUDGE_STYLES, SET_ROWS_VAL: SET_ROWS,
     openSettings: openSettings, closeSettings: closeSettings, introSkip: introSkip,
     drawNotes: drawNotes, saveSettings: saveSettings,

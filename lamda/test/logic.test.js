@@ -900,10 +900,33 @@ function boot() {
   eq(M.settingValue(1), 'RING', '设置面板回显判定样式');
   eq(M.settingValue(2), 'ON', '设置面板回显星环开关');
 
+  /* ---------- 选曲过渡 ---------- */
+  console.log('\n== 选曲过渡 ==');
+  M.goSelect();
+  M.App.sel = 0;
+  M.renderSongList();
+  const doc = win.document;
+  let items0 = Array.prototype.slice.call(doc.querySelectorAll('#songList .song'));
+  eq(items0.length, 5, '选曲列表 5 项');
+  ok(items0.every(function (el, i) { return el.style.animationDelay === (i * 45) + 'ms'; }),
+    '列表项带逐项入场延迟（错开 45ms）');
+
+  const ref0 = items0[0], ref1 = items0[1];
+  M.moveSel(1);
+  let items1 = Array.prototype.slice.call(doc.querySelectorAll('#songList .song'));
+  eq(items1[0], ref0, '切歌复用原 DOM 节点（不重建，不会闪）');
+  eq(items1[1], ref1, '第二项也是同一个节点');
+  ok(items1[1].classList.contains('sel'), '选中态跟着下移到第 2 项');
+  ok(!items1[0].classList.contains('sel'), '旧选中态被清除');
+
+  M.moveSel(-1);
+  items1 = Array.prototype.slice.call(doc.querySelectorAll('#songList .song'));
+  eq(M.App.sel, 0, '上移一位回到第 1 项');
+  ok(items1[0].classList.contains('sel'), '选中态回到第 1 项');
+
   /* ---------- 曲目清单 ---------- */
   console.log('\n== 曲目清单 ==');
-  ok(Array.isArray(win.LAMBDA_INDEX), 'charts/index.js 提供清单');
-  eq(win.LAMBDA_INDEX.length, 5, '清单里 5 首');
+  ok(Array.isArray(win.LAMBDA_INDEX), 'charts/index.js 提供清单');  eq(win.LAMBDA_INDEX.length, 5, '清单里 5 首');
   eq(win.LAMBDA_INDEX[0], CHART_ID, '清单 id = ' + CHART_ID);
   ok(!!(win.LAMBDA_CHART && win.LAMBDA_CHART[CHART_ID]), '谱面已注册到 LAMBDA_CHART');
   eq(M.App.songs[0].id, CHART_ID, '歌曲 id 与清单一致');
