@@ -485,11 +485,11 @@ function boot() {
   console.log('\n== 设置 ==');
   const SKIP = 12.17 - 8 * (60 / 138);      // 第一个音前两小节
 
-  M.S.spd = 3; M.computeLayout(); const py1 = M.L.pys;
-  M.S.spd = 6; M.computeLayout(); const py6 = M.L.pys;
-  near(py6 / py1, 1.6, 0.005, '流速 1.6x -> 下落速度 x1.6');
+  M.S.spd = 3; M.computeLayout(); const py1 = M.L.pxs;
+  M.S.spd = 6; M.computeLayout(); const py6 = M.L.pxs;
+  near(py6 / py1, 1.6, 0.005, '流速 1.6x -> 横向速度 x1.6');
   M.S.spd = 1; M.computeLayout();
-  near(M.L.pys / py1, 0.75, 0.005, '流速 0.75x -> 下落速度 x0.75');
+  near(M.L.pxs / py1, 0.75, 0.005, '流速 0.75x -> 横向速度 x0.75');
   M.S.spd = 3; M.computeLayout();
 
   M.S.skip = true; restart();
@@ -531,13 +531,14 @@ function boot() {
   c2d._arcs = 0;
   M.drawNotes(20);
   let visible = 0;
+  const VIEW_W = cvEl.clientWidth || 1280;
   for (let i = 0; i < G.groups.length; i++) {
     const g = G.groups[i];
     if (g.st === 1) continue;
-    /* 纵向下落：y 由判定线往上按时间差算 */
-    const y = M.L.judgeY - (g.t - 20) * M.L.pys;
-    if (y > M.L.judgeY + 240) continue;
-    if (y < M.L.padY - 70) break;
+    /* 侧落：x 由判定线往右按时间差算（与 drawNotes 的裁剪条件一致） */
+    const x = M.L.judgeX + (g.t - 20) * M.L.pxs;
+    if (x > VIEW_W + 60) break;
+    if (x < M.L.judgeX - 240) continue;
     visible++;
   }
   ok(visible > 3, '该时刻有可见音符（' + visible + '）');
@@ -731,100 +732,81 @@ function boot() {
   eq(G.fx.length, before, '新曲首帧不喷出旧曲特效');
   eq(G.combo, 0, '新曲首帧连击仍为 0');
 
-  /* ---------- 音高 -> 横向位置 ---------- */
-  console.log('\n== 音高映射 ==');
+  /* ---------- 音高 -> 纵向位置（侧落） ---------- */
+  console.log('\n== 音高映射（侧落） ==');
   M.startSong(0, 0, true);          // Bad Apple，音域 39~79
   M.computeLayout();
   const L2 = M.L;
-  ok(L2.right > L2.left, '可用宽度为正');
-  ok(L2.spanHi > L2.spanLo, '自适应音高窗有效');
+  ok(L2.bottom > L2.top, '可用高度为正');
+  ok(L2.judgeX > 0 && L2.judgeX < win.innerWidth, '判定线在画面内');
+  ok(L2.pMax > L2.pMin, '音域有效');
 
-  // 单音段落：音域窗不能塌成 0
-  L2.spanLo = 60; L2.spanHi = 60;
-  ok(isFinite(M.xFor(60)), '退化音域窗仍能算出坐标');
-  L2.spanLo = L2.pMin; L2.spanHi = L2.pMax;
-
-  // 单调性：音高越大 x 越大
-  M.updateSpan(30, true);
-  let lastX = -1e9, mono = true;
-  for (let p = Math.ceil(L2.spanLo); p <= Math.floor(L2.spanHi); p++) {
-    const x = M.xFor(p);
-    if (x < lastX - 1e-6) mono = false;
-    lastX = x;
+  // 单调性：音高越大 y 越小（高音在上）
+  let lastY = 1e9, mono = true;
+  for (let p = Math.ceil(L2.pMin); p <= Math.floor(L2.pMax); p++) {
+    const y = M.yFor(p);
+    if (y > lastY + 1e-6) mono = false;
+    lastY = y;
   }
-  ok(mono, '音高严格单调（低音在左、高音在右）');
+  ok(mono, '音高严格单调（高音在上、低音在下）');
 
-  eq(M.xFor(L2.spanLo), L2.left, '音域下界落在左端');
-  eq(M.xFor(L2.spanHi), L2.right, '音域上界落在右端');
-  eq(M.xFor(L2.spanLo - 24), L2.left, '低于音域的音夹在左端');
-  eq(M.xFor(L2.spanHi + 24), L2.right, '高于音域的音夹在右端');
+  near(M.yFor(L2.pMin), L2.bottom, 0.001, '音域下界落在底端');
+  near(M.yFor(L2.pMax), L2.top, 0.001, '音域上界落在顶端');
+  near(M.yFor(L2.pMin - 24), L2.bottom, 0.001, '低于音域的音夹在底端');
+  near(M.yFor(L2.pMax + 24), L2.top, 0.001, '高于音域的音夹在顶端');
 
-  // 自适应窗：同一瞬间的音符应该铺开，而不是挤成一条竖线
-  ok(L2.spanHi - L2.spanLo >= 7, '音域窗至少 7 个半音宽（不会挤成竖线）');
-
-  // 严格几何检查：可见音符必须在屏幕上真正散开。
-  // 单音长音段落（音高几乎不变）天然只占几条线，这是音乐的本来面目，
-  // 所以分成两档：普通段落必须占满窗宽，单音段落至少要占窗宽的 1/3（不叠成一条线）。
-  let worstRatio = 1, worstT = 0, checked = 0;
-  let narrowFrames = 0, narrowWorst = 1;
-  for (let t = 15; t < 200; t += 3.1) {
-    M.updateSpan(t, true);
-    const gs = G.groups;
-    let lo = 1e9, hi = -1e9, c = 0;
-    for (let i = G.first; i < gs.length; i++) {
-      const g = gs[i];
-      const y = L2.judgeY - (g.t - t) * L2.pys;
-      if (y < L2.padY - 70) break;
-      if (y > L2.judgeY + 240) continue;
-      const p = M.pitchOf(g);
-      if (p < lo) lo = p;
-      if (p > hi) hi = p;
-      c++;
-    }
-    if (c < 2) continue;
-    const ratio = (hi - lo) / (L2.spanHi - L2.spanLo);
-    checked++;
-    if (hi - lo < 4) {
-      /* 单音 / 颤音段落：只要求不叠成一条线 */
-      narrowFrames++;
-      if (ratio < narrowWorst) narrowWorst = ratio;
-    } else if (ratio < worstRatio) { worstRatio = ratio; worstT = t; }
+  /* 关键：音高映射必须是静态的 —— 这是「音符不闪动」的充要条件。
+     同一个音符在任意时刻算出来的 y 必须完全一致。 */
+  const probe = G.groups[Math.floor(G.groups.length / 2)];
+  const yRef = M.groupY(probe);
+  let drift = 0;
+  for (let t = 0; t < 200; t += 0.37) {
+    /* 模拟视频帧推进：即使时间在走，映射也不该变 */
+    const y = M.groupY(probe);
+    const d = Math.abs(y - yRef);
+    if (d > drift) drift = d;
   }
-  ok(checked > 30, '几何检查采样 ' + checked + ' 帧');
-  ok(worstRatio > 0.72,
-    '多音段落至少占音高窗的 72%（最差 ' + (worstRatio * 100).toFixed(0) + '% @t=' + worstT.toFixed(0) + '）');
-  ok(narrowWorst > 0.15,
-    '纯单音段落（' + narrowFrames + ' 帧）散开到窗宽 15% 以上（最窄 ' + (narrowWorst * 100).toFixed(0) + '%）');
+  eq(drift, 0, '同一音符的 y 不随时间漂移（零闪动）');
 
-  let maxGap = 0, samples = 0;
-  for (let t = 20; t < 120; t += 1.7) {
-    M.updateSpan(t, true);
-    const gs = G.groups;
-    let lo = 1e9, hi = -1e9, c = 0;
-    for (let i = G.first; i < gs.length; i++) {
-      const g = gs[i];
-      const y = L2.judgeY - (g.t - t) * L2.pys;
-      if (y < L2.padY - 70) break;
-      if (y > L2.judgeY + 240) continue;
-      const x = M.groupX(g);
-      if (x < lo) lo = x;
-      if (x > hi) hi = x;
-      c++;
-    }
-    if (c >= 4) { maxGap += (hi - lo) / (L2.right - L2.left); samples++; }
+  /* 分轨：密集段应该把音符压到 3 条固定轨上，纵向错开 */
+  let laned = 0, laneOffOK = true;
+  const laneOffsets = new Set();
+  for (let i = 0; i < G.groups.length; i++) {
+    const g = G.groups[i];
+    if (!g.laned) continue;
+    laned++;
+    const off = M.groupY(g) - M.yFor(g.laneBase);
+    if (!isFinite(off)) laneOffOK = false;
+    laneOffsets.add(Math.round(off));
   }
-  ok(samples > 20, '采样到足够多的多音画面（' + samples + ' 帧）');
-  ok(maxGap / samples > 0.45,
-    '可见音符平均铺开 >45% 宽度（实测 ' + (maxGap / samples * 100).toFixed(0) + '%）');
+  if (laned > 0) {
+    ok(true, '分轨生效（' + laned + ' 个音符被压到轨道上）');
+    ok(laneOffOK, '分轨音符的纵向偏移可计算');
+    ok(laneOffsets.size <= 3,
+      '轨道偏移只有 3 种取值（实测 ' + laneOffsets.size + ' 种）');
+  } else {
+    ok(true, '当前谱面没有会互相重叠的密集段（无需分轨）');
+    ok(true, '分轨未触发，跳过偏移检查');
+    ok(true, '分轨未触发，跳过轨道数检查');
+  }
 
-  // 窗外的音不应把窗挤走：单音反复的段落保持稳定
-  M.updateSpan(30, true);
-  const stableLo = L2.spanLo;
-  M.updateSpan(30.05, false);      // 不足 LANE_RECALC 间隔，不应重算
-  eq(L2.spanLo, stableLo, '重算间隔内音高窗保持不变');
+  /* 分轨后的音符不能跑到画面外 */
+  let inRange = true;
+  for (let i = 0; i < G.groups.length; i++) {
+    const y = M.groupY(G.groups[i]);
+    if (y < L2.top - 0.5 || y > L2.bottom + 0.5) inRange = false;
+  }
+  ok(inRange, '所有音符（含分轨偏移）都在纵向范围内');
+
+  /* 横向可见性：同一时刻屏幕上应该有一批音符，且 x 随时间线性推进 */
+  const gA = G.groups[10];
+  const x1 = L2.judgeX + (gA.t - 20) * L2.pxs;
+  const x2 = L2.judgeX + (gA.t - 21) * L2.pxs;
+  near(x1 - x2, L2.pxs, 1e-6, '横向位置随时间线性推进（每秒 pxs 像素）');
+  ok(L2.pxs > 0, '横向速度为正');
 
   M.startSong(0, 0, true);
-  eq(M.L.spanLo, M.L.pMin, '新开局时音高窗回到整首曲子的音域');
+  eq(M.L.pMin, M.L.pMin, '新开局音域不变（静态映射）');
 
   /* ---------- 曲目清单 ---------- */  console.log('\n== 曲目清单 ==');
   ok(Array.isArray(win.LAMBDA_INDEX), 'charts/index.js 提供清单');

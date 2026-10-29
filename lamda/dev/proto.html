@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>LAMDA · 玩法原型</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; background: #070707; overflow: hidden;
+    font: 12px ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: #e8e8e8; }
+  #cv { display: block; position: absolute; left: 0; top: 0; }
+  #hud { position: absolute; left: 0; top: 0; right: 0; height: 46px; display: flex;
+    align-items: center; gap: 14px; padding: 0 16px; background: rgba(0,0,0,.74);
+    border-bottom: 1px solid rgba(255,255,255,.10); z-index: 5; }
+  .seg { display: flex; border: 1px solid rgba(255,255,255,.18); border-radius: 6px; overflow: hidden; }
+  .seg button { background: transparent; border: 0; color: #9a9a9a; padding: 5px 13px;
+    font: inherit; cursor: pointer; }
+  .seg button.on { background: #fff; color: #0a0a0a; }
+  .stat { color: #8c8c8c; white-space: nowrap; }
+  .stat b { color: #fff; font-weight: 500; }
+  #tip { position: absolute; left: 16px; bottom: 12px; color: #565656; z-index: 5; line-height: 1.8; }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="hud">
+  <div class="seg">
+    <button id="bA" class="on">A 浮现式</button>
+    <button id="bB">B 单轨下落</button>
+  </div>
+  <div class="stat" id="sSong">—</div>
+  <div class="stat" id="sDens">—</div>
+  <div class="stat" id="sTime">—</div>
+  <div class="seg">
+    <button id="bPlay">暂停</button>
+    <button id="bPrev">◀</button>
+    <button id="bNext">▶</button>
+  </div>
+</div>
+<div id="tip">空格 暂停 · 1 / 2 切方案 · ← / → 切歌 · R 重来</div>
+
+<script src="../charts/badapple.js"></script>
+<script src="../charts/pupa.js"></script>
+<script src="../charts/amidst-the-jungle.js"></script>
+<script src="../charts/the-earth.js"></script>
+<script src="../charts/the-field-of-hopes-and-dreams.js"></script>
+<script src="skeleton.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var TAU = Math.PI * 2;
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d', { alpha: false });
+  var W = 0, H = 0, DPR = 1;
+
+  function resize() {
+    var w = window.innerWidth, h = window.innerHeight;
+    var d = Math.min(window.devicePixelRatio || 1, 2);
+    if (w === W && h === H && d === DPR) return;
+    W = w; H = h; DPR = d;
+    cv.width = Math.round(w * d); cv.height = Math.round(h * d);
+    cv.style.width = w + 'px'; cv.style.height = h + 'px';
+    ctx.setTransform(d, 0, 0, d, 0, 0);
+  }
+  function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+
+  /* ---------------------------------------------------------- 骨架提取
+     实现在 dev/skeleton.js（原型与验证脚本共用同一份），这里只做场景适配 */
+  var SK = window.LAMDA_SKELETON;
+  var OPT = SK.OPT;
+
+  function skeleton(chart) { return SK.skeleton(chart, OPT); }
+
+  /* ---------------------------------------------------------- 状态 */
+  var IDS = ['badapple', 'pupa', 'amidst-the-jungle', 'the-earth', 'the-field-of-hopes-and-dreams'];
+  var P = { notes: [], pLo: 40, pHi: 80, duration: 1, title: '', rawTaps: 0, dropDeco: 0, dropDens: 0 };
+  var si = 0, mode = 'A', now = 0, playing = true, lastTs = 0;
+
+  function load(i) {
+    si = (i + IDS.length) % IDS.length;
+    var chart = (window.LAMBDA_CHART || {})[IDS[si]];
+    if (!chart) return;
+    var sk = skeleton(chart);
+    P = sk;
+    P.duration = chart.duration;
+    P.title = chart.title;
+    P.taps = chart.taps;
+    /* 跳过开头空白：从第一个音前 2.5s 开始 */
+    now = Math.max(0, P.notes.length ? P.notes[0].t - 2.5 : 0);
+    document.getElementById('sSong').innerHTML =
+      '<b>' + chart.title + '</b>';
+    document.getElementById('sDens').innerHTML =
+      'taps <b>' + chart.taps + '</b> → <b>' + P.notes.length + '</b> · ' +
+      '<b>' + (P.notes.length / chart.duration).toFixed(1) + '/s</b>' +
+      ' · hold <b>' + P.notes.filter(function (n) { return n.hold; }).length + '</b>';
+  }
+
+  /* ---------------------------------------------------------- A · 浮现式
+     判定环固定在屏幕中央。音符从远处朝环收缩，缩到与环重合时就是判定时刻。
+     时间信息直接用「半径」编码：越近越小、越亮。
+     hold 音符：收缩时更粗，到位后绕判定环画进度弧。 */
+  function drawA() {
+    var cx = W * 0.5, cy = H * 0.50;
+    var R = Math.min(W, H) * 0.105;
+    var LEAD = 1.05;
+    var ns = P.notes;
+    var MAX_ON = 3;          /* 同时最多显示 3 个环，再多就看不出谁先到 */
+
+    /* 中心光晕，给判定点一点「热度」 */
+    var gr = ctx.createRadialGradient(cx, cy, R * 0.2, cx, cy, R * 2.2);
+    gr.addColorStop(0, 'rgba(255,255,255,0.04)');
+    gr.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gr;
+    ctx.beginPath(); ctx.arc(cx, cy, R * 2.2, 0, TAU); ctx.fill();
+
+    /* 判定环本体 */
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.beginPath(); ctx.arc(cx, cy, 2.6, 0, TAU); ctx.fill();
+
+    /* 先找出「最近的几个」，从近往远画，远的先画好压在下面 */
+    var pick = [];
+    for (var i = 0; i < ns.length; i++) {
+      var g = ns[i];
+      var dt = g.t - now;
+      if (dt > LEAD) break;
+      if (dt < -Math.max(0.45, g.hold ? g.dur : 0)) continue;
+      if (dt > 0) {
+        if (pick.length < MAX_ON) pick.push(g);
+      } else {
+        pick.push(g);           /* 已到点的 hold 总是要画 */
+      }
+    }
+
+    for (var k = pick.length - 1; k >= 0; k--) {
+      var g2 = pick[k];
+      var dt2 = g2.t - now;
+
+      if (dt2 > 0) {
+        var u = dt2 / LEAD;                       /* 1 = 最远, 0 = 判定点 */
+        var r = R + u * R * 2.2;
+        /* 亮度梯度要陡：只有最近那个才醒目，远的是提示而非干扰 */
+        var a = 0.07 + Math.pow(1 - u, 3.2) * 0.93;
+        ctx.strokeStyle = 'rgba(255,255,255,' + a.toFixed(3) + ')';
+        ctx.lineWidth = g2.hold ? 3 : 1.4;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); ctx.stroke();
+
+        /* hold：外侧加一圈细的绿色环，预告「这个要按住」 */
+        if (g2.hold) {
+          ctx.strokeStyle = 'rgba(93,202,165,' + (a * 0.7).toFixed(3) + ')';
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(cx, cy, r + 5, 0, TAU); ctx.stroke();
+        }
+      } else if (g2.hold) {
+        /* 按住中：绕判定环走进度弧 */
+        var p = clamp(-dt2 / g2.dur, 0, 1);
+        var s0 = -Math.PI / 2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+        ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.stroke();
+        ctx.strokeStyle = '#5DCAA5';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, s0, s0 + p * TAU);
+        ctx.stroke();
+      }
+    }
+  }
+
+  /* ---------------------------------------------------------- B · 单轨下落
+     保留纵向下落，但横向收成一条窄带；音高只做很小的左右偏移（静态映射）。
+     视觉焦点集中在中心一列，读谱不用扫屏。 */
+  function drawB() {
+    var cx = W * 0.5, judgeY = H * 0.78;
+    var LEAD = 1.9;
+    var topY = H * 0.05;
+    var pys = (judgeY - topY) / LEAD;
+    var halfW = Math.min(88, W * 0.065);
+    var mid = (P.pLo + P.pHi) / 2;
+    var span = Math.max(4, P.pHi - P.pLo);
+    var ns = P.notes;
+
+    /* 轨道边界 */
+    ctx.strokeStyle = 'rgba(255,255,255,0.075)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx - halfW, topY); ctx.lineTo(cx - halfW, judgeY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + halfW, topY); ctx.lineTo(cx + halfW, judgeY); ctx.stroke();
+
+    /* 判定线 */
+    ctx.strokeStyle = 'rgba(255,255,255,0.80)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cx - halfW - 18, judgeY); ctx.lineTo(cx + halfW + 18, judgeY); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillRect(cx - halfW - 20, judgeY - 8, 2, 16);
+    ctx.fillRect(cx + halfW + 18, judgeY - 8, 2, 16);
+
+    for (var i = 0; i < ns.length; i++) {
+      var g = ns[i];
+      var dt = g.t - now;
+      if (dt > LEAD) break;
+      if (dt < -(g.hold ? g.dur : 0) - 0.35) continue;
+
+      var y = judgeY - dt * pys;
+      if (y < topY - 60) continue;
+      var x = cx + clamp((g.pitch - mid) / span, -1, 1) * halfW * 0.8;
+      var a = clamp((y - (topY - 60)) / 120, 0, 1);
+
+      /* hold 尾迹：向上拖出时值 */
+      if (g.hold) {
+        var tl = g.dur * pys;
+        ctx.strokeStyle = 'rgba(93,202,165,' + (a * 0.55).toFixed(3) + ')';
+        ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.moveTo(x, y - 7); ctx.lineTo(x, y - 7 - tl); ctx.stroke();
+      }
+
+      ctx.globalAlpha = a;
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(x, y, 7, 0, TAU); ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(x, y, 2.6, 0, TAU); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /* ---------------------------------------------------------- 主循环 */
+  var hudTick = 0;
+  function loop(ts) {
+    requestAnimationFrame(loop);
+    resize();
+    var dt = lastTs ? Math.min(0.05, (ts - lastTs) / 1000) : 0;
+    lastTs = ts;
+
+    if (playing) now += dt;
+    if (now > P.duration + 2) now = Math.max(0, P.notes.length ? P.notes[0].t - 2.5 : 0);
+
+    ctx.fillStyle = '#070707';
+    ctx.fillRect(0, 0, W, H);
+    if (mode === 'A') drawA(); else drawB();
+
+    if (++hudTick % 6 === 0) {
+      var m = Math.floor(now / 60), s = Math.floor(now % 60);
+      document.getElementById('sTime').textContent =
+        (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s +
+        ' / ' + Math.floor(P.duration / 60) + ':' +
+        ('0' + Math.floor(P.duration % 60)).slice(-2);
+    }
+  }
+
+  /* ---------------------------------------------------------- 交互 */
+  function setMode(m) {
+    mode = m;
+    document.getElementById('bA').className = (m === 'A' ? 'on' : '');
+    document.getElementById('bB').className = (m === 'B' ? 'on' : '');
+  }
+  function setPlay(v) {
+    playing = v;
+    document.getElementById('bPlay').textContent = v ? '暂停' : '播放';
+  }
+  document.getElementById('bA').addEventListener('click', function () { setMode('A'); });
+  document.getElementById('bB').addEventListener('click', function () { setMode('B'); });
+  document.getElementById('bPlay').addEventListener('click', function () { setPlay(!playing); });
+  document.getElementById('bPrev').addEventListener('click', function () { load(si - 1); });
+  document.getElementById('bNext').addEventListener('click', function () { load(si + 1); });
+
+  window.addEventListener('keydown', function (e) {
+    if (e.repeat) return;
+    if (e.key === ' ') { e.preventDefault(); setPlay(!playing); }
+    else if (e.key === '1') setMode('A');
+    else if (e.key === '2') setMode('B');
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); load(si - 1); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); load(si + 1); }
+    else if (e.key === 'r' || e.key === 'R') {
+      now = Math.max(0, P.notes.length ? P.notes[0].t - 2.5 : 0);
+    }
+  });
+
+  window.__PROTO = {
+    get P() { return P; }, setMode: setMode, load: load,
+    skeleton: skeleton, OPT: OPT,
+    setNow: function (v) { now = v; }, setPlaying: setPlay,
+    getMode: function () { return mode; }
+  };
+
+  /* URL 参数便于截图与分享某个瞬间：
+     ?mode=A|B  ?at=<秒>  ?song=<索引>  ?play=0 */
+  (function applyQuery() {
+    var q = new URLSearchParams(location.search);
+    load(parseInt(q.get('song') || '0', 10) || 0);
+    if (q.get('mode') === 'B') setMode('B');
+    var at = parseFloat(q.get('at'));
+    if (isFinite(at)) now = at;
+    if (q.get('play') === '0') setPlay(false);
+  })();
+
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
