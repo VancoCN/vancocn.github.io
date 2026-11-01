@@ -1,0 +1,101 @@
+name: bili-fetch
+
+# 由网页 https://vancocn.github.io/bili-web-dl/ 通过 REST API (workflow_dispatch) 触发。
+# 结果发布到 Release（tag = dl-<job>）：
+#   Release 正文 = meta.json（前端读取的元数据 / 错误信息）
+#   Release 资产 = 下载好的 mp3 / mp4，保留 24 小时后自动清理
+#
+# 注意：不用 yt-dlp。Actions runner 是机房 IP，B 站对 www.bilibili.com 的网页请求
+# 会直接返回 HTTP 412（换 UA / 带 cookie / --impersonate 均无效），而 api.bilibili.com 正常，
+# 所以 bili-web-dl/scripts/bili.py 直接走官方 API。
+run-name: bili ${{ inputs.mode }} ${{ inputs.job }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "任务 ID（前端生成，用于回捞结果）"
+        required: true
+        type: string
+      mode:
+        description: "parse=只解析元数据 / download=解析并下载"
+        required: true
+        type: choice
+        options: [parse, download]
+        default: parse
+      url:
+        description: "B 站链接或 BV 号"
+        required: true
+        type: string
+      kind:
+        description: "download 时下载音频还是视频"
+        required: false
+        type: choice
+        options: [audio, video]
+        default: audio
+      quality:
+        description: "视频档位 qn：80=1080P / 64=720P / 32=480P"
+        required: false
+        type: string
+        default: "80"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bili-${{ inputs.job }}
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      # 主站仓库有 200 多 MB 的资源，只取用到的那一个目录
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: bili-web-dl
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 安装 ffmpeg
+        run: |
+          # ubuntu-latest 镜像并不保证自带 ffmpeg，必须显式安装并校验
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq ffmpeg
+          fi
+          command -v ffmpeg
+          ffmpeg -hide_banner -version | head -n 1
+          ffmpeg -hide_banner -h encoder=libmp3lame | head -n 3
+
+      - name: 清理过期 Release
+        continue-on-error: true
+        working-directory: bili-web-dl
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: python scripts/cleanup.py
+
+      - name: 解析 / 下载
+        working-directory: bili-web-dl
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MODE: ${{ inputs.mode }}
+          URL_RAW: ${{ inputs.url }}
+          KIND: ${{ inputs.kind }}
+          QUALITY: ${{ inputs.quality }}
+          JOB: ${{ inputs.job }}
+          BILI_COOKIE: ${{ secrets.BILI_COOKIE }}
+        run: python scripts/bili.py
+
+      - name: 发布结果
+        if: always()
+        working-directory: bili-web-dl
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          JOB: ${{ inputs.job }}
+        run: bash scripts/publish.sh
