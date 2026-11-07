@@ -1,162 +1,126 @@
-# BiliFetch · 网页 + GitHub Actions 的 B 站解析下载
+# BiliFetch · 粘贴 B 站链接，直接下载音频 / 视频
 
-一个纯静态网页（可放 GitHub Pages）＋ 一个 GitHub Actions 工作流，实现：
+两个版本，按需选：
 
-1. 网页里粘贴 B 站链接
-2. 点「解析」拿到标题 / UP 主 / 时长 / 封面 / 分 P / 可用清晰度
-3. 按需下载 **音频 MP3** 或 **视频 MP4**
+| | **默认版** `index.html` | **完整版** `full.html` |
+| --- | --- | --- |
+| 打开就能用 | ✅ 不用登录、不用填 token | ❌ 要粘一个 Personal Access Token |
+| 解析速度 | 约 1 秒 | 30–90 秒（走一次 Actions） |
+| 视频 | 单文件 MP4（含音轨），最高 **720P** | MP4，可到 1080P（配 cookie） |
+| 音频 | M4A（AAC 原始码率） | **MP3**（ffmpeg 转码） |
+| 额外依赖 | 一个几十行的 Cloudflare Worker（一次性部署） | GitHub Actions（仓库里已有） |
+| 访客需要做什么 | 什么都不用做 | 每次换浏览器都要填 token |
 
-页面本身不解码任何视频流，所有网络抓取、转码都在 Actions runner 上完成，
-结果通过 **Release 资产** 回传给页面。
+---
+
+## 默认版是怎么跑起来的
 
 ```
-浏览器 (index.html)
-  │  ① POST /actions/workflows/bili.yml/dispatches  {job, mode, url, ...}
+浏览器 (index.html, GitHub Pages)
+  │  ① GET  <worker>/x/web-interface/view?bvid=…         ← Worker 补 Referer
+  │  ② GET  <worker>/x/player/wbi/playurl?…              ← Worker 补 Referer，返回 JSON
+  │  ③ <video src> / <a download> 直连 B 站 CDN         ← 不经过 Worker
+  │  ④ 音频：MP4 里的音轨是 DASH 分片，必须带 Referer
+  │        → 走 <worker>/stream?u=…&s=<HMAC>            ← 只代理这几 MB
   ▼
-GitHub Actions (ubuntu-latest)
-  │  ② view 接口拿元数据 / 分P → meta.json
-  │  ③ (mode=download) wbi 签名的 playurl 接口拿 DASH → 直连 CDN 拉流
-  │     ffmpeg：音频转 mp3，视频流+音频流 -c copy 合并 mp4
-  │  ④ gh release create dl-<job> --notes-file meta.json + 上传媒体
-  ▼
-浏览器
-     ⑤ 轮询 GET /releases/tags/dl-<job>
-        Release 正文 = meta JSON（前端读它渲染卡片 / 报错）
-        Release 资产 = 媒体文件（点「下载」直接拉）
+Cloudflare Worker（十几行，免费额度足够）
 ```
 
-用 `job` 这个随机 ID 配对请求与结果，避免并发请求互相串号。
+关键设计：**Worker 只转发几 KB 的 JSON 和几 MB 的音频，视频字节由浏览器直连 B 站 CDN。**
+所以它不会被当成视频代理，带宽和免费额度都不成问题。
 
-## 为什么不用 yt-dlp（重要）
+### 为什么绕不开这一个转发器
 
-一开始的实现是 `yt-dlp -J` + `yt-dlp -f ...`，本地跑得很好，**但在 Actions 上必然失败**：
+我把所有能想到的浏览器方案都实测过，结论是**纯静态页面做不到**：
 
-```
-[BiliBili] BV1ugxq6HEfH: Unable to download webpage: HTTP Error 412: Precondition Failed
-```
+| 请求 | 无 Referer | 外站 Referer | bilibili Referer |
+| --- | --- | --- | --- |
+| `view`（标题/封面/分P） | ✅ 200 | ✅ 200 | ✅ 200 |
+| **`playurl`（取播放地址）** | ❌ 风控页 | ❌ 风控页 | ✅ 200 |
+| DASH 音频流 | ❌ 403 | ❌ 403 | ✅ 206 |
+| 单文件 MP4 | ✅ 206 | ✅ 206 | ✅ 206 |
 
-我在真实 runner 上做过对照实验，结论很明确：
+`playurl` 强制校验 `Referer: https://www.bilibili.com/`，浏览器无法伪造这个请求头；
+加 cookie（buvid3/buvid4）、换老接口、`--impersonate`、公共 CORS 代理，全部无效。
+既然一定要有「浏览器之外的一跳」，那就让它尽量小 —— 这就是 `worker.js`。
 
-| 做法 | 结果 |
-| --- | --- |
-| `yt-dlp -J`（默认） | 412 |
-| 加真实 Chrome UA + `Referer` | 412 |
-| 再加 `buvid3` 等成套 cookie | 412 |
-| `--impersonate chrome`（curl_cffi，伪造 TLS 指纹） | 412 |
-| `curl https://www.bilibili.com/video/BV...` | **412** |
-| `curl https://api.bilibili.com/x/web-interface/view?...` | **200** |
-| `curl https://api.bilibili.com/x/player/wbi/playurl?...` | **200** |
+---
 
-也就是说 B 站按 **IP 段**风控了机房地址：网页抓不了，API 完全不拦。yt-dlp 的第一步
-就是抓网页，所以它在 Actions 上没有救。改成直连 API 后一切正常：
+## 部署转发器（一次性，约 2 分钟）
 
-1. `x/web-interface/view` → 标题 / UP / 时长 / 分 P / cid
-2. `x/web-interface/nav` → wbi 签名密钥，再对 playurl 参数做 `w_rid` 签名
-3. `x/player/wbi/playurl` → DASH 的视频流与音频流地址
-4. 带 `Referer` / `UA` 直接 HTTP 拉流，CDN 返回 206 正常
+1. 打开 [Cloudflare 控制台 → Workers & Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages)
+2. **Create → Worker**，随便起个名字（如 `bili-proxy`），**Deploy**
+3. 点 **Edit code**，把仓库里 `worker.js` 的全文粘进去，**Deploy**
+4. 复制分配给你的地址，形如 `https://bili-proxy.xxx.workers.dev`
 
-## 目录
+然后把它写进 `index.html`：
 
-```
-bili-web-dl/index.html          单文件前端（无构建、无依赖）
-bili-web-dl/scripts/bili.py     走 B 站 API 的解析与下载，产出 bili-web-dl/out/meta.json
-bili-web-dl/scripts/publish.sh  创建 Release 并把结果挂上去
-bili-web-dl/scripts/cleanup.py  删除 24 小时前的 dl-* Release
-.github/workflows/bili.yml      工作流：解析 / 下载 / 发布 / 清理（只 sparse-checkout bili-web-dl/）
+```js
+/* ==== 唯一需要改的地方 ==== */
+var PROXY = 'https://bili-proxy.xxx.workers.dev';
 ```
 
-## 部署位置
+临时测试不想改代码也行：打开页面时带 `?proxy=https://...`，或直接在页面顶部的输入框里填
+（会存到 localStorage，但只对当前浏览器有效，访客仍需要上面那行）。
 
-已集成在 `VancoCN/vancocn.github.io` 仓库里：
+### 可选：解锁 720P 以上
 
-- 网页：`bili-web-dl/` 目录 → https://vancocn.github.io/bili-web-dl/
-- 工作流：仓库根目录 `.github/workflows/bili.yml`，运行时只 sparse-checkout `bili-web-dl/`，
-  不会把主站那 200 多 MB 的资源拉一遍
+Worker 的 **Settings → Variables and Secrets** 加一个 `BILI_COOKIE`，
+值是浏览器里复制的完整 Cookie 头（需含 `SESSDATA`）。加了之后 Worker 转发时会带上它，
+页面右上角会显示「已连接 · 带登录态」。
 
-页面用起来只需要配置一次：
+再可选：加 `SIGN_KEY`（随便一串长随机字符）作为 `/stream` 的 HMAC 密钥，不设置则用内置默认值。
 
-1. 打开 https://vancocn.github.io/bili-web-dl/
-2. 右上角「设置」→ 所有者 `VancoCN`，仓库名 **`vancocn.github.io`**，分支 `main`
-3. 生成 Fine-grained token（**Settings → Developer settings → Personal access tokens → Fine-grained**）
-   - Repository access：只勾 `vancocn.github.io`
-   - Permissions：`Actions: Read and write`、`Contents: Read and write`
-   - 有效期建议 30 天
-4. 粘进「设置」里保存
+---
 
-之后：粘贴链接 → 解析 → 选音频或视频 → 下载。
+## 完整版（GitHub Actions）
 
-> 注意：用户站（`<用户名>.github.io` 仓库）里用子目录部署时，**仓库名是 `vancocn.github.io`，
-> 不是目录名 `bili-web-dl`**。页面会自动猜成 `<用户名>.github.io`，也可以在设置里手改。
-> 如果哪天挪到独立仓库，记得把仓库名改回那个仓库名。
+`full.html` 保留原来的方案：网页触发 `workflow_dispatch` → Actions 里跑 `scripts/bili.py`
+→ 结果发布成 Release（tag = `dl-<job>`），页面轮询取回。
+它能做 MP3、1080P（配 `BILI_COOKIE` secret）、更精细的分 P 处理，代价是慢和需要 token。
 
-### 可选：配置 Cookie 解锁 720P / 1080P
+页面里需要填一次 Fine-grained token：只勾 `vancocn.github.io` 这一个仓库，
+权限 `Actions: Read and write` + `Contents: Read`。
 
-未登录（游客）时，`playurl` 虽然会声称「1080P 可选」，实际只返回 **360P / 480P** 的流。
-我在真实 runner 上实测就是这个结果。
-
-要更高清晰度，在仓库 **Settings → Secrets and variables → Actions** 里加一个 `BILI_COOKIE`，
-内容是从浏览器复制的完整 Cookie 头（必须包含 `SESSDATA`、`DEDEUSERID`、`bili_jct`）。
-
-没有配置时脚本会自己伪造一套匿名 cookie（`buvid3` / `buvid4` / `_uuid`）——
-这不是为了登录，而是因为机房 IP 上「完全不带 cookie」的请求更容易被 412 拦，
-带上之后成功率明显提高。
-
-> Cookie 等同于账号凭证。只放进 Secrets，别贴进 issue、别提交到仓库。
-> 大会员画质还取决于账号本身有没有对应权益。
+---
 
 ## 实测与限制
 
 | 项 | 情况 |
 | --- | --- |
-| 清晰度档位 | 未登录实测只给 **360P / 480P**；配了 Cookie 才有 720P / 1080P 及以上 |
-| 档位标识 | 用 B 站自己的 `qn`（16=360P、32=480P、64=720P、80=1080P、120=4K），比按像素猜更可靠 |
-| 音频 | 取最高码率的 mp4a 流（常见 30280 / 192k），转成 MP3 |
-| 视频合并 | 视频流 + 音频流用 `ffmpeg -c copy` 合并，不重编码，几秒完成 |
-| 412 风控 | 机房 IP 会偶发 412，脚本带匿名 cookie + 三次退避重试；仍失败时页面会显示原因 |
-| ffmpeg | **ubuntu-latest 镜像不保证自带 ffmpeg**，工作流里显式 `apt-get install` 并校验 |
-| 耗时 | 实测解析约 1.5 秒、下载+转码约 3 秒，整体主要花在 runner 启动与 apt 装 ffmpeg（约 20–40 秒） |
-| 单文件上限 | Release 资产 2 GB，脚本在 1.9 GB 主动报错 |
-| 结果保留 | `dl-*` Release 24 小时后由工作流自动删除，旧链接会失效 |
-| 文件名 | 资产名用 `<job>_<BV号>.mp4`，因为 GitHub 会把中文文件名里的汉字整个丢掉 |
-| 私有仓库 | 不适用，资产下载要带上 token |
-| 番剧 / 付费内容 / 直播 | 拿不到，需要账号权限，会在页面显示 B 站返回的错误 |
-| Actions 使用条款 | 官方规定 Actions 不应用于与项目构建、测试、部署无关的用途。自己低频率用问题不大，但**不要拿它当公开的免费下载站**，流量一上来既会被限也会被处理 |
+| 默认版清晰度 | 单文件 MP4 固定锁在 **720P**（`platform=html5` 的上限），请求 qn=80/120 也只返回 64 |
+| 默认版音频 | DASH 最高码率（常见 192k），存为 `.m4a`；要 MP3 用完整版 |
+| 未登录 | 只给 360P / 480P 档位；720P 需 cookie（完整版同理） |
+| 番剧 / 付费 / 直播 | 两条路都拿不到，会显示 B 站返回的错误 |
+| 跨域 | 单文件 MP4 的 CDN 对外站 Referer 放行，浏览器可直接下载；DASH 音频不行，必须走 `/stream` |
+| 音频 CDN | 会落到 `*.mountaintoys.cn` 这类 P2P 边缘节点，所以 `/stream` 不用域名白名单，改用 HMAC 签名防滥用 |
+| Worker 免费额度 | 每天 10 万次请求，只有 JSON 和音频经过它，个人用远够 |
 
-如果要做成真正对外的服务，把 `scripts/bili.py` 拿到 VPS / Cloudflare Containers 上跑，
-前端换成普通的后端接口即可，逻辑几乎不用改。
+---
 
-## 为什么不能纯前端
+## 目录
 
-B 站的播放地址接口有两个硬门槛：
-
-- `api.bilibili.com` 不对浏览器页面开放 CORS，网页里 `fetch` 直接被拦；
-- 拿到的媒体 CDN 地址校验 `Referer` / `User-Agent`，`<video>` 或 `fetch` 都会 403。
-
-所以「解析」和「取流」必须发生在服务端。Actions 正好提供了带 ffmpeg 的临时 Linux 机器，
-这也是这套方案成立的原因。
+```
+bili-web-dl/index.html          默认版：打开即用（依赖 Worker）
+bili-web-dl/full.html           完整版：GitHub Actions + token，支持 MP3 / 1080P
+bili-web-dl/worker.js           Cloudflare Worker，补 Referer 的转发器
+bili-web-dl/scripts/bili.py     完整版用：走 B 站 API 的解析与下载
+bili-web-dl/scripts/publish.sh  完整版用：把结果发布成 Release
+bili-web-dl/scripts/cleanup.py  完整版用：清理 24 小时前的 dl-* Release
+.github/workflows/bili.yml      完整版的工作流（只 sparse-checkout bili-web-dl/）
+```
 
 ## 本地调试
 
 ```bash
 cd bili-web-dl
-python -m http.server 8080      # 直接双击 index.html 也行
-# 打开 http://127.0.0.1:8080/index.html?demo=1 看演示数据，不会调用 GitHub
+python -m http.server 8080
+# 打开 http://127.0.0.1:8080/?proxy=http://127.0.0.1:8787
 ```
 
-单独测抓取（只需 python + 一个给力的网络，转码才需要 ffmpeg）：
-
-```bash
-MODE=parse  URL_RAW=BV1ugxq6HEfH JOB=test python scripts/bili.py
-MODE=download URL_RAW=BV1ugxq6HEfH JOB=test KIND=audio python scripts/bili.py
-cat out/meta.json
-```
-
-按 job 取回结果（和页面做的事一样）：
-
-```bash
-curl -H "Authorization: Bearer $TOKEN" \
-  https://api.github.com/repos/<owner>/<repo>/releases/tags/dl-<job>
-```
+Worker 本地跑：把 `worker.js` 复制成 `.mjs`，写个 http 服务器把请求交给
+`worker.fetch(request, env)` 即可（Node 22 自带 fetch/Request/Response/crypto.subtle）。
+仓库里不带这个 shim，因为线上用不到。
 
 ## 免责声明
 
