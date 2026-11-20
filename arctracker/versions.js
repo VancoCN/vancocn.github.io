@@ -1,6 +1,6 @@
 window.ARC_VERSIONS = {
   "latest": "7.3.1c",
-  "updated_at": "2026-11-20T07:44:23+00:00",
+  "updated_at": "2026-11-20T15:29:03+00:00",
   "history": [
     {
       "version": "7.3.1c",
@@ -8,8 +8,8 @@ window.ARC_VERSIONS = {
       "size": 2214365733,
       "size_human": "2.1 GB",
       "last_modified": null,
-      "url": "https://arcaea-static.lowiro-cdn.net/ffIYQx-XRxTNvcxbroE4iia047HHlo0be0SbE5-8tKhtCiux4fROBpI8_xLeoIqO5_QBx0c0Qv6rgIVVQ7eKlAiyRsZk9IxNmuobkpSOEEeSMF6yTQ2XZaKp3rlneqfP7gEOAPwYc1bFjDE?filename=arcaea_7.3.1c.apk",
-      "url_fetched_at": "2026-11-20T07:44:23+00:00"
+      "url": "https://arcaea-static.lowiro-cdn.net/WeKv3dAZpk3eNPzR0Fe8Qk0jJvKgF0iskw99jzupHBv6mhNTtrULA1I0_Tx-WfIvvZGknEzpwd3HAmfd5G5SgzwjLXW2LqnYbHnNGtWoHa4qds_0N0dGp4j6E-Qbs73UcRN8hA2OORLlh4k?filename=arcaea_7.3.1c.apk",
+      "url_fetched_at": "2026-11-20T15:29:03+00:00"
     },
     {
       "version": "7.3.0c",
@@ -40,6 +40,12 @@ window.ARC_VERSIONS = {
     }
   ],
   "checks": [
+    {
+      "time": "2026-11-20T15:29:03+00:00",
+      "status": "unchanged",
+      "version": "7.3.1c",
+      "url": "https://arcaea-static.lowiro-cdn.net/WeKv3dAZpk3eNPzR0Fe8Qk0jJvKgF0iskw99jzupHBv6mhNTtrULA1I0_Tx-WfIvvZGknEzpwd3HAmfd5G5SgzwjLXW2LqnYbHnNGtWoHa4qds_0N0dGp4j6E-Qbs73UcRN8hA2OORLlh4k?filename=arcaea_7.3.1c.apk"
+    },
     {
       "time": "2026-11-20T07:44:23+00:00",
       "status": "unchanged",
@@ -1833,12 +1839,6 @@ window.ARC_VERSIONS = {
       "status": "unchanged",
       "version": "7.0.260c",
       "url": "https://arcaea-static.lowiro-cdn.net/eV4nfpMlLk5oQOpRg_ha6hggpIb5y0IDoaAx_KCLE-5lyXAqHpGpWVzN5wEmHcrX3wxvNcx4DFmVgu59DNsYzLOCLYPRvhXpoROsNL0StnkcQXuh2hZlOiahGjAlgXMGQ_55LfWW_WEBtMLyaloJ?filename=arcaea_7.0.260c.apk"
-    },
-    {
-      "time": "2026-10-08T18:52:28+00:00",
-      "status": "unchanged",
-      "version": "7.0.260c",
-      "url": "https://arcaea-static.lowiro-cdn.net/PyB3xdb9zi9X8bVVVkTw3udURpk9AfmcA2mPEwXPXALO0OfCFZGxYZRaARedU-2AakSXEi7sOlDW3K8sUtnxkacDkWEA-sHQQphSbcFrwc0BVmoV-l43Xo4RlWtuW5HpzMEdi8giikCcMylbBoa-?filename=arcaea_7.0.260c.apk"
     }
   ]
 };
