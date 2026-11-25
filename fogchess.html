@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>国际象棋 · 战争迷雾</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#171c24; --panel2:#1d2430; --line:#2b3542;
+    --ink:#e7edf5; --muted:#8b9aab; --gold:#e8bd6a; --cyan:#63c7d8;
+    --light:#e9ecd6; --dark:#7d9b63; --fog:#0a0c10;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 700px at 20% -10%,#1b2531,var(--bg));color:var(--ink);
+       font-family:"PingFang SC","Microsoft YaHei","WenQuanYi Micro Hei",system-ui,sans-serif;min-height:100vh}
+  header{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:18px 26px;border-bottom:1px solid var(--line);
+         background:rgba(14,17,22,.72);backdrop-filter:blur(8px)}
+  h1{font-size:20px;margin:0;letter-spacing:.06em;font-weight:650}
+  h1 span{color:var(--gold)}
+  .sub{font-size:12px;color:var(--muted);margin-left:2px}
+  .ctl{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  label{font-size:13px;color:var(--muted)}
+  select,button{font:inherit;font-size:13px;color:var(--ink);background:var(--panel2);border:1px solid var(--line);
+                border-radius:8px;padding:8px 12px;cursor:pointer;transition:.15s}
+  select:hover,button:hover{border-color:var(--gold)}
+  button.primary{background:linear-gradient(180deg,#3a4a5e,#2b3849);border-color:#4d627a}
+  main{display:flex;gap:22px;padding:24px 26px 40px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+  .board-wrap{width:min(74vh,660px);min-width:320px;flex:0 1 auto}
+  #board{width:100%;aspect-ratio:1;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);
+         border-radius:10px;overflow:hidden;border:3px solid #33404f;box-shadow:0 18px 50px rgba(0,0,0,.55);
+         user-select:none}
+  .cell{position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s}
+  .cell.light{background:var(--light)} .cell.dark{background:var(--dark)}
+  .cell.fog{background:var(--fog);
+    background-image:repeating-linear-gradient(45deg,transparent,transparent 7px,rgba(255,255,255,.014) 7px,rgba(255,255,255,.014) 8px);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.035)}
+  .cell.lit:not(.fog){box-shadow:inset 0 0 0 2px rgba(232,189,106,.30)}
+  .cell.selected{box-shadow:inset 0 0 0 3px var(--gold),0 0 14px rgba(232,189,106,.5);z-index:2}
+  .cell.hint::after{content:"";position:absolute;width:26%;height:26%;border-radius:50%;background:rgba(30,70,90,.42)}
+  .cell.hint-fog{outline:2px dashed rgba(99,199,216,.42);outline-offset:-4px;z-index:1}
+  .cell.hint-fog::after{content:"";position:absolute;width:16%;height:16%;border-radius:50%;background:rgba(99,199,216,.55);
+                        box-shadow:0 0 9px rgba(99,199,216,.7)}
+  .cell.threatened{outline:2px solid rgba(255,98,78,.9);outline-offset:-3px;z-index:1}
+  .cell.ai-from::before,.cell.ai-to::before{content:"";position:absolute;inset:3px;pointer-events:none;z-index:3;border-radius:2px}
+  .cell.ai-from::before{border:2px dashed rgba(180,148,255,.95)}
+  .cell.ai-to::before{border:2px solid rgba(180,148,255,.95)}
+  .piece{font-size:clamp(28px,5.4vw,52px);line-height:1;pointer-events:none;font-family:"Segoe UI Symbol","DejaVu Sans",serif}
+  .piece.w{color:#fbf8ef;-webkit-text-stroke:1.3px #232a33;text-shadow:0 3px 5px rgba(0,0,0,.4)}
+  .piece.b{color:#1c2027;text-shadow:0 1px 1px rgba(255,255,255,.28),0 3px 5px rgba(0,0,0,.3)}
+  .coord{position:absolute;font-size:10px;color:rgba(20,30,20,.45);pointer-events:none;line-height:1;z-index:4}
+  .cell.fog .coord{color:rgba(190,205,220,.22)}
+  .coord.f{bottom:3px;left:4px}.coord.r{top:3px;right:4px}
+  .reveal #board{border-color:var(--gold);box-shadow:0 0 0 4px rgba(232,189,106,.25),0 18px 50px rgba(0,0,0,.6)}
+  aside{width:310px;flex:0 0 310px;display:flex;flex-direction:column;gap:12px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+  .panel h2{font-size:12px;letter-spacing:.14em;color:var(--muted);margin:0 0 10px;font-weight:600;text-transform:uppercase}
+  .big{font-size:15px;font-weight:600}
+  .row{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--muted);margin:5px 0}
+  .row b{color:var(--ink);font-weight:600}
+  .warn{color:#ff9a86}.good{color:#8fd694}.gold{color:var(--gold)}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;font-size:11.5px;color:var(--muted)}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px}
+  #events{max-height:190px;overflow:auto;font-size:12px;line-height:1.85;color:var(--muted)}
+  #events div{border-bottom:1px dashed rgba(255,255,255,.05);padding:1px 0}
+  #events .hl{color:var(--ink)}
+  details.panel summary{cursor:pointer;font-size:12px;letter-spacing:.14em;color:var(--muted);font-weight:600;text-transform:uppercase}
+  details.panel p,details.panel li{font-size:12px;color:var(--muted);line-height:1.75}
+  details.panel ol{padding-left:18px;margin:10px 0 0}
+  #customPanel.hidden{display:none}
+  .cfg-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:7px 0;font-size:12.5px;color:var(--muted)}
+  .cfg-row label{cursor:pointer;flex:1;line-height:1.4}
+  .cfg-row select{font-size:12px;padding:5px 8px;max-width:178px;flex:0 0 auto}
+  .cfg-row input[type=checkbox]{width:16px;height:16px;flex:0 0 auto;accent-color:var(--gold);cursor:pointer}
+  .cfg-sep{font-size:11px;letter-spacing:.12em;color:var(--gold);border-top:1px solid var(--line);margin:13px 0 3px;padding-top:10px}
+  .cfg-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;align-items:center}
+  .cfg-btns button,.cfg-btns select{font-size:11.5px;padding:6px 9px}
+  .cfg-note{font-size:11px;color:var(--muted);line-height:1.65;margin:10px 0 0}
+  .modal{position:fixed;inset:0;background:rgba(5,7,10,.76);display:flex;align-items:center;justify-content:center;z-index:20;backdrop-filter:blur(3px)}
+  .modal.hidden{display:none}
+  .modal-box{background:var(--panel);border:1px solid #46566a;border-radius:16px;padding:22px 26px;width:min(420px,92vw);
+             box-shadow:0 24px 70px rgba(0,0,0,.7)}
+  .reveal-banner{background:linear-gradient(90deg,rgba(232,189,106,.18),rgba(232,189,106,.04));border:1px solid rgba(232,189,106,.45);
+                 color:var(--gold);font-size:12.5px;padding:9px 12px;border-radius:8px;margin-bottom:16px;text-align:center}
+  .reveal-banner.off{background:rgba(255,255,255,.03);border-color:var(--line);color:var(--muted)}
+  .modal-box h3{margin:0 0 16px;font-size:17px}
+  .promo-options{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .promo-options button{padding:12px 4px;font-size:30px;background:var(--panel2)}
+  .promo-options button small{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+  .foot{font-size:11.5px;color:var(--muted);margin-top:14px}
+  @media(max-width:760px){main{padding:14px}aside{width:100%;flex-basis:100%}header{padding:14px}.ctl{margin-left:0}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>国际象棋 - 战争迷雾<span>Fog Chess</span></h1>
+    <div class="sub">只有我方棋子的攻击格会被照亮</div>
+  </div>
+  <div class="ctl">
+    <label for="difficulty">模式</label>
+    <select id="difficulty">
+      <option value="easy">简单（威胁预警 + 上一步位置提示 / AI 随机）</option>
+      <option value="medium" selected>中等（威胁预警 / AI 2 层）</option>
+      <option value="hard">困难（情报全封锁 / AI 3 层+静态搜索）</option>
+      <option value="custom">自定义…（自己设定 AI 与情报）</option>
+    </select>
+    <button class="primary" id="newGame">新开一局</button>
+  </div>
+</header>
+
+<main>
+  <div class="board-wrap"><div id="board"></div></div>
+  <aside>
+    <div class="panel hidden" id="customPanel">
+      <h2>自定义模式 · 配置</h2>
+      <div class="cfg-row">
+        <label for="cfgAI">AI 强度</label>
+        <select id="cfgAI" data-cfg="ai">
+          <option value="easy">简单 · 随机偏好吃子</option>
+          <option value="medium">中等 · 2 层搜索</option>
+          <option value="hard">困难 · 3 层 + 静态吃子搜索</option>
+        </select>
+      </div>
+      <div class="cfg-sep">情报显示内容</div>
+      <div class="cfg-row"><label for="cfgThreat">受攻击红框预警（含数量）</label><input type="checkbox" id="cfgThreat" data-cfg="threat"></div>
+      <div class="cfg-row"><label for="cfgLastMove">上一步位置提示（虚框 / 实框）</label><input type="checkbox" id="cfgLastMove" data-cfg="lastMove"></div>
+      <div class="cfg-row"><label for="cfgCapture">可吃目标情报（含坐标与棋种）</label><input type="checkbox" id="cfgCapture" data-cfg="captureIntel"></div>
+      <div class="cfg-row"><label for="cfgLog">走子 / 吃子记录（含坐标与棋种）</label><input type="checkbox" id="cfgLog" data-cfg="moveLog"></div>
+      <div class="cfg-row"><label for="cfgMaterial">双方子力明细（剩 / 失）</label><input type="checkbox" id="cfgMaterial" data-cfg="material"></div>
+      <div class="cfg-row">
+        <label for="cfgEnemy">对方剩余子数</label>
+        <select id="cfgEnemy" data-cfg="enemyCount">
+          <option value="hide">不提供</option>
+          <option value="???">显示 ???（无法直接确定）</option>
+          <option value="number">显示具体数字</option>
+        </select>
+      </div>
+      <div class="cfg-sep">辅助与视野开关</div>
+      <div class="cfg-row"><label for="cfgFog">黑块中的落点标记</label><input type="checkbox" id="cfgFog" data-cfg="fogHint"></div>
+      <div class="cfg-row"><label for="cfgPromo">升变时全图视野</label><input type="checkbox" id="cfgPromo" data-cfg="promoReveal"></div>
+      <div class="cfg-btns">
+        <button id="cfgAllOff">情报全关</button>
+        <button id="cfgAllOn">情报全开</button>
+        <select id="cfgPreset">
+          <option value="">套用预设…</option>
+          <option value="easy">简单</option>
+          <option value="medium">中等</option>
+          <option value="hard">困难</option>
+        </select>
+      </div>
+      <p class="cfg-note">改动即时生效，AI 强度从下一步起执行；「新开一局」不会重置这里的配置。勾选含坐标与棋种的项目等于自行解除迷雾情报封锁；记录关闭时不会在后台留存，开启后从当前这一步开始记录。「情报全关 / 全开」只影响情报项，不动下面的辅助与视野开关。</p>
+    </div>
+    <div class="panel" id="status"></div>
+    <div class="panel" id="intel"></div>
+    <div class="panel"><h2 id="eventsTitle">对局提示</h2><div id="events"></div></div>
+    <div class="panel legend" id="legend"></div>
+    <details class="panel">
+      <summary>机制与视野口径</summary>
+      <ol>
+        <li><b>可见格</b> = 我方棋子所在格 ∪ 我方所有棋子的<b>理论攻击格</b>并集。可见格显示真实内容：空格、我方棋子、或敌方棋子（含类型）。其余一律黑块，上面有没有棋都不知道。</li>
+        <li><b>车 / 象 / 后</b>沿方向逐格照亮，遇第一个棋子即停止：敌子所在格照亮并可见；己子所在格不纳入（但己方棋子本身始终可见）。开局 a1 车被 a2 兵挡住，向上整列不再照亮；该兵自己照亮它的两个斜前格，其中一格在棋盘外。</li>
+        <li><b>兵</b>只照亮两个斜前攻击格（无论上面有没有敌子，出界忽略）；<b>马</b>照亮 8 个 L 型格，无视遮挡；<b>王</b>照亮周围 8 格；<b>后</b> = 车 + 象。</li>
+        <li>选中棋子后，落点只显示统一的「可落点」标记，<b>不区分是否吃子</b>；黑块里的落点只描边，<b>不揭示该格有无棋子、也不揭示内容</b>，可以盲走过去，结果等视野刷新才知道。</li>
+        <li><b>升变选择期间</b>默认获得全图视野，选定后立即收回；自定义模式可关闭该效果，此时仍需在迷雾状态下选择升变棋子。</li>
+        <li><b>预设三档</b>：三档都不提供文字坐标、棋子类型、可吃目标、吃子明细、走子记录与对方剩余子数，棋盘上能看到什么只由视野决定。简单 = 受攻击红框 + 上一步位置提示 + AI 随机；中等 = 受攻击红框 + AI 2 层；困难 = 全部封锁、对方剩余子数显示 ??? + AI 3 层。<br>
+            <b>上一步提示</b>：虚框标出对方原位置、实框标出落点，仅提示位置，不告知走的是什么棋，也不把黑块揭开；你落子后提示清除。</li>
+        <li><b>自定义模式</b>：可独立设定 AI 强度（三档）、受攻击预警、上一步提示、可吃目标情报、走子 / 吃子记录、子力明细、对方剩余子数（不提供 / ??? / 数字）、黑块落点标记、升变全图视野，共 9 项。关闭黑块落点标记只是不画提示，黑块依旧不揭示内容、仍可盲走；<b>核心视野规则不可配置</b>，始终生效。</li>
+        <li>AI 使用完整棋盘信息决策（不受迷雾影响），难度只改变搜索深度与提供给你的辅助提示。AI 升变自动选择后。规则含：兵双步、吃过路兵、王车易位、升变、将军 / 将死 / 逼和、50 步和棋。</li>
+      </ol>
+    </details>
+  </aside>
+</main>
+
+<div class="modal hidden" id="promoModal">
+  <div class="modal-box">
+    <div class="reveal-banner" id="promoBanner">◉ 升变选择期间：全图视野生效，此刻可看见棋盘上全部棋子（选定后立即收回）</div>
+    <h3>兵抵达底线，升变为？</h3>
+    <div class="promo-options" id="promoOptions"></div>
+    <div class="foot">选择完成后视野立刻收回，记得利用这次短暂的全局情报。</div>
+  </div>
+</div>
+
+<script id="engine">
+/* ============ 纯规则引擎（不依赖 DOM） ============ */
+const W='w', B='b', FILES='abcdefgh';
+const VAL={p:100,n:320,b:330,r:500,q:900,k:20000};
+const NAME={p:'兵',n:'马',b:'象',r:'车',q:'后',k:'王'};
+const GLYPH={w:{k:'♔',q:'♕',r:'♖',b:'♗',n:'♘',p:'♙'},b:{k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'}};
+const DIRS={
+  r:[[-1,0],[1,0],[0,-1],[0,1]],
+  b:[[-1,-1],[-1,1],[1,-1],[1,1]]
+};
+DIRS.q=DIRS.r.concat(DIRS.b);
+const N_OFF=[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+const K_OFF=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+
+/* 简式位置表：按 row0=rank8 → row7=rank1 排列，白方直接取，黑方垂直镜像 */
+const PST={
+ p:[0,0,0,0,0,0,0,0, 50,50,50,50,50,50,50,50, 10,10,20,30,30,20,10,10, 5,5,10,25,25,10,5,5,
+    0,0,0,20,20,0,0,0, 5,-5,-10,0,0,-10,-5,5, 5,10,10,-20,-20,10,10,5, 0,0,0,0,0,0,0,0],
+ n:[-50,-40,-30,-30,-30,-30,-40,-50, -40,-20,0,0,0,0,-20,-40, -30,0,10,15,15,10,0,-30,
+    -30,5,15,20,20,15,5,-30, -30,0,15,20,20,15,0,-30, -30,5,10,15,15,10,5,-30,
+    -40,-20,0,5,5,0,-20,-40, -50,-40,-30,-30,-30,-30,-40,-50],
+ b:[-20,-10,-10,-10,-10,-10,-10,-20, -10,0,0,0,0,0,0,-10, -10,0,5,10,10,5,0,-10,
+    -10,5,5,10,10,5,5,-10, -10,0,10,10,10,10,0,-10, -10,10,10,10,10,10,10,-10,
+    -10,5,0,0,0,0,5,-10, -20,-10,-10,-10,-10,-10,-10,-20],
+ r:[0,0,0,0,0,0,0,0, 5,10,10,10,10,10,10,5, -5,0,0,0,0,0,0,-5, -5,0,0,0,0,0,0,-5,
+    -5,0,0,0,0,0,0,-5, -5,0,0,0,0,0,0,-5, -5,0,0,0,0,0,0,-5, 0,0,0,5,5,0,0,0],
+ q:[-20,-10,-10,-5,-5,-10,-10,-20, -10,0,0,0,0,0,0,-10, -10,0,5,5,5,5,0,-10,
+    -5,0,5,5,5,5,0,-5, 0,0,5,5,5,5,0,-5, -10,5,5,5,5,5,0,-10, -10,0,5,0,0,0,0,-10,
+    -20,-10,-10,-5,-5,-10,-10,-20],
+ k:[-30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30, -20,-30,-30,-40,-40,-30,-30,-20, -10,-20,-20,-20,-20,-20,-20,-10,
+    20,20,0,0,0,0,20,20, 20,30,10,0,0,10,30,20]
+};
+
+function inB(r,c){return r>=0&&r<8&&c>=0&&c<8;}
+function sqName(r,c){return FILES[c]+(8-r);}
+
+function initialGame(){
+  const b=Array.from({length:8},()=>Array(8).fill(null));
+  const back=['r','n','b','q','k','b','n','r'];
+  for(let c=0;c<8;c++){
+    b[0][c]={c:B,t:back[c]}; b[1][c]={c:B,t:'p'};
+    b[6][c]={c:W,t:'p'};    b[7][c]={c:W,t:back[c]};
+  }
+  return {b,turn:W,ep:null,castle:{w:{k:true,q:true},b:{k:true,q:true}},halfmove:0};
+}
+function cloneGame(g){
+  return {b:g.b.map(row=>row.slice()),turn:g.turn,ep:g.ep?{...g.ep}:null,
+          castle:{w:{...g.castle.w},b:{...g.castle.b}},halfmove:g.halfmove};
+}
+
+/* 某格是否被 by 色理论攻击（用于将军判定与易位） */
+function isAttacked(g,r,c,by){
+  const b=g.b;
+  const pr=r+(by===W?1:-1);
+  for(const dc of [-1,1]){
+    const cc=c+dc;
+    if(inB(pr,cc)){const p=b[pr][cc];if(p&&p.c===by&&p.t==='p')return true;}
+  }
+  for(const [dr,dc] of N_OFF){const tr=r+dr,tc=c+dc;if(inB(tr,tc)){const p=b[tr][tc];if(p&&p.c===by&&p.t==='n')return true;}}
+  for(const [dr,dc] of K_OFF){const tr=r+dr,tc=c+dc;if(inB(tr,tc)){const p=b[tr][tc];if(p&&p.c===by&&p.t==='k')return true;}}
+  for(const [dr,dc] of DIRS.q){
+    let tr=r+dr,tc=c+dc;
+    while(inB(tr,tc)){
+      const p=b[tr][tc];
+      if(p){
+        if(p.c===by){
+          const straight=(dr===0||dc===0);
+          if(p.t==='q'||(straight&&p.t==='r')||(!straight&&p.t==='b'))return true;
+        }
+        break;
+      }
+      tr+=dr;tc+=dc;
+    }
+  }
+  return false;
+}
+function findKing(g,color){
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=g.b[r][c];if(p&&p.c===color&&p.t==='k')return {r,c};}
+  return null;
+}
+function inCheck(g,color){
+  const k=findKing(g,color);
+  return k?isAttacked(g,k.r,k.c,color===W?B:W):false;
+}
+
+/* 伪合法走法生成 */
+function genPseudo(g,color,onlyCap=false){
+  const b=g.b,out=[],enemy=color===W?B:W;
+  const dr=color===W?-1:1, startRow=color===W?6:1, promoRow=color===W?0:7;
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const p=b[r][c];if(!p||p.c!==color)continue;
+    const push=(tr,tc,extra={})=>{
+      if(!inB(tr,tc))return;
+      const target=b[tr][tc];
+      if(target&&target.c===color)return;
+      const cap=!!target||!!extra.ep;
+      if(onlyCap&&!cap&&!extra.promo)return;
+      out.push({fr:r,fc:c,tr,tc,piece:p,cap,capPiece:target||(extra.ep?b[r][tc]:null),
+                capR:extra.ep?r:tr,capC:extra.ep?tc:tc,ep:!!extra.ep,castle:extra.castle||null,
+                promo:!!extra.promo,promoT:extra.promoT||null,isDouble:!!extra.isDouble});
+    };
+    if(p.t==='p'){
+      if(!onlyCap&&!b[r+dr][c]){
+        push(r+dr,c,{promo:r+dr===promoRow});
+        if(r===startRow&&!b[r+2*dr][c])push(r+2*dr,c,{isDouble:true});
+      }
+      for(const dc of [-1,1]){
+        const tr=r+dr,tc=c+dc;if(!inB(tr,tc))continue;
+        const t=b[tr][tc];
+        if(t&&t.c===enemy)push(tr,tc,{promo:tr===promoRow});
+        else if(!t&&g.ep&&g.ep.r===tr&&g.ep.c===tc)push(tr,tc,{ep:true});
+      }
+    }else if(p.t==='n'){
+      for(const [ddr,ddc] of N_OFF)push(r+ddr,c+ddc);
+    }else if(p.t==='k'){
+      for(const [ddr,ddc] of K_OFF)push(r+ddr,c+ddc);
+      if(!onlyCap&&!isAttacked(g,r,c,enemy)){
+        const home=color===W?7:0;
+        if(r===home&&c===4){
+          if(g.castle[color].k&&b[r][7]&&b[r][7].c===color&&b[r][7].t==='r'
+             &&!b[r][5]&&!b[r][6]&&!isAttacked(g,r,4,enemy)&&!isAttacked(g,r,5,enemy)&&!isAttacked(g,r,6,enemy))
+            push(r,6,{castle:'k'});
+          if(g.castle[color].q&&b[r][0]&&b[r][0].c===color&&b[r][0].t==='r'
+             &&!b[r][1]&&!b[r][2]&&!b[r][3]&&!isAttacked(g,r,4,enemy)&&!isAttacked(g,r,3,enemy)&&!isAttacked(g,r,2,enemy))
+            push(r,2,{castle:'q'});
+        }
+      }
+    }else{
+      for(const [ddr,ddc] of DIRS[p.t]){
+        let tr=r+ddr,tc=c+ddc;
+        while(inB(tr,tc)){
+          const t=b[tr][tc];
+          if(!t){if(!onlyCap)push(tr,tc);}
+          else{if(t.c===enemy)push(tr,tc);break;}
+          tr+=ddr;tc+=ddc;
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/* 落子（返回新局面，不修改原局面） */
+function apply(g,mv,promoT){
+  const n=cloneGame(g),b=n.b,p=b[mv.fr][mv.fc];
+  if(mv.capPiece)b[mv.capR][mv.capC]=null;
+  b[mv.fr][mv.fc]=null;
+  b[mv.tr][mv.tc]=mv.promo?{c:p.c,t:promoT||mv.promoT||'q'}:p;
+  if(mv.castle==='k'){b[mv.tr][5]=b[mv.tr][7];b[mv.tr][7]=null;}
+  if(mv.castle==='q'){b[mv.tr][3]=b[mv.tr][0];b[mv.tr][0]=null;}
+  if(p.t==='k'){n.castle[p.c].k=false;n.castle[p.c].q=false;}
+  if(p.t==='r'){
+    if(mv.fr===7&&mv.fc===0)n.castle.w.q=false;
+    if(mv.fr===7&&mv.fc===7)n.castle.w.k=false;
+    if(mv.fr===0&&mv.fc===0)n.castle.b.q=false;
+    if(mv.fr===0&&mv.fc===7)n.castle.b.k=false;
+  }
+  if(mv.capPiece&&mv.capPiece.t==='r'){
+    if(mv.capR===7&&mv.capC===0)n.castle.w.q=false;
+    if(mv.capR===7&&mv.capC===7)n.castle.w.k=false;
+    if(mv.capR===0&&mv.capC===0)n.castle.b.q=false;
+    if(mv.capR===0&&mv.capC===7)n.castle.b.k=false;
+  }
+  n.ep=mv.isDouble?{r:(mv.fr+mv.tr)/2,c:mv.fc}:null;
+  n.turn=g.turn===W?B:W;
+  n.halfmove=(p.t==='p'||mv.capPiece)?0:g.halfmove+1;
+  return n;
+}
+
+function genLegal(g,color){
+  const out=[];
+  for(const mv of genPseudo(g,color,false)){
+    const ng=apply(g,mv,'q');
+    const k=findKing(ng,color);
+    if(k&&!isAttacked(ng,k.r,k.c,color===W?B:W))out.push(mv);
+  }
+  return out;
+}
+function expand(moves){
+  const out=[];
+  for(const m of moves){
+    if(m.promo){for(const t of ['q','n','r','b'])out.push({...m,promoT:t});}
+    else out.push(m);
+  }
+  return out;
+}
+function gameStatus(g){
+  if(g.halfmove>=100)return 'draw50';
+  if(genLegal(g,g.turn).length===0)return inCheck(g,g.turn)?'checkmate':'stalemate';
+  return null;
+}
+function perft(g,d){
+  if(d===0)return 1;
+  let n=0;
+  for(const mv of expand(genLegal(g,g.turn)))n+=perft(apply(g,mv,mv.promoT||'q'),d-1);
+  return n;
+}
+
+/* ============ 视野：我方棋子所在格 ∪ 我方理论攻击格 ============ */
+function visionSquares(g,color=W){
+  const b=g.b,vis=new Set(),lit=new Set(),enemy=color===W?B:W;
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const p=b[r][c];if(p&&p.c===color)vis.add(r+','+c);
+  }
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const p=b[r][c];if(!p||p.c!==color)continue;
+    const sqs=[];
+    if(p.t==='p'){
+      const dr=color===W?-1:1;
+      for(const dc of [-1,1]){const tr=r+dr,tc=c+dc;if(inB(tr,tc))sqs.push([tr,tc]);}
+    }else if(p.t==='n'||p.t==='k'){
+      for(const [dr,dc] of (p.t==='n'?N_OFF:K_OFF)){const tr=r+dr,tc=c+dc;if(inB(tr,tc))sqs.push([tr,tc]);}
+    }else{
+      for(const [dr,dc] of DIRS[p.t]){
+        let tr=r+dr,tc=c+dc;
+        while(inB(tr,tc)){
+          const t=b[tr][tc];
+          if(t){if(t.c===enemy)sqs.push([tr,tc]);break;}
+          sqs.push([tr,tc]);tr+=dr;tc+=dc;
+        }
+      }
+    }
+    for(const [tr,tc] of sqs){const k=tr+','+tc;lit.add(k);vis.add(k);}
+  }
+  return {vis,lit};
+}
+
+/* ============ 评估与 AI ============ */
+function evaluate(g){
+  let s=0;
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const p=g.b[r][c];if(!p)continue;
+    const rr=p.c===W?r:7-r;
+    const v=VAL[p.t]+PST[p.t][rr*8+c];
+    s+=p.c===g.turn?v:-v;
+  }
+  return s;
+}
+function orderMoves(moves,g){
+  for(const m of moves){
+    let s=0;
+    if(m.capPiece)s+=VAL[m.capPiece.t]*10-VAL[m.piece.t];
+    if(m.promo)s+=800;
+    if(m.castle)s+=35;
+    m._o=s;
+  }
+  moves.sort((a,b)=>b._o-a._o);
+}
+function quiesce(g,alpha,beta,ply,q){
+  const chk=inCheck(g,g.turn);
+  if(!chk){
+    const stand=evaluate(g);
+    if(stand>=beta)return beta;
+    if(stand>alpha)alpha=stand;
+    if(q<=0)return stand;
+  }else if(q<=-2)return evaluate(g);
+  let moves=genLegal(g,g.turn);
+  if(!chk)moves=moves.filter(m=>m.capPiece||m.promo);
+  if(!moves.length)return chk?-30000+ply:alpha;
+  orderMoves(moves,g);
+  for(const mv of expand(moves)){
+    const v=-quiesce(apply(g,mv,mv.promoT||'q'),-beta,-alpha,ply+1,q-1);
+    if(v>=beta)return beta;
+    if(v>alpha)alpha=v;
+  }
+  return alpha;
+}
+function negamax(g,depth,alpha,beta,ply,opts){
+  const legal=genLegal(g,g.turn);
+  if(!legal.length)return inCheck(g,g.turn)?-30000+ply:0;
+  if(depth<=0)return opts.q>0?quiesce(g,alpha,beta,ply,opts.q):evaluate(g);
+  orderMoves(legal,g);
+  let best=-Infinity;
+  for(const mv of expand(legal)){
+    const v=-negamax(apply(g,mv,mv.promoT||'q'),depth-1,-beta,-alpha,ply+1,opts);
+    if(v>best)best=v;
+    if(best>alpha)alpha=best;
+    if(alpha>=beta)break;
+  }
+  return best;
+}
+function chooseAI(g,diff){
+  let moves=expand(genLegal(g,g.turn));
+  if(!moves.length)return null;
+  orderMoves(moves,g);
+  if(diff==='easy'){
+    const pool=[];
+    for(const m of moves){
+      let w=1+Math.random()*4;
+      if(m.capPiece)w+=VAL[m.capPiece.t]/45;
+      if(m.promo)w+=6;
+      pool.push({m,w});
+    }
+    let total=pool.reduce((s,x)=>s+x.w,0),r=Math.random()*total;
+    for(const x of pool){r-=x.w;if(r<=0)return x.m;}
+    return pool[0].m;
+  }
+  const depth=diff==='hard'?2:1, opts=diff==='hard'?{q:2}:{q:0};
+  let best=-Infinity,pick=null,alpha=-Infinity;
+  for(const m of moves){
+    const ng=apply(g,m,m.promoT||'q');
+    let v=-negamax(ng,depth,-Infinity,-alpha,1,opts);
+    if(diff==='medium')v+=(Math.random()-0.5)*36;
+    if(v>best){best=v;pick=m;}
+    if(v>alpha)alpha=v;
+  }
+  return pick||moves[0];
+}
+</script>
+<script id="ui">
+/* ============ 界面层 ============ */
+/* 预设 = 一份配置；自定义模式 = 可编辑的同一份配置，逻辑只认 cfg() */
+const PRESETS={
+  easy:  {ai:'easy',  threat:true, lastMove:true,  enemyCount:'hide',   captureIntel:false,moveLog:false,material:false,fogHint:true,promoReveal:true},
+  medium:{ai:'medium',threat:true, lastMove:false, enemyCount:'hide',   captureIntel:false,moveLog:false,material:false,fogHint:true,promoReveal:true},
+  hard:  {ai:'hard',  threat:false,lastMove:false, enemyCount:'???',    captureIntel:false,moveLog:false,material:false,fogHint:true,promoReveal:true}
+};
+const AI_NAME={easy:'简单',medium:'中等',hard:'困难'};
+const MODE_NAME={easy:'简单',medium:'中等',hard:'困难',custom:'自定义'};
+let customCfg={...PRESETS.medium};
+function cfg(){return difficulty==='custom'?customCfg:PRESETS[difficulty];}
+
+let game=initialGame(),difficulty='medium',selected=null,hints=[],vision={vis:new Set(),lit:new Set()};
+let events=[],logs=[],over=null,aiThinking=false,revealAll=false,pendingMove=null,lastAIMove=null;
+let threatened=new Set();
+const boardEl=document.getElementById('board');
+const cells=Array.from({length:8},()=>Array(8).fill(null));
+const statusEl=document.getElementById('status'),intelEl=document.getElementById('intel');
+const eventsEl=document.getElementById('events'),eventsTitle=document.getElementById('eventsTitle');
+const legendEl=document.getElementById('legend'),customPanel=document.getElementById('customPanel');
+const modal=document.getElementById('promoModal'),promoOptions=document.getElementById('promoOptions');
+const promoBanner=document.getElementById('promoBanner');
+
+for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+  const d=document.createElement('div');
+  d.className='cell';
+  d.addEventListener('click',()=>onCellClick(r,c));
+  boardEl.appendChild(d);cells[r][c]=d;
+}
+for(const [t,n] of [['q','后'],['r','车'],['b','象'],['n','马']]){
+  const b=document.createElement('button');
+  b.innerHTML=GLYPH.w[t]+'<small>'+n+'</small>';
+  b.onclick=()=>pickPromo(t);
+  promoOptions.appendChild(b);
+}
+
+/* ---- 自定义配置控件 ---- */
+function syncCustomUI(){
+  customPanel.querySelectorAll('[data-cfg]').forEach(el=>{
+    const v=customCfg[el.dataset.cfg];
+    if(el.type==='checkbox')el.checked=!!v;else el.value=v;
+  });
+}
+customPanel.querySelectorAll('[data-cfg]').forEach(el=>{
+  el.addEventListener('change',()=>{
+    customCfg[el.dataset.cfg]=el.type==='checkbox'?el.checked:el.value;
+    lastAIMove=null;render();
+  });
+});
+document.getElementById('cfgAllOff').onclick=()=>{
+  customCfg={...customCfg,threat:false,lastMove:false,enemyCount:'hide',captureIntel:false,
+             moveLog:false,material:false};
+  syncCustomUI();lastAIMove=null;render();
+};
+document.getElementById('cfgAllOn').onclick=()=>{
+  customCfg={...customCfg,threat:true,lastMove:true,enemyCount:'number',captureIntel:true,
+             moveLog:true,material:true};
+  syncCustomUI();lastAIMove=null;render();
+};
+document.getElementById('cfgPreset').onchange=e=>{
+  if(!e.target.value)return;
+  customCfg={...PRESETS[e.target.value]};
+  e.target.value='';
+  syncCustomUI();lastAIMove=null;render();
+};
+document.getElementById('difficulty').onchange=e=>{
+  difficulty=e.target.value;
+  customPanel.classList.toggle('hidden',difficulty!=='custom');
+  if(difficulty==='custom')syncCustomUI();
+  lastAIMove=null;render();
+};
+document.getElementById('newGame').onclick=()=>{
+  game=initialGame();selected=null;hints=[];over=null;aiThinking=false;
+  revealAll=false;pendingMove=null;lastAIMove=null;threatened=new Set();
+  events=['对局开始 · 你执白先行'];logs=[];
+  modal.classList.add('hidden');document.body.classList.remove('reveal');
+  render();
+};
+function addEvent(s){events.unshift(s);if(events.length>12)events.pop();}
+function addLog(s,hl){if(!cfg().moveLog)return;logs.unshift({s,hl:!!hl});if(logs.length>70)logs.pop();}
+function countPieces(color){let n=0;for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=game.b[r][c];if(p&&p.c===color)n++;}return n;}
+function computeThreatened(){
+  const s=new Set();
+  if(!cfg().threat)return s;
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const p=game.b[r][c];
+    if(p&&p.c===W&&isAttacked(game,r,c,B))s.add(r+','+c);
+  }
+  return s;
+}
+function materialList(color){
+  const have={};
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=game.b[r][c];if(p&&p.c===color)have[p.t]=(have[p.t]||0)+1;}
+  const init={p:8,n:2,b:2,r:2,q:1,k:1};
+  let s='';
+  for(const t of ['q','r','b','n','p'])s+='<span>'+GLYPH[color][t]+' 剩 '+(have[t]||0)+' / 失 '+(init[t]-(have[t]||0))+'</span>';
+  return s;
+}
+
+function render(){
+  const c=cfg();
+  vision=visionSquares(game,W);
+  threatened=computeThreatened();
+  document.body.classList.toggle('reveal',revealAll);
+  const hintMap=new Map();
+  for(const m of hints)hintMap.set(m.tr+','+m.tc,m);
+  const showAIMove=c.lastMove&&lastAIMove&&!revealAll;
+  for(let r=0;r<8;r++)for(let c2=0;c2<8;c2++){
+    const key=r+','+c2,cell=cells[r][c2],shown=revealAll||vision.vis.has(key);
+    let cls='cell '+((r+c2)%2?'dark':'light');
+    if(!shown)cls+=' fog';
+    else if(vision.lit.has(key))cls+=' lit';
+    if(selected&&selected.r===r&&selected.c===c2)cls+=' selected';
+    if(threatened.has(key))cls+=' threatened';
+    if(hintMap.has(key)){if(shown)cls+=' hint';else if(c.fogHint)cls+=' hint-fog';}
+    if(showAIMove&&lastAIMove.fr===r&&lastAIMove.fc===c2)cls+=' ai-from';
+    if(showAIMove&&lastAIMove.tr===r&&lastAIMove.tc===c2)cls+=' ai-to';
+    cell.className=cls;
+    const p=game.b[r][c2];
+    let html='';
+    if(shown&&p)html='<span class="piece '+p.c+'">'+GLYPH[p.c][p.t]+'</span>';
+    if(c2===0)html+='<span class="coord r">'+(8-r)+'</span>';
+    if(r===7)html+='<span class="coord f">'+FILES[c2]+'</span>';
+    cell.innerHTML=html;
+  }
+  renderStatus();renderIntel();renderEvents();renderLegend();
+}
+function renderStatus(){
+  const c=cfg(),chk=inCheck(game,W),chkAI=inCheck(game,B);
+  let head;
+  if(over==='checkmate')head=game.turn===B?'<span class="good">将死！你赢了 ♕</span>':'<span class="warn">将死，你输了</span>';
+  else if(over==='stalemate')head='<span class="gold">逼和 · 和棋</span>';
+  else if(over==='draw50')head='<span class="gold">50 步规则和棋</span>';
+  else if(aiThinking)head='<span class="gold">AI 思考中…</span>';
+  else head=game.turn===W?'轮到 <b>你（白方）</b>':'轮到 <b>AI（黑方）</b>';
+  const alerts=(chk?'<div class="row"><span class="warn">⚠ 你被将军</span><b>须应将</b></div>':'')
+              +(chkAI?'<div class="row"><span class="good">✓ 将军！</span><b>对方须应将</b></div>':'');
+  statusEl.innerHTML='<h2>对局状态</h2><div class="big">'+head+'</div>'+alerts+
+    '<div class="row"><span>当前可见格</span><b>'+vision.vis.size+' / 64</b></div>'+
+    '<div class="row"><span>模式</span><b>'+MODE_NAME[difficulty]+'</b></div>'+
+    '<div class="row"><span>AI 强度</span><b>'+AI_NAME[c.ai]+'</b></div>';
+}
+function renderIntel(){
+  const c=cfg();
+  let s='<h2>'+(difficulty==='custom'?'自定义 · 情报口径':'情报口径 · '+MODE_NAME[difficulty])+'</h2>';
+  if(c.enemyCount==='number')s+='<div class="row"><span>对方剩余子数</span><b>'+countPieces(B)+'</b></div>';
+  else if(c.enemyCount==='???')s+='<div class="row"><span>对方剩余子数</span><b class="gold">??? 无法直接确定</b></div>';
+  else s+='<div class="row"><span>对方剩余子数</span><b>不提供</b></div>';
+  if(c.threat){
+    s+='<div class="row"><span>⚠ 受攻击的己方棋子</span><b class="warn">'+threatened.size+' 枚</b></div>'+
+       '<p style="font-size:11.5px;color:var(--muted);margin:6px 0 0;line-height:1.7">红框标出正被对方攻击的己方棋子，仅提示威胁，不含坐标、棋种与可吃目标。</p>';
+  }else s+='<div class="row"><span>受攻击预警</span><b>已关闭</b></div>';
+  if(c.lastMove){
+    s+=lastAIMove
+      ? '<div class="row" style="margin-top:9px"><span>上一步提示</span><b>虚框起点 / 实框落点</b></div>'+
+        '<p style="font-size:11.5px;color:var(--muted);margin:4px 0 0;line-height:1.7">仅标出位置，不告知走的是什么棋，也不揭开黑块；你落子后提示清除。</p>'
+      : '<div class="row"><span>上一步位置提示</span><b>等待对方走子</b></div>';
+  }else s+='<div class="row"><span>上一步位置提示</span><b>已关闭</b></div>';
+  if(c.captureIntel){
+    const wm=genLegal(game,W).filter(m=>m.capPiece);
+    s+='<div class="row" style="margin-top:9px"><span>可吃目标情报</span><b class="gold">已开启</b></div>';
+    s+=wm.length
+      ? wm.slice(0,6).map(m=>'<div class="row"><span>'+GLYPH.w[m.piece.t]+' '+sqName(m.fr,m.fc)+' 可吃 '+GLYPH.b[m.capPiece.t]+' '+NAME[m.capPiece.t]+'</span><b>'+sqName(m.tr,m.tc)+'</b></div>').join('')
+      : '<div class="row"><span>当前无可吃目标</span><b>—</b></div>';
+  }else s+='<div class="row"><span>可吃目标情报</span><b>不提供</b></div>';
+  s+='<div class="row"><span>走子 / 吃子记录</span><b>'+(c.moveLog?'<span class="gold">已开启</span>':'不提供')+'</b></div>';
+  if(c.material){
+    s+='<div class="row" style="margin-top:9px"><span>双方子力明细</span><b class="gold">已开启</b></div>'+
+       '<div style="font-size:11.5px;color:var(--muted);margin:4px 0 2px">白方</div><div class="caps" style="display:flex;flex-wrap:wrap;gap:5px 9px;font-size:12.5px">'+materialList(W)+'</div>'+
+       '<div style="font-size:11.5px;color:var(--muted);margin:8px 0 2px">黑方</div><div class="caps" style="display:flex;flex-wrap:wrap;gap:5px 9px;font-size:12.5px">'+materialList(B)+'</div>';
+  }else s+='<div class="row"><span>双方子力明细</span><b>不提供</b></div>';
+  if(!c.captureIntel&&!c.moveLog&&!c.material){
+    s+='<p style="font-size:11.5px;color:var(--muted);margin:10px 0 0;line-height:1.7">文字坐标与棋子类型均未暴露；棋盘上能看到什么只由视野决定，不由面板补。升变全图视野是唯一一次看全盘的机会。</p>';
+  }
+  intelEl.innerHTML=s;
+}
+function renderEvents(){
+  const c=cfg();
+  eventsTitle.textContent=c.moveLog?'对局提示 / 走子记录':'对局提示';
+  const out=events.map(x=>'<div>'+x+'</div>');
+  if(c.moveLog)for(const l of logs)out.push('<div class="'+(l.hl?'hl':'')+'">'+l.s+'</div>');
+  eventsEl.innerHTML=out.length?out.join(''):'<div>—</div>';
+}
+function renderLegend(){
+  const c=cfg();
+  let s='<span><i style="background:#e9ecd6"></i>可见空格</span>'+
+        '<span><i style="background:#e8bd6a"></i>攻击照亮 / 选中</span>'+
+        '<span><i style="background:#0a0c10;border:1px solid #333"></i>黑块（有无棋子未知）</span>'+
+        '<span><i style="background:#63c7d8"></i>可落点（不区分是否吃子）</span>';
+  s+=c.fogHint?'<span><i style="background:transparent;border:2px dashed #63c7d8"></i>黑块中的落点（不揭示内容）</span>'
+              :'<span>黑块落点标记：已关闭（仍可盲走）</span>';
+  if(c.threat)s+='<span><i style="background:transparent;border:2px solid #ff6250"></i>受攻击的己方棋子</span>';
+  if(c.lastMove)s+='<span><i style="background:transparent;border:2px dashed #b494ff"></i>虚框 · 对方原位置</span>'+
+                    '<span><i style="background:transparent;border:2px solid #b494ff"></i>实框 · 对方落点</span>';
+  legendEl.innerHTML=s;
+}
+
+function onCellClick(r,c){
+  if(over||aiThinking||game.turn!==W||revealAll)return;
+  const h=hints.find(m=>m.tr===r&&m.tc===c);
+  if(selected&&h){doPlayerMove(h);return;}
+  const p=game.b[r][c];
+  if(p&&p.c===W&&vision.vis.has(r+','+c)){
+    selected={r,c};
+    hints=genLegal(game,W).filter(m=>m.fr===r&&m.fc===c);
+  }else{selected=null;hints=[];}
+  render();
+}
+function moveText(mv,who,promoT){
+  let s=who+' '+GLYPH[mv.piece.c][mv.piece.t]+NAME[mv.piece.t]+' '+sqName(mv.fr,mv.fc)+' → '+sqName(mv.tr,mv.tc);
+  if(mv.promo)s+=' · 升变为 '+NAME[promoT||mv.promoT||'q'];
+  if(mv.capPiece)s+=' · 吃掉 '+GLYPH[mv.capPiece.c][mv.capPiece.t]+NAME[mv.capPiece.t];
+  if(mv.castle)s+=' · 王车易位';
+  return s;
+}
+function doPlayerMove(mv){
+  if(mv.promo){
+    pendingMove=mv;
+    revealAll=cfg().promoReveal;
+    modal.classList.remove('hidden');
+    promoBanner.textContent=revealAll
+      ? '◉ 升变选择期间：全图视野生效，此刻可看见棋盘上全部棋子（选定后立即收回）'
+      : '◉ 全图视野已关闭：按当前迷雾状态选择升变棋子';
+    promoBanner.classList.toggle('off',!revealAll);
+    addEvent(revealAll?'◉ 升变选择：全图视野生效':'◉ 升变选择：按当前迷雾选择');
+    render();return;
+  }
+  finalizePlayer(mv,'q');
+}
+function pickPromo(t){
+  if(!pendingMove)return;
+  const mv=pendingMove,hadReveal=revealAll;pendingMove=null;
+  revealAll=false;modal.classList.add('hidden');
+  addEvent(hadReveal?'◉ 视野已收回':'◉ 升变完成');
+  finalizePlayer(mv,t);
+}
+function finalizePlayer(mv,promoT){
+  addLog(moveText(mv,'你',promoT),true);
+  game=apply(game,mv,promoT||'q');
+  lastAIMove=null;
+  selected=null;hints=[];
+  checkOver();render();
+  if(!over)scheduleAI();
+}
+function scheduleAI(){aiThinking=true;render();setTimeout(aiTurn,240);}
+function aiTurn(){
+  const mv=chooseAI(game,cfg().ai);
+  if(!mv){aiThinking=false;checkOver();render();return;}
+  addLog(moveText(mv,'黑方',mv.promoT||'q'),!!mv.capPiece);
+  game=apply(game,mv,mv.promoT||'q');
+  lastAIMove={fr:mv.fr,fc:mv.fc,tr:mv.tr,tc:mv.tc};
+  aiThinking=false;
+  checkOver();render();
+}
+function checkOver(){
+  const st=gameStatus(game);
+  if(st){
+    over=st;
+    const txt=st==='checkmate'?(game.turn===B?'将死！你赢了 ♕':'将死，你输了'):st==='stalemate'?'逼和，和棋':'50 步规则和棋';
+    addEvent('● 对局结束：'+txt);
+  }
+}
+events=['对局开始 · 你执白先行'];
+render();
+</script>
+</body>
+</html>
